@@ -1,0 +1,12 @@
+Time,testTimechoDB,testConsensus,testCaseName,testResult,testElapsedTimeSeconds,warnNum,testOtherMessage,maxBMTestTimeSec,sumBMTestTimeSec
+2026-03-03T17:19:50.008+08:00,'v2082rc3_0212_1606693','IoTConsensus','tc2026_Jan_0004_query_into_optimize_v1365_v2081.sh','PASS',982,1,'first cost 23 less than second cost 25.',69.67,69.67
+2026-03-04T11:33:45.778+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0001_obj_ttl_comp_all_expired.sh,FAIL,20,0,No Warn.,null,null
+2026-03-04T17:31:12.228+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0003_query_oom_wrong_parser_infinite_loop.sh,FAIL,4,0,No Warn.,null,null
+2026-03-04T18:31:23.274+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0003_query_oom_wrong_parser_infinite_loop.sh,FAIL,4,0,No Warn.,null,null
+2026-03-04T18:33:27.532+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0002_obj_ttl_close_comp_all_expired.sh,FAIL,12,0,No Warn.,null,null
+2026-03-04T18:35:36.634+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0001_obj_ttl_comp_all_expired.sh,FAIL,20,0,No Warn.,null,null
+2026-03-04T18:53:35.410+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0004_query_into_optimize_v1365_v2081.sh,PASS,963,1,first cost 22 less than second cost 24.,68.55,68.55
+2026-03-04T19:02:17.969+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0005_more_than_1000_conn.sh,FAIL,365,0,The error message is incorrect.,,
+2026-03-04T19:04:54.869+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0006_storage_print_resource_no_obj_V2-185.sh,PASS,27,0,No Warn.,null,null
+2026-03-04T19:06:51.068+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0007_storage_object_BufferUnderflow.sh,FAIL,5,0,create table fail.,null,null
+2026-03-04T19:43:58.430+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0009_compaction_droptable_tag_num_name_diff_v2081.sh,PASS,2099,0,No Warn.,280.96,555.45
