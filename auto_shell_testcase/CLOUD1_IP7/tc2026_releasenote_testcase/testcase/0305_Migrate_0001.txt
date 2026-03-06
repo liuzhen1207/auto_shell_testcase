@@ -1,0 +1,1539 @@
++ set -uo pipefail
++++ dirname tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh
+++ cd .
+++ pwd
++ cur_dir=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase
+++ basename tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh
++ SCRIPT_NAME=tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh
++ conf_file=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
++ nodeinfo_dir=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf
+++ grep '^os_user_name' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ awk -F = '{print $2}'
+++ sed 's/ //g'
++ os_user_name=root
+++ grep '^db_user_name' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ awk -F = '{print $2}'
+++ sed 's/ //g'
++ db_user_name=root
+++ grep '^v_testdb' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ sed 's/ //g'
+++ awk -F = '{print $2}'
++ testdb=v2082rc4_0305_6111b6e
+++ grep '^v_db_parent_dir' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ awk -F = '{print $2}'
+++ sed 's/ //g'
++ db_parent_dir=/data1/iotdb
+++ grep '^v_shell_client_db_parent_dir=' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ awk -F = '{gsub(/ /,""); print $2}'
++ shell_client_db_parent_dir=/data2/iotdb
++ cli_dir=/data2/iotdb/v2082rc4_0305_6111b6e
++ db_dir=/data1/iotdb/v2082rc4_0305_6111b6e
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ grep '^v_cn_db_parent_dir'
+++ awk -F = '{print $2}'
++ cn_db_parent_dir=/data1/iotdb
++ cn_db_dir=/data1/iotdb/v2082rc4_0305_6111b6e
++ clean_env_dir=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../clean_env
++ prepare_env_dir=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../prepare_env
+++ grep '^CLUSTER_NAME' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/test.conf
+++ awk -F = '{print $2}'
+++ sed 's/ //g'
++ CLUSTER_ID=ClusterID2
++ cn_num=3
++ dn_num=5
++ dr_rep_num=2
++ sr_rep_num=3
++ total_node_num=8
++ log_file=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/set_conf_parallel.log
++ ssl_str=
++ backup_flag=0
++ backup_log_flag=0
++ v_warnNum=0
++ v_warnMessage='No Warn.'
++ v_consensus=IoTConsensus
++ v_mig_user_name=migrate_user
++ rm -rf /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/confignode.txt
++ rm -rf /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode.txt
++ cp -rp /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/confignode_3c.txt /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/confignode.txt
++ cp -rp /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode_5d.txt /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode.txt
+++ head -1 /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/confignode.txt
+++ sed 's/ //g'
++ seed_cn_ip=172.16.2.8:10710
+++ head -1 /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode.txt
+++ sed 's/ //g'
++ query_ip=172.16.2.11
+++ sed -n 2p /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode.txt
++ mig_from_ip=172.16.2.12
++ fail_flag=0
++ prepare_fail_flag=0
++ echo ''
++ start_db
++ log INFO $'\345\274\200\345\247\213\345\220\257\345\212\250\346\225\260\346\215\256\345\272\223\351\233\206\347\276\244...'
++ local level=INFO
++ local $'msg=\345\274\200\345\247\213\345\220\257\345\212\250\346\225\260\346\215\256\345\272\223\351\233\206\347\276\244...'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:16:54'
++ echo '[2026-03-05 18:16:54] [INFO] 开始启动数据库集群...'
++ echo '[2026-03-05 18:16:54] [INFO] 开始启动数据库集群...'
+[2026-03-05 18:16:54] [INFO] 开始启动数据库集群...
++ clean_env
++ log INFO $'\345\274\200\345\247\213\346\270\205\347\220\206\351\233\206\347\276\244\347\216\257\345\242\203...'
++ local level=INFO
++ local $'msg=\345\274\200\345\247\213\346\270\205\347\220\206\351\233\206\347\276\244\347\216\257\345\242\203...'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:16:54'
++ echo '[2026-03-05 18:16:54] [INFO] 开始清理集群环境...'
++ echo '[2026-03-05 18:16:54] [INFO] 开始清理集群环境...'
+[2026-03-05 18:16:54] [INFO] 开始清理集群环境...
++ sh -x /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../clean_env/stop_cluster.sh
++ sh -x /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../clean_env/clean_cluster.sh
++ sh -x /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../clean_env/reset_conf.sh
++ sh -x /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../clean_env/clear_cache.sh
++ '[' 0 -eq 0 ']'
++ log INFO $'\351\233\206\347\276\244\347\216\257\345\242\203\346\270\205\347\220\206\345\256\214\346\210\220'
++ local level=INFO
++ local $'msg=\351\233\206\347\276\244\347\216\257\345\242\203\346\270\205\347\220\206\345\256\214\346\210\220'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 集群环境清理完成'
++ echo '[2026-03-05 18:19:02] [INFO] 集群环境清理完成'
+[2026-03-05 18:19:02] [INFO] 集群环境清理完成
++ '[' 0 -eq 1 ']'
+++ head -1 /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/confignode.txt
+++ sed 's/ //g'
++ seed_cn_ip=172.16.2.8:10710
+++ head -1 /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode.txt
+++ sed 's/ //g'
++ query_ip=172.16.2.11
++ set_conf
++ log INFO $'\345\274\200\345\247\213\345\271\266\350\241\214\351\205\215\347\275\256\346\211\200\346\234\211\350\212\202\347\202\271\357\274\210\351\200\202\351\205\215\345\220\214IP\345\234\272\346\231\257\357\274\211...'
++ local level=INFO
++ local $'msg=\345\274\200\345\247\213\345\271\266\350\241\214\351\205\215\347\275\256\346\211\200\346\234\211\350\212\202\347\202\271\357\274\210\351\200\202\351\205\215\345\220\214IP\345\234\272\346\231\257\357\274\211...'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 开始并行配置所有节点（适配同IP场景）...'
++ echo '[2026-03-05 18:19:02] [INFO] 开始并行配置所有节点（适配同IP场景）...'
+[2026-03-05 18:19:02] [INFO] 开始并行配置所有节点（适配同IP场景）...
++ grep -v '^$' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/confignode.txt
++ sed 's/ //g'
++ sort -u
++ sed 's/ //g'
++ sort -u
++ grep -v '^$' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../conf/datanode.txt
++ cn_ips=()
++ read -r line
++ [[ -n 172.16.2.10 ]]
++ cn_ips+=("${line}")
++ read -r line
++ [[ -n 172.16.2.8 ]]
++ cn_ips+=("${line}")
++ read -r line
++ [[ -n 172.16.2.9 ]]
++ cn_ips+=("${line}")
++ read -r line
++ dn_ips=()
++ read -r line
++ [[ -n 172.16.2.11 ]]
++ dn_ips+=("${line}")
++ read -r line
++ [[ -n 172.16.2.12 ]]
++ dn_ips+=("${line}")
++ read -r line
++ [[ -n 172.16.2.13 ]]
++ dn_ips+=("${line}")
++ read -r line
++ [[ -n 172.16.2.14 ]]
++ dn_ips+=("${line}")
++ read -r line
++ [[ -n 172.16.2.15 ]]
++ dn_ips+=("${line}")
++ read -r line
++ mixed_ips=()
++ for ip in '"${cn_ips[@]}"'
++ grep -q '^172.16.2.10$' /tmp/dn_ips.tmp
++ for ip in '"${cn_ips[@]}"'
++ grep -q '^172.16.2.8$' /tmp/dn_ips.tmp
++ for ip in '"${cn_ips[@]}"'
++ grep -q '^172.16.2.9$' /tmp/dn_ips.tmp
++ only_cn_ips=()
++ for ip in '"${cn_ips[@]}"'
++ grep -q '^172.16.2.10$' /tmp/dn_ips.tmp
++ only_cn_ips+=("${ip}")
++ for ip in '"${cn_ips[@]}"'
++ grep -q '^172.16.2.8$' /tmp/dn_ips.tmp
++ only_cn_ips+=("${ip}")
++ for ip in '"${cn_ips[@]}"'
++ grep -q '^172.16.2.9$' /tmp/dn_ips.tmp
++ only_cn_ips+=("${ip}")
++ only_dn_ips=()
++ for ip in '"${dn_ips[@]}"'
++ grep -q '^172.16.2.11$' /tmp/cn_ips.tmp
++ only_dn_ips+=("${ip}")
++ for ip in '"${dn_ips[@]}"'
++ grep -q '^172.16.2.12$' /tmp/cn_ips.tmp
++ only_dn_ips+=("${ip}")
++ for ip in '"${dn_ips[@]}"'
++ grep -q '^172.16.2.13$' /tmp/cn_ips.tmp
++ only_dn_ips+=("${ip}")
++ for ip in '"${dn_ips[@]}"'
++ grep -q '^172.16.2.14$' /tmp/cn_ips.tmp
++ only_dn_ips+=("${ip}")
++ for ip in '"${dn_ips[@]}"'
++ grep -q '^172.16.2.15$' /tmp/cn_ips.tmp
++ only_dn_ips+=("${ip}")
++ pids=()
++ log INFO '启动仅ConfigNode节点并行配置: 172.16.2.10 172.16.2.8 172.16.2.9'
++ local level=INFO
++ local 'msg=启动仅ConfigNode节点并行配置: 172.16.2.10 172.16.2.8 172.16.2.9'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 启动仅ConfigNode节点并行配置: 172.16.2.10 172.16.2.8 172.16.2.9'
++ echo '[2026-03-05 18:19:02] [INFO] 启动仅ConfigNode节点并行配置: 172.16.2.10 172.16.2.8 172.16.2.9'
+[2026-03-05 18:19:02] [INFO] 启动仅ConfigNode节点并行配置: 172.16.2.10 172.16.2.8 172.16.2.9
++ for ip in '"${only_cn_ips[@]}"'
++ pids+=($!)
++ for ip in '"${only_cn_ips[@]}"'
++ configure_confignode 172.16.2.10
++ pids+=($!)
++ for ip in '"${only_cn_ips[@]}"'
++ local node_ip=172.16.2.10
++ configure_confignode 172.16.2.8
++ log INFO '开始配置ConfigNode: 172.16.2.10'
++ local level=INFO
++ local 'msg=开始配置ConfigNode: 172.16.2.10'
++ local node_ip=172.16.2.8
++ pids+=($!)
++ log INFO '开始配置ConfigNode: 172.16.2.8'
++ local level=INFO
++ local 'msg=开始配置ConfigNode: 172.16.2.8'
++ log INFO '启动仅DataNode节点并行配置: 172.16.2.11 172.16.2.12 172.16.2.13 172.16.2.14 172.16.2.15'
++ local level=INFO
++ local 'msg=启动仅DataNode节点并行配置: 172.16.2.11 172.16.2.12 172.16.2.13 172.16.2.14 172.16.2.15'
++ configure_confignode 172.16.2.9
++ local node_ip=172.16.2.9
++ log INFO '开始配置ConfigNode: 172.16.2.9'
++ local level=INFO
+++ date '+%Y-%m-%d %H:%M:%S'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'msg=开始配置ConfigNode: 172.16.2.9'
+++ date '+%Y-%m-%d %H:%M:%S'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.10'
++ local 'timestamp=2026-03-05 18:19:02'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.10'
++ echo '[2026-03-05 18:19:02] [INFO] 启动仅DataNode节点并行配置: 172.16.2.11 172.16.2.12 172.16.2.13 172.16.2.14 172.16.2.15'
+[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.10
++ echo '[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.8'
++ echo '[2026-03-05 18:19:02] [INFO] 启动仅DataNode节点并行配置: 172.16.2.11 172.16.2.12 172.16.2.13 172.16.2.14 172.16.2.15'
++ ssh -o ConnectTimeout=10 root@172.16.2.10 bash -s
+[2026-03-05 18:19:02] [INFO] 启动仅DataNode节点并行配置: 172.16.2.11 172.16.2.12 172.16.2.13 172.16.2.14 172.16.2.15
++ echo '[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.8'
+[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.8
++ for ip in '"${only_dn_ips[@]}"'
++ ssh -o ConnectTimeout=10 root@172.16.2.8 bash -s
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.9'
++ pids+=($!)
++ echo '[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.9'
++ for ip in '"${only_dn_ips[@]}"'
++ configure_datanode 172.16.2.11
+[2026-03-05 18:19:02] [INFO] 开始配置ConfigNode: 172.16.2.9
++ ssh -o ConnectTimeout=10 root@172.16.2.9 bash -s
++ local node_ip=172.16.2.11
++ ssh -o ConnectTimeout=10 root@172.16.2.11 bash -s
++ pids+=($!)
++ for ip in '"${only_dn_ips[@]}"'
++ configure_datanode 172.16.2.12
++ local node_ip=172.16.2.12
++ pids+=($!)
++ for ip in '"${only_dn_ips[@]}"'
++ ssh -o ConnectTimeout=10 root@172.16.2.12 bash -s
++ pids+=($!)
++ for ip in '"${only_dn_ips[@]}"'
++ configure_datanode 172.16.2.14
++ pids+=($!)
++ '[' 0 -gt 0 ']'
++ configure_datanode 172.16.2.15
++ local node_ip=172.16.2.14
++ log INFO $'\346\234\252\346\243\200\346\265\213\345\210\260\346\267\267\345\220\210\350\212\202\347\202\271\357\274\210CN+DN\357\274\211\357\274\214\350\267\263\350\277\207\346\267\267\345\220\210\350\212\202\347\202\271\351\205\215\347\275\256'
++ local level=INFO
++ local $'msg=\346\234\252\346\243\200\346\265\213\345\210\260\346\267\267\345\220\210\350\212\202\347\202\271\357\274\210CN+DN\357\274\211\357\274\214\350\267\263\350\277\207\346\267\267\345\220\210\350\212\202\347\202\271\351\205\215\347\275\256'
++ ssh -o ConnectTimeout=10 root@172.16.2.14 bash -s
++ local node_ip=172.16.2.15
++ ssh -o ConnectTimeout=10 root@172.16.2.15 bash -s
++ configure_datanode 172.16.2.13
++ local node_ip=172.16.2.13
+++ date '+%Y-%m-%d %H:%M:%S'
++ ssh -o ConnectTimeout=10 root@172.16.2.13 bash -s
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 未检测到混合节点（CN+DN），跳过混合节点配置'
++ echo '[2026-03-05 18:19:02] [INFO] 未检测到混合节点（CN+DN），跳过混合节点配置'
+[2026-03-05 18:19:02] [INFO] 未检测到混合节点（CN+DN），跳过混合节点配置
++ log INFO $'\347\255\211\345\276\205\346\211\200\346\234\211\350\212\202\347\202\271\351\205\215\347\275\256\350\277\233\347\250\213\345\256\214\346\210\220...'
++ local level=INFO
++ local $'msg=\347\255\211\345\276\205\346\211\200\346\234\211\350\212\202\347\202\271\351\205\215\347\275\256\350\277\233\347\250\213\345\256\214\346\210\220...'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 等待所有节点配置进程完成...'
++ echo '[2026-03-05 18:19:02] [INFO] 等待所有节点配置进程完成...'
+[2026-03-05 18:19:02] [INFO] 等待所有节点配置进程完成...
++ for pid in '"${pids[@]}"'
++ wait 16524
++ '[' 0 -eq 0 ']'
++ log INFO 'ConfigNode 172.16.2.10 配置完成'
++ local level=INFO
++ local 'msg=ConfigNode 172.16.2.10 配置完成'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.10 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.10 配置完成'
+[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.10 配置完成
++ log INFO '进程PID 16524 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16524 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16524 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16524 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16524 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16525
++ '[' 0 -eq 0 ']'
++ log INFO 'ConfigNode 172.16.2.9 配置完成'
++ local level=INFO
++ local 'msg=ConfigNode 172.16.2.9 配置完成'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.9 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.9 配置完成'
+[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.9 配置完成
++ '[' 0 -eq 0 ']'
++ log INFO 'DataNode 172.16.2.15 配置完成'
++ local level=INFO
++ local 'msg=DataNode 172.16.2.15 配置完成'
++ '[' 0 -eq 0 ']'
++ log INFO 'DataNode 172.16.2.11 配置完成'
++ local level=INFO
++ local 'msg=DataNode 172.16.2.11 配置完成'
+++ date '+%Y-%m-%d %H:%M:%S'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.15 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.15 配置完成'
+[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.15 配置完成
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.11 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.11 配置完成'
+[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.11 配置完成
++ '[' 0 -eq 0 ']'
++ '[' 0 -eq 0 ']'
++ log INFO 'DataNode 172.16.2.14 配置完成'
++ log INFO 'DataNode 172.16.2.12 配置完成'
++ local level=INFO
++ local level=INFO
++ local 'msg=DataNode 172.16.2.14 配置完成'
++ local 'msg=DataNode 172.16.2.12 配置完成'
++ '[' 0 -eq 0 ']'
++ log INFO 'ConfigNode 172.16.2.8 配置完成'
+++ date '+%Y-%m-%d %H:%M:%S'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local level=INFO
++ local 'msg=ConfigNode 172.16.2.8 配置完成'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.14 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.14 配置完成'
+[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.14 配置完成
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.8 配置完成'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.8 配置完成'
+[2026-03-05 18:19:02] [INFO] ConfigNode 172.16.2.8 配置完成
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.12 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.12 配置完成'
+[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.12 配置完成
++ log INFO '进程PID 16525 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16525 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16525 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16525 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16525 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16526
++ log INFO '进程PID 16526 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16526 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16526 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16526 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16526 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16531
++ log INFO '进程PID 16531 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16531 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16531 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16531 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16531 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16534
++ log INFO '进程PID 16534 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16534 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16534 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16534 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16534 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16537
++ '[' 0 -eq 0 ']'
++ log INFO 'DataNode 172.16.2.13 配置完成'
++ local level=INFO
++ local 'msg=DataNode 172.16.2.13 配置完成'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.13 配置完成'
++ echo '[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.13 配置完成'
+[2026-03-05 18:19:02] [INFO] DataNode 172.16.2.13 配置完成
++ log INFO '进程PID 16537 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16537 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16537 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16537 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16537 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16538
++ log INFO '进程PID 16538 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16538 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16538 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16538 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16538 执行成功
++ for pid in '"${pids[@]}"'
++ wait 16540
++ log INFO '进程PID 16540 执行成功'
++ local level=INFO
++ local 'msg=进程PID 16540 执行成功'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16540 执行成功'
++ echo '[2026-03-05 18:19:02] [INFO] 进程PID 16540 执行成功'
+[2026-03-05 18:19:02] [INFO] 进程PID 16540 执行成功
++ rm -f /tmp/cn_ips.tmp /tmp/dn_ips.tmp
++ '[' 0 -eq 0 ']'
++ log INFO $'\346\211\200\346\234\211\350\212\202\347\202\271\351\205\215\347\275\256\345\256\214\346\210\220\357\274\201\346\227\245\345\277\227\346\226\207\344\273\266\357\274\232/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/set_conf_parallel.log'
++ local level=INFO
++ local $'msg=\346\211\200\346\234\211\350\212\202\347\202\271\351\205\215\347\275\256\345\256\214\346\210\220\357\274\201\346\227\245\345\277\227\346\226\207\344\273\266\357\274\232/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/set_conf_parallel.log'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:19:02'
++ echo '[2026-03-05 18:19:02] [INFO] 所有节点配置完成！日志文件：/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/set_conf_parallel.log'
++ echo '[2026-03-05 18:19:02] [INFO] 所有节点配置完成！日志文件：/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/set_conf_parallel.log'
+[2026-03-05 18:19:02] [INFO] 所有节点配置完成！日志文件：/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/set_conf_parallel.log
++ '[' 0 -eq 1 ']'
++ sh -x /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../prepare_env/start_cluster_v20.sh 1 8
++ '[' 0 -eq 0 ']'
++ log INFO $'\351\233\206\347\276\244\345\220\257\345\212\250\346\210\220\345\212\237'
++ local level=INFO
++ local $'msg=\351\233\206\347\276\244\345\220\257\345\212\250\346\210\220\345\212\237'
+++ date '+%Y-%m-%d %H:%M:%S'
++ local 'timestamp=2026-03-05 18:20:22'
++ echo '[2026-03-05 18:20:22] [INFO] 集群启动成功'
++ echo '[2026-03-05 18:20:22] [INFO] 集群启动成功'
+[2026-03-05 18:20:22] [INFO] 集群启动成功
+++ date +%s
++ v_start_test_time=1772706022
++ create_user
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e 'CREATE USER tree_user '\''TimechoDB@2021'\'';'
++ check_res successfully 1 'CREATE USER tree_user'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='CREATE USER tree_user'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'CREATE USER tree_user PASS.'
+CREATE USER tree_user PASS.
++ [[ 0 -gt 0 ]]
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e 'grant all ON root.** TO USER tree_user;'
++ check_res successfully 1 'grant all ON root.** TO USER tree_user'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='grant all ON root.** TO USER tree_user'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'grant all ON root.** TO USER tree_user PASS.'
+grant all ON root.** TO USER tree_user PASS.
++ [[ 0 -gt 0 ]]
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e -sql_dialect table 'CREATE USER table_user '\''TimechoDB@2021'\'';'
++ check_res successfully 1 'CREATE USER table_user'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='CREATE USER table_user'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'CREATE USER table_user PASS.'
+CREATE USER table_user PASS.
++ [[ 0 -gt 0 ]]
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e -sql_dialect table 'grant all ON any TO USER table_user;'
++ check_res successfully 1 'grant all ON any TO USER table_user'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='grant all ON any TO USER table_user'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'grant all ON any TO USER table_user PASS.'
+grant all ON any TO USER table_user PASS.
++ [[ 0 -gt 0 ]]
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e -sql_dialect table 'CREATE USER migrate_user '\''TimechoDB@2021'\'';'
++ check_res successfully 1 'CREATE USER migrate_user'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='CREATE USER migrate_user'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'CREATE USER migrate_user PASS.'
+CREATE USER migrate_user PASS.
++ [[ 0 -gt 0 ]]
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e -sql_dialect table 'grant system TO USER migrate_user;'
++ check_res successfully 1 'grant system TO USER migrate_user'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='grant system TO USER migrate_user'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'grant system TO USER migrate_user PASS.'
+grant system TO USER migrate_user PASS.
++ [[ 0 -gt 0 ]]
++ [[ 0 = 0 ]]
++ start_bm
++ bm_dir=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl
++ bm_conf=tree_table
++ ts_num=1000000
+++ grep '^passwd_param=' /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh
+++ grep TimechoDB
+++ wc -l
++ v_20_pass=1
++ [[ 1 -gt 0 ]]
++ bm_root_pw=TimechoDB@2021
++ sed -i 's/^PASSWORD=.*/PASSWORD=TimechoDB@2021/g' /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/tree_table/conf1/config.properties /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/tree_table/conf2/config.properties /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/tree_table/conf3/config.properties
++ bm_log_dir=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/v2082rc4_0305_6111b6e
++ '[' '!' -d /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/v2082rc4_0305_6111b6e ']'
++ echo '目录 /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/v2082rc4_0305_6111b6e 已存在，无需创建'
+目录 /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/v2082rc4_0305_6111b6e 已存在，无需创建
+++ date +%Y_%m_%d_%H_%M_%S
++ bm_test_time=2026_03_05_18_20_39
++ nohup /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/benchmark.sh -cf /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/tree_table/conf1
++ nohup /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/benchmark.sh -cf /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/tree_table/conf2
++ true
++ nohup /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/benchmark.sh -cf /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/../benchmark/bm_20251017_b6be9bd_ssl/tree_table/conf3
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e 'count timeseries root.**;'
+++ grep '| '
+++ awk -F '|' '{gsub(" ","");print $2}'
++ v_ts_num=128
++ [[ 128 -ge 1000000 ]]
++ sleep 10
++ true
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e 'count timeseries root.**;'
+++ grep '| '
+++ awk -F '|' '{gsub(" ","");print $2}'
++ v_ts_num=128
++ [[ 128 -ge 1000000 ]]
++ sleep 10
++ true
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -e 'count timeseries root.**;'
+++ grep '| '
+++ awk -F '|' '{gsub(" ","");print $2}'
++ v_ts_num=1000158
++ [[ 1000158 -ge 1000000 ]]
++ break
++ testcase1
++ exec_migrate_region
++ echo '开始清空节点 172.16.2.12 上的所有Region...'
+开始清空节点 172.16.2.12 上的所有Region...
++ migrate_all_regions_for_dialect tree
++ local dialect=tree
+++ get_source_dn_id
++++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -u migrate_user -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ local 'datanodes_output=+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            4|              7|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            4|              6|
+|     7|Running|172.16.2.15|   6667|            5|              6|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.058s'
+++ [[ -z +------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            4|              7|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            4|              6|
+|     7|Running|172.16.2.15|   6667|            5|              6|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.058s ]]
++++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            4|              7|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            4|              6|
+|     7|Running|172.16.2.15|   6667|            5|              6|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.058s'
++++ grep -m1 NodeID
+++ local 'header_line=|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ [[ -z |NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum| ]]
+++ headers=()
+++ local -a headers
+++ IFS='|'
+++ read -ra headers
++++ tr -d ' '
++++ echo '|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ local rpc_addr_col=-1
+++ local node_id_col=-1
+++ for i in '"${!headers[@]}"'
+++ [[ '' == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ '' == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ NodeID == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ NodeID == \N\o\d\e\I\D ]]
+++ node_id_col=1
+++ for i in '"${!headers[@]}"'
+++ [[ Status == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ Status == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ RpcAddress == \R\p\c\A\d\d\r\e\s\s ]]
+++ rpc_addr_col=3
+++ for i in '"${!headers[@]}"'
+++ [[ RpcPort == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ RpcPort == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ DataRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ DataRegionNum == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ SchemaRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ SchemaRegionNum == \N\o\d\e\I\D ]]
+++ [[ 3 -eq -1 ]]
+++ [[ 1 -eq -1 ]]
+++ grep -v 'It costs'
+++ grep -v 'Total line number'
+++ IFS='|'
+++ read -ra cols
+++ grep -v NodeID
+++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            4|              7|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            4|              6|
+|     7|Running|172.16.2.15|   6667|            5|              6|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.058s'
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 961: cols[$rpc_addr_col]: unbound variable
++++ xargs
+++ local rpc_address=
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 962: cols[$node_id_col]: unbound variable
++++ xargs
+++ local node_id=
+++ [[ '' =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 961: cols[$rpc_addr_col]: unbound variable
++++ xargs
+++ local rpc_address=
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 962: cols[$node_id_col]: unbound variable
++++ xargs
+++ local node_id=
+++ [[ '' =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.11
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.11
++++ echo '     3'
++++ tr -d ' '
++++ xargs
+++ local node_id=3
+++ [[ 172.16.2.11 =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.12
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.12
++++ tr -d ' '
++++ echo '     4'
++++ xargs
+++ local node_id=4
+++ [[ 172.16.2.12 =~ ^172.16.2.12$ ]]
+++ echo 4
+++ break
++ local from_dn_id=4
++ [[ -z 4 ]]
++ echo '=== 开始迁移 dialect=tree 下，从节点 172.16.2.12 (DN: 4) 的所有Region ==='
+=== 开始迁移 dialect=tree 下，从节点 172.16.2.12 (DN: 4) 的所有Region ===
++ local region_list_file=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/v_tree_mig_id_list.txt
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -u migrate_user -sql_dialect tree -e 'show regions;'
++ grep -v 'It costs'
++ grep '172.16.2.12|'
++ awk -F '|' '{gsub(" ", "", $2); print $2}'
++ grep -v 'Total line number'
++ [[ ! -s /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/v_tree_mig_id_list.txt ]]
++ IFS=
++ read -r v_mig_id
++ [[ -n 0 ]]
+++ get_least_loaded_dn tree
+++ local dialect=tree
+++ declare -A dn_count
+++ local tmp_dn_list=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp_dn_list_15860.txt
+++ get_all_target_datanodes
++++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -u migrate_user -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ local 'datanodes_output=+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.031s'
+++ [[ -z +------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.031s ]]
++++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.031s'
++++ grep -m1 NodeID
+++ local 'header_line=|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ [[ -z |NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum| ]]
+++ headers=()
+++ local -a headers
+++ IFS='|'
+++ read -ra headers
++++ echo '|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
++++ tr -d ' '
+++ local rpc_addr_col=-1
+++ local node_id_col=-1
+++ for i in '"${!headers[@]}"'
+++ [[ '' == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ '' == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ NodeID == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ NodeID == \N\o\d\e\I\D ]]
+++ node_id_col=1
+++ for i in '"${!headers[@]}"'
+++ [[ Status == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ Status == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ RpcAddress == \R\p\c\A\d\d\r\e\s\s ]]
+++ rpc_addr_col=3
+++ for i in '"${!headers[@]}"'
+++ [[ RpcPort == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ RpcPort == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ DataRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ DataRegionNum == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ SchemaRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ SchemaRegionNum == \N\o\d\e\I\D ]]
+++ [[ 3 -eq -1 ]]
+++ [[ 1 -eq -1 ]]
+++ grep -v 'Total line number'
+++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.031s'
+++ IFS='|'
+++ read -ra cols
+++ grep -v NodeID
+++ grep -v 'It costs'
++++ xargs
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 854: cols[$rpc_addr_col]: unbound variable
++++ tr -d ' '
+++ local rpc_address=
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 855: cols[$node_id_col]: unbound variable
++++ tr -d ' '
++++ xargs
+++ local node_id=
+++ [[ -n '' ]]
+++ IFS='|'
+++ read -ra cols
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 854: cols[$rpc_addr_col]: unbound variable
++++ tr -d ' '
++++ xargs
+++ local rpc_address=
++++ xargs
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 855: cols[$node_id_col]: unbound variable
++++ tr -d ' '
+++ local node_id=
+++ [[ -n '' ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.11
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.11
++++ echo '     3'
++++ tr -d ' '
++++ xargs
+++ local node_id=3
+++ [[ -n 172.16.2.11 ]]
+++ [[ -n 3 ]]
+++ [[ ! 172.16.2.11 =~ ^172.16.2.12$ ]]
+++ echo '3 172.16.2.11'
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.12
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.12
++++ echo '     4'
++++ tr -d ' '
++++ xargs
+++ local node_id=4
+++ [[ -n 172.16.2.12 ]]
+++ [[ -n 4 ]]
+++ [[ ! 172.16.2.12 =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ xargs
++++ echo 172.16.2.13
++++ tr -d ' '
+++ local rpc_address=172.16.2.13
++++ echo '     5'
++++ tr -d ' '
++++ xargs
+++ local node_id=5
+++ [[ -n 172.16.2.13 ]]
+++ [[ -n 5 ]]
+++ [[ ! 172.16.2.13 =~ ^172.16.2.12$ ]]
+++ echo '5 172.16.2.13'
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.14
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.14
++++ echo '     6'
++++ tr -d ' '
++++ xargs
+++ local node_id=6
+++ [[ -n 172.16.2.14 ]]
+++ [[ -n 6 ]]
+++ [[ ! 172.16.2.14 =~ ^172.16.2.12$ ]]
+++ echo '6 172.16.2.14'
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.15
++++ xargs
++++ tr -d ' '
+++ local rpc_address=172.16.2.15
++++ xargs
++++ echo '     7'
++++ tr -d ' '
+++ local node_id=7
+++ [[ -n 172.16.2.15 ]]
+++ [[ -n 7 ]]
+++ [[ ! 172.16.2.15 =~ ^172.16.2.12$ ]]
+++ echo '7 172.16.2.15'
+++ IFS='|'
+++ read -ra cols
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 854: cols[$rpc_addr_col]: unbound variable
++++ xargs
++++ tr -d ' '
+++ local rpc_address=
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 855: cols[$node_id_col]: unbound variable
++++ xargs
+++ local node_id=
+++ [[ -n '' ]]
+++ IFS='|'
+++ read -ra cols
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 3 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 5 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 6 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 7 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ rm -f /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp_dn_list_15860.txt
+++ [[ 4 -eq 0 ]]
+++ local tmp_region_list=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp_region_list_15860.txt
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -u migrate_user -sql_dialect tree -e 'show regions;'
+++ awk -F '|' '{gsub(" ", "", $7); print $7}'
+++ grep -v 'Total line number'
+++ grep -v 'It costs'
+++ IFS=
+++ read -r dn_id
+++ [[ -n '' ]]
+++ IFS=
+++ read -r dn_id
+++ [[ -n TimeSlotNum ]]
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 895: dn_count[$dn_id]: unbound variable
++ local to_dn_id=
++ [[ -z '' ]]
++ echo '❌ 迁移 Region 0 失败：无法获取有效的目标 DataNode ID，终止当前模型迁移'
+❌ 迁移 Region 0 失败：无法获取有效的目标 DataNode ID，终止当前模型迁移
++ return 1
++ migrate_all_regions_for_dialect table
++ local dialect=table
+++ get_source_dn_id
++++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -u migrate_user -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ local 'datanodes_output=+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.078s'
+++ [[ -z +------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.078s ]]
++++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.078s'
++++ grep -m1 NodeID
+++ local 'header_line=|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ [[ -z |NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum| ]]
+++ headers=()
+++ local -a headers
+++ IFS='|'
+++ read -ra headers
++++ echo '|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
++++ tr -d ' '
+++ local rpc_addr_col=-1
+++ local node_id_col=-1
+++ for i in '"${!headers[@]}"'
+++ [[ '' == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ '' == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ NodeID == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ NodeID == \N\o\d\e\I\D ]]
+++ node_id_col=1
+++ for i in '"${!headers[@]}"'
+++ [[ Status == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ Status == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ RpcAddress == \R\p\c\A\d\d\r\e\s\s ]]
+++ rpc_addr_col=3
+++ for i in '"${!headers[@]}"'
+++ [[ RpcPort == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ RpcPort == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ DataRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ DataRegionNum == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ SchemaRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ SchemaRegionNum == \N\o\d\e\I\D ]]
+++ [[ 3 -eq -1 ]]
+++ [[ 1 -eq -1 ]]
+++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.078s'
+++ grep -v NodeID
+++ grep -v 'Total line number'
+++ grep -v 'It costs'
+++ IFS='|'
+++ read -ra cols
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 961: cols[$rpc_addr_col]: unbound variable
++++ tr -d ' '
++++ xargs
+++ local rpc_address=
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 962: cols[$node_id_col]: unbound variable
++++ xargs
++++ tr -d ' '
+++ local node_id=
+++ [[ '' =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 961: cols[$rpc_addr_col]: unbound variable
++++ xargs
+++ local rpc_address=
++++ tr -d ' '
++++ xargs
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 962: cols[$node_id_col]: unbound variable
+++ local node_id=
+++ [[ '' =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.11
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.11
++++ echo '     3'
++++ tr -d ' '
++++ xargs
+++ local node_id=3
+++ [[ 172.16.2.11 =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.12
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.12
++++ echo '     4'
++++ tr -d ' '
++++ xargs
+++ local node_id=4
+++ [[ 172.16.2.12 =~ ^172.16.2.12$ ]]
+++ echo 4
+++ break
++ local from_dn_id=4
++ [[ -z 4 ]]
++ echo '=== 开始迁移 dialect=table 下，从节点 172.16.2.12 (DN: 4) 的所有Region ==='
+=== 开始迁移 dialect=table 下，从节点 172.16.2.12 (DN: 4) 的所有Region ===
++ local region_list_file=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/v_table_mig_id_list.txt
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -u migrate_user -sql_dialect table -e 'show regions;'
++ grep '172.16.2.12|'
++ grep -v 'It costs'
++ grep -v 'Total line number'
++ awk -F '|' '{gsub(" ", "", $2); print $2}'
++ [[ ! -s /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/v_table_mig_id_list.txt ]]
++ IFS=
++ read -r v_mig_id
++ [[ -n 8 ]]
+++ get_least_loaded_dn table
+++ local dialect=table
+++ declare -A dn_count
+++ local tmp_dn_list=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp_dn_list_15860.txt
+++ get_all_target_datanodes
++++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -u migrate_user -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ local 'datanodes_output=+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.045s'
+++ [[ -z +------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.045s ]]
++++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.045s'
++++ grep -m1 NodeID
+++ local 'header_line=|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ [[ -z |NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum| ]]
+++ headers=()
+++ local -a headers
+++ IFS='|'
+++ read -ra headers
++++ echo '|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
++++ tr -d ' '
+++ local rpc_addr_col=-1
+++ local node_id_col=-1
+++ for i in '"${!headers[@]}"'
+++ [[ '' == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ '' == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ NodeID == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ NodeID == \N\o\d\e\I\D ]]
+++ node_id_col=1
+++ for i in '"${!headers[@]}"'
+++ [[ Status == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ Status == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ RpcAddress == \R\p\c\A\d\d\r\e\s\s ]]
+++ rpc_addr_col=3
+++ for i in '"${!headers[@]}"'
+++ [[ RpcPort == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ RpcPort == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ DataRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ DataRegionNum == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ SchemaRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ SchemaRegionNum == \N\o\d\e\I\D ]]
+++ [[ 3 -eq -1 ]]
+++ [[ 1 -eq -1 ]]
+++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.045s'
+++ grep -v 'It costs'
+++ grep -v NodeID
+++ IFS='|'
+++ read -ra cols
+++ grep -v 'Total line number'
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 854: cols[$rpc_addr_col]: unbound variable
++++ tr -d ' '
++++ xargs
+++ local rpc_address=
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 855: cols[$node_id_col]: unbound variable
++++ tr -d ' '
++++ xargs
+++ local node_id=
+++ [[ -n '' ]]
+++ IFS='|'
+++ read -ra cols
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 854: cols[$rpc_addr_col]: unbound variable
++++ xargs
+++ local rpc_address=
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 855: cols[$node_id_col]: unbound variable
++++ tr -d ' '
++++ xargs
+++ local node_id=
+++ [[ -n '' ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.11
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.11
++++ echo '     3'
++++ tr -d ' '
++++ xargs
+++ local node_id=3
+++ [[ -n 172.16.2.11 ]]
+++ [[ -n 3 ]]
+++ [[ ! 172.16.2.11 =~ ^172.16.2.12$ ]]
+++ echo '3 172.16.2.11'
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.12
++++ xargs
++++ tr -d ' '
+++ local rpc_address=172.16.2.12
++++ echo '     4'
++++ tr -d ' '
++++ xargs
+++ local node_id=4
+++ [[ -n 172.16.2.12 ]]
+++ [[ -n 4 ]]
+++ [[ ! 172.16.2.12 =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ xargs
++++ echo 172.16.2.13
++++ tr -d ' '
+++ local rpc_address=172.16.2.13
++++ tr -d ' '
++++ echo '     5'
++++ xargs
+++ local node_id=5
+++ [[ -n 172.16.2.13 ]]
+++ [[ -n 5 ]]
+++ [[ ! 172.16.2.13 =~ ^172.16.2.12$ ]]
+++ echo '5 172.16.2.13'
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.14
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.14
++++ echo '     6'
++++ tr -d ' '
++++ xargs
+++ local node_id=6
+++ [[ -n 172.16.2.14 ]]
+++ [[ -n 6 ]]
+++ [[ ! 172.16.2.14 =~ ^172.16.2.12$ ]]
+++ echo '6 172.16.2.14'
+++ IFS='|'
+++ read -ra cols
++++ xargs
++++ tr -d ' '
++++ echo 172.16.2.15
+++ local rpc_address=172.16.2.15
++++ echo '     7'
++++ tr -d ' '
++++ xargs
+++ local node_id=7
+++ [[ -n 172.16.2.15 ]]
+++ [[ -n 7 ]]
+++ [[ ! 172.16.2.15 =~ ^172.16.2.12$ ]]
+++ echo '7 172.16.2.15'
+++ IFS='|'
+++ read -ra cols
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 854: cols[$rpc_addr_col]: unbound variable
++++ xargs
++++ tr -d ' '
+++ local rpc_address=
++++ xargs
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 855: cols[$node_id_col]: unbound variable
++++ tr -d ' '
+++ local node_id=
+++ [[ -n '' ]]
+++ IFS='|'
+++ read -ra cols
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 3 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 5 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 6 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ [[ -n 7 ]]
+++ dn_count[$dn_id]=0
+++ IFS=' '
+++ read -r dn_id _
+++ rm -f /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp_dn_list_15860.txt
+++ [[ 4 -eq 0 ]]
+++ local tmp_region_list=/data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp_region_list_15860.txt
+++ grep -v 'Total line number'
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -u migrate_user -sql_dialect table -e 'show regions;'
+++ grep -v 'It costs'
+++ awk -F '|' '{gsub(" ", "", $7); print $7}'
+++ IFS=
+++ read -r dn_id
+++ [[ -n '' ]]
+++ IFS=
+++ read -r dn_id
+++ [[ -n TimeSlotNum ]]
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 895: dn_count[$dn_id]: unbound variable
++ local to_dn_id=
++ [[ -z '' ]]
++ echo '❌ 迁移 Region 8 失败：无法获取有效的目标 DataNode ID，终止当前模型迁移'
+❌ 迁移 Region 8 失败：无法获取有效的目标 DataNode ID，终止当前模型迁移
++ return 1
++ echo '✅ 所有迁移任务执行完毕！'
+✅ 所有迁移任务执行完毕！
++ remove_datanode
+++ get_source_dn_id
++++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -u migrate_user -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ local 'datanodes_output=+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.061s'
+++ [[ -z +------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.061s ]]
++++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.061s'
++++ grep -m1 NodeID
+++ local 'header_line=|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ [[ -z |NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum| ]]
+++ headers=()
+++ local -a headers
+++ IFS='|'
+++ read -ra headers
++++ tr -d ' '
++++ echo '|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|'
+++ local rpc_addr_col=-1
+++ local node_id_col=-1
+++ for i in '"${!headers[@]}"'
+++ [[ '' == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ '' == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ NodeID == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ NodeID == \N\o\d\e\I\D ]]
+++ node_id_col=1
+++ for i in '"${!headers[@]}"'
+++ [[ Status == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ Status == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ RpcAddress == \R\p\c\A\d\d\r\e\s\s ]]
+++ rpc_addr_col=3
+++ for i in '"${!headers[@]}"'
+++ [[ RpcPort == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ RpcPort == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ DataRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ DataRegionNum == \N\o\d\e\I\D ]]
+++ for i in '"${!headers[@]}"'
+++ [[ SchemaRegionNum == \R\p\c\A\d\d\r\e\s\s ]]
+++ [[ SchemaRegionNum == \N\o\d\e\I\D ]]
+++ [[ 3 -eq -1 ]]
+++ [[ 1 -eq -1 ]]
+++ grep -v NodeID
+++ IFS='|'
+++ read -ra cols
+++ echo '+------+-------+-----------+-------+-------------+---------------+
+|NodeID| Status| RpcAddress|RpcPort|DataRegionNum|SchemaRegionNum|
++------+-------+-----------+-------+-------------+---------------+
+|     3|Running|172.16.2.11|   6667|            4|              7|
+|     4|Running|172.16.2.12|   6667|            5|              8|
+|     5|Running|172.16.2.13|   6667|            5|              7|
+|     6|Running|172.16.2.14|   6667|            5|              7|
+|     7|Running|172.16.2.15|   6667|            5|              7|
++------+-------+-----------+-------+-------------+---------------+
+Total line number = 5
+It costs 0.061s'
+++ grep -v 'It costs'
+++ grep -v 'Total line number'
++++ tr -d ' '
++++ xargs
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 961: cols[$rpc_addr_col]: unbound variable
+++ local rpc_address=
++++ tr -d ' '
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 962: cols[$node_id_col]: unbound variable
++++ xargs
+++ local node_id=
+++ [[ '' =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 961: cols[$rpc_addr_col]: unbound variable
++++ xargs
++++ tr -d ' '
+++ local rpc_address=
+tc2026_March_Migrate_0001_system_priv_normal_tree_table.sh: line 962: cols[$node_id_col]: unbound variable
++++ xargs
++++ tr -d ' '
+++ local node_id=
+++ [[ '' =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.11
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.11
++++ echo '     3'
++++ tr -d ' '
++++ xargs
+++ local node_id=3
+++ [[ 172.16.2.11 =~ ^172.16.2.12$ ]]
+++ IFS='|'
+++ read -ra cols
++++ echo 172.16.2.12
++++ tr -d ' '
++++ xargs
+++ local rpc_address=172.16.2.12
++++ echo '     4'
++++ tr -d ' '
++++ xargs
+++ local node_id=4
+++ [[ 172.16.2.12 =~ ^172.16.2.12$ ]]
+++ echo 4
+++ break
++ local from_dn_id=4
++ [[ -z 4 ]]
++ echo '=== 开始缩容节点 172.16.2.12 (DN ID: 4) ==='
+=== 开始缩容节点 172.16.2.12 (DN ID: 4) ===
++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -u migrate_user -sql_dialect tree -e 'remove datanode 4;'
++ check_res successfully 1 'remove datanode 4'
++ exp_res=successfully
++ exp_num=1
++ tc_desc='remove datanode 4'
+++ cat /data2/auto_test/cluster_shell_3c5d_no2/tc2026_releasenote_testcase/testcase/tmp.out
+++ grep successfully
+++ wc -l
++ v_act_num=1
++ [[ 1 = 1 ]]
++ echo 'remove datanode 4 PASS.'
+remove datanode 4 PASS.
++ [[ 0 -ne 0 ]]
++ local wait_seconds=0
++ local max_wait_seconds=1800
++ local check_interval=30
++ true
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ grep -v NodeID
+++ grep -v 'Total line number'
+++ grep -v 'It costs'
+++ awk -F '|' '{gsub(" ", "", $4); print $4}'
+++ grep -c '^172.16.2.12$'
++ local dn_exists=1
++ [[ 1 -eq 0 ]]
++ [[ 0 -ge 1800 ]]
++ echo '⏳ 等待缩容完成：已等待0秒，172.16.2.12 仍在DataNode列表中（剩余等待时间：1800秒）'
+⏳ 等待缩容完成：已等待0秒，172.16.2.12 仍在DataNode列表中（剩余等待时间：1800秒）
++ sleep 30
++ wait_seconds=30
++ true
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ grep -v NodeID
+++ grep -v 'Total line number'
+++ grep -v 'It costs'
+++ awk -F '|' '{gsub(" ", "", $4); print $4}'
+++ grep -c '^172.16.2.12$'
++ local dn_exists=1
++ [[ 1 -eq 0 ]]
++ [[ 30 -ge 1800 ]]
++ echo '⏳ 等待缩容完成：已等待30秒，172.16.2.12 仍在DataNode列表中（剩余等待时间：1770秒）'
+⏳ 等待缩容完成：已等待30秒，172.16.2.12 仍在DataNode列表中（剩余等待时间：1770秒）
++ sleep 30
++ wait_seconds=60
++ true
+++ /data2/iotdb/v2082rc4_0305_6111b6e/sbin/start-cli.sh -h 172.16.2.11 -sql_dialect tree -e 'show datanodes;'
+++ grep -v NodeID
+++ grep -v 'Total line number'
+++ grep -v 'It costs'
+++ awk -F '|' '{gsub(" ", "", $4); print $4}'
+++ grep -c '^172.16.2.12$'
++ local dn_exists=0
++ [[ 0 -eq 0 ]]
++ echo '✅ 缩容完成：172.16.2.12 已从DataNode列表中移除'
+✅ 缩容完成：172.16.2.12 已从DataNode列表中移除
++ break
++ wait_benchmark
++ true
+++ jps
+++ grep App
+++ wc -l
++ v_bm_num=3
++ [[ 3 -gt 0 ]]
++ sleep 120
++ true
+++ jps
+++ grep App
+++ wc -l
++ v_bm_num=3
++ [[ 3 -gt 0 ]]
++ sleep 120

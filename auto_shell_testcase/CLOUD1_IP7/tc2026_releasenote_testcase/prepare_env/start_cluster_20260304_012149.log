@@ -1,0 +1,63 @@
+[2026-03-04_01:21:49] DEBUG: 脚本原始参数 - $1=1, $2=8
+[2026-03-04_01:21:49] DEBUG: 参数赋值后 - cur_start_cluster_time=1, total_node_num=8
+[2026-03-04_01:21:49] INFO: ==================== 集群启动开始 ====================
+[2026-03-04_01:21:49] INFO: 启动参数：总节点数=8，查询节点=172.16.2.2，启动时间戳=1772558509
+[2026-03-04_01:21:49] INFO: 检测到3个有效ConfigNode节点：172.16.2.26 172.16.2.27 172.16.2.28
+[2026-03-04_01:21:49] INFO: -------------------- 处理ConfigNode节点：172.16.2.26 --------------------
+[2026-03-04_01:21:49] INFO: 节点172.16.2.26 检查license文件...
+[2026-03-04_01:21:50] INFO: 节点172.16.2.26 license已存在，拷贝.env文件
+[2026-03-04_01:21:50] INFO: 节点172.16.2.26 执行启动命令：ssh root@172.16.2.26 'source /etc/profile; nohup /data/iotdb/v2082rc3_0212_1606693/sbin/start-confignode.sh -H /data/iotdb/v2082rc3_0212_1606693/cn_1772558509_heapdump.hprof > /data/iotdb/v2082rc3_0212_1606693/start_cn_1772558509.log 2>&1 &'
+[2026-03-04_01:21:50] INFO: 节点172.16.2.26 ConfigNode启动命令执行成功（退出码：0）
+[2026-03-04_01:21:52] INFO: 节点172.16.2.26 ConfigNode进程已启动，PID：21048
+[2026-03-04_01:21:52] INFO: -------------------- 处理ConfigNode节点：172.16.2.27 --------------------
+[2026-03-04_01:21:52] INFO: 节点172.16.2.27 检查license文件...
+[2026-03-04_01:21:52] WARN: 节点172.16.2.27 未找到license文件，继续启动
+[2026-03-04_01:21:52] INFO: 节点172.16.2.27 执行启动命令：ssh root@172.16.2.27 'source /etc/profile; nohup /data/iotdb/v2082rc3_0212_1606693/sbin/start-confignode.sh -H /data/iotdb/v2082rc3_0212_1606693/cn_1772558509_heapdump.hprof > /data/iotdb/v2082rc3_0212_1606693/start_cn_1772558509.log 2>&1 &'
+[2026-03-04_01:21:52] INFO: 节点172.16.2.27 ConfigNode启动命令执行成功（退出码：0）
+[2026-03-04_01:21:54] INFO: 节点172.16.2.27 ConfigNode进程已启动，PID：15213
+[2026-03-04_01:21:54] INFO: -------------------- 处理ConfigNode节点：172.16.2.28 --------------------
+[2026-03-04_01:21:54] INFO: 节点172.16.2.28 检查license文件...
+[2026-03-04_01:21:55] WARN: 节点172.16.2.28 未找到license文件，继续启动
+[2026-03-04_01:21:55] INFO: 节点172.16.2.28 执行启动命令：ssh root@172.16.2.28 'source /etc/profile; nohup /data/iotdb/v2082rc3_0212_1606693/sbin/start-confignode.sh -H /data/iotdb/v2082rc3_0212_1606693/cn_1772558509_heapdump.hprof > /data/iotdb/v2082rc3_0212_1606693/start_cn_1772558509.log 2>&1 &'
+[2026-03-04_01:21:55] INFO: 节点172.16.2.28 ConfigNode启动命令执行成功（退出码：0）
+[2026-03-04_01:21:57] INFO: 节点172.16.2.28 ConfigNode进程已启动，PID：14931
+[2026-03-04_01:21:57] INFO: 检测到5个有效DataNode节点：172.16.2.2 172.16.2.3 172.16.2.4 172.16.2.5 172.16.2.6
+[2026-03-04_01:21:57] INFO: -------------------- 处理DataNode节点：172.16.2.2 --------------------
+[2026-03-04_01:21:57] INFO: 节点172.16.2.2 执行启动命令：ssh root@172.16.2.2 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772558509_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772558509.log 2>&1 &'
+[2026-03-04_01:21:57] INFO: 节点172.16.2.2 DataNode启动命令执行成功（退出码：0）
+[2026-03-04_01:21:59] INFO: 节点172.16.2.2 DataNode进程已启动，PID：27240
+[2026-03-04_01:21:59] INFO: -------------------- 处理DataNode节点：172.16.2.3 --------------------
+[2026-03-04_01:21:59] INFO: 节点172.16.2.3 执行启动命令：ssh root@172.16.2.3 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772558509_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772558509.log 2>&1 &'
+[2026-03-04_01:21:59] INFO: 节点172.16.2.3 DataNode启动命令执行成功（退出码：0）
+[2026-03-04_01:22:02] INFO: 节点172.16.2.3 DataNode进程已启动，PID：32120
+[2026-03-04_01:22:02] INFO: -------------------- 处理DataNode节点：172.16.2.4 --------------------
+[2026-03-04_01:22:02] INFO: 节点172.16.2.4 执行启动命令：ssh root@172.16.2.4 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772558509_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772558509.log 2>&1 &'
+[2026-03-04_01:22:02] INFO: 节点172.16.2.4 DataNode启动命令执行成功（退出码：0）
+[2026-03-04_01:22:04] INFO: 节点172.16.2.4 DataNode进程已启动，PID：13981
+[2026-03-04_01:22:04] INFO: -------------------- 处理DataNode节点：172.16.2.5 --------------------
+[2026-03-04_01:22:04] INFO: 节点172.16.2.5 执行启动命令：ssh root@172.16.2.5 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772558509_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772558509.log 2>&1 &'
+[2026-03-04_01:22:04] INFO: 节点172.16.2.5 DataNode启动命令执行成功（退出码：0）
+[2026-03-04_01:22:06] INFO: 节点172.16.2.5 DataNode进程已启动，PID：6204
+[2026-03-04_01:22:06] INFO: -------------------- 处理DataNode节点：172.16.2.6 --------------------
+[2026-03-04_01:22:06] INFO: 节点172.16.2.6 执行启动命令：ssh root@172.16.2.6 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772558509_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772558509.log 2>&1 &'
+[2026-03-04_01:22:06] INFO: 节点172.16.2.6 DataNode启动命令执行成功（退出码：0）
+[2026-03-04_01:22:09] INFO: 节点172.16.2.6 DataNode进程已启动，PID：14845
+[2026-03-04_01:22:09] INFO: ==================== 等待集群状态达标 ====================
+[2026-03-04_01:22:09] INFO: 目标就绪节点数：8，最大等待时间：300秒
+[2026-03-04_01:22:12] WARN: 第0秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-04_01:22:12] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-04_01:22:12] INFO: 第0秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-04_01:22:17] WARN: 第1秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-04_01:22:17] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-04_01:22:17] INFO: 第1秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-04_01:22:21] WARN: 第2秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-04_01:22:21] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-04_01:22:21] INFO: 第2秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-04_01:23:09] DEBUG: 统计详情 - total_node_num=8, v_running=8, v_readonly=0, v_ok_num=8
+[2026-03-04_01:23:09] INFO: 第3秒：当前就绪节点数=8/8（Running:8, ReadOnly:0）
+[2026-03-04_01:23:09] INFO: ✅ 集群所有节点已就绪！
+[2026-03-04_01:23:09] INFO: ==================== 集群启动成功 ====================
+[2026-03-04_01:23:09] INFO: 📝 日志文件：/data2/auto_test/cluster_shell_3c5d_no1/tc2026_releasenote_testcase/prepare_env/start_cluster_20260304_012149.log
+[2026-03-04_01:23:09] INFO: 📌 CN启动日志：各节点/data/iotdb/v2082rc3_0212_1606693/start_cn_1772558509.log
+[2026-03-04_01:23:09] INFO: 📌 DN启动日志：各节点/data1/iotdb/v2082rc3_0212_1606693/start_dn_1772558509.log
+[2026-03-04_01:23:09] INFO: 集群启动脚本执行完成，完整日志路径：/data2/auto_test/cluster_shell_3c5d_no1/tc2026_releasenote_testcase/prepare_env/start_cluster_20260304_012149.log

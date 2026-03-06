@@ -1,0 +1,948 @@
+[2026-03-03_22:31:52] DEBUG: 脚本原始参数 - $1=1, $2=8
+[2026-03-03_22:31:52] DEBUG: 参数赋值后 - cur_start_cluster_time=1, total_node_num=8
+[2026-03-03_22:31:52] INFO: ==================== 集群启动开始 ====================
+[2026-03-03_22:31:52] INFO: 启动参数：总节点数=8，查询节点=172.16.2.2，启动时间戳=1772548312
+[2026-03-03_22:31:52] INFO: 检测到3个有效ConfigNode节点：172.16.2.26 172.16.2.27 172.16.2.28
+[2026-03-03_22:31:52] INFO: -------------------- 处理ConfigNode节点：172.16.2.26 --------------------
+[2026-03-03_22:31:52] INFO: 节点172.16.2.26 检查license文件...
+[2026-03-03_22:31:52] INFO: 节点172.16.2.26 license已存在，拷贝.env文件
+[2026-03-03_22:31:52] INFO: 节点172.16.2.26 执行启动命令：ssh root@172.16.2.26 'source /etc/profile; nohup /data/iotdb/v2082rc3_0212_1606693/sbin/start-confignode.sh -H /data/iotdb/v2082rc3_0212_1606693/cn_1772548312_heapdump.hprof > /data/iotdb/v2082rc3_0212_1606693/start_cn_1772548312.log 2>&1 &'
+[2026-03-03_22:31:52] INFO: 节点172.16.2.26 ConfigNode启动命令执行成功（退出码：0）
+[2026-03-03_22:31:54] INFO: 节点172.16.2.26 ConfigNode进程已启动，PID：8871
+[2026-03-03_22:31:54] INFO: -------------------- 处理ConfigNode节点：172.16.2.27 --------------------
+[2026-03-03_22:31:54] INFO: 节点172.16.2.27 检查license文件...
+[2026-03-03_22:31:55] WARN: 节点172.16.2.27 未找到license文件，继续启动
+[2026-03-03_22:31:55] INFO: 节点172.16.2.27 执行启动命令：ssh root@172.16.2.27 'source /etc/profile; nohup /data/iotdb/v2082rc3_0212_1606693/sbin/start-confignode.sh -H /data/iotdb/v2082rc3_0212_1606693/cn_1772548312_heapdump.hprof > /data/iotdb/v2082rc3_0212_1606693/start_cn_1772548312.log 2>&1 &'
+[2026-03-03_22:31:55] INFO: 节点172.16.2.27 ConfigNode启动命令执行成功（退出码：0）
+[2026-03-03_22:31:57] INFO: 节点172.16.2.27 ConfigNode进程已启动，PID：3130
+[2026-03-03_22:31:57] INFO: -------------------- 处理ConfigNode节点：172.16.2.28 --------------------
+[2026-03-03_22:31:57] INFO: 节点172.16.2.28 检查license文件...
+[2026-03-03_22:31:57] WARN: 节点172.16.2.28 未找到license文件，继续启动
+[2026-03-03_22:31:57] INFO: 节点172.16.2.28 执行启动命令：ssh root@172.16.2.28 'source /etc/profile; nohup /data/iotdb/v2082rc3_0212_1606693/sbin/start-confignode.sh -H /data/iotdb/v2082rc3_0212_1606693/cn_1772548312_heapdump.hprof > /data/iotdb/v2082rc3_0212_1606693/start_cn_1772548312.log 2>&1 &'
+[2026-03-03_22:31:57] INFO: 节点172.16.2.28 ConfigNode启动命令执行成功（退出码：0）
+[2026-03-03_22:31:59] INFO: 节点172.16.2.28 ConfigNode进程已启动，PID：2604
+[2026-03-03_22:31:59] INFO: 检测到5个有效DataNode节点：172.16.2.2 172.16.2.3 172.16.2.4 172.16.2.5 172.16.2.6
+[2026-03-03_22:31:59] INFO: -------------------- 处理DataNode节点：172.16.2.2 --------------------
+[2026-03-03_22:31:59] INFO: 节点172.16.2.2 执行启动命令：ssh root@172.16.2.2 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772548312_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772548312.log 2>&1 &'
+[2026-03-03_22:32:00] INFO: 节点172.16.2.2 DataNode启动命令执行成功（退出码：0）
+[2026-03-03_22:32:02] INFO: 节点172.16.2.2 DataNode进程已启动，PID：1671
+[2026-03-03_22:32:02] INFO: -------------------- 处理DataNode节点：172.16.2.3 --------------------
+[2026-03-03_22:32:02] INFO: 节点172.16.2.3 执行启动命令：ssh root@172.16.2.3 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772548312_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772548312.log 2>&1 &'
+[2026-03-03_22:32:02] INFO: 节点172.16.2.3 DataNode启动命令执行成功（退出码：0）
+[2026-03-03_22:32:04] INFO: 节点172.16.2.3 DataNode进程已启动，PID：14732
+[2026-03-03_22:32:04] INFO: -------------------- 处理DataNode节点：172.16.2.4 --------------------
+[2026-03-03_22:32:04] INFO: 节点172.16.2.4 执行启动命令：ssh root@172.16.2.4 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772548312_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772548312.log 2>&1 &'
+[2026-03-03_22:32:04] INFO: 节点172.16.2.4 DataNode启动命令执行成功（退出码：0）
+[2026-03-03_22:32:06] INFO: 节点172.16.2.4 DataNode进程已启动，PID：29616
+[2026-03-03_22:32:06] INFO: -------------------- 处理DataNode节点：172.16.2.5 --------------------
+[2026-03-03_22:32:06] INFO: 节点172.16.2.5 执行启动命令：ssh root@172.16.2.5 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772548312_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772548312.log 2>&1 &'
+[2026-03-03_22:32:06] INFO: 节点172.16.2.5 DataNode启动命令执行成功（退出码：0）
+[2026-03-03_22:32:09] INFO: 节点172.16.2.5 DataNode进程已启动，PID：21311
+[2026-03-03_22:32:09] INFO: -------------------- 处理DataNode节点：172.16.2.6 --------------------
+[2026-03-03_22:32:09] INFO: 节点172.16.2.6 执行启动命令：ssh root@172.16.2.6 'source /etc/profile; nohup /data1/iotdb/v2082rc3_0212_1606693/sbin/start-datanode.sh -H /data1/iotdb/v2082rc3_0212_1606693/dn_1772548312_heapdump.hprof > /data1/iotdb/v2082rc3_0212_1606693/start_dn_1772548312.log 2>&1 &'
+[2026-03-03_22:32:09] INFO: 节点172.16.2.6 DataNode启动命令执行成功（退出码：0）
+[2026-03-03_22:32:11] INFO: 节点172.16.2.6 DataNode进程已启动，PID：30417
+[2026-03-03_22:32:11] INFO: ==================== 等待集群状态达标 ====================
+[2026-03-03_22:32:11] INFO: 目标就绪节点数：8，最大等待时间：300秒
+[2026-03-03_22:32:15] WARN: 第0秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:15] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:15] INFO: 第0秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:19] WARN: 第1秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:19] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:19] INFO: 第1秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:23] WARN: 第2秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:23] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:23] INFO: 第2秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:28] WARN: 第3秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:28] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:28] INFO: 第3秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:32] WARN: 第4秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:32] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:32] INFO: 第4秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:37] WARN: 第5秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:37] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:37] INFO: 第5秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:41] WARN: 第6秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:41] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:41] INFO: 第6秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:45] WARN: 第7秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:45] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:45] INFO: 第7秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:50] WARN: 第8秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:50] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:50] INFO: 第8秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:54] WARN: 第9秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:54] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:54] INFO: 第9秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:32:59] WARN: 第10秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:32:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:32:59] INFO: 第10秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:03] WARN: 第11秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:03] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:03] INFO: 第11秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:08] WARN: 第12秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:08] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:08] INFO: 第12秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:12] WARN: 第13秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:12] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:12] INFO: 第13秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:16] WARN: 第14秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:16] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:16] INFO: 第14秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:21] WARN: 第15秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:21] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:21] INFO: 第15秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:25] WARN: 第16秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:25] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:25] INFO: 第16秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:30] WARN: 第17秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:30] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:30] INFO: 第17秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:34] WARN: 第18秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:34] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:34] INFO: 第18秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:38] WARN: 第19秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:38] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:38] INFO: 第19秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:43] WARN: 第20秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:43] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:43] INFO: 第20秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:47] WARN: 第21秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:47] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:47] INFO: 第21秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:52] WARN: 第22秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:52] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:52] INFO: 第22秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:33:56] WARN: 第23秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:33:56] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:33:56] INFO: 第23秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:00] WARN: 第24秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:00] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:00] INFO: 第24秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:05] WARN: 第25秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:05] INFO: 第25秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:09] WARN: 第26秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:09] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:09] INFO: 第26秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:14] WARN: 第27秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:14] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:14] INFO: 第27秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:18] WARN: 第28秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:18] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:18] INFO: 第28秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:23] WARN: 第29秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:23] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:23] INFO: 第29秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:27] WARN: 第30秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:27] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:27] INFO: 第30秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:32] WARN: 第31秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:32] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:32] INFO: 第31秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:36] WARN: 第32秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:36] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:36] INFO: 第32秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:41] WARN: 第33秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:41] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:41] INFO: 第33秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:45] WARN: 第34秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:45] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:45] INFO: 第34秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:49] WARN: 第35秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:49] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:49] INFO: 第35秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:54] WARN: 第36秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:54] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:54] INFO: 第36秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:34:58] WARN: 第37秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:34:58] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:34:58] INFO: 第37秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:03] WARN: 第38秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:03] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:03] INFO: 第38秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:07] WARN: 第39秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:07] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:07] INFO: 第39秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:11] WARN: 第40秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:11] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:11] INFO: 第40秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:16] WARN: 第41秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:16] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:16] INFO: 第41秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:20] WARN: 第42秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:20] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:20] INFO: 第42秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:25] WARN: 第43秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:25] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:25] INFO: 第43秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:29] WARN: 第44秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:29] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:29] INFO: 第44秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:34] WARN: 第45秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:34] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:34] INFO: 第45秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:38] WARN: 第46秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:38] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:38] INFO: 第46秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:42] WARN: 第47秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:42] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:42] INFO: 第47秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:47] WARN: 第48秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:47] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:47] INFO: 第48秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:51] WARN: 第49秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:51] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:51] INFO: 第49秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:35:56] WARN: 第50秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:35:56] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:35:56] INFO: 第50秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:00] WARN: 第51秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:00] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:00] INFO: 第51秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:05] WARN: 第52秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:05] INFO: 第52秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:09] WARN: 第53秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:09] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:09] INFO: 第53秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:13] WARN: 第54秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:13] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:13] INFO: 第54秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:18] WARN: 第55秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:18] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:18] INFO: 第55秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:22] WARN: 第56秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:22] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:22] INFO: 第56秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:27] WARN: 第57秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:27] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:27] INFO: 第57秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:31] WARN: 第58秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:31] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:31] INFO: 第58秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:35] WARN: 第59秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:35] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:35] INFO: 第59秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:40] WARN: 第60秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:40] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:40] INFO: 第60秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:44] WARN: 第61秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:44] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:44] INFO: 第61秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:49] WARN: 第62秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:49] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:49] INFO: 第62秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:53] WARN: 第63秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:53] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:53] INFO: 第63秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:36:57] WARN: 第64秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:36:57] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:36:57] INFO: 第64秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:02] WARN: 第65秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:02] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:02] INFO: 第65秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:06] WARN: 第66秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:06] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:06] INFO: 第66秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:11] WARN: 第67秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:11] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:11] INFO: 第67秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:15] WARN: 第68秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:15] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:15] INFO: 第68秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:20] WARN: 第69秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:20] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:20] INFO: 第69秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:24] WARN: 第70秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:24] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:24] INFO: 第70秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:28] WARN: 第71秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:28] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:28] INFO: 第71秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:33] WARN: 第72秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:33] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:33] INFO: 第72秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:37] WARN: 第73秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:37] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:37] INFO: 第73秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:42] WARN: 第74秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:42] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:42] INFO: 第74秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:46] WARN: 第75秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:46] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:46] INFO: 第75秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:51] WARN: 第76秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:51] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:51] INFO: 第76秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:55] WARN: 第77秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:55] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:55] INFO: 第77秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:37:59] WARN: 第78秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:37:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:37:59] INFO: 第78秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:04] WARN: 第79秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:04] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:04] INFO: 第79秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:08] WARN: 第80秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:08] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:08] INFO: 第80秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:13] WARN: 第81秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:13] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:13] INFO: 第81秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:17] WARN: 第82秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:17] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:17] INFO: 第82秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:22] WARN: 第83秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:22] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:22] INFO: 第83秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:26] WARN: 第84秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:26] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:26] INFO: 第84秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:30] WARN: 第85秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:30] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:30] INFO: 第85秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:35] WARN: 第86秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:35] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:35] INFO: 第86秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:39] WARN: 第87秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:39] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:39] INFO: 第87秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:44] WARN: 第88秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:44] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:44] INFO: 第88秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:48] WARN: 第89秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:48] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:48] INFO: 第89秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:53] WARN: 第90秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:53] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:53] INFO: 第90秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:38:57] WARN: 第91秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:38:57] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:38:57] INFO: 第91秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:02] WARN: 第92秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:02] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:02] INFO: 第92秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:06] WARN: 第93秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:06] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:06] INFO: 第93秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:10] WARN: 第94秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:10] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:10] INFO: 第94秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:15] WARN: 第95秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:15] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:15] INFO: 第95秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:19] WARN: 第96秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:19] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:19] INFO: 第96秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:24] WARN: 第97秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:24] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:24] INFO: 第97秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:28] WARN: 第98秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:28] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:28] INFO: 第98秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:33] WARN: 第99秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:33] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:33] INFO: 第99秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:37] WARN: 第100秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:37] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:37] INFO: 第100秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:41] WARN: 第101秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:41] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:41] INFO: 第101秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:46] WARN: 第102秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:46] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:46] INFO: 第102秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:50] WARN: 第103秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:50] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:50] INFO: 第103秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:55] WARN: 第104秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:55] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:55] INFO: 第104秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:39:59] WARN: 第105秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:39:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:39:59] INFO: 第105秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:04] WARN: 第106秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:04] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:04] INFO: 第106秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:08] WARN: 第107秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:08] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:08] INFO: 第107秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:12] WARN: 第108秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:12] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:12] INFO: 第108秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:17] WARN: 第109秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:17] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:17] INFO: 第109秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:21] WARN: 第110秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:21] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:21] INFO: 第110秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:26] WARN: 第111秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:26] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:26] INFO: 第111秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:30] WARN: 第112秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:30] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:30] INFO: 第112秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:35] WARN: 第113秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:35] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:35] INFO: 第113秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:39] WARN: 第114秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:39] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:39] INFO: 第114秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:43] WARN: 第115秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:43] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:43] INFO: 第115秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:48] WARN: 第116秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:48] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:48] INFO: 第116秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:52] WARN: 第117秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:52] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:52] INFO: 第117秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:40:57] WARN: 第118秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:40:57] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:40:57] INFO: 第118秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:01] WARN: 第119秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:01] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:01] INFO: 第119秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:05] WARN: 第120秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:05] INFO: 第120秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:10] WARN: 第121秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:10] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:10] INFO: 第121秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:14] WARN: 第122秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:14] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:14] INFO: 第122秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:19] WARN: 第123秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:19] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:19] INFO: 第123秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:23] WARN: 第124秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:23] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:23] INFO: 第124秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:27] WARN: 第125秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:27] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:27] INFO: 第125秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:32] WARN: 第126秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:32] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:32] INFO: 第126秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:36] WARN: 第127秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:36] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:36] INFO: 第127秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:41] WARN: 第128秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:41] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:41] INFO: 第128秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:45] WARN: 第129秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:45] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:45] INFO: 第129秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:50] WARN: 第130秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:50] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:50] INFO: 第130秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:54] WARN: 第131秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:54] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:54] INFO: 第131秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:41:59] WARN: 第132秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:41:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:41:59] INFO: 第132秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:03] WARN: 第133秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:03] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:03] INFO: 第133秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:07] WARN: 第134秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:07] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:07] INFO: 第134秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:12] WARN: 第135秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:12] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:12] INFO: 第135秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:16] WARN: 第136秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:16] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:16] INFO: 第136秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:21] WARN: 第137秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:21] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:21] INFO: 第137秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:25] WARN: 第138秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:25] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:25] INFO: 第138秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:30] WARN: 第139秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:30] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:30] INFO: 第139秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:34] WARN: 第140秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:34] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:34] INFO: 第140秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:39] WARN: 第141秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:39] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:39] INFO: 第141秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:43] WARN: 第142秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:43] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:43] INFO: 第142秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:47] WARN: 第143秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:47] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:47] INFO: 第143秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:52] WARN: 第144秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:52] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:52] INFO: 第144秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:42:56] WARN: 第145秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:42:56] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:42:56] INFO: 第145秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:01] WARN: 第146秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:01] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:01] INFO: 第146秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:05] WARN: 第147秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:05] INFO: 第147秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:10] WARN: 第148秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:10] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:10] INFO: 第148秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:14] WARN: 第149秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:14] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:14] INFO: 第149秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:18] WARN: 第150秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:18] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:18] INFO: 第150秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:23] WARN: 第151秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:23] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:23] INFO: 第151秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:27] WARN: 第152秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:27] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:27] INFO: 第152秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:32] WARN: 第153秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:32] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:32] INFO: 第153秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:36] WARN: 第154秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:36] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:36] INFO: 第154秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:40] WARN: 第155秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:40] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:40] INFO: 第155秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:45] WARN: 第156秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:45] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:45] INFO: 第156秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:49] WARN: 第157秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:49] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:49] INFO: 第157秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:54] WARN: 第158秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:54] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:54] INFO: 第158秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:43:58] WARN: 第159秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:43:58] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:43:58] INFO: 第159秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:02] WARN: 第160秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:02] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:02] INFO: 第160秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:07] WARN: 第161秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:07] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:07] INFO: 第161秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:11] WARN: 第162秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:11] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:11] INFO: 第162秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:16] WARN: 第163秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:16] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:16] INFO: 第163秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:20] WARN: 第164秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:20] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:20] INFO: 第164秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:25] WARN: 第165秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:25] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:25] INFO: 第165秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:29] WARN: 第166秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:29] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:29] INFO: 第166秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:33] WARN: 第167秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:33] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:33] INFO: 第167秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:38] WARN: 第168秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:38] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:38] INFO: 第168秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:42] WARN: 第169秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:42] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:42] INFO: 第169秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:47] WARN: 第170秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:47] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:47] INFO: 第170秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:51] WARN: 第171秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:51] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:51] INFO: 第171秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:44:55] WARN: 第172秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:44:55] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:44:55] INFO: 第172秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:00] WARN: 第173秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:00] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:00] INFO: 第173秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:04] WARN: 第174秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:04] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:04] INFO: 第174秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:09] WARN: 第175秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:09] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:09] INFO: 第175秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:13] WARN: 第176秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:13] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:13] INFO: 第176秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:17] WARN: 第177秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:17] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:17] INFO: 第177秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:22] WARN: 第178秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:22] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:22] INFO: 第178秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:26] WARN: 第179秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:26] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:26] INFO: 第179秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:31] WARN: 第180秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:31] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:31] INFO: 第180秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:35] WARN: 第181秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:35] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:35] INFO: 第181秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:40] WARN: 第182秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:40] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:40] INFO: 第182秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:44] WARN: 第183秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:44] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:44] INFO: 第183秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:48] WARN: 第184秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:48] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:48] INFO: 第184秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:53] WARN: 第185秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:53] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:53] INFO: 第185秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:45:57] WARN: 第186秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:45:57] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:45:57] INFO: 第186秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:02] WARN: 第187秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:02] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:02] INFO: 第187秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:06] WARN: 第188秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:06] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:06] INFO: 第188秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:11] WARN: 第189秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:11] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:11] INFO: 第189秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:15] WARN: 第190秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:15] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:15] INFO: 第190秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:19] WARN: 第191秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:19] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:19] INFO: 第191秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:24] WARN: 第192秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:24] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:24] INFO: 第192秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:28] WARN: 第193秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:28] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:28] INFO: 第193秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:33] WARN: 第194秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:33] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:33] INFO: 第194秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:37] WARN: 第195秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:37] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:37] INFO: 第195秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:41] WARN: 第196秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:41] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:41] INFO: 第196秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:46] WARN: 第197秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:46] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:46] INFO: 第197秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:50] WARN: 第198秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:50] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:50] INFO: 第198秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:55] WARN: 第199秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:55] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:55] INFO: 第199秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:46:59] WARN: 第200秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:46:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:46:59] INFO: 第200秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:04] WARN: 第201秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:04] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:04] INFO: 第201秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:08] WARN: 第202秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:08] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:08] INFO: 第202秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:12] WARN: 第203秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:12] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:12] INFO: 第203秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:17] WARN: 第204秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:17] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:17] INFO: 第204秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:21] WARN: 第205秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:21] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:21] INFO: 第205秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:26] WARN: 第206秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:26] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:26] INFO: 第206秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:30] WARN: 第207秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:30] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:30] INFO: 第207秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:34] WARN: 第208秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:34] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:34] INFO: 第208秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:39] WARN: 第209秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:39] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:39] INFO: 第209秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:43] WARN: 第210秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:43] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:43] INFO: 第210秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:48] WARN: 第211秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:48] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:48] INFO: 第211秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:52] WARN: 第212秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:52] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:52] INFO: 第212秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:47:56] WARN: 第213秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:47:56] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:47:56] INFO: 第213秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:01] WARN: 第214秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:01] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:01] INFO: 第214秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:05] WARN: 第215秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:05] INFO: 第215秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:10] WARN: 第216秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:10] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:10] INFO: 第216秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:14] WARN: 第217秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:14] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:14] INFO: 第217秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:19] WARN: 第218秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:19] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:19] INFO: 第218秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:23] WARN: 第219秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:23] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:23] INFO: 第219秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:28] WARN: 第220秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:28] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:28] INFO: 第220秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:32] WARN: 第221秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:32] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:32] INFO: 第221秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:36] WARN: 第222秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:36] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:36] INFO: 第222秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:41] WARN: 第223秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:41] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:41] INFO: 第223秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:45] WARN: 第224秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:45] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:45] INFO: 第224秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:50] WARN: 第225秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:50] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:50] INFO: 第225秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:54] WARN: 第226秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:54] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:54] INFO: 第226秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:48:59] WARN: 第227秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:48:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:48:59] INFO: 第227秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:03] WARN: 第228秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:03] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:03] INFO: 第228秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:07] WARN: 第229秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:07] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:07] INFO: 第229秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:12] WARN: 第230秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:12] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:12] INFO: 第230秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:16] WARN: 第231秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:16] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:16] INFO: 第231秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:21] WARN: 第232秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:21] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:21] INFO: 第232秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:25] WARN: 第233秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:25] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:25] INFO: 第233秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:30] WARN: 第234秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:30] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:30] INFO: 第234秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:34] WARN: 第235秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:34] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:34] INFO: 第235秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:38] WARN: 第236秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:38] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:38] INFO: 第236秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:43] WARN: 第237秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:43] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:43] INFO: 第237秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:47] WARN: 第238秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:47] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:47] INFO: 第238秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:52] WARN: 第239秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:52] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:52] INFO: 第239秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:49:56] WARN: 第240秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:49:56] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:49:56] INFO: 第240秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:00] WARN: 第241秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:00] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:00] INFO: 第241秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:05] WARN: 第242秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:05] INFO: 第242秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:09] WARN: 第243秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:09] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:09] INFO: 第243秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:14] WARN: 第244秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:14] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:14] INFO: 第244秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:18] WARN: 第245秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:18] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:18] INFO: 第245秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:23] WARN: 第246秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:23] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:23] INFO: 第246秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:27] WARN: 第247秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:27] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:27] INFO: 第247秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:31] WARN: 第248秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:31] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:31] INFO: 第248秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:36] WARN: 第249秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:36] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:36] INFO: 第249秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:40] WARN: 第250秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:40] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:40] INFO: 第250秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:45] WARN: 第251秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:45] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:45] INFO: 第251秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:49] WARN: 第252秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:49] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:49] INFO: 第252秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:54] WARN: 第253秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:54] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:54] INFO: 第253秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:50:58] WARN: 第254秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:50:58] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:50:58] INFO: 第254秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:03] WARN: 第255秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:03] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:03] INFO: 第255秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:07] WARN: 第256秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:07] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:07] INFO: 第256秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:11] WARN: 第257秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:11] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:11] INFO: 第257秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:16] WARN: 第258秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:16] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:16] INFO: 第258秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:20] WARN: 第259秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:20] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:20] INFO: 第259秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:25] WARN: 第260秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:25] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:25] INFO: 第260秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:29] WARN: 第261秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:29] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:29] INFO: 第261秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:34] WARN: 第262秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:34] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:34] INFO: 第262秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:38] WARN: 第263秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:38] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:38] INFO: 第263秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:42] WARN: 第264秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:42] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:42] INFO: 第264秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:47] WARN: 第265秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:47] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:47] INFO: 第265秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:51] WARN: 第266秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:51] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:51] INFO: 第266秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:51:56] WARN: 第267秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:51:56] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:51:56] INFO: 第267秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:00] WARN: 第268秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:00] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:00] INFO: 第268秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:05] WARN: 第269秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:05] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:05] INFO: 第269秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:09] WARN: 第270秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:09] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:09] INFO: 第270秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:13] WARN: 第271秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:13] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:13] INFO: 第271秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:18] WARN: 第272秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:18] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:18] INFO: 第272秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:22] WARN: 第273秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:22] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:22] INFO: 第273秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:27] WARN: 第274秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:27] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:27] INFO: 第274秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:31] WARN: 第275秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:31] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:31] INFO: 第275秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:36] WARN: 第276秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:36] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:36] INFO: 第276秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:40] WARN: 第277秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:40] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:40] INFO: 第277秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:44] WARN: 第278秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:44] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:44] INFO: 第278秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:49] WARN: 第279秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:49] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:49] INFO: 第279秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:53] WARN: 第280秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:53] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:53] INFO: 第280秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:52:58] WARN: 第281秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:52:58] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:52:58] INFO: 第281秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:02] WARN: 第282秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:02] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:02] INFO: 第282秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:06] WARN: 第283秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:06] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:06] INFO: 第283秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:11] WARN: 第284秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:11] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:11] INFO: 第284秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:15] WARN: 第285秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:15] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:15] INFO: 第285秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:20] WARN: 第286秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:20] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:20] INFO: 第286秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:24] WARN: 第287秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:24] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:24] INFO: 第287秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:28] WARN: 第288秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:28] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:28] INFO: 第288秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:33] WARN: 第289秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:33] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:33] INFO: 第289秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:37] WARN: 第290秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:37] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:37] INFO: 第290秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:42] WARN: 第291秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:42] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:42] INFO: 第291秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:46] WARN: 第292秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:46] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:46] INFO: 第292秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:50] WARN: 第293秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:50] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:50] INFO: 第293秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:55] WARN: 第294秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:55] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:55] INFO: 第294秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:53:59] WARN: 第295秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:53:59] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:53:59] INFO: 第295秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:54:04] WARN: 第296秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:54:04] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:54:04] INFO: 第296秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:54:08] WARN: 第297秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:54:08] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:54:08] INFO: 第297秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:54:13] WARN: 第298秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:54:13] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:54:13] INFO: 第298秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:54:17] WARN: 第299秒：CLI执行失败（重试1次），错误信息：ErrorCan't execute sql becauseConnection Error, please check whether the network is available or the server has started.
+[2026-03-03_22:54:17] DEBUG: 统计详情 - total_node_num=8, v_running=0, v_readonly=0, v_ok_num=0
+[2026-03-03_22:54:17] INFO: 第299秒：当前就绪节点数=0/8（Running:0, ReadOnly:0）
+[2026-03-03_22:54:18] ERROR: ==================== 集群启动超时 ====================
+[2026-03-03_22:54:18] ERROR: ❌ 等待300秒后集群仍未就绪，最终就绪数=0/8
