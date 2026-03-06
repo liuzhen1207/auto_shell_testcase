@@ -555,6 +555,8 @@ wait_sync_done 180
       if [[ ${v_diff_total} -gt 0 ]];then
          let fail_flag++
 	 let backup_data_log_flag++
+	 diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out
+	 diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out
 	 v_warnMessage="data inconsistent."
          echo "diff : ${v_diff_total}"
       fi
