@@ -10,3 +10,10 @@ Time,testTimechoDB,testConsensus,testCaseName,testResult,testElapsedTimeSeconds,
 2026-03-04T19:04:54.869+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0006_storage_print_resource_no_obj_V2-185.sh,PASS,27,0,No Warn.,null,null
 2026-03-04T19:06:51.068+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0007_storage_object_BufferUnderflow.sh,FAIL,5,0,create table fail.,null,null
 2026-03-04T19:43:58.430+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0009_compaction_droptable_tag_num_name_diff_v2081.sh,PASS,2099,0,No Warn.,280.96,555.45
+2026-03-05T15:37:29.847+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0011_remove_dn_iss0480.sh,PASS,71436,0,No Warn.,54001.63,972003
+2026-03-05T17:42:34.113+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0012_v2081_treeview_alter_type.sh,PASS,7294,0,No Warn.,1691.48,5155.57
+2026-03-05T18:01:14.286+08:00,v2082rc3_0212_1606693,IoTConsensus,tc2026_Jan_0008_v2081_count_devices_timeseries_optimize.sh,PASS,39,0,No Warn.,26.32,52.58
+2026-03-05T18:09:20.240+08:00,v2082rc4_0305_6111b6e,IoTConsensus,tc2026_Jan_0003_query_oom_wrong_parser_infinite_loop.sh,PASS,34,0,No Warn.,null,null
+2026-03-05T18:15:24.817+08:00,v2082rc4_0305_6111b6e,IoTConsensus,tc2026_Jan_0002_obj_ttl_close_comp_all_expired.sh,PASS,240,0,No Warn.,null,null
+2026-03-05T18:25:18.373+08:00,v2082rc4_0305_6111b6e,IoTConsensus,tc2026_Jan_0001_obj_ttl_comp_all_expired.sh,PASS,482,0,No Warn.,null,null
+2026-03-05T18:43:23.602+08:00,v2082rc4_0305_6111b6e,IoTConsensus,tc2026_Jan_0004_query_into_optimize_v1365_v2081.sh,PASS,968,1,first cost 24 less than second cost 25.,68.7,68.7

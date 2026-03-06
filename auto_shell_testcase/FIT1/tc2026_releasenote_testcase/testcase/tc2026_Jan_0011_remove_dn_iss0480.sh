@@ -581,6 +581,9 @@ wait_sync_done 180
       v_diff_total=$((v_diff_tree+v_diff_table))
       if [[ ${v_diff_total} -gt 0 ]];then
          let fail_flag++
+	 let backup_flag++
+	 diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out
+	 diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out
 	 v_warnMessage="data inconsistent"
          echo "diff : ${v_diff_total}"
       fi
@@ -711,12 +714,6 @@ if [[ ${backup_log_flag} -gt 0 ]];then
 	v_backup_time=`date +%s`
     sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 
 fi
-   if [[ ${fail_flag} -gt 0 ]];then
-	   echo "testcase1 fail"
-   else
-	   echo "testcase1 pass"
-
-   fi
 }
 # start cluster 
 echo "">${log_file}

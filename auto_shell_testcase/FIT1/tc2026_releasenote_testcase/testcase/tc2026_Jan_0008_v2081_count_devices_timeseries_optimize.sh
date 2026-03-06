@@ -388,7 +388,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -timeout 120 -e "show timeseries roo
 check_cost "${cur_dir}/tmp.out" 1
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -timeout 120 -e "show devices root.test.** where time>2020-01-01T00:00:00+08:00 and time<2021-01-04T00:00:00+08:00 limit 1;">${cur_dir}/tmp.out
 check_cost "${cur_dir}/tmp.out" 1
-fi
+
 }
 
 start_db
