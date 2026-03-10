@@ -1,5 +1,5 @@
 #!/bin/bash
-# tree table migrate privilege test 
+# tree table migrate privilege test;enable_separation_of_powers=true 
 set -uo pipefail
 cur_dir="$( cd "$( dirname "$0"  )" && pwd  )"
 SCRIPT_NAME=$(basename "$0")
@@ -33,6 +33,8 @@ v_warnNum=0
 v_warnMessage="No Warn."
 v_consensus="IoTConsensus"
 v_mig_user_name="migrate_user"
+v_sec_super_user="security_admin"
+v_sys_super_user="sys_admin"
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -111,7 +113,7 @@ configure_confignode() {
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
         batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
-
+        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=true"
 EOF
 
     if [ $? -eq 0 ]; then
@@ -161,6 +163,7 @@ configure_datanode() {
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
         batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
+        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=true"
 
 
 EOF
@@ -331,41 +334,41 @@ function check_res()
 function create_user()
 {
 # create user
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "CREATE USER tree_user 'TimechoDB@2021';">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER tree_user 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res "successfully" 1 "CREATE USER tree_user"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "grant all ON root.** TO USER tree_user;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "grant all ON root.** TO USER tree_user;">${cur_dir}/tmp.out
 check_res "successfully" 1 "grant all ON root.** TO USER tree_user"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "CREATE USER table_user 'TimechoDB@2021';">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -sql_dialect table -e "CREATE USER table_user 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res "successfully" 1 "CREATE USER table_user"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant all ON any TO USER table_user;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user}  -sql_dialect table -e "grant all ON any TO USER table_user;">${cur_dir}/tmp.out
 check_res "successfully" 1 "grant all ON any TO USER table_user"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user}  -sql_dialect table -e "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res "successfully" 1 "CREATE USER ${v_mig_user_name}"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -sql_dialect table -e "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
 check_res "successfully" 1 "grant system TO USER ${v_mig_user_name}"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
@@ -376,8 +379,8 @@ fi
 function start_bm()
 {
 bm_dir=${cur_dir}/../benchmark/bm_20251017_b6be9bd_ssl
-bm_conf=tree_table
-ts_num=1000000
+bm_conf=tree_table_100w
+ts_num=500000
 #get root password
 #v_bm_test_time=54000000
 #v_bm_test_time=36000000
@@ -415,7 +418,7 @@ do
                 sleep 10
         fi
 done
-
+sleep 60
 }
 function wait_sync_done()
 {

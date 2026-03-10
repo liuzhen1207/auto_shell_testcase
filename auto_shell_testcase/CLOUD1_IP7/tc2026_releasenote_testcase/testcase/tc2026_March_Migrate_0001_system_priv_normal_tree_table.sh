@@ -45,6 +45,7 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 mig_from_ip=$(sed -n "2p" "${nodeinfo_dir}/datanode.txt")
 
 fail_flag=0
+sync_fail_flag=0
 # if > 0 exit test 
 prepare_fail_flag=0
 
@@ -343,28 +344,28 @@ if [[ ${fail_flag} -gt 0 ]];then
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e -sql_dialect table "CREATE USER table_user 'TimechoDB@2021';">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "CREATE USER table_user 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res "successfully" 1 "CREATE USER table_user"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e -sql_dialect table "grant all ON any TO USER table_user;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant all ON any TO USER table_user;">${cur_dir}/tmp.out
 check_res "successfully" 1 "grant all ON any TO USER table_user"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e -sql_dialect table "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -sql_dialect table -e "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res "successfully" 1 "CREATE USER ${v_mig_user_name}"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e -sql_dialect table "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
 check_res "successfully" 1 "grant system TO USER ${v_mig_user_name}"
 if [[ ${fail_flag} -gt 0 ]];then
    let prepare_fail_flag++
