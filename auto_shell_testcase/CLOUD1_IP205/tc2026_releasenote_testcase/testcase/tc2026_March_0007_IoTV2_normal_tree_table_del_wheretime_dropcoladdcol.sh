@@ -1,5 +1,5 @@
 #!/bin/bash
-# tree table migrate privilege test 
+# tree table normal test 
 set -uo pipefail
 cur_dir="$( cd "$( dirname "$0"  )" && pwd  )"
 SCRIPT_NAME=$(basename "$0")
@@ -31,8 +31,7 @@ backup_flag=0
 backup_log_flag=0
 v_warnNum=0
 v_warnMessage="No Warn."
-v_consensus="IoTConsensus"
-v_mig_user_name="migrate_user"
+v_consensus="IoTConsensusV2"
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -42,12 +41,16 @@ cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
 # 读取种子节点IP（兼容低版本）
 seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
 query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
-mig_from_ip=$(sed -n "2p" "${nodeinfo_dir}/datanode.txt")
 
 fail_flag=0
 sync_fail_flag=0
-# if > 0 exit test 
-prepare_fail_flag=0
+test_begin_sec=$(date +%s)
+
+max_concurrent=4     # 最大并发数，根据数据库性能调整（建议5-10）
+tree_max_concurrent=4     # 最大并发数，根据数据库性能调整（建议5-10）
+# 表模型固定配置
+TABLE_DB_NAME="tabledb_g_0"
+TABLE_NAME="table_0"
 
 # ===================== 工具函数 =====================
 # 日志输出函数（带时间戳）
@@ -110,8 +113,7 @@ configure_confignode() {
         batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=5"
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
-        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
-        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=false"
+
 
 EOF
 
@@ -161,8 +163,6 @@ configure_datanode() {
         batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=5"
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
-        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
-        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=false"
 
 
 EOF
@@ -316,70 +316,11 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
        exit 1
    fi
 }
-function check_res()
-{
-   exp_res=$1
-   exp_num=$2
-   tc_desc=$3
-   v_act_num=`cat ${cur_dir}/tmp.out|grep "${exp_res}"|wc -l`
-   if [[ ${v_act_num} = ${exp_num} ]];then
-      echo "${tc_desc} PASS."
-   else
-      echo "${tc_desc} FAIL."
-      let fail_flag++
-      cat ${cur_dir}/tmp.out
-   fi
-}
-function create_user()
-{
-# create user
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "CREATE USER tree_user 'TimechoDB@2021';">${cur_dir}/tmp.out
-check_res "successfully" 1 "CREATE USER tree_user"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "grant all ON root.** TO USER tree_user;">${cur_dir}/tmp.out
-check_res "successfully" 1 "grant all ON root.** TO USER tree_user"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "CREATE USER table_user 'TimechoDB@2021';">${cur_dir}/tmp.out
-check_res "successfully" 1 "CREATE USER table_user"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant all ON any TO USER table_user;">${cur_dir}/tmp.out
-check_res "successfully" 1 "grant all ON any TO USER table_user"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-
-${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -sql_dialect table -e "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
-check_res "successfully" 1 "CREATE USER ${v_mig_user_name}"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
-check_res "successfully" 1 "grant system TO USER ${v_mig_user_name}"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-
-}
 function start_bm()
 {
 bm_dir=${cur_dir}/../benchmark/bm_20251017_b6be9bd_ssl
-bm_conf=tree_table_100w
-ts_num=500000
+bm_conf=tree_table
+ts_num=1000000
 #get root password
 #v_bm_test_time=54000000
 #v_bm_test_time=36000000
@@ -403,6 +344,9 @@ if [ ! -d "${bm_log_dir}" ]; then
 else
     echo "目录 ${bm_log_dir} 已存在，无需创建"
 fi
+# create user
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "CREATE USER tree_user 'TimechoDB@2021';grant all ON root.** TO USER tree_user;"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "CREATE USER table_user 'TimechoDB@2021';grant all ON any TO USER table_user;"
 
 bm_test_time=`date +%Y_%m_%d_%H_%M_%S`
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf1 > ${bm_log_dir}/${bm_test_time}_tree_bm1.out &
@@ -417,7 +361,7 @@ do
                 sleep 10
         fi
 done
-sleep 60
+sleep 10
 }
 function wait_sync_done()
 {
@@ -431,8 +375,8 @@ local max_wait_time=$1
    do
    while true
    do
-   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep db_table">${cur_dir}/tmp1.out
-   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep root.test">${cur_dir}/tmp2.out
+   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep tabledb">${cur_dir}/tmp1.out
+   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep root.treedb">${cur_dir}/tmp2.out
    last_time_str1=$(tail -n 1 "${cur_dir}/tmp1.out" | awk -F',' '{print $1}')
    last_time_str2=$(tail -n 1 "${cur_dir}/tmp2.out" | awk -F',' '{print $1}')
    last_timestamp1=$(date -d "$last_time_str1" +%s 2>/dev/null)
@@ -486,33 +430,26 @@ do
 
 done
 }
-# 监控 Total Sync Lag 直到所有 DataNode 连续 5 分钟为 0
 wait_for_sync_completion() {
     # Prometheus服务器信息
     local PROMETHEUS_URL=$(grep ^monitor_url "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
     local PROMETHEUS_USER=admin
     local PROMETHEUS_PASS=admin
 
-    # 连续时间（秒）- 120秒
-    local TARGET_DURATION=120
-    local current_duration=0
-    local start_time=$(date +%s)
-
     # 关联数组：追踪每个DataNode上一次的sync lag状态（true=上一次>0，false=上一次=0）
     declare -A last_node_status
 
-    echo "开始监控 Total Sync Lag，目标连续 ${TARGET_DURATION} 秒所有 DataNode 均为 0..."
+    echo "开始监控 Total Sync Lag，直到所有 DataNode 的 Sync Lag 均为 0 为止..."
 
     while true; do
-        # 获取当前时间
-        local current_time=$(date +%s)
-        local elapsed_time=$((current_time - start_time))
-        local all_zero=true  # 标记本次检测是否所有节点都为0
-        local has_non_zero=false  # 标记本次是否有节点>0
+        # 标记本次检测是否所有节点都为0（核心退出条件）
+        local all_zero=true
+        # 标记本次是否有节点>0（用于状态追踪）
+        local has_non_zero=false
 
         # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
         local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22ioTConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
+            "$PROMETHEUS_URL/api/v1/query?query=pipe_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22PipeConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
 
         # 检查响应是否成功
         if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
@@ -547,7 +484,7 @@ wait_for_sync_completion() {
             # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
             if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
                 has_non_zero=true
-                all_zero=false
+                all_zero=false  # 只要有一个节点>0，就不满足退出条件
 
                 # 核心逻辑：只有上一次状态也是>0时，才累加fail_flag
                 if [[ ${last_node_status[$instance]} == "true" ]]; then
@@ -569,38 +506,26 @@ wait_for_sync_completion() {
             fi
         done
 
-        # 重置计时逻辑：仅当本次有节点>0时，才重置连续为0的计时
-        if $has_non_zero; then
-            current_duration=0
-            start_time=$(date +%s)
-            echo "  ❌ 存在DataNode Sync Lag>0，重置连续为0计时"
-        else
-            # 所有节点都为0，累计连续时长
-            current_duration=$((current_time - start_time))
-            echo "✅ 所有 DataNode 的 Total Sync Lag 均为 0，已持续 ${current_duration} 秒"
-
-            # 检查是否达到目标时长
-            if [[ $current_duration -ge $TARGET_DURATION ]]; then
-                echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒均为 0"
-                echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
-                return 0
-            fi
+        # 核心退出条件：本次检测所有节点Sync Lag均为0
+        if $all_zero; then
+            echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 均为 0"
+            echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
+            return 0
         fi
 
-        # 间隔1秒检测一次
+        # 存在节点>0，继续监控（间隔1秒检测一次）
+        echo "  ❌ 仍有DataNode Sync Lag>0，1秒后继续检测..."
         sleep 1
     done
 }
-
 function check_data_consistent()
 {
 wait_sync_done 180
 wait_for_sync_completion
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;create or replace view table_0(device_id string tag) as root.test.g_0.**;"
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
    cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
    mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
-   sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.testdb.g_0.** align by device;"
+   sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.treedb.g_0.** align by device;"
    sql2="select device_id,count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from tabledb_g_0.table_0 group by device_id order by device_id;"
    exception_num=0
    # all online
@@ -773,404 +698,508 @@ done
 
 
 }
-# 检查目标DataNode是否已经包含指定的Region
-function is_region_on_target_dn() {
-    local region_id=$1
-    local target_dn_id=$2
-    local dialect=$3
-    
-    # 获取目标DataNode上已有的Region列表
-    local target_regions=$(${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_mig_user_name} -sql_dialect "$dialect" -e "show regions;" | \
-        grep "Region|"|awk -F '|' '{gsub(" ",""); print $2","$8}'|grep ",${target_dn_id}"| \
-        awk -F ',' '{gsub(" ", "", $2); print $1}' | tr '\n' ' ')
-    # 检查目标Region是否存在于目标DataNode上
-    for existing_region in $target_regions; do
-        if [[ "$existing_region" == "$region_id" ]]; then
-            return 0  # 区域已存在，返回真
-        fi
-    done
-    return 1  # 区域不存在，返回假
-}
-
-function migrate_region()
+function tree_del_data()
 {
-   local v_mig_id=$1
-   local v_mig_from_dn_id=$2
-   local v_mig_to_dn_id=$3
-   local v_dialect=$4
-   
-   # 检查目标DataNode是否已经包含要迁移的Region
-   if is_region_on_target_dn "$v_mig_id" "$v_mig_to_dn_id" "$v_dialect"; then
-       echo "⚠️  Region ${v_mig_id} 已经存在于目标DataNode ${v_mig_to_dn_id} 上，跳过迁移"
-       return 0
-   fi
-   
-   # exec migrate
-   echo "执行迁移: migrate region ${v_mig_id} from ${v_mig_from_dn_id} to ${v_mig_to_dn_id} (dialect: ${v_dialect})"
-   ${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -u ${v_mig_user_name}  -sql_dialect ${v_dialect} -e "migrate region ${v_mig_id} from ${v_mig_from_dn_id} to ${v_mig_to_dn_id};" > ${cur_dir}/tmp.out
-   check_res "successfully" 1 "migrate region ${v_mig_id} from ${v_mig_from_dn_id} to ${v_mig_to_dn_id}"
-   if [[ ${fail_flag} = 0 ]];then
-        # 初始化连续v_mig_status_num=0的计数器
-        local count_zero_status=0
-        # 定义连续3次为退出阈值
-        local MAX_ZERO_COUNT=3
+    # 1. 生成传感器名称文件（不变）
+    cat > del_test.txt << EOF
+s_0
+s_1000
+s_2000
+s_3000
+s_4000
+s_5000
+s_6000
+s_7000
+s_8000
+s_9999
+EOF
 
-        while true
-        do
-            # 获取迁移状态数量（Adding/Removing的region数）
-            v_mig_status_num=$(${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -u ${v_mig_user_name} -sql_dialect ${v_dialect}  -e "show regions;" | egrep "Adding|Removing" | wc -l)
+    # 配置项（不变）
+    local v_dev_num=49
 
-            ## 连续3次v_mig_status_num=0
-            # 重置/累加计数器
-            if [[ ${v_mig_status_num} -eq 0 ]]; then
-                count_zero_status=$((count_zero_status + 1))
-                echo "当前v_mig_status_num=0，连续计数：${count_zero_status}/${MAX_ZERO_COUNT}"
-            else
-                count_zero_status=0  # 非0则重置计数器
-                echo "当前v_mig_status_num=${v_mig_status_num}，重置连续0计数"
-            fi
-
-            # 检查是否达到连续3次0
-            if [[ ${count_zero_status} -ge ${MAX_ZERO_COUNT} ]]; then
-                echo "满足条件：连续${MAX_ZERO_COUNT}次v_mig_status_num=0，迁移完成"
-                break
-            fi
-
-            # 未满足条件，休眠60秒后继续循环
-            sleep 60
-        done
-   fi
-}
-
-# 动态解析所有DataNode信息，并过滤掉源节点（修复IP字符串子集匹配问题）
-function get_all_target_datanodes() {
-    # 执行show datanodes并保存完整输出
-    local datanodes_output=$(${cli_dir}/sbin/start-cli.sh -u ${v_mig_user_name} -h ${query_ip} -sql_dialect tree -e "show datanodes;")
-    if [[ -z "$datanodes_output" ]]; then
-        echo "❌ 执行 show datanodes 失败，输出为空" >&2
-        return 1
-    fi
-
-    # 第一步：解析表头，找到RpcAddress和NodeID列的位置
-    local header_line=$(echo "$datanodes_output" | grep -m1 "NodeID")
-    if [[ -z "$header_line" ]]; then
-        echo "❌ 未找到 show datanodes 表头，无法解析列位置" >&2
-        return 1
-    fi
-
-    local -a headers=()
-    IFS='|' read -ra headers <<< "$(echo "$header_line" | tr -d ' ')"
-    
-    local rpc_addr_col=-1
-    local node_id_col=-1
-    for i in "${!headers[@]}"; do
-        if [[ "${headers[$i]}" == "RpcAddress" ]]; then
-            rpc_addr_col=$i
-        elif [[ "${headers[$i]}" == "NodeID" ]]; then
-            node_id_col=$i
-        fi
-    done
-
-    if [[ $rpc_addr_col -eq -1 || $node_id_col -eq -1 ]]; then
-        echo "❌ 未找到 RpcAddress 或 NodeID 列，表头：${header_line}" >&2
-        return 1
-    fi
-
-    # 第二步：解析数据行，过滤源节点，输出有效节点
-    echo "$datanodes_output" | \
-        grep -v "NodeID" | grep -v "Total line number" | grep -v "It costs" | \
-        while IFS='|' read -ra cols; do
-            # 修复：确保变量正确绑定
-            if [[ ${#cols[@]} -gt $rpc_addr_col && ${#cols[@]} -gt $node_id_col ]]; then
-                local rpc_address=$(echo "${cols[$rpc_addr_col]}" | tr -d ' ' | xargs)
-                local node_id=$(echo "${cols[$node_id_col]}" | tr -d ' ' | xargs)
-                
-                # 跳过源节点 + 过滤空值
-                if [[ -n "$rpc_address" && -n "$node_id" && ! "$rpc_address" =~ ^${mig_from_ip}$ ]]; then
-                    echo "$node_id $rpc_address"
-                fi
-            fi
-        done
-}
-# 统计目标节点上的Region数量，选择最少的节点
-function get_least_loaded_dn() {
-    local dialect=$1
-    local region_id=$2  # 新增参数：要迁移的Region ID
-    
-    # 初始化所有目标节点的计数为0
-    declare -A dn_count
-    
-    # 修复：用临时文件替代进程替换，兼容所有Shell
-    local tmp_dn_list="${cur_dir}/tmp_dn_list_$$.txt"
-    get_all_target_datanodes > "$tmp_dn_list"
-    
-    # 读取目标节点列表，初始化计数
-    while IFS=' ' read -r dn_id _; do
-        if [[ -n "$dn_id" ]]; then
-            # 检查此DataNode是否已经包含该Region
-            if ! is_region_on_target_dn "$region_id" "$dn_id" "$dialect"; then
-                dn_count[$dn_id]=0
-            fi
-        fi
-    done < "$tmp_dn_list"
-    rm -f "$tmp_dn_list"
-
-    # 检查是否有可用的目标节点
-    if [[ ${#dn_count[@]} -eq 0 ]]; then
-        echo "❌ 错误：未找到任何可用的目标 DataNode，无法进行迁移" >&2
-        return 1
-    fi
-
-    # 统计每个节点上的Region数量
-    local tmp_region_list="${cur_dir}/tmp_region_list_$$.txt"
-    ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_mig_user_name} -sql_dialect "$dialect" -e "show regions;" | \
-        grep -v "Total line number" | grep -v "It costs" | \
-        awk -F '|' '{gsub(" ", "", $7); print $7}' > "$tmp_region_list"
-    
-    while IFS= read -r dn_id; do
-        # 核心修复：只统计已初始化的dn_id，避免空值或不存在的dn_id导致数组下标错误
-        if [[ -n "$dn_id" && -n "${dn_count[$dn_id]+isset}" ]]; then
-            dn_count[$dn_id]=$(( ${dn_count[$dn_id]} + 1 ))
-        fi
-    done < "$tmp_region_list"
-    rm -f "$tmp_region_list"
-
-    # 找到数量最少的节点
-    local min_count=999999
-    local target_dn=""
-    for dn_id in "${!dn_count[@]}"; do
-        if [[ ${dn_count[$dn_id]} -lt $min_count ]]; then
-            min_count=${dn_count[$dn_id]}
-            target_dn=$dn_id
-        fi
-    done
-
-    # 最终检查：确保返回了有效的DN ID
-    if [[ -z "$target_dn" ]]; then
-        echo "❌ 错误：无法确定负载最少的目标 DataNode" >&2
-        return 1
-    fi
-
-    echo "$target_dn"
-}
-
-# 从可用的目标DataNode中查找一个不包含指定Region的节点
-function find_available_target_dn() {
-    local dialect=$1
-    local region_id=$2
-    
-    # 获取所有目标DataNode列表
-    local tmp_dn_list="${cur_dir}/tmp_dn_list_$$.txt"
-    get_all_target_datanodes > "$tmp_dn_list"
-    
-    # 遍历所有目标节点，找到第一个不包含该Region的节点
-    while IFS=' ' read -r dn_id _; do
-        if [[ -n "$dn_id" ]]; then
-            # 检查此DataNode是否已经包含该Region
-            if ! is_region_on_target_dn "$region_id" "$dn_id" "$dialect"; then
-                rm -f "$tmp_dn_list"
-                echo "$dn_id"
-                return 0
-            fi
-        fi
-    done < "$tmp_dn_list"
-    
-    rm -f "$tmp_dn_list"
-    # 如果没有找到合适的节点，则返回错误
-    echo "❌ 错误：找不到可用的目标DataNode，所有节点都已包含Region ${region_id}" >&2
-    return 1
-}
-# 同步优化get_source_dn_id函数（避免IP子集匹配）
-function get_source_dn_id() {
-    # 执行show datanodes并保存完整输出
-    local datanodes_output=$(${cli_dir}/sbin/start-cli.sh -u ${v_mig_user_name} -h ${query_ip} -sql_dialect tree -e "show datanodes;")
-    if [[ -z "$datanodes_output" ]]; then
-        echo "❌ 执行 show datanodes 失败，输出为空" >&2
-        return 1
-    fi
-
-    # ========== 第一步：解析表头，找到RpcAddress和NodeID列的位置 ==========
-    local header_line=$(echo "$datanodes_output" | grep -m1 "NodeID")  # 提取表头行
-    if [[ -z "$header_line" ]]; then
-        echo "❌ 未找到 show datanodes 表头，无法解析列位置" >&2
-        return 1
-    fi
-
-    # 拆分表头为数组，忽略空格，获取列名
-    local -a headers=()
-    IFS='|' read -ra headers <<< "$(echo "$header_line" | tr -d ' ')"
-    
-    # 查找RpcAddress和NodeID列的索引（从0开始）
-    local rpc_addr_col=-1
-    local node_id_col=-1
-    for i in "${!headers[@]}"; do
-        if [[ "${headers[$i]}" == "RpcAddress" ]]; then
-            rpc_addr_col=$i
-        elif [[ "${headers[$i]}" == "NodeID" ]]; then
-            node_id_col=$i
-        fi
-    done
-
-    # 检查列索引是否有效
-    if [[ $rpc_addr_col -eq -1 || $node_id_col -eq -1 ]]; then
-        echo "❌ 未找到 RpcAddress 或 NodeID 列，表头：${header_line}" >&2
-        return 1
-    fi
-
-    # ========== 第二步：解析数据行，精准匹配目标IP ==========
-    echo "$datanodes_output" | \
-        grep -v "NodeID" | grep -v "Total line number" | grep -v "It costs" | \
-        while IFS='|' read -ra cols; do
-            # 修复：确保变量正确绑定
-            if [[ ${#cols[@]} -gt $rpc_addr_col && ${#cols[@]} -gt $node_id_col ]]; then
-                # 清理每一列的空格（关键）
-                local rpc_address=$(echo "${cols[$rpc_addr_col]}" | tr -d ' ' | xargs)
-                local node_id=$(echo "${cols[$node_id_col]}" | tr -d ' ' | xargs)
-                
-                # 精准匹配目标IP，避免子集问题
-                if [[ "$rpc_address" =~ ^${mig_from_ip}$ ]]; then
-                    echo "$node_id"
-                    break  # 找到后立即退出，避免多输出
-                fi
-            fi
-        done
-}
-# 主执行函数：迁移指定dialect下的所有Region
-function migrate_all_regions_for_dialect() {
-    local dialect=$1
-    local from_dn_id=$(get_source_dn_id)
-    if [[ -z "$from_dn_id" ]]; then
-        echo "❌ 错误：无法获取源节点 DataNode ID，跳过 ${dialect} 模型迁移"
-        return 1
-    fi
-
-    echo "=== 开始迁移 dialect=${dialect} 下，从节点 ${mig_from_ip} (DN: ${from_dn_id}) 的所有Region ==="
-    local region_list_file="${cur_dir}/v_${dialect}_mig_id_list.txt"
-    ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_mig_user_name} -sql_dialect "$dialect" -e "show regions;" | \
-        grep "${mig_from_ip}|" | grep -v "Total line number" | grep -v "It costs" | \
-        awk -F '|' '{gsub(" ", "", $2); print $2}' > "$region_list_file"
-    
-    if [[ ! -s "$region_list_file" ]]; then
-        echo "⚠️  在 ${dialect} 模型下，未找到需要从 ${mig_from_ip} 迁移的Region"
-        return 0
-    fi
-
-    while IFS= read -r v_mig_id; do
-        if [[ -n "$v_mig_id" ]]; then
-            # 每次迁移前，查找可用的目标DataNode（不包含该Region的节点）
-            local to_dn_id=$(find_available_target_dn "$dialect" "$v_mig_id")
-            
-            # 核心修复：检查to_dn_id是否有效，无效则终止迁移
-            if [[ -z "$to_dn_id" ]]; then
-                echo "❌ 迁移 Region ${v_mig_id} 失败：无法获取有效的目标 DataNode ID，终止当前模型迁移"
-                return 1
-            fi
-
-            echo "将迁移 Region ${v_mig_id} 从 DN ${from_dn_id} 到 DN ${to_dn_id} (dialect: ${dialect})"
-            migrate_region "$v_mig_id" "$from_dn_id" "$to_dn_id" "$dialect"
-            
-            # 检查迁移是否失败
-            if [[ ${fail_flag} -ne 0 ]]; then
-                echo "❌ 迁移 Region ${v_mig_id} 失败，终止当前模型迁移"
-                return 1
-            fi
-        fi
-    done < "$region_list_file"
-    
-    echo "=== 完成 dialect=${dialect} 下的所有Region迁移 ==="
-    return 0
-}
-# 主入口：迁移树模型和表模型的所有Region
-function exec_migrate_region()
-{
-    echo "开始清空节点 ${mig_from_ip} 上的所有Region..."
-    # 先迁移树模型（tree）
-    migrate_all_regions_for_dialect "tree"
-    # 再迁移表模型（table）
-    migrate_all_regions_for_dialect "table"
-    echo "✅ 所有迁移任务执行完毕！"
-}
-# 同步优化缩容函数中的节点检查逻辑（核心修复点）
-function remove_datanode() {
-    local from_dn_id=$(get_source_dn_id)
-    if [[ -z "$from_dn_id" ]]; then
-        echo "❌ 未找到 ${mig_from_ip} 对应的DataNode ID，缩容失败"
-        return 1
-    fi
-
-    echo "=== 开始缩容节点 ${mig_from_ip} (DN ID: ${from_dn_id}) ==="
-    # 执行remove datanode命令
-    ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_mig_user_name} -sql_dialect tree -e "remove datanode ${from_dn_id};" > ${cur_dir}/remove_dn.out
-    check_res "successfully" 1 "remove datanode ${from_dn_id}"
-
-    if [[ ${fail_flag} -ne 0 ]]; then
-        echo "❌ 执行remove datanode命令失败，终止缩容流程"
-        return 1
-    fi
-
-    # 等待缩容完成：循环检查show datanodes中是否还有该节点（修复IP子集匹配）
-    local wait_seconds=0
-    local max_wait_seconds=1800  # 最大等待时间：30分钟
-    local check_interval=30      # 检查间隔：30秒
-    while true; do
-        # 核心修复：用awk精准提取RpcAddress列，再用^$匹配整行IP，避免子集问题
-        local dn_exists=$(${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "show datanodes;" | \
-            grep -v "NodeID" | grep -v "Total line number" | grep -v "It costs" | \
-            awk -F '|' '{gsub(" ", "", $4); print $4}' | grep -c "^${mig_from_ip}$")
-        
-        if [[ ${dn_exists} -eq 0 ]]; then
-            echo "✅ 缩容完成：${mig_from_ip} 已从DataNode列表中移除"
-            break
-        fi
-
-        # 检查是否超时
-        if [[ ${wait_seconds} -ge ${max_wait_seconds} ]]; then
-            echo "❌ 缩容超时：等待${max_wait_seconds}秒后，${mig_from_ip} 仍未从DataNode列表中移除"
-            return 1
-        fi
-
-        echo "⏳ 等待缩容完成：已等待${wait_seconds}秒，${mig_from_ip} 仍在DataNode列表中（剩余等待时间：$((max_wait_seconds - wait_seconds))秒）"
-        sleep ${check_interval}
-        wait_seconds=$((wait_seconds + check_interval))
-    done
-}
-function wait_benchmark()
-{
     while true
     do
-        v_bm_num=`jps|grep App|wc -l`
-        if [[ ${v_bm_num} -gt 0 ]];then
-            sleep 120
-        else
-            ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "flush;"
-            ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "flush;"
-            break
+
+        # 遍历设备和传感器
+        for v_dev_idx in $(seq 0 $v_dev_num); do
+            # 检查App进程（不变）
+            local v_bm=$(jps | grep -E 'App$' | wc -l)
+            if [[ ${v_bm} -eq 0 ]]; then
+                echo "[$(date)] App进程已退出，终止tree delete任务"
+                break 2
+            fi
+
+            for v_sensor_idx in {1..10}
+            do
+                # 检查App进程（不变）
+                v_bm=$(jps | grep -E 'App$' | wc -l)
+                if [[ ${v_bm} -eq 0 ]]; then
+                    break 2
+                fi
+
+                # 获取传感器名称（不变）
+                local v_sensor_name=$(sed -n "${v_sensor_idx}p" "${cur_dir}/del_test.txt")
+                if [[ -z "${v_sensor_name}" ]]; then
+                    continue
+                fi
+
+                # 后续delete逻辑（不变）
+                local v_max_time1=$("${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect tree -timeout 3600 -e "select ${v_sensor_name} from root.treedb.g_0.aligned_${v_dev_idx} order by time desc limit 1;" | grep "+08:00" | awk -F '|' '{gsub(/ /,"");print $2}')
+                if [[ -n "${v_max_time1}" ]];then
+#                    echo "[$(date)] 执行tree delete: aligned_${v_dev_idx}.${v_sensor_name} time<=${v_max_time1}"
+                    "${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect tree -timeout 3600 -e "delete from root.treedb.g_0.aligned_${v_dev_idx}.${v_sensor_name} where time<=${v_max_time1};" &
+                fi
+
+                # 同理，处理v_max_time2时的数组遍历也要加保护
+                local v_max_time2=$("${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect tree -timeout 3600 -e "select ${v_sensor_name} from root.treedb.g_0.nonaligned_${v_dev_idx} order by time desc limit 1;" | grep "+08:00" | awk -F '|' '{gsub(/ /,"");print $2}')
+                if [[ -n "${v_max_time2}" ]];then
+#                    echo "[$(date)] 执行tree delete: nonaligned_${v_dev_idx}.${v_sensor_name} time<=${v_max_time2}"
+                    "${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect tree -timeout 3600 -e "delete from root.treedb.g_0.nonaligned_${v_dev_idx}.${v_sensor_name} where time<=${v_max_time2};"
+                fi
+            done
+        done
+
+        # 检查App进程（不变）
+        v_bm=$(jps | grep -E 'App$' | wc -l)
+        if [[ ${v_bm} -eq 0 ]]; then
+            echo "[$(date)] App进程已退出，tree_del_data函数终止"
             return 0
         fi
+
+        sleep 1
     done
 }
+function table_del_data()
+{
+    local v_tab_dev_num=99
+
+    while true
+    do
+
+        for v_tab_dev_idx in $(seq 0 2 $v_tab_dev_num); do
+            # 检查App进程（不变）
+            local v_bm=$(jps | grep -E 'App$' | wc -l)
+            if [[ ${v_bm} -eq 0 ]]; then
+                echo "[$(date)] App进程已退出，终止table delete任务"
+                break 2
+            fi
+
+            v_tab_dev_idx2=$((v_tab_dev_idx+1))
+
+            # 后续delete逻辑（不变，仅数组遍历加保护）
+            local v_max_time3=$("${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect table -timeout 3600 -e "use tabledb_g_0;select time from table_0 where device_id='d_${v_tab_dev_idx}' order by time desc limit 1;"|grep "+08:00"|awk -F '|' '{gsub(/ /,"");print $2}')
+            local v_max_time4=$("${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect table -timeout 3600 -e "use tabledb_g_0;select time from table_0 where device_id='d_${v_tab_dev_idx2}' order by time desc limit 1;"|grep "+08:00"|awk -F '|' '{gsub(/ /,"");print $2}')
+            if [[ -n "${v_max_time3}" ]];then
+#                echo "[$(date)] 执行table delete: d_${v_tab_dev_idx} time<=${v_max_time3}"
+                "${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect table -timeout 3600 -e "use tabledb_g_0;delete from table_0 where device_id='d_${v_tab_dev_idx}' and  time<=${v_max_time3};" &
+            fi
+            if [[ -n "${v_max_time4}" ]];then
+#                echo "[$(date)] 执行table delete: d_${v_tab_dev_idx} time<=${v_max_time3}"
+                "${cli_dir}/sbin/start-cli.sh" -h "${query_ip}" -sql_dialect table -timeout 3600 -e "use tabledb_g_0;delete devices from table_0 where device_id='d_${v_tab_dev_idx2}';"
+            fi
+
+            # 同理处理v_max_time4的数组遍历
+            # ... 剩余逻辑和之前一致，仅数组遍历加保护 ...
+        done
+
+        # 检查App进程（不变）
+        v_bm=$(jps | grep -E 'App$' | wc -l)
+        if [[ ${v_bm} -eq 0 ]]; then
+            echo "[$(date)] App进程已退出，table_del_data函数终止"
+            return 0
+        fi
+
+        sleep 1
+    done
+}
+
+# 表模型固定配置
+TABLE_DB_NAME="tabledb_g_0"
+TABLE_NAME="table_0"
+
+# ===================== 1. 生成类型映射文件（只执行一次） =====================
+generate_type_files() {
+    echo "[$(date +%F_%T)] 生成类型映射文件..." | tee -a "${log_file}"
+    
+    # 定义类型映射关系（用关联数组统一管理，便于维护）
+    declare -A TYPE_MAPPINGS=(
+        ["INT32"]="INT64
+FLOAT
+DOUBLE
+TIMESTAMP
+STRING
+TEXT"
+        ["INT64"]="TIMESTAMP
+DOUBLE
+STRING
+TEXT"
+        ["FLOAT"]="DOUBLE
+STRING
+TEXT"
+        ["DOUBLE"]="STRING
+TEXT"
+        ["BOOLEAN"]="STRING
+TEXT"
+        ["TEXT"]="BLOB
+STRING"
+        ["STRING"]="TEXT
+BLOB"
+        ["BLOB"]="STRING
+TEXT"
+        ["DATE"]="STRING
+TEXT"
+        ["TIMESTAMP"]="INT64
+DOUBLE
+STRING
+TEXT"
+    )
+
+    # 循环生成类型文件，避免重复echo
+    for type in "${!TYPE_MAPPINGS[@]}"; do
+        type_file="${cur_dir}/${type}.txt"
+        echo -e "${TYPE_MAPPINGS[${type}]}" > "${type_file}"
+        echo "[$(date +%F_%T)] 生成 ${type_file} 完成" | tee -a "${log_file}"
+    done
+}
+
+# ===================== 2. 表模型列类型修改函数（适配ALTER TABLE语法） =====================
+exec_alter_table_column() {
+    local v_col_name=$1          # 列名（如s_9000）
+    local v_col_type_orig=$2     # 原始类型（如DATE）
+    local type_file="${cur_dir}/${v_col_type_orig}.txt"
+
+    # 检查类型文件是否存在
+    if [ ! -f "${type_file}" ]; then
+        echo "[$(date +%F_%T)] ERROR: 类型文件${type_file}不存在，跳过列${v_col_name}" | tee -a "${log_file}"
+        return 1
+    fi
+
+    # 逐行读取目标类型（本地循环，无文件描述符冲突）
+    while read -r v_dest_type; do
+        # 跳过空行和注释行
+        [[ -z "${v_dest_type}" || "${v_dest_type}" =~ ^# ]] && continue
+
+        echo "[$(date +%F_%T)] 开始修改表列: ${TABLE_DB_NAME}.${TABLE_NAME}.${v_col_name} -> ${v_dest_type}" | tee -a "${log_file}"
+        
+        # 构建表模型ALTER语法（核心适配：-sql_dialect table + ALTER TABLE COLUMN）
+        alter_cmd="${cli_dir}/sbin/start-cli.sh \
+            -u ${db_user_name} \
+            ${ssl_str} \
+            -h ${query_ip} \
+            -sql_dialect table \
+            -timeout 3600 \
+            -e \"ALTER TABLE ${TABLE_DB_NAME}.${TABLE_NAME} DROP COLUMN ${v_col_name} ;\""
+
+        # 执行命令并记录日志
+        eval "${alter_cmd}" >> "${log_file}" 2>&1
+        local exit_code=$?
+
+        if [ ${exit_code} -eq 0 ]; then
+            echo "[$(date +%F_%T)] SUCCESS: ${v_col_name} 修改为${v_dest_type}成功" | tee -a "${log_file}"
+        else
+            echo "[$(date +%F_%T)] FAIL: ${v_col_name} 修改为${v_dest_type}失败（退出码：${exit_code}）" | tee -a "${log_file}"
+        fi
+        alter_cmd="${cli_dir}/sbin/start-cli.sh \
+            -u ${db_user_name} \
+            ${ssl_str} \
+            -h ${query_ip} \
+            -sql_dialect table \
+            -timeout 3600 \
+            -e \"ALTER TABLE ${TABLE_DB_NAME}.${TABLE_NAME} ADD COLUMN ${v_col_name} ${v_dest_type};\""
+              # 执行命令并记录日志
+        eval "${alter_cmd}" >> "${log_file}" 2>&1
+        local exit_code=$?
+
+        if [ ${exit_code} -eq 0 ]; then
+            echo "[$(date +%F_%T)] SUCCESS: ${v_col_name} 修改为${v_dest_type}成功" | tee -a "${log_file}"
+        else
+            echo "[$(date +%F_%T)] FAIL: ${v_col_name} 修改为${v_dest_type}失败（退出码：${exit_code}）" | tee -a "${log_file}"
+        fi
+
+        v_bm_num=`jps|grep App|wc -l`
+        if [[ ${v_bm_num} = 0 ]];then
+           echo "benchmark finish."
+           return 0
+        fi
+
+    done < "${type_file}"
+}
+
+# ===================== 3. 时序模型timeseries修改函数（保留原逻辑，可选） =====================
+exec_alter_timeseries() {
+    local v_ts_name_orig=$1
+    local v_ts_type_orig=$2
+    local type_file="${cur_dir}/${v_ts_type_orig}.txt"
+
+    if [ ! -f "${type_file}" ]; then
+        echo "[$(date +%F_%T)] ERROR: 类型文件${type_file}不存在，跳过${v_ts_name_orig}" | tee -a "${log_file}"
+        return 1
+    fi
+
+    while read -r v_dest_type; do
+        [ -z "${v_dest_type}" ] && continue
+
+        echo "[$(date +%F_%T)] 开始修改时序: ${v_ts_name_orig} -> ${v_dest_type}" | tee -a "${log_file}"
+#        alter_cmd="${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -timeout 3600 -e \"alter timeseries ${v_ts_name_orig} set data type ${v_dest_type};\""
+        alter_cmd="${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -timeout 3600 -e \"delete timeseries ${v_ts_name_orig};\""
+        eval "${alter_cmd}" >> "${log_file}" 2>&1
+        local exit_code=$?
+
+        if [ ${exit_code} -eq 0 ]; then
+            echo "[$(date +%F_%T)] SUCCESS: ${v_ts_name_orig} 修改为${v_dest_type}成功" | tee -a "${log_file}"
+        else
+            echo "[$(date +%F_%T)] FAIL: ${v_ts_name_orig} 修改为${v_dest_type}失败（退出码：${exit_code}）" | tee -a "${log_file}"
+        fi
+        v_bm_num=`jps|grep App|wc -l`
+        if [[ ${v_bm_num} = 0 ]];then
+           echo "benchmark finish."
+           return 0
+        fi
+    done < "${type_file}"
+}
+
+# ===================== 4. 批量获取列表（合并重复命令，用循环替代硬编码） =====================
+get_target_lists() {
+    # 定义需要查询的后缀列表（替代硬编码的s_0/s_1000等）
+    local suffix_list=("0" "1000" "2000" "3000" "4000" "5000" "6000" "7000" "8000" "9999")
+    local show_ts_file="${cur_dir}/show_ts.txt"
+    local show_table_col_file="${cur_dir}/show_table_col.txt"
+
+    # 清空历史文件
+    > "${show_ts_file}"
+    > "${show_table_col_file}"
+
+    # ========== 4.1 批量获取时序模型列表 ==========
+    echo "[$(date +%F_%T)] 批量获取timeseries列表..." | tee -a "${log_file}"
+    for suffix in "${suffix_list[@]}"; do
+        show_cmd="${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -timeout 3600 -e \"show timeseries root.treedb.**.s_${suffix};\""
+        eval "${show_cmd}" | grep "root.treedb" >> "${show_ts_file}" 2>&1
+        echo "[$(date +%F_%T)] 已获取s_${suffix}的timeseries列表" | tee -a "${log_file}"
+    done
+
+    # ========== 4.2 批量获取表模型列列表 ==========
+    echo "[$(date +%F_%T)] 批量获取表${TABLE_DB_NAME}.${TABLE_NAME}的列列表..." | tee -a "${log_file}"
+    # 先获取完整的desc结果，再循环过滤（减少cli调用次数）
+    full_desc_cmd="${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 3600 -e \"desc ${TABLE_DB_NAME}.${TABLE_NAME};\""
+    eval "${full_desc_cmd}" > "${cur_dir}/full_table_desc.txt" 2>&1
+
+    # 循环过滤指定后缀的列
+    for suffix in "${suffix_list[@]}"; do
+        grep "s_${suffix}" "${cur_dir}/full_table_desc.txt" >> "${show_table_col_file}" 2>&1
+        echo "[$(date +%F_%T)] 已过滤出s_${suffix}的表列" | tee -a "${log_file}"
+    done
+
+    # 校验文件非空
+    if [ ! -s "${show_ts_file}" ]; then
+        echo "[$(date +%F_%T)] WARN: timeseries列表文件为空" | tee -a "${log_file}"
+    fi
+    if [ ! -s "${show_table_col_file}" ]; then
+        echo "[$(date +%F_%T)] WARN: 表列列表文件为空" | tee -a "${log_file}"
+    fi
+}
+
+alter_table_all_types() {
+    generate_type_files
+    get_target_lists
+
+    # ========== 表列修改：后台执行 ==========
+    echo "[$(date +%F_%T)] 启动表列修改（后台）..." | tee -a "${log_file}"
+    (
+        # 子shell内独立解析表列行，避免变量污染
+        while read -r col_line; do
+            # 跳过空行
+            [ -z "${col_line}" ] && continue
+
+            # ========== v_col_name/v_col_type 赋值逻辑 ==========
+            # 解析表列行：|    s_9000|     DATE|   FIELD| → 切割后去除空格
+            IFS='|' read -ra arr <<< "${col_line}"
+            v_col_name=$(echo "${arr[1]}" | sed 's/ //g')  # 列名（如s_9000）
+            v_col_type=$(echo "${arr[2]}" | sed 's/ //g')   # 原始类型（如DATE）
+
+            # 跳过解析失败的行
+            if [ -z "${v_col_name}" ] || [ -z "${v_col_type}" ]; then
+                echo "[$(date +%F_%T)] WARN: 解析表行列失败：${col_line}" | tee -a "${log_file}"
+                continue
+            fi
+
+            # 限制子shell内的并发数（关键：只统计当前子shell的后台进程）
+            while [ $(jobs -p | wc -l) -ge ${max_concurrent} ]; do
+                sleep 1
+            done
+
+            # 执行表列修改（后台）
+            exec_alter_table_column "${v_col_name}" "${v_col_type}" &
+        done < "${cur_dir}/show_table_col.txt"
+        
+        # 等待当前子shell内所有表列修改完成
+        wait
+        echo "[$(date +%F_%T)] 表列修改完成" | tee -a "${log_file}"
+    ) &
+    local table_pid=$!  # 记录表列修改的子shell PID
+
+    # 等待两个子shell（表列+时序）都执行完成
+    wait ${table_pid}
+    echo "table [$(date +%F_%T)] 所有修改完成" | tee -a "${log_file}"
+}
+
+alter_tree_all_types() {
+
+    # ========== 时序修改：后台执行 ==========
+    echo "[$(date +%F_%T)] 启动时序修改（后台）..." | tee -a "${log_file}"
+    (
+        # 子shell内独立解析时序行，避免变量污染
+        while read -r ts_line; do
+            # 跳过空行
+            [ -z "${ts_line}" ] && continue
+
+            # ========== v_ts_name/v_ts_orig_type 赋值逻辑 ==========
+            # 解析时序行：从show timeseries结果中提取名称和原始类型
+            v_ts_name=$(echo "${ts_line}" | awk -F '|' '{gsub(/ /,""); print $2}')  # 时序名
+            v_ts_orig_type=$(echo "${ts_line}" | awk -F '|' '{gsub(/ /,""); print $5}')  # 原始类型
+
+            # 跳过解析失败的行
+            if [ -z "${v_ts_name}" ] || [ -z "${v_ts_orig_type}" ]; then
+                echo "[$(date +%F_%T)] WARN: 解析时序行失败：${ts_line}" | tee -a "${log_file}"
+                continue
+            fi
+
+            # 限制子shell内的并发数
+            while [ $(jobs -p | wc -l) -ge ${tree_max_concurrent} ]; do
+                sleep 1
+            done
+
+            # 执行时序修改（后台）
+            exec_alter_timeseries "${v_ts_name}" "${v_ts_orig_type}" &
+        done < "${cur_dir}/show_ts.txt"
+        
+        # 等待当前子shell内所有时序修改完成
+        wait
+        echo "[$(date +%F_%T)] 时序修改完成" | tee -a "${log_file}"
+    ) &
+    local ts_pid=$!  # 记录时序修改的子shell PID
+
+    # 等待两个子shell（表列+时序）都执行完成
+    wait ${ts_pid}
+    echo " tree [$(date +%F_%T)] 所有修改完成" | tee -a "${log_file}"
+}
+
+function restart_node1()
+{
+sleep 600 
+readonly_ip=`head -1 ${nodeinfo_dir}/datanode.txt`
+# no stop datanode
+while true
+do
+
+while true
+do
+        v_jps=`ssh ${os_user_name}@${readonly_ip} "jps|grep DataNode|wc -l"`
+        if [[ ${v_jps} -gt 0 ]];then
+           break
+        else
+           sleep 10
+        fi
+done
+sleep 60
+
+
+sleep 10
+while true
+do
+   v_ok=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "show cluster;"|grep "${readonly_ip}|"|grep -i Running|wc -l`
+   if [[ ${v_ok} = 1 ]];then
+      break
+   else
+      sleep 10
+   fi
+done
+sleep 180
+#check client connections
+check_client_connections
+v_bm=`jps|grep App|wc -l`
+if [[ ${v_bm} = 0 ]];then
+   break
+   return 0 # This command won’t be executed.
+fi
+done
+
+}
+# ====================== 核心函数 ======================
+# 函数：查询单个节点的进程线程数
+check_client_connections() {
+# Prometheus服务器信息
+PROMETHEUS_URL=$(grep ^monitor_url "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+PROMETHEUS_USER=admin
+PROMETHEUS_PASS=admin
+
+# 调用Prometheus API获取当前值（只获取DataNode的ClientRPC连接）
+response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" "$PROMETHEUS_URL/api/v1/query?query=thrift_connections%7Bcluster%3D%22$CLUSTER_ID%22%2Cname%3D%22ClientRPC%22%2CnodeType%3D%22DATANODE%22%7D")
+
+# 检查响应是否成功
+if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
+  echo "Error: Failed to get data from Prometheus"
+  echo "Response: $response"
+  exit 1
+fi
+
+# 解析JSON并提取数据
+echo "===== DataNode Client Connections (Cluster: $CLUSTER_ID) ====="
+
+# 获取结果数量
+result_count=$(echo "$response" | jq -r '.data.result | length')
+
+# 遍历每个结果
+for ((i=0; i<result_count; i++)); do
+  instance=$(echo "$response" | jq -r ".data.result[$i].metric.instance")
+  connections=$(echo "$response" | jq -r ".data.result[$i].value[1]")
+  echo "Instance: $instance, Connections: $connections"
+
+  # 判断连接数是否大于50
+  if [[ $connections -gt 50 ]]; then
+    fail_flag=$((fail_flag + 1))
+    echo "  WARNING: Connections exceed 50!"
+  fi
+done
+
+# 统计总连接数
+total_connections=$(echo "$response" | jq -r '.data.result[] | .value[1]' | awk '{sum+=$1} END {print sum}')
+echo "Total Client Connections: $total_connections"
+echo "Fail Flag: $fail_flag"
+
+}
+
 function testcase1()
 {
-# 执行迁移
-exec_migrate_region
-remove_datanode
-# wait benchmark
-wait_benchmark
 # check data
 check_data_consistent
 #check log
 check_log
+if [[ ${backup_flag} -gt 0 ]];then
+	v_backup_time=`date +%s`
+    sh ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time} 
+fi
+if [[ ${backup_log_flag} -gt 0 ]];then
+	v_backup_time=`date +%s`
+    sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 
+fi
 }
 # start cluster 
 echo "">${log_file}
 start_db
 # start test time
 v_start_test_time=`date +%s`
-create_user
-if [[ ${prepare_fail_flag} = 0 ]];then
 start_bm
+generate_type_files
+get_target_lists
+
+alter_table_all_types &
+sleep 10
+alter_tree_all_types &
+tree_del_data &
+table_del_data &
+wait
+restart_node1 
 testcase1
-fi
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
 # record test result
@@ -1198,13 +1227,13 @@ function write_result()
    fi
 
 # backup logs?
-#if [[ ${backup_log_flag} -gt 0 ]];then
-## stop cluster
-#v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
-#v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
-#sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
-#sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
-#
-#fi 
+if [[ ${backup_log_flag} -gt 0 ]];then
+# stop cluster
+v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
+v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
+sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
+sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
+
+fi 
 }
 write_result

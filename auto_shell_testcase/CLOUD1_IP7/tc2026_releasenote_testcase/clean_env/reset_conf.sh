@@ -8,6 +8,7 @@ db_parent_dir=`cat ${conf_file}|grep ^v_db_parent_dir|awk -F '=' '{print $2}'`
 cn_db_parent_dir=`cat ${conf_file}|grep ^v_cn_db_parent_dir|awk -F '=' '{print $2}'`
 cli_dir=${db_parent_dir}/${testdb}
 cn_db_dir=${cn_db_parent_dir}/${testdb}
+dn_db_dir=${db_parent_dir}/${testdb}
 
 function reset_conf()
 {
@@ -26,10 +27,10 @@ done
 exec 3<${cur_dir}/../conf/datanode.txt
 while read line <&3
 do
-   if ssh ${os_user_name}@${line} test -d ${db_dir}/conf; then
-      if ssh ${os_user_name}@${line} test -d ${db_dir}/conf_orig; then
-         ssh ${os_user_name}@${line} "source /etc/profile;rm -rf ${db_dir}/conf"
-         ssh ${os_user_name}@${line} "source /etc/profile;cp -rp ${db_dir}/conf_orig ${db_dir}/conf"
+   if ssh ${os_user_name}@${line} test -d ${dn_db_dir}/conf; then
+      if ssh ${os_user_name}@${line} test -d ${dn_db_dir}/conf_orig; then
+         ssh ${os_user_name}@${line} "source /etc/profile;rm -rf ${dn_db_dir}/conf"
+         ssh ${os_user_name}@${line} "source /etc/profile;cp -rp ${dn_db_dir}/conf_orig ${dn_db_dir}/conf"
       fi
    fi
 done

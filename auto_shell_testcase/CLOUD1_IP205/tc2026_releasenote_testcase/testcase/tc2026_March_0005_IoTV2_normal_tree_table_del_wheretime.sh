@@ -427,29 +427,23 @@ do
 
 done
 }
-# 监控 Total Sync Lag 直到所有 DataNode 连续 5 分钟为 0
+
 wait_for_sync_completion() {
     # Prometheus服务器信息
     local PROMETHEUS_URL=$(grep ^monitor_url "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
     local PROMETHEUS_USER=admin
     local PROMETHEUS_PASS=admin
 
-    # 连续时间（秒）- 120秒
-    local TARGET_DURATION=120
-    local current_duration=0
-    local start_time=$(date +%s)
-
     # 关联数组：追踪每个DataNode上一次的sync lag状态（true=上一次>0，false=上一次=0）
     declare -A last_node_status
 
-    echo "开始监控 Total Sync Lag，目标连续 ${TARGET_DURATION} 秒所有 DataNode 均为 0..."
+    echo "开始监控 Total Sync Lag，直到所有 DataNode 的 Sync Lag 均为 0 为止..."
 
     while true; do
-        # 获取当前时间
-        local current_time=$(date +%s)
-        local elapsed_time=$((current_time - start_time))
-        local all_zero=true  # 标记本次检测是否所有节点都为0
-        local has_non_zero=false  # 标记本次是否有节点>0
+        # 标记本次检测是否所有节点都为0（核心退出条件）
+        local all_zero=true
+        # 标记本次是否有节点>0（用于状态追踪）
+        local has_non_zero=false
 
         # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
         local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
@@ -488,7 +482,7 @@ wait_for_sync_completion() {
             # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
             if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
                 has_non_zero=true
-                all_zero=false
+                all_zero=false  # 只要有一个节点>0，就不满足退出条件
 
                 # 核心逻辑：只有上一次状态也是>0时，才累加fail_flag
                 if [[ ${last_node_status[$instance]} == "true" ]]; then
@@ -510,25 +504,15 @@ wait_for_sync_completion() {
             fi
         done
 
-        # 重置计时逻辑：仅当本次有节点>0时，才重置连续为0的计时
-        if $has_non_zero; then
-            current_duration=0
-            start_time=$(date +%s)
-            echo "  ❌ 存在DataNode Sync Lag>0，重置连续为0计时"
-        else
-            # 所有节点都为0，累计连续时长
-            current_duration=$((current_time - start_time))
-            echo "✅ 所有 DataNode 的 Total Sync Lag 均为 0，已持续 ${current_duration} 秒"
-
-            # 检查是否达到目标时长
-            if [[ $current_duration -ge $TARGET_DURATION ]]; then
-                echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒均为 0"
-                echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
-                return 0
-            fi
+        # 核心退出条件：本次检测所有节点Sync Lag均为0
+        if $all_zero; then
+            echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 均为 0"
+            echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
+            return 0
         fi
 
-        # 间隔1秒检测一次
+        # 存在节点>0，继续监控（间隔1秒检测一次）
+        echo "  ❌ 仍有DataNode Sync Lag>0，1秒后继续检测..."
         sleep 1
     done
 }

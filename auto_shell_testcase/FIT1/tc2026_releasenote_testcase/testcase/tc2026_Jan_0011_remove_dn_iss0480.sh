@@ -631,31 +631,14 @@ do
    v_err=`ssh ${os_user_name}@${line} "grep CompactionTableSchemaNotMatchException ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err2=`ssh ${os_user_name}@${line} "grep \"has overlapped data\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err3=`ssh ${os_user_name}@${line} "grep \"which should be later than the last time\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   if [[ ${v_npe} -gt 0 ]];then
+   v_err4=`ssh ${os_user_name}@${line} "grep \"Failed to statistic the size of\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err_total=$((v_npe+v_err+v_err2+v_err3+v_err4))
+   if [[ ${v_err_total} -gt 0 ]];then
            let fail_flag++
 	   let backup_log_flag++
-	   v_warnMessage="${v_warnMessage}DN NPE."
+	   v_warnMessage="${v_warnMessage}DN unexpected log."
            echo "DN ${line} NullPointer : ${v_npe}"
    fi
-   if [[ ${v_err} -gt 0 ]];then
-	   let fail_flag++
-	    let backup_flag++
-	   v_warnMessage="${v_warnMessage}DN CompactionTableSchemaNotMatchException."
-	   echo "DN ${line} CompactionTableSchemaNotMatchException : ${v_err}"
-   fi
-   if [[ ${v_err2} -gt 0 ]];then
-           let fail_flag++
-	    let backup_flag++
-	   v_warnMessage="${v_warnMessage}DN overlapped."
-           echo "DN ${line} has overlapped data: ${v_err2}"
-   fi
-   if [[ ${v_err3} -gt 0 ]];then
-           let fail_flag++
-	    let backup_flag++
-	   v_warnMessage="${v_warnMessage}DN overlapped."
-           echo "DN ${line} which should be later than the last time: ${v_err3}"
-   fi
-
 
 done
 
@@ -708,11 +691,13 @@ sleep 1h
 check_log
 if [[ ${backup_flag} -gt 0 ]];then
 	v_backup_time=`date +%s`
-    sh ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time} 
+	sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
+    sh -x ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time} 2>&1
 fi
 if [[ ${backup_log_flag} -gt 0 ]];then
 	v_backup_time=`date +%s`
-    sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 
+	sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
+    sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 2>&1
 fi
 }
 # start cluster 
