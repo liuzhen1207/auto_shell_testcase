@@ -8,6 +8,7 @@ db_parent_dir=`cat ${conf_file}|grep ^v_db_parent_dir|awk -F '=' '{print $2}'`
 cn_db_parent_dir=`cat ${conf_file}|grep ^v_cn_db_parent_dir|awk -F '=' '{print $2}'`
 cli_dir=${db_parent_dir}/${testdb}
 cn_db_dir=${cn_db_parent_dir}/${testdb}
+db_dir=${db_parent_dir}/${testdb}
 
 function reset_conf()
 {

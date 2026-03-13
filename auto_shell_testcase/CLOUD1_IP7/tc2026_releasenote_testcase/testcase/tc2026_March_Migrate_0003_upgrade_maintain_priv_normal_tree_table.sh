@@ -27,6 +27,8 @@ sr_rep_num=3
 total_node_num=$((cn_num+dn_num))
 log_file="${cur_dir}/set_conf_parallel.log"
 ssl_str=""
+dn_testdata_backup_dir=${db_parent_dir}/testdata_backup/v1371_release/data
+cn_testdata_backup_dir=${cn_db_parent_dir}/testdata_backup/v1371_release/data
 backup_flag=0
 backup_log_flag=0
 v_warnNum=0
@@ -306,8 +308,20 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
        exit 1
    fi
    
+       # copy test data
+exec 3<${nodeinfo_dir}/datanode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "cp -rp ${dn_testdata_backup_dir} ${db_dir}" 
+done
+exec 3<${nodeinfo_dir}/confignode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "cp -rp ${cn_testdata_backup_dir} ${cn_db_dir}"
+done
+
    # 启动集群
-   sh -x "${prepare_env_dir}/start_cluster_v20.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
+   sh -x "${prepare_env_dir}/start_cluster_upd.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
    if [ $? -eq 0 ]; then
        log "INFO" "集群启动成功"
    else
@@ -333,18 +347,18 @@ function check_res()
 function create_user()
 {
 # create user
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "CREATE USER tree_user 'TimechoDB@2021';">${cur_dir}/tmp.out
-check_res "successfully" 1 "CREATE USER tree_user"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "grant all ON root.** TO USER tree_user;">${cur_dir}/tmp.out
-check_res "successfully" 1 "grant all ON root.** TO USER tree_user"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
+#${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "CREATE USER tree_user 'TimechoDB@2021';">${cur_dir}/tmp.out
+#check_res "successfully" 1 "CREATE USER tree_user"
+#if [[ ${fail_flag} -gt 0 ]];then
+#   let prepare_fail_flag++
+#   return 1
+#fi
+#${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "grant all ON root.** TO USER tree_user;">${cur_dir}/tmp.out
+#check_res "successfully" 1 "grant all ON root.** TO USER tree_user"
+#if [[ ${fail_flag} -gt 0 ]];then
+#   let prepare_fail_flag++
+#   return 1
+#fi
 
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "CREATE USER table_user 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res "successfully" 1 "CREATE USER table_user"
@@ -360,19 +374,19 @@ if [[ ${fail_flag} -gt 0 ]];then
    return 1
 fi
 
-${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -sql_dialect table -e "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
-check_res "successfully" 1 "CREATE USER ${v_mig_user_name}"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
-
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
-check_res "successfully" 1 "grant system TO USER ${v_mig_user_name}"
-if [[ ${fail_flag} -gt 0 ]];then
-   let prepare_fail_flag++
-   return 1
-fi
+#${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -sql_dialect table -e "CREATE USER ${v_mig_user_name} 'TimechoDB@2021';">${cur_dir}/tmp.out
+#check_res "successfully" 1 "CREATE USER ${v_mig_user_name}"
+#if [[ ${fail_flag} -gt 0 ]];then
+#   let prepare_fail_flag++
+#   return 1
+#fi
+#
+#${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "grant system TO USER ${v_mig_user_name};">${cur_dir}/tmp.out
+#check_res "successfully" 1 "grant system TO USER ${v_mig_user_name}"
+#if [[ ${fail_flag} -gt 0 ]];then
+#   let prepare_fail_flag++
+#   return 1
+#fi
 
 }
 function start_bm()
@@ -692,9 +706,9 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       v_diff_total=$((v_diff_tree+v_diff_table))
       if [[ ${v_diff_total} -gt 0 ]];then
          let fail_flag++
+         v_warnMessage="Failed to check replica data consistency."
          diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
          diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"
-         v_warnMessage="Failed to check replica data consistency."
          echo "diff : ${v_diff_total}"
       fi
       # restart

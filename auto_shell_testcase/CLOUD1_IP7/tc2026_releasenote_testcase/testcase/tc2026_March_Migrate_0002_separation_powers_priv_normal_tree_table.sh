@@ -30,7 +30,7 @@ ssl_str=""
 backup_flag=0
 backup_log_flag=0
 v_warnNum=0
-v_warnMessage="No Warn."
+v_warnMessage="."
 v_consensus="IoTConsensus"
 v_mig_user_name="migrate_user"
 v_sec_super_user="security_admin"
@@ -308,7 +308,7 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
    fi
    
    # 启动集群
-   sh -x "${prepare_env_dir}/start_cluster_v20.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
+   sh -x "${prepare_env_dir}/start_cluster_v20_power.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
    if [ $? -eq 0 ]; then
        log "INFO" "集群启动成功"
    else
@@ -411,7 +411,7 @@ nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf2 > ${bm_log_dir}/${bm
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf3 > ${bm_log_dir}/${bm_test_time}_table_bm3.out &
 while true
 do
-        v_ts_num=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "count timeseries root.**;"|grep "| "|awk -F '|' '{gsub(" ","");print $2}'`
+        v_ts_num=`${cli_dir}/sbin/start-cli.sh -u tree_user -h ${query_ip} -e "count timeseries root.**;"|grep "| "|awk -F '|' '{gsub(" ","");print $2}'`
         if [[ ${v_ts_num} -ge ${ts_num} ]];then
                 break
         else
@@ -423,8 +423,8 @@ sleep 60
 function wait_sync_done()
 {
 local max_wait_time=$1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
    cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
    mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
    exec 3<${cur_dir}/tmp.out
@@ -597,8 +597,7 @@ function check_data_consistent()
 {
 wait_sync_done 180
 wait_for_sync_completion
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;create or replace view table_0(device_id string tag) as root.test.g_0.**;"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
    cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
    mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
    sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.testdb.g_0.** align by device;"
@@ -607,7 +606,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
    # all online
    while true
    do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
+   ${cli_dir}/sbin/start-cli.sh -u tree_user ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
    v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
    if [[ ${v_exception_num} = 0 ]];then
 	   break
@@ -623,7 +622,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
    exception_num=0
    while true
    do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table.out
+   ${cli_dir}/sbin/start-cli.sh -u table_user ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table.out
    v_exception_num=`grep Exception ${cur_dir}/q_all_online_table.out|wc -l`
    if [[ ${v_exception_num} = 0 ]];then
            break
@@ -655,7 +654,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       exception_num=0
       while true
       do
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
+      ${cli_dir}/sbin/start-cli.sh -u tree_user ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
       v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_tree.out|wc -l`
       if [[ ${v_exception_num} = 0 ]];then
            break
@@ -673,7 +672,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       while true
       do
 
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table.out
+      ${cli_dir}/sbin/start-cli.sh -u table_user ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table.out
       v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table.out|wc -l`
       if [[ ${v_exception_num} = 0 ]];then
            break
@@ -693,6 +692,8 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       v_diff_total=$((v_diff_tree+v_diff_table))
       if [[ ${v_diff_total} -gt 0 ]];then
          let fail_flag++
+         diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
+         diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"
          v_warnMessage="Failed to check replica data consistency."
          echo "diff : ${v_diff_total}"
       fi
@@ -701,7 +702,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};./sbin/start-datanode.sh -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
       while true
       do
-      v_start_ok=`${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${line}  -timeout 3600 -e "show datanodes;"|grep "${line}|"|grep Running|wc -l`
+      v_start_ok=`${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${line}  -timeout 3600 -e "show datanodes;"|grep "${line}|"|grep Running|wc -l`
       if [[ ${v_start_ok} -gt 0 ]];then
          break
       else
@@ -1115,7 +1116,7 @@ function remove_datanode() {
     local check_interval=30      # 检查间隔：30秒
     while true; do
         # 核心修复：用awk精准提取RpcAddress列，再用^$匹配整行IP，避免子集问题
-        local dn_exists=$(${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "show datanodes;" | \
+        local dn_exists=$(${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -sql_dialect tree -e "show datanodes;" | \
             grep -v "NodeID" | grep -v "Total line number" | grep -v "It costs" | \
             awk -F '|' '{gsub(" ", "", $4); print $4}' | grep -c "^${mig_from_ip}$")
         
@@ -1143,8 +1144,8 @@ function wait_benchmark()
         if [[ ${v_bm_num} -gt 0 ]];then
             sleep 120
         else
-            ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "flush;"
-            ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "flush;"
+            ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -sql_dialect tree -e "flush;"
+            ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -sql_dialect table -e "flush;"
             break
             return 0
         fi
