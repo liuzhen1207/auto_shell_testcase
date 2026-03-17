@@ -16,3 +16,7 @@ liuzhen/1qaz2wsx
 
 华为的ibmc
 root/Huawei12#$
+
+
+cli_a9395bcdacb89bc8
+gt02hxArWv1hTGeXpTCQ9cxOzoBUosmH
