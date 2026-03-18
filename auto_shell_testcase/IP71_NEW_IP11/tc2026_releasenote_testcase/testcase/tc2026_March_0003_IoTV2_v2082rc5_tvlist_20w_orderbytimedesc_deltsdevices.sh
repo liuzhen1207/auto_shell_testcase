@@ -31,7 +31,7 @@ backup_flag=0
 backup_log_flag=0
 v_warnNum=0
 v_warnMessage="."
-v_consensus="IoTConsensus"
+v_consensus="IoTConsensusV2"
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -481,7 +481,7 @@ wait_for_sync_completion() {
 
         # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
         local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22ioTConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
+            "$PROMETHEUS_URL/api/v1/query?query=pipe_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22PipeConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
 
         # 检查响应是否成功
         if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
@@ -740,9 +740,21 @@ done
 function testcase1()
 {
 	# query
+	v_del1="delete timeseries root.treedb.g_0.aligned_0.s_1;"
+	v_del2="delete timeseries root.treedb.g_0.nonaligned_0.s_1;"
+	v_del3="delete devices from tabledb_g_0.table_0 where device_id='d_0';"
 	v_q1="select s_0 from root.treedb.g_0.aligned_0 where time >= 350000 order by time desc limit 1;"
 	v_q2="select s_0 from root.treedb.g_0.nonaligned_0 where time >= 350000 order by time desc limit 1;"
 	v_q3="select time,device_id,s_0 from tabledb_g_0.table_0 where time >= 350000 order by time desc limit 1;"
+	${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 3600 -e "${v_del1}">${cur_dir}/tmp.out
+	check_res "${cur_dir}/tmp.out" "success" 1 "delete timeseries root.treedb.g_0.aligned_0.s_1 result"
+        cat ${cur_dir}/tmp.out
+	${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 3600 -e "${v_del2}">${cur_dir}/tmp.out
+        check_res "${cur_dir}/tmp.out" "success" 1 "delete timeseries root.treedb.g_0.nonaligned_0.s_1 result"
+        cat ${cur_dir}/tmp.out
+        ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table  -timeout 3600 -e "${v_del3}">${cur_dir}/tmp.out
+        check_res "${cur_dir}/tmp.out" "success" 1 "delete devices from tabledb_g_0.table_0 where device_id=d_0 result"
+        cat ${cur_dir}/tmp.out
         ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 3600 -e "${v_q1}">${cur_dir}/tmp.out
 	check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 1 "tree aligned expect result 1970-01-01T08:08:20"
 	cat ${cur_dir}/tmp.out
@@ -750,8 +762,22 @@ function testcase1()
 	check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 1 "tree nonaligned expect result 1970-01-01T08:08:20"
 	cat ${cur_dir}/tmp.out
         ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 3600 -e "${v_q3}">${cur_dir}/tmp.out
-	check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 1 "table expect result 1970-01-01T08:08:20"
+	check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 0 "table not expect result 1970-01-01T08:08:20"
 	cat ${cur_dir}/tmp.out
+        v_q1="select s_1 from root.treedb.g_0.aligned_0 where time >= 350000 order by time desc limit 1;"
+        v_q2="select s_1 from root.treedb.g_0.nonaligned_0 where time >= 350000 order by time desc limit 1;"
+        v_q3="select time,device_id,s_1 from tabledb_g_0.table_0 where time >= 350000 order by time desc limit 1;"
+
+        ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 3600 -e "${v_q1}">${cur_dir}/tmp.out
+        check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 0 "tree aligned not expect result 1970-01-01T08:08:20"
+        cat ${cur_dir}/tmp.out
+        ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 3600 -e "${v_q2}">${cur_dir}/tmp.out
+        check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 0 "tree nonaligned not expect result 1970-01-01T08:08:20"
+        cat ${cur_dir}/tmp.out
+        ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 3600 -e "${v_q3}">${cur_dir}/tmp.out
+        check_res "${cur_dir}/tmp.out" "1970-01-01T08:08:20" 0 "table not expect result 1970-01-01T08:08:20"
+        cat ${cur_dir}/tmp.out
+
 
 # check data
 check_data_consistent
