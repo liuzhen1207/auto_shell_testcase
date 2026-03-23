@@ -929,6 +929,7 @@ v_elp_time=$((v_end_test_time-v_start_test_time))
 # record test result
 function write_result()
 {
+backup_log_flag=1
    v_result_iotdb_ip=$(grep ^test_result_iotdb_ip "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
    v_bm_max_value=`grep "Test elapsed" ${bm_log_dir}/${bm_test_time}*out|awk '{print $8}'|sort -n|tail -1`
 

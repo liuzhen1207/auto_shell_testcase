@@ -327,7 +327,7 @@ function check_res()
         check_num=$3
         v_desc=$4
         v_act_num=`grep "${check_str}" ${check_file}|wc -l`
-        if [[ ${v_act_num} -ge ${check_num} ]];then
+        if [[ ${v_act_num} -eq ${check_num} ]];then
                 echo "check result success."
         else
                 let fail_flag++
