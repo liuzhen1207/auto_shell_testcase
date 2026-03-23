@@ -614,15 +614,20 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
    cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
    mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
-   sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.testdb.g_0.** align by device;"
+   sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.treedb.g_0.** align by device;"
    sql2="select device_id,count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from tabledb_g_0.table_0 group by device_id order by device_id;"
    exception_num=0
    # all online
    while true
    do
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
+   v_exp_num=`grep root.treedb ${cur_dir}/q_all_online_tree.out|wc -l`
    v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
    if [[ ${v_exception_num} = 0 ]];then
+      if [[ ${v_exp_num} != 50 ]];then
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}query root.treedb line number is not expected."
+      fi
 	   break
    else
            let exception_num++
@@ -637,8 +642,14 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
    while true
    do
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table.out
+   v_exp_num=`grep d_ ${cur_dir}//q_all_online_table.out|wc -l`
+   v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
    v_exception_num=`grep Exception ${cur_dir}/q_all_online_table.out|wc -l`
    if [[ ${v_exception_num} = 0 ]];then
+      if [[ ${v_exp_num} != 50 ]];then
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}query tabledb line number is not expected."
+      fi
            break
    else
            let exception_num++
