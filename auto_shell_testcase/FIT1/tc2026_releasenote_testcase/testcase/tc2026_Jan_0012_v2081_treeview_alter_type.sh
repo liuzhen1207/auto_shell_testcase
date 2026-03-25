@@ -580,6 +580,74 @@ wait_sync_done 180
       fi
       done
    done
+   # V2-396表视图（定义基于树模型非对齐设备）last查询可优化，当前实现是：没下推，且为正序scan，会扫描所有的数据。田原：对于非对齐设备，虽然聚合不能下推，但last查询，可优化为倒序查，避免扫描所有数据
+   local timeout_threshold=1
+
+   sql1="SELECT device_id, last(time), last_by(s_4, time) FROM db_g_0.table_0 WHERE (device_id = 'd1_7') GROUP BY device_id"
+   sql2="SELECT device_id, last(time), last_by(s_4, time) FROM db_g_0.table_0 WHERE (device_id = 'd2_7') GROUP BY device_id"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql1}" >${cur_dir}/tmp.out 2>&1
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql1}" >${cur_dir}/tmp.out 2>&1
+   # 检查执行是否失败（比如SQL语法错误、连接失败）
+    if [ $? -ne 0 ]; then
+        echo "ERROR: SQL执行失败！"
+	let fail_flag++
+        cat ${cur_dir}/tmp.out 
+        return 1
+    fi
+
+    # 提取耗时（匹配"It costs X.XXXs"格式）
+    cost_time=$(grep -o "It costs [0-9.]*s" ${cur_dir}/tmp.out | awk '{print $3}' | sed 's/s//g')
+
+    # 检查是否提取到耗时
+    if [ -z "${cost_time}" ]; then
+        echo "WARNING: 未找到耗时信息，输出如下："
+        cat ${cur_dir}/tmp.out
+        let fail_flag++	
+        return 1
+    fi
+
+    # 比较耗时是否超过阈值（浮点比较）
+    if (( $(echo "${cost_time} > ${timeout_threshold}" | bc -l) )); then
+        echo "ERROR: 耗时超标！耗时=${cost_time}s，阈值=${timeout_threshold}s"
+        cat ${cur_dir}/tmp.out
+        let fail_flag++	
+        return 1
+    else
+        echo "SUCCESS: 耗时正常，耗时=${cost_time}s"
+        return 0
+    fi
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/tmp.out 2>&1
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/tmp.out 2>&1
+   # 检查执行是否失败（比如SQL语法错误、连接失败）
+    if [ $? -ne 0 ]; then
+        echo "ERROR: SQL执行失败！"
+        let fail_flag++
+        cat ${cur_dir}/tmp.out
+        return 1
+    fi
+
+    # 提取耗时（匹配"It costs X.XXXs"格式）
+    cost_time=$(grep -o "It costs [0-9.]*s" ${cur_dir}/tmp.out | awk '{print $3}' | sed 's/s//g')
+
+    # 检查是否提取到耗时
+    if [ -z "${cost_time}" ]; then
+        echo "WARNING: 未找到耗时信息，输出如下："
+        cat ${cur_dir}/tmp.out
+        let fail_flag++
+        return 1
+    fi
+
+    # 比较耗时是否超过阈值（浮点比较）
+    if (( $(echo "${cost_time} > ${timeout_threshold}" | bc -l) )); then
+        echo "ERROR: 耗时超标！耗时=${cost_time}s，阈值=${timeout_threshold}s"
+        cat ${cur_dir}/tmp.out
+        let fail_flag++
+        return 1
+    else
+        echo "SUCCESS: 耗时正常，耗时=${cost_time}s"
+        return 0
+    fi
+
 }
 
 function check_log()
@@ -619,7 +687,8 @@ do
    v_err7=`ssh ${os_user_name}@${line} "grep \"StatisticsClassException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9))
+   v_err10=`ssh ${os_user_name}@${line} "grep \"RuntimeException: data type not matched\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
 
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
@@ -755,22 +824,12 @@ echo "${v_bm}"
 check_data_consistent
 #check log
 check_log
-v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
-v_backup_time=`date "+%Y_%m_%d_%H_%M_%S"`
-if [[ ${backup_data_log_flag} -gt 0 ]];then
-   sh ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time}_${v_backup_desc}
-   backup_log_flag=0  
-fi
-if [[ ${backup_log_flag} -gt 0 ]];then
-	v_backup_time=`date +%s`
-    sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc} 
-fi
-   if [[ ${fail_flag} -gt 0 ]];then
-	   echo "testcase1 fail"
-   else
-	   echo "testcase1 pass"
-
-   fi
+#v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
+#v_backup_time=`date "+%Y_%m_%d_%H_%M_%S"`
+#if [[ ${backup_data_log_flag} -gt 0 ]];then
+#   sh ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time}_${v_backup_desc}
+#   backup_log_flag=0  
+#fi
 }
 # start cluster 
 echo "">${log_file}
@@ -801,6 +860,9 @@ function write_result()
            echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},FAIL,${v_elp_time},${v_warnNum},${v_warnMessage},${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"
 
            echo "testcase1 fail"
+	   v_backup_time=`date +%s`
+	   v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
+	   sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc}
    else
            echo "testcase1 pass"
 #           echo "${test_time},'${testdb}','${v_consensus}','${SCRIPT_NAME}','PASS',${v_elp_time},${v_warnNum},'${v_warnMessage}',${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"

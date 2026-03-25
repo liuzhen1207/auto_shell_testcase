@@ -17,24 +17,17 @@ clean_env_dir="${cur_dir}/../clean_env"
 prepare_env_dir="${cur_dir}/../prepare_env"
 cn_num=3
 dn_num=3
+dr_rep_num=2
+sr_rep_num=3
+total_node_num=$((cn_num+dn_num))
 v_warnNum=0
 v_warnMessage="."
-v_consensus="IoTConsensus"
-
-dr_rep_num=1
-sr_rep_num=1
-total_node_num=$((cn_num+dn_num))
+v_consensus="IoTConsensusV2"
+CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
 data3_dir="/data3/iotdb_data/${testdb}/data"
-ssl_str=""
-CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-log_file="${cur_dir}/set_conf_parallel.log"
-v_sys_super_user=sys_admin
-v_sec_super_user=security_admin
-backup_log_flag=0
-backup_data_log_flag=0
-
+v_sec_super_user="security_admin"
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -64,11 +57,11 @@ clean_env() {
    sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
    sh -x "${clean_env_dir}/clean_cluster.sh" >> "${log_file}" 2>&1
    sh -x "${clean_env_dir}/reset_conf.sh" >> "${log_file}" 2>&1
-   sh -x "${clean_env_dir}/clear_cache.sh" >> "${log_file}" 2>&1
    if [ $? -eq 0 ]; then
        log "INFO" "集群环境清理完成"
    else
        log "ERROR" "集群环境清理失败"
+       fail_flag=1
    fi
 }
 
@@ -99,17 +92,24 @@ configure_confignode() {
         batch_set_sys_conf ".*cn_seed_config_node=.*" "cn_seed_config_node=${seed_cn_ip}"
         batch_set_sys_conf ".*cn_internal_address=.*" "cn_internal_address=${node_ip}"
         batch_set_sys_conf ".*cn_metric_reporter_list=.*" "cn_metric_reporter_list=PROMETHEUS"
+        batch_set_sys_conf ".*cn_metric_level=.*" "cn_metric_level=IMPORTANT"
         batch_set_sys_conf ".*cn_metric_prometheus_reporter_port=.*" "cn_metric_prometheus_reporter_port=9081"
-        batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
-        batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
-        batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
-
+        batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=3"
+        batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=2"
+        batch_set_sys_conf ".*schema_region_group_extension_policy=.*" "schema_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*data_region_group_extension_policy=.*" "data_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=1"
+        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=1"
+        batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
+        batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
+batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=true"
 EOF
 
     if [ $? -eq 0 ]; then
         log "INFO" "ConfigNode ${node_ip} 配置完成"
     else
         log "ERROR" "ConfigNode ${node_ip} 配置失败"
+        fail_flag=1
         return 1
     fi
 }
@@ -127,8 +127,8 @@ configure_datanode() {
     # 整合所有DataNode修改命令，一次SSH执行
     ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
         # 修改env.sh配置
-        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="16G"/g' ${db_dir}/conf/datanode-env.sh
-        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="4G"/g' ${db_dir}/conf/datanode-env.sh
+        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="20G"/g' ${db_dir}/conf/datanode-env.sh
+        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="2G"/g' ${db_dir}/conf/datanode-env.sh
         
         # 定义批量修改函数
         batch_set_sys_conf() {
@@ -147,11 +147,16 @@ configure_datanode() {
         batch_set_sys_conf ".*dn_internal_address=.*" "dn_internal_address=${node_ip}"
         batch_set_sys_conf ".*dn_rpc_address=.*" "dn_rpc_address=${node_ip}"
         batch_set_sys_conf ".*dn_metric_reporter_list=.*" "dn_metric_reporter_list=PROMETHEUS"
-        batch_set_sys_conf ".*dn_metric_prometheus_reporter_port=.*" "dn_metric_prometheus_reporter_port=9091"
-        batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
-        batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
-        batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
-
+        batch_set_sys_conf ".*dn_metric_level=.*" "dn_metric_level=IMPORTANT"
+        batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=3"
+        batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=2"
+        batch_set_sys_conf ".*schema_region_group_extension_policy=.*" "schema_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*data_region_group_extension_policy=.*" "data_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=1"
+        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=1"
+        batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
+        batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
+batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=true"
 EOF
 
     # 处理坏盘节点目录配置
@@ -163,7 +168,6 @@ EOF
 EOF
     else
         ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
-
             file="${db_dir}/conf/iotdb-system.properties"
             sed -i 's|.*dn_data_dirs=.*|dn_data_dirs=data/datanode/data,/data1/iotdb_data/${testdb}/data/datanode/data,/data3/iotdb_data/${testdb}/data/datanode/data|g' \$file
             sed -i 's|.*dn_wal_dirs=.*|dn_wal_dirs=data/datanode/wal,/data1/iotdb_data/${testdb}/data/datanode/wal,/data3/iotdb_data/${testdb}/data/datanode/wal|g' \$file
@@ -174,6 +178,7 @@ EOF
         log "INFO" "DataNode ${node_ip} 配置完成"
     else
         log "ERROR" "DataNode ${node_ip} 配置失败"
+        fail_flag=1
         return 1
     fi
 }
@@ -273,6 +278,7 @@ set_conf() {
             log "INFO" "进程PID ${pid} 执行成功"
         else
             log "ERROR" "进程PID ${pid} 执行失败"
+            fail_flag=1
         fi
     done
 
@@ -290,43 +296,12 @@ set_conf() {
 start_db() {
    log "INFO" "开始启动数据库集群..."
    # 清理环境
-cn_num=3
-dn_num=3
-total_node_num=$((cn_num+dn_num))
-# 清理旧节点文件，复制新配置
-rm -rf "${nodeinfo_dir}/confignode.txt"
-rm -rf "${nodeinfo_dir}/datanode.txt"
-cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
-cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
-
    clean_env
-cn_num=1
-dn_num=4
-total_node_num=$((cn_num+dn_num))
-# 清理旧节点文件，复制新配置
-rm -rf "${nodeinfo_dir}/confignode.txt"
-rm -rf "${nodeinfo_dir}/datanode.txt"
-cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
-cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
-   clean_env
-
    if [ ${fail_flag} -eq 1 ]; then
        log "ERROR" "环境清理失败，终止启动流程"
        exit 1
    fi
-  # 1C1D
-cn_num=1
-dn_num=1
-total_node_num=$((cn_num+dn_num))
-# 清理旧节点文件，复制新配置
-rm -rf "${nodeinfo_dir}/confignode.txt"
-rm -rf "${nodeinfo_dir}/datanode.txt"
-cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
-cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
-# 读取种子节点IP（兼容低版本）
-seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
-query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
-
+   
    # 配置节点
    set_conf
    if [ ${fail_flag} -eq 1 ]; then
@@ -335,36 +310,33 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
    fi
    
    # 启动集群
-   sh -x "${prepare_env_dir}/start_cluster_v20.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
+   sh -x "${prepare_env_dir}/start_cluster_v20_power.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
    if [ $? -eq 0 ]; then
        log "INFO" "集群启动成功"
    else
        log "ERROR" "集群启动失败"
-       let fail_flag++
+       fail_flag=1
        exit 1
    fi
 }
-function load_tsfile()
-{
-	${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "show cluster;"
-	${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "show variables;"
-tsfile_dir=${cur_dir}/../load_tsfile/jan_0010/tsfile
-${cli_dir}/./tools/import-data.sh -ft tsfile -h ${query_ip} -p 6667 -u root -pw TimechoDB@2021    -s ${tsfile_dir} -os none -of none       -tn 1 -tz +08:00 -tp ms >${cur_dir}/tmp.out
-cat ${cur_dir}/tmp.out
 
-}
-function start_query()
+# testcase1 delete 1 row in memtable
+function testcase1()
 {
-iotdb_sql_dir=${cur_dir}/../tools/iotdb-sql_jan_0010
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "set sql_dialect=table;create database db;use db;create view AA5 (sensor_id STRING TAG, value float field) AS root.reactor.system1.techSystem1.DX.HYH_W3.AA5.**;create view AA6 (sensor_id STRING TAG, value float field) AS root.reactor.system1.techSystem1.DX.HYH_W3.AA5.**;">${cur_dir}/tmp.out
+	fail_flag=0
+#create table
+v_t1=`date +%s`
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -sql_dialect table -e "list privileges of user  who_is_not_exist;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -sql_dialect tree -e "list privileges of user  who_is_not_exist;">>${cur_dir}/tmp.out
+v_t2=`date +%s`
 cat ${cur_dir}/tmp.out
-view_count=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -timeout 36000 -e 'select count(*) as count_count_count from db.aa5;'|grep "|  "|awk -F '|' '{gsub(" ","");print $2}'`
-if [[ ${view_count} = 339557195 ]];then
-${iotdb_sql_dir}/test.sh
-else
-   let fail_flag++
-        echo "count result is not expected."
+v_exp_num=$(grep "No such user" ${cur_dir}/tmp.out|wc -l)
+if [[ ${v_exp_num} != 2 ]];then
+let fail_flag++
+v_warnMessage="${v_warnMessage}unexpected msg."
 fi
+v_t_elp=$((v_t2-v_t1))
+echo "list cost: ${v_t_elp} seconds"
 
 }
 function check_log()
@@ -405,9 +377,7 @@ do
    v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err10=`ssh ${os_user_name}@${line} "grep \"RuntimeException: data type not matched\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err11=`ssh ${os_user_name}@${line} "grep ArithmeticException ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_warn12=`ssh ${os_user_name}@${line} "grep \"UnsupportedOperationException: org.apache.tsfile.read.common.block.column.FloatColumn\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_warn12))
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
 
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
@@ -418,7 +388,7 @@ do
    if [[ ${v_dn_total_err} -gt 0 ]];then
            let fail_flag++
            let backup_log_flag++
-           v_warnMessage="${v_warnMessage}DN unexpected log."
+           v_warnMessage="${v_warnMessage}DN unexp log."
            echo "DN ${line} has error: ${v_dn_total_err}"
    fi
 
@@ -427,46 +397,17 @@ done
 
 }
 
-# testcase1
-function testcase1()
-{
-	echo "testcase1 at `date "+%Y-%m-%d %H:%M:%S"`"
-# export ddl
-v_exp_res=${cur_dir}/tc2026_Jan_0010_exp.sql
->${cur_dir}/dump_db.sql
-${cli_dir}/tools/schema/export-schema.sh -h ${query_ip} -p 6667 -sql_dialect table -db db -t ${cur_dir}/
-v_diff=`diff ${cur_dir}/tc2026_Jan_0010_exp.sql ${cur_dir}/dump_db.sql|wc -l`
-if [[ ${v_diff} -gt 0 ]];then
-let fail_flag++
-           v_warnMessage="${v_warnMessage}export ddl is not expected."
-
-fi
-# check res
-
-	check_log
-   if [[ ${fail_flag} -gt 0 ]];then
-	   echo "testcase1 fail"
-   else
-	   echo "testcase1 pass"
-
-   fi
-}
 # start cluster 
 start_db
 v_start_test_time=`date +%s`
-load_tsfile
-start_query
 testcase1
+check_log
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
-
 # record test result
 function write_result()
 {
         test_time=$(date +"%Y-%m-%dT%H:%M:%S.%3N%:z")
-   v_bm_max_value=0
-
-   v_bm_sum_value=0
    # 写入表头
    v_exist_flag=`grep Time,testTimechoDB $CSV_FILE|wc -l`
    if [[ ${v_exist_flag} -gt 0 ]];then
@@ -476,22 +417,16 @@ function write_result()
    fi
    if [[ ${fail_flag} -gt 0 ]];then
 #           echo "${test_time},'${testdb}','${v_consensus}','${SCRIPT_NAME}','FAIL',${v_elp_time},${v_warnNum},'${v_warnMessage}',${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"
-           echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},FAIL,${v_elp_time},${v_warnNum},${v_warnMessage},${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"
+           echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},FAIL,${v_elp_time},${v_warnNum},${v_warnMessage},null,null">>"$CSV_FILE"
 
            echo "testcase1 fail"
-           v_backup_time=`date +%s`
-           v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
-           sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc}
    else
            echo "testcase1 pass"
 #           echo "${test_time},'${testdb}','${v_consensus}','${SCRIPT_NAME}','PASS',${v_elp_time},${v_warnNum},'${v_warnMessage}',${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"
-           echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},PASS,${v_elp_time},${v_warnNum},${v_warnMessage},${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"
+           echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},PASS,${v_elp_time},${v_warnNum},${v_warnMessage},null,null">>"$CSV_FILE"
 
 # remove bm logs
 #        rm -rf ${bm_log_dir}/${t}_bm.out
-v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
-v_backup_time=`date "+%Y_%m_%d_%H_%M_%S"`
-sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc}
    fi
 
 }

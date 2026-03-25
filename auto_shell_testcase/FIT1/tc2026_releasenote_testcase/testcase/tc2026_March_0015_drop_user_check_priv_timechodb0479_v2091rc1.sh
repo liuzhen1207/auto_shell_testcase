@@ -17,24 +17,19 @@ clean_env_dir="${cur_dir}/../clean_env"
 prepare_env_dir="${cur_dir}/../prepare_env"
 cn_num=3
 dn_num=3
+dr_rep_num=2
+sr_rep_num=3
+total_node_num=$((cn_num+dn_num))
 v_warnNum=0
 v_warnMessage="."
 v_consensus="IoTConsensus"
-
-dr_rep_num=1
-sr_rep_num=1
-total_node_num=$((cn_num+dn_num))
+CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
 data3_dir="/data3/iotdb_data/${testdb}/data"
 ssl_str=""
-CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-log_file="${cur_dir}/set_conf_parallel.log"
-v_sys_super_user=sys_admin
-v_sec_super_user=security_admin
 backup_log_flag=0
 backup_data_log_flag=0
-
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -47,6 +42,9 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 
 fail_flag=0
 test_begin_sec=$(date +%s)
+
+max_concurrent=7     # 最大并发数，根据数据库性能调整（建议5-10）
+
 
 # ===================== 工具函数 =====================
 # 日志输出函数（带时间戳）
@@ -103,6 +101,11 @@ configure_confignode() {
         batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
         batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
+        batch_set_sys_conf ".*schema_region_group_extension_policy=.*" "schema_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*data_region_group_extension_policy=.*" "data_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=5"
+        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=5"
+        batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 EOF
 
@@ -127,8 +130,8 @@ configure_datanode() {
     # 整合所有DataNode修改命令，一次SSH执行
     ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
         # 修改env.sh配置
-        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="16G"/g' ${db_dir}/conf/datanode-env.sh
-        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="4G"/g' ${db_dir}/conf/datanode-env.sh
+        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="20G"/g' ${db_dir}/conf/datanode-env.sh
+        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="2G"/g' ${db_dir}/conf/datanode-env.sh
         
         # 定义批量修改函数
         batch_set_sys_conf() {
@@ -151,6 +154,11 @@ configure_datanode() {
         batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
         batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
+        batch_set_sys_conf ".*schema_region_group_extension_policy=.*" "schema_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*data_region_group_extension_policy=.*" "data_region_group_extension_policy=CUSTOM"
+        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=5"
+        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=5"
+        batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 EOF
 
@@ -163,6 +171,9 @@ EOF
 EOF
     else
         ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
+        # 修改env.sh配置
+        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="20G"/g' ${db_dir}/conf/datanode-env.sh
+        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="4G"/g' ${db_dir}/conf/datanode-env.sh
 
             file="${db_dir}/conf/iotdb-system.properties"
             sed -i 's|.*dn_data_dirs=.*|dn_data_dirs=data/datanode/data,/data1/iotdb_data/${testdb}/data/datanode/data,/data3/iotdb_data/${testdb}/data/datanode/data|g' \$file
@@ -191,7 +202,6 @@ configure_mixed_node() {
 
 # ===================== 主配置函数（完全兼容低版本Bash） =====================
 set_conf() {
-    > "${log_file}"
     log "INFO" "开始并行配置所有节点（适配同IP场景）..."
 
     # -------------------- 步骤1：用临时文件读取节点IP（替代进程替换） --------------------
@@ -291,8 +301,7 @@ start_db() {
    log "INFO" "开始启动数据库集群..."
    # 清理环境
 cn_num=3
-dn_num=3
-total_node_num=$((cn_num+dn_num))
+dn_num=4
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -300,23 +309,21 @@ cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.t
 cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
 
    clean_env
+
 cn_num=1
 dn_num=4
-total_node_num=$((cn_num+dn_num))
-# 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
 cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
 cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
-   clean_env
-
+clean_env
    if [ ${fail_flag} -eq 1 ]; then
        log "ERROR" "环境清理失败，终止启动流程"
-       exit 1
+#       exit 1
    fi
-  # 1C1D
-cn_num=1
-dn_num=1
+  # 1C4D
+cn_num=3
+dn_num=3
 total_node_num=$((cn_num+dn_num))
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
@@ -344,29 +351,7 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
        exit 1
    fi
 }
-function load_tsfile()
-{
-	${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "show cluster;"
-	${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "show variables;"
-tsfile_dir=${cur_dir}/../load_tsfile/jan_0010/tsfile
-${cli_dir}/./tools/import-data.sh -ft tsfile -h ${query_ip} -p 6667 -u root -pw TimechoDB@2021    -s ${tsfile_dir} -os none -of none       -tn 1 -tz +08:00 -tp ms >${cur_dir}/tmp.out
-cat ${cur_dir}/tmp.out
 
-}
-function start_query()
-{
-iotdb_sql_dir=${cur_dir}/../tools/iotdb-sql_jan_0010
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "set sql_dialect=table;create database db;use db;create view AA5 (sensor_id STRING TAG, value float field) AS root.reactor.system1.techSystem1.DX.HYH_W3.AA5.**;create view AA6 (sensor_id STRING TAG, value float field) AS root.reactor.system1.techSystem1.DX.HYH_W3.AA5.**;">${cur_dir}/tmp.out
-cat ${cur_dir}/tmp.out
-view_count=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -timeout 36000 -e 'select count(*) as count_count_count from db.aa5;'|grep "|  "|awk -F '|' '{gsub(" ","");print $2}'`
-if [[ ${view_count} = 339557195 ]];then
-${iotdb_sql_dir}/test.sh
-else
-   let fail_flag++
-        echo "count result is not expected."
-fi
-
-}
 function check_log()
 {
 exec 3<${nodeinfo_dir}/confignode.txt
@@ -377,16 +362,16 @@ do
    v_cn_err1=`ssh ${os_user_name}@${line} "grep BufferUnderflowException ${db_dir}/logs/*confignode*all*|wc -l"`
    v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
    if [[ ${v_npe} -gt 0 ]];then
-           let fail_flag++
-           let backup_log_flag++
-           echo "CN ${line} NullPointer : ${v_npe}"
-           v_warnMessage="${v_warnMessage}CN NPE."
+	   let fail_flag++
+	   let backup_log_flag++
+	   echo "CN ${line} NullPointer : ${v_npe}"
+	   v_warnMessage="${v_warnMessage}CN NPE." 
    fi
    v_cn_err_total=$((v_cn_err1+v_cn_err2))
    if [[ ${v_cn_err_total} -gt 0 ]];then
            let fail_flag++
            let backup_log_flag++
-           v_warnMessage="${v_warnMessage}CN HAS_MORE_STATE."
+	   v_warnMessage="${v_warnMessage}CN HAS_MORE_STATE." 
            echo "CN ${line} has error: ${v_npe}"
    fi
 done
@@ -405,57 +390,190 @@ do
    v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err10=`ssh ${os_user_name}@${line} "grep \"RuntimeException: data type not matched\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err11=`ssh ${os_user_name}@${line} "grep ArithmeticException ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_warn12=`ssh ${os_user_name}@${line} "grep \"UnsupportedOperationException: org.apache.tsfile.read.common.block.column.FloatColumn\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_warn12))
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
 
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
-           let backup_log_flag++
-           v_warnMessage="${v_warnMessage}DN NPE."
+	   let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}DN NPE." 
            echo "DN ${line} NullPointer : ${v_npe}"
    fi
    if [[ ${v_dn_total_err} -gt 0 ]];then
-           let fail_flag++
-           let backup_log_flag++
-           v_warnMessage="${v_warnMessage}DN unexpected log."
-           echo "DN ${line} has error: ${v_dn_total_err}"
+	   let fail_flag++
+	   let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}DN unexp log." 
+	   echo "DN ${line} has error: ${v_dn_total_err}"
    fi
 
 done
 
 
 }
+function check_res()
+{
+	v_exp_msg=$1
+	v_exp_num=$2
+	v_act_num=$(grep ${v_exp_msg} ${cur_dir}/tmp.out|wc -l)
+	if [[ ${v_act_num} = ${v_exp_num} ]];then
+		echo "pass"
+	else
+		let fail_flag++
+                v_warnMessage="${v_warnMessage}check_res ${v_exp_msg} exp num=${v_exp_num} failed."
 
-# testcase1
+	fi
+}
 function testcase1()
 {
-	echo "testcase1 at `date "+%Y-%m-%d %H:%M:%S"`"
-# export ddl
-v_exp_res=${cur_dir}/tc2026_Jan_0010_exp.sql
->${cur_dir}/dump_db.sql
-${cli_dir}/tools/schema/export-schema.sh -h ${query_ip} -p 6667 -sql_dialect table -db db -t ${cur_dir}/
-v_diff=`diff ${cur_dir}/tc2026_Jan_0010_exp.sql ${cur_dir}/dump_db.sql|wc -l`
-if [[ ${v_diff} -gt 0 ]];then
-let fail_flag++
-           v_warnMessage="${v_warnMessage}export ddl is not expected."
+    # 定义测试变量
+    local test_user="lily"
+    local test_pwd_old="TimechoDB@2021"
+    local test_pwd_new="TimechoDB@2022"
+    local test_priv="SYSTEM"
+    local test_scope="root.**"
+    local session1_pipe="/tmp/iotdb_session1.fifo"
+    local session1_log="/tmp/iotdb_session1.log"
+    local first_user_id=""
+    local second_user_id=""
 
-fi
-# check res
+    # 清理旧资源
+    rm -f "${session1_pipe}" "${session1_log}" "${cur_dir}/tmp.out" "${cur_dir}/tmp_check.out" "${cur_dir}/user_id.tmp"
+    mkfifo "${session1_pipe}"
 
-	check_log
-   if [[ ${fail_flag} -gt 0 ]];then
-	   echo "testcase1 fail"
-   else
-	   echo "testcase1 pass"
+    # root 创建用户 + 授权
+    ${cli_dir}/sbin/start-cli.sh -h "${query_ip}" -e "create user ${test_user} '${test_pwd_old}';">${cur_dir}/tmp.out
+    check_res "success" 1
+    ${cli_dir}/sbin/start-cli.sh -h "${query_ip}" -e "grant system,ALL on root.** to user ${test_user};">${cur_dir}/tmp.out
+    check_res "success" 1
 
-   fi
+    # ======================
+    # 步骤0：记录第一次创建的 UserId
+    # ======================
+    ${cli_dir}/sbin/start-cli.sh -u "${db_user_name}" -h "${query_ip}" -e "LIST USER;" > "${cur_dir}/user_id.tmp"
+    first_user_id=$(grep "${test_user}" "${cur_dir}/user_id.tmp" | awk -F '|' '{print $2}' | tr -d ' ')
+    echo "第一次创建用户 ${test_user} 的 UserId: ${first_user_id}"
+
+    if [[ -z "${first_user_id}" ]]; then
+        echo "错误：无法获取第一次创建的 UserId"
+        let fail_flag++
+	cat ${cur_dir}/user_id.tmp
+        v_warnMessage="${v_warnMessage}无法获取第一次创建的UserId"
+        return 1
+    fi
+
+    # ======================
+    # 启动 lily 持久连接（session-1）
+    # ======================
+    (
+        "${cli_dir}/sbin/start-cli.sh" \
+            -u "${test_user}" \
+            -pw "${test_pwd_old}" \
+            -h "${query_ip}" \
+            ${ssl_str} \
+            -sql_dialect table \
+            < "${session1_pipe}" >> "${session1_log}" 2>&1
+    ) &
+    local session1_pid=$!
+    sleep 4
+
+    # ======================
+    # 步骤1：验证权限正常
+    # ======================
+    echo "LIST privileges of user ${test_user};" >> "${session1_pipe}"
+    sleep 2
+
+    # 打印日志（调试用）
+    echo "========================================"
+    echo "【DEBUG】会话日志内容如下："
+    cat "${session1_log}"
+    echo "========================================"
+
+    # 检查结果
+    session1_step3_result=$(grep -E "(SYSTEM|Total line number)" "${session1_log}" | tail -10)
+    if echo "${session1_step3_result}" | grep -q "${test_priv}"; then
+        echo "session-1 权限验证成功"
+    else
+        echo "session-1 权限验证失败"
+        echo "失败日志：$session1_step3_result"
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}权限验证失败"
+        kill ${session1_pid} >/dev/null 2>&1
+        rm -f "${session1_pipe}" "${session1_log}" "${cur_dir}/user_id.tmp"
+        return 1
+    fi
+
+    # ======================
+    # 步骤2：root 删除用户
+    # ======================
+    ${cli_dir}/sbin/start-cli.sh -u "${db_user_name}" -h "${query_ip}" -sql_dialect table -e "DROP USER ${test_user};"
+    sleep 2
+
+    # ======================
+    # 判断：旧CLI是否被服务器断开
+    # ======================
+    if ps -p ${session1_pid} > /dev/null; then
+        echo "警告：用户删除后会话未断开"
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}用户删除后会话未自动断开"
+        kill ${session1_pid} >/dev/null 2>&1
+    else
+        echo "预期结果：用户删除后，会话已被服务器断开"
+    fi
+
+    # ======================
+    # 步骤3：重建用户，用 NEW CLI 验证
+    # ======================
+    ${cli_dir}/sbin/start-cli.sh -u "${db_user_name}" -h "${query_ip}" -e "CREATE USER ${test_user} '${test_pwd_new}';"
+    ${cli_dir}/sbin/start-cli.sh -u "${db_user_name}" -h "${query_ip}" -e "grant ${test_priv} on ${test_scope} to user ${test_user};"
+    sleep 1
+
+    # 记录重建后的 UserId
+    ${cli_dir}/sbin/start-cli.sh -u "${db_user_name}" -h "${query_ip}" -e "LIST USER;" > "${cur_dir}/user_id.tmp"
+    second_user_id=$(grep "${test_user}" "${cur_dir}/user_id.tmp" | awk -F '|' '{print $2}' | tr -d ' ')
+    echo "重建后用户 ${test_user} 的 UserId: ${second_user_id}"
+
+    if [[ -z "${second_user_id}" ]]; then
+        echo "错误：无法获取重建后的 UserId"
+        let fail_flag++
+	cat ${cur_dir}/user_id.tmp
+        v_warnMessage="${v_warnMessage}无法获取重建后的UserId"
+    elif [[ "${first_user_id}" == "${second_user_id}" ]]; then
+        echo "错误：重建前后 UserId 相同（${first_user_id}），不符合预期"
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}重建前后UserId相同"
+    else
+        echo "✅ 重建前后 UserId 不同（${first_user_id} → ${second_user_id}），符合预期"
+    fi
+
+    # 新CLI验证权限
+    ${cli_dir}/sbin/start-cli.sh -u ${test_user} -pw ${test_pwd_new} -h ${query_ip} -e "LIST PRIVILEGES of user ${test_user};" > ${cur_dir}/tmp_check.out
+    if grep -q "SYSTEM" ${cur_dir}/tmp_check.out; then
+        echo "新用户会话权限正常"
+    else
+        echo "新用户会话权限异常"
+        cat ${cur_dir}/tmp_check.out
+        let fail_flag++
+    fi
+
+    # ======================
+    # 最终清理
+    # ======================
+    kill ${session1_pid} >/dev/null 2>&1
+    rm -f "${session1_pipe}" "${session1_log}" ${cur_dir}/tmp_check.out ${cur_dir}/tmp.out "${cur_dir}/user_id.tmp"
+    ${cli_dir}/sbin/start-cli.sh -u "${db_user_name}" -h "${query_ip}" -e "DROP USER ${test_user};"
+
+    check_log
+
+    if [ ${fail_flag} -eq 0 ]; then
+        echo "===== testcase1 执行完成: PASS ====="
+    else
+        echo "===== testcase1 执行完成: FAIL ====="
+    fi
 }
 # start cluster 
+echo "">${log_file}
 start_db
 v_start_test_time=`date +%s`
-load_tsfile
-start_query
+
 testcase1
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
@@ -479,9 +597,9 @@ function write_result()
            echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},FAIL,${v_elp_time},${v_warnNum},${v_warnMessage},${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"
 
            echo "testcase1 fail"
-           v_backup_time=`date +%s`
-           v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
-           sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc}
+	   v_backup_time=`date +%s`
+	   v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
+	   sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc}
    else
            echo "testcase1 pass"
 #           echo "${test_time},'${testdb}','${v_consensus}','${SCRIPT_NAME}','PASS',${v_elp_time},${v_warnNum},'${v_warnMessage}',${v_bm_max_value},${v_bm_sum_value}">>"$CSV_FILE"

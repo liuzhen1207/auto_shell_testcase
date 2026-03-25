@@ -11,7 +11,7 @@ db_dir=${db_parent_dir}/${testdb}
 function stop_cluster()
 {
 # stop all dn
-exec 3<${cur_dir}/../conf/datanode.txt
+exec 3<${cur_dir}/../conf/datanode_4d.txt
 while read line <&3
 do
         ssh ${os_user_name}@${line} "source /etc/profile;sudo ${db_dir}/sbin/stop-datanode.sh"
@@ -32,7 +32,7 @@ do
           fi
         done
 done
-exec 3<${cur_dir}/../conf/confignode.txt
+exec 3<${cur_dir}/../conf/confignode_3c.txt
 while read line <&3
 do
 
@@ -54,6 +54,30 @@ do
           fi
         done
 done
+
+exec 3<${cur_dir}/../conf/confignode_1c.txt
+while read line <&3
+do
+
+        ssh ${os_user_name}@${line} "source /etc/profile;sudo ${db_dir}/sbin/stop-confignode.sh"
+        t1=`date +%s`
+        while true
+        do
+          cn_pid_str=`ssh ${os_user_name}@${line} "source /etc/profile;sudo jps|grep -i confignode"`
+          cn_pid=`echo ${cn_pid_str}|awk '{print $1}'`
+          if [[ "${cn_pid}" -gt 0 ]];then
+             sleep 2
+          else
+             break
+          fi
+          t2=`date +%s`
+          t=$((t2-t1))
+          if [[ ${t} -gt 180 ]];then
+             ssh ${os_user_name}@${line} "source /etc/profile;sudo kill -9 ${cn_pid}"
+          fi
+        done
+done
+
 
 #stop local bm
 jps|grep App|awk '{print "kill -9 "$1}'|sh

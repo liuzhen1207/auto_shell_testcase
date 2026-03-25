@@ -431,9 +431,8 @@ v_sql_ins_100="INSERT INTO db1.t_no_obj(time, device_id, color, age, department,
 echo "${v_sql_ins_100}"
 #${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e <${cur_dir}/${SQL_FILE}
 v_ins1=`date +%s`
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "${v_sql_ins_100}">${cur_dir}/tmp1.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "${v_sql_ins_100}"
 v_ins2=`date +%s`
-cat ${cur_dir}/tmp1.out
 v_ins_elp=$((v_ins2-v_ins1))
 echo "insert 100 rows cost: ${v_ins_elp} seconds."
 sleep 1

@@ -18,7 +18,7 @@ exec 3<${cur_dir}/../conf/datanode.txt
 while read line <&3
 do
   if ssh ${os_user_name}@${line} test -d ${db_dir}/logs; then
-     ssh ${os_user_name}@${line} "source /etc/profile;sudo mv ${db_dir}/logs ${db_dir}/logs_${desc}"
+     ssh ${os_user_name}@${line} "source /etc/profile;sudo cp -rp ${db_dir}/logs ${db_dir}/logs_${desc}"
   fi
 
 done
@@ -27,7 +27,7 @@ exec 3<${cur_dir}/../conf/confignode.txt
 while read line <&3
 do
   if ssh ${os_user_name}@${line} test -d ${db_dir}/logs; then
-     ssh ${os_user_name}@${line} "source /etc/profile;sudo mv ${db_dir}/logs ${db_dir}/logs_${desc}"
+     ssh ${os_user_name}@${line} "source /etc/profile;sudo cp -rp ${db_dir}/logs ${db_dir}/logs_${desc}"
   fi
 
 done

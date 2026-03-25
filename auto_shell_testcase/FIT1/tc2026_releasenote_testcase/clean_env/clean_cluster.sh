@@ -15,7 +15,7 @@ data3_dir="/data3/iotdb_data/${testdb}/data"
 function clean_cluster()
 {
 
-exec 3<${cur_dir}/../conf/datanode.txt
+exec 3<${cur_dir}/../conf/datanode_4d.txt
 while read line <&3
 do
   if ssh ${os_user_name}@${line} test -d ${db_dir}/data; then
@@ -33,7 +33,7 @@ do
 
 done
 
-exec 3<${cur_dir}/../conf/confignode.txt
+exec 3<${cur_dir}/../conf/confignode_3c.txt
 while read line <&3
 do
   if ssh ${os_user_name}@${line} test -d ${db_dir}/data; then
@@ -50,6 +50,25 @@ do
   fi
 
 done
+
+exec 3<${cur_dir}/../conf/confignode_1c.txt
+while read line <&3
+do
+  if ssh ${os_user_name}@${line} test -d ${db_dir}/data; then
+     ssh ${os_user_name}@${line} "source /etc/profile;sudo rm -rf ${db_dir}/data"
+  fi
+  if ssh ${os_user_name}@${line} test -d ${db_dir}/logs; then
+     ssh ${os_user_name}@${line} "source /etc/profile;sudo rm -rf ${db_dir}/logs"
+  fi
+  if ssh ${os_user_name}@${line} test -d ${data1_dir}; then
+     ssh ${os_user_name}@${line} "source /etc/profile;sudo rm -rf ${data1_dir}"
+  fi
+  if ssh ${os_user_name}@${line} test -d ${data3_dir}; then
+     ssh ${os_user_name}@${line} "source /etc/profile;sudo rm -rf ${data3_dir}"
+  fi
+
+done
+
 
 }
 clean_cluster
