@@ -26,9 +26,12 @@ done
 exec 3<${cur_dir}/../conf/confignode.txt
 while read line <&3
 do
+	v_same_ip=`grep ${line} ${cur_dir}/../conf/datanode.txt|wc -l`
+	if [[ ${v_same_ip} = 0 ]];then
   if ssh ${os_user_name}@${line} test -d ${db_dir}/logs; then
      ssh ${os_user_name}@${line} "source /etc/profile;sudo cp -rp ${db_dir}/logs ${db_dir}/logs_${desc}"
   fi
+	fi
 
 done
 

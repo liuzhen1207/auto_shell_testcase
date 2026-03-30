@@ -1199,14 +1199,25 @@ function write_result()
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
    fi
 
+backup_log_flag=1
+# remove bm logs
+#        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm1.out
+#        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm2.out
+#        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm1.out
+#        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm2.out
+#        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm1.out
+#        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
+#   fi
+
 # backup logs?
-#if [[ ${backup_log_flag} -gt 0 ]];then
-## stop cluster
-#v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
-#v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
-#sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
-#sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
-#
-#fi 
+if [[ ${backup_log_flag} -gt 0 ]];then
+# stop cluster
+v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
+v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
+sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
+sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
+
+fi
+
 }
 write_result

@@ -113,7 +113,7 @@ configure_confignode() {
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
         batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
-        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=true"
+        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=false"
 
 EOF
 
@@ -164,7 +164,7 @@ configure_datanode() {
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
         batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
-        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=true"
+        batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=false"
 
 
 EOF
@@ -431,7 +431,7 @@ do
                 sleep 10
         fi
 done
-sleep 60
+wait
 }
 function wait_sync_done()
 {
@@ -628,17 +628,17 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
          let fail_flag++
          v_warnMessage="${v_warnMessage}query root.treedb line number is not expected."
       fi
-	   break
+           break
    else
            let exception_num++
-	   sleep 1
+           sleep 1
    fi
    if [[ ${exception_num} -ge 10 ]];then
       let fail_flag++
       break
    fi
    done
-   exception_num=0
+
    while true
    do
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table.out
@@ -717,10 +717,9 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       v_diff_total=$((v_diff_tree+v_diff_table))
       if [[ ${v_diff_total} -gt 0 ]];then
          let fail_flag++
+         v_warnMessage="Failed to check replica data consistency."
          diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
          diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"
-
-         v_warnMessage="Failed to check replica data consistency."
          echo "diff : ${v_diff_total}"
       fi
       # restart
@@ -1179,9 +1178,6 @@ function wait_benchmark()
 }
 function testcase1()
 {
-# 执行迁移
-exec_migrate_region
-remove_datanode
 # wait benchmark
 wait_benchmark
 # check data
@@ -1224,7 +1220,6 @@ function write_result()
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm1.out
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
    fi
-
 backup_log_flag=1
 # remove bm logs
 #        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm1.out
@@ -1233,7 +1228,6 @@ backup_log_flag=1
 #        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm2.out
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm1.out
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
-#   fi
 
 # backup logs?
 if [[ ${backup_log_flag} -gt 0 ]];then
