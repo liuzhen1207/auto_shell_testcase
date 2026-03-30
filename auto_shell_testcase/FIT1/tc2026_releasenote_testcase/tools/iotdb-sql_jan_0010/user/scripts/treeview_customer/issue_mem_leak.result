@@ -1,0 +1,1352 @@
+
+-- [1]2:set sql_dialect=table
+STRICT{
+PASS
+}
+
+-- [1]3:use db
+STRICT{
+PASS
+}
+
+-- [1]4:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]5:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]6:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]7:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]8:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]9:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]10:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]11:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]12:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]13:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]14:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]15:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]16:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]17:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]18:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]19:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]20:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]21:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]22:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]23:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]24:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]25:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]26:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]27:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]28:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]29:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]30:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]31:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]32:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]33:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]34:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]35:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]36:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]37:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]38:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]39:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]40:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]41:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]42:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]43:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]44:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]45:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]46:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]47:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]48:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]49:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]50:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]51:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]52:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]53:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]54:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]55:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]56:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]57:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]58:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]59:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]60:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]61:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]62:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]63:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]64:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]65:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]66:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]67:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]68:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]69:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]70:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]71:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]72:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]73:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]74:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]75:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]76:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]77:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]78:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]79:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]80:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]81:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]82:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]83:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]84:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]85:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]86:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]87:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]88:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]89:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]90:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]91:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]92:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]93:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]94:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]95:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]96:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]97:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]98:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]99:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]100:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]101:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]102:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]103:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]104:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]105:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]106:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]107:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]108:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]109:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]110:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]111:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]112:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]113:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]114:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]115:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]116:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]117:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]118:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]119:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]120:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]121:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]122:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]123:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]124:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]125:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]126:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]127:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]128:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]129:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]130:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]131:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]132:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]133:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]134:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]135:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]136:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]137:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]138:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]139:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]140:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]141:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]142:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]143:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]144:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]145:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]146:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]147:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]148:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]149:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]150:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]151:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]152:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]153:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]154:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]155:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]156:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]157:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]158:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]159:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]160:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]161:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]162:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]163:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]164:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]165:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]166:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]167:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]168:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]169:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]170:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]171:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]172:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]173:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]174:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]175:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]176:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]177:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]178:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]179:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]180:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]181:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]182:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]183:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]184:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]185:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]186:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]187:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]188:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]189:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]190:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]191:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]192:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]193:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]194:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]195:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]196:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]197:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]198:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]199:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]200:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]201:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]202:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]203:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719
+}
+
+-- [1]204:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.498
+
+-- [1]205:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.516
+
+-- [1]206:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.499
+
+-- [1]207:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.496
+
+-- [1]208:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.501
+
+-- [1]209:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.510
+
+-- [1]210:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.500
+
+-- [1]211:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.500
+
+-- [1]212:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.301
+
+-- [1]213:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.501
+
+-- [1]214:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.506
+
+-- [1]215:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.515
+
+-- [1]216:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.974
+
+-- [1]217:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.307
+
+-- [1]218:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.292
+
+-- [1]219:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.288
+
+-- [1]220:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.491
+
+-- [1]221:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.308
+
+-- [1]222:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.497
+
+-- [1]223:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.513
+
+-- [1]224:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.517
+
+-- [1]225:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.501
+
+-- [1]226:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.501
+
+-- [1]227:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.497
+
+-- [1]228:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.509
+
+-- [1]229:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.497
+
+-- [1]230:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.296
+
+-- [1]231:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.494
+
+-- [1]232:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.508
+
+-- [1]233:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.505
+
+-- [1]234:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.508
+
+-- [1]235:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.309
+
+-- [1]236:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.515
+
+-- [1]237:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.1.109
+
+-- [1]238:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.521
+
+-- [1]239:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.512
+
+-- [1]240:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.510
+
+-- [1]241:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+Elapsed Time: 0.0.512

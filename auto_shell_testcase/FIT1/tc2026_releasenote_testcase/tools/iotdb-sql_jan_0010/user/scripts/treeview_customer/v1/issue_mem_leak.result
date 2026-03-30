@@ -1,0 +1,1388 @@
+-- [1]2:set sql_dialect=table
+STRICT{
+PASS
+}
+-- [1]3:use db
+STRICT{
+PASS
+}
+-- [1]4:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100602_31205_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]5:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100609_31210_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]6:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100615_31215_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]7:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100622_31220_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]8:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100628_31225_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]9:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100634_31230_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]10:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100640_31235_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]11:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100646_31240_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]12:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100653_31246_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]13:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100659_31251_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]14:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100705_31256_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]15:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100711_31261_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]16:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100717_31266_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]17:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100724_31271_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]18:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100730_31276_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]19:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100736_31281_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]20:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100742_31286_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]21:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100748_31291_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]22:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100755_31296_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]23:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100801_31301_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]24:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100807_31306_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]25:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100813_31311_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]26:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100820_31316_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]27:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100826_31321_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]28:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100832_31326_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]29:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100838_31331_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]30:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100844_31336_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]31:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100851_31341_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]32:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100857_31346_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]33:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100904_31351_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]34:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100910_31356_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]35:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100916_31361_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]36:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100922_31366_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]37:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100929_31371_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]38:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100935_31376_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]39:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100942_31381_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]40:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100948_31386_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]41:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_100954_31391_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]42:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101000_31396_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]43:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101007_31401_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]44:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101013_31406_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]45:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101019_31411_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]46:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101026_31416_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]47:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101032_31421_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]48:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101038_31426_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]49:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101044_31431_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]50:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101050_31436_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]51:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101057_31441_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]52:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101103_31446_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]53:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101109_31451_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]54:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101115_31456_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]55:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101122_31461_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]56:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101128_31466_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]57:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101134_31471_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]58:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101140_31476_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]59:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101147_31481_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]60:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101153_31486_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]61:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101159_31491_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]62:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101206_31496_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]63:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101212_31501_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]64:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101218_31506_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]65:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101224_31511_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]66:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101231_31516_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]67:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101237_31521_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]68:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101243_31526_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]69:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101250_31531_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]70:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101256_31536_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]71:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101303_31541_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]72:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101309_31546_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]73:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101315_31551_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]74:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101321_31556_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]75:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101328_31561_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]76:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101334_31566_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]77:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101340_31571_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]78:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101347_31576_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]79:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101353_31581_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]80:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101359_31586_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]81:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101406_31591_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]82:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101412_31596_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]83:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101418_31601_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]84:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101425_31606_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]85:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101431_31611_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]86:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101437_31616_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]87:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101444_31621_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]88:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101450_31626_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]89:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101456_31631_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]90:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101502_31636_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]91:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101508_31641_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]92:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101515_31646_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]93:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101521_31651_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]94:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101527_31656_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]95:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101533_31668_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]96:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101540_31673_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]97:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101546_31678_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]98:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101552_31683_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]99:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101558_31688_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]100:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101605_31693_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]101:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101611_31698_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]102:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101617_31703_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]103:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101624_31708_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]104:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101630_31715_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]105:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101637_31722_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]106:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101643_31728_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]107:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101649_31733_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]108:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101655_31739_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]109:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101701_31745_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]110:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101707_31751_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]111:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101714_31756_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]112:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101720_31761_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]113:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101726_31766_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]114:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101732_31771_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]115:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101738_31776_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]116:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101745_31781_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]117:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101751_31786_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]118:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101757_31791_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]119:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101803_31796_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]120:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101810_31801_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]121:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101816_31806_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]122:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101822_31811_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]123:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101829_31816_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]124:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101835_31821_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]125:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101841_31826_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]126:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101847_31831_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]127:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101854_31836_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]128:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101900_31841_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]129:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101906_31846_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]130:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101912_31851_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]131:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101918_31856_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]132:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101925_31861_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]133:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101931_31866_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]134:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101938_31871_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]135:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101944_31876_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]136:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101951_31881_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]137:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_101957_31886_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]138:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102003_31891_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]139:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102010_31896_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]140:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102016_31901_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]141:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102022_31906_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]142:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102028_31911_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]143:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102035_31916_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]144:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102041_31921_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]145:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102048_31926_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]146:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102054_31931_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]147:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102100_31936_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]148:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102106_31941_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]149:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102112_31946_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]150:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102119_31951_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]151:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102125_31956_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]152:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102131_31961_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]153:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102138_31966_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]154:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102144_31971_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]155:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102151_31976_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]156:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102157_31981_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]157:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102203_31986_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]158:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102209_31991_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]159:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102216_31996_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]160:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102222_32001_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]161:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102228_32006_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]162:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102234_32011_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]163:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102241_32016_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]164:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102247_32021_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]165:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102254_32026_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]166:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102300_32031_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]167:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102306_32036_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]168:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102312_32041_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]169:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102319_32046_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]170:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102325_32051_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]171:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102331_32056_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]172:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102338_32061_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]173:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102344_32066_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]174:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102350_32071_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]175:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102356_32076_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]176:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102402_32081_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]177:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102409_32086_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]178:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102415_32091_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]179:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102421_32096_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]180:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102427_32101_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]181:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102433_32106_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]182:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102440_32111_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]183:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102446_32116_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]184:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102453_32121_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]185:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102459_32126_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]186:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102506_32131_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]187:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102512_32136_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]188:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102518_32141_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]189:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102524_32146_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]190:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102530_32151_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]191:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102537_32156_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]192:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102543_32161_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]193:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102549_32166_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]194:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102556_32171_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]195:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102603_32176_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]196:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102609_32181_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]197:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102615_32186_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]198:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102622_32191_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]199:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102628_32196_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]200:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102634_32201_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]201:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102641_32206_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]202:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102647_32211_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+-- [1]203:select distinct min(v2.value) as min_c1 ,max(v1.value) as max_c2 from AA5 as v1 ,AA5 as v2, AA5 AS v3, AA5 as v4 where v1.sensor_id like '%_RRB2%' and  v2.time>1 and v3.value>2 and v4.time<2024-11-22T09:45:43.000+08:00  limit 5 offset 0
+STRICT{
+SQLSTATE : 719: There is not enough memory for Query 20260324_102654_32216_1, the contextHolder is org.apache.iotdb.db.queryengine.execution.fragment.FragmentInstanceContext,current remaining free memory is 586636B, already reserved memory for this context in total is 1014671056B, the memory requested this time is 1059128B
+EXPECT:PASS
+}
+
+-- [1]204:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.489
+
+-- [1]205:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.532
+
+-- [1]206:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.493
+
+-- [1]207:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.513
+
+-- [1]208:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.482
+
+-- [1]209:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.497
+
+-- [1]210:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.486
+
+-- [1]211:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.479
+
+-- [1]212:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.481
+
+-- [1]213:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.496
+
+-- [1]214:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.482
+
+-- [1]215:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.482
+
+-- [1]216:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.489
+
+-- [1]217:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.288
+
+-- [1]218:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.486
+
+-- [1]219:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.483
+
+-- [1]220:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.497
+
+-- [1]221:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.503
+
+-- [1]222:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.290
+
+-- [1]223:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.482
+
+-- [1]224:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.498
+
+-- [1]225:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.499
+
+-- [1]226:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.502
+
+-- [1]227:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.500
+
+-- [1]228:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.298
+
+-- [1]229:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.274
+
+-- [1]230:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.475
+
+-- [1]231:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.484
+
+-- [1]232:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.283
+
+-- [1]233:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.288
+
+-- [1]234:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.479
+
+-- [1]235:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.485
+
+-- [1]236:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.485
+
+-- [1]237:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.485
+
+-- [1]238:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.282
+
+-- [1]239:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.495
+
+-- [1]240:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.879
+
+-- [1]241:select count(*) from (select * from (select * from AA5  limit 400 )as v1 where time>2024-11-21T08:10:00.000+08:00)as vv1 , (select * from (select * from AA5  limit 400 )as v2 where time<2024-11-21T08:10:00.000+08:00)as vv2  where vv1.sensor_id like '5DVL039KA' and (vv2.sensor_id='5RAZ032VZT3' or vv2.sensor_id like '5DVL039K_') and vv1.value>-1 or vv2.value=0
+STRICT{
+_col0(INT64)      |
+------------------
+31351             |
+总数目：1
+}
+
+Elapsed Time: 0.0.476
