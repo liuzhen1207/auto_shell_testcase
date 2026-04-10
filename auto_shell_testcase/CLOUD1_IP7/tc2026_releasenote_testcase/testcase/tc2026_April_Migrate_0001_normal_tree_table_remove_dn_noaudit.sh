@@ -433,6 +433,7 @@ do
         fi
 done
 sleep 60
+mig_from_ip=$(${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -e "show data regions;"|grep Running|grep -v audit|grep -v "${query_ip}|"|head -1|awk -F '|' '{gsub(" ","");print $9}')
 }
 function wait_sync_done()
 {
@@ -787,8 +788,8 @@ do
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
 	   let backup_log_flag++
-           v_warnMessage="${v_warnMessage}DN ${line} NullPointer : ${v_npe},remove DN IP is:${mig_from_ip}." 
-           echo "DN ${line} NullPointer : ${v_npe},remove DN IP is:${mig_from_ip}" 
+           v_warnMessage="${v_warnMessage}DN ${line} NullPointer : ${v_npe},remove DN IP is:${mig_from_ip}."
+           echo "DN ${line} NullPointer : ${v_npe},remove DN IP is:${mig_from_ip}"
    fi
    if [[ ${v_dn_total_err} -gt 0 ]];then
 	   let fail_flag++

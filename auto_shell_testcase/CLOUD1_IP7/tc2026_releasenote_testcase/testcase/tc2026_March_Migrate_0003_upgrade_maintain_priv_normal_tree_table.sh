@@ -1163,17 +1163,24 @@ function remove_datanode() {
 }
 function wait_benchmark()
 {
+v_check_t1=`date +%s`
     while true
     do
         v_bm_num=`jps|grep App|wc -l`
         if [[ ${v_bm_num} -gt 0 ]];then
-            sleep 120
+            sleep 300
         else
             ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "flush;"
             ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "flush;"
             break
             return 0
         fi
+v_check_t2=`date +%s`
+v_bm_elp=$((v_check_t2-v_check_t1))
+if [[ ${v_bm_elp} -gt 9000 ]];then
+# kill bm
+jps|grep App|awk '{print "kill -9 "$1}'|sh
+fi
     done
 }
 function testcase1()

@@ -1,5 +1,7 @@
 #!/bin/bash
-# tree table migrate privilege test;enable_separation_of_powers=true 
+# failed_login_attempts=-1
+# failed_login_attempts_per_user=10
+# password_lock_time_minutes=1
 set -uo pipefail
 cur_dir="$( cd "$( dirname "$0"  )" && pwd  )"
 current_dir=${cur_dir}
@@ -9,8 +11,10 @@ nodeinfo_dir="${cur_dir}/../conf"
 
 # 读取配置文件（去空格，兼容低版本）
 os_user_name=$(grep ^os_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+os_name=${os_user_name}
 db_user_name=$(grep ^db_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_admin_name=${db_user_name}
+db_sec_admin_name=${db_user_name}
 testdb=$(grep ^v_testdb "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_parent_dir=$(grep ^v_db_parent_dir "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 shell_client_db_parent_dir=$(grep "^v_shell_client_db_parent_dir=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
@@ -18,7 +22,9 @@ cli_dir=${shell_client_db_parent_dir}/${testdb}
 db_dir=${db_parent_dir}/${testdb}
 cn_db_parent_dir=`cat ${conf_file}|grep ^v_cn_db_parent_dir|awk -F '=' '{print $2}'`
 cn_db_dir=${cn_db_parent_dir}/${testdb}
-
+remote_cli_os_user=$(grep "^remote_cli_os_user=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+remote_cli_ip=$(grep "^remote_cli_ip=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+this_shell_ip=$(grep "^this_shell_ip=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
 clean_env_dir="${cur_dir}/../clean_env"
 prepare_env_dir="${cur_dir}/../prepare_env"
 CLUSTER_ID=$(grep ^CLUSTER_NAME "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
@@ -113,8 +119,11 @@ configure_confignode() {
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
-        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
+        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=false"
         batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=false"
+        batch_set_sys_conf ".*failed_login_attempts=.*" "failed_login_attempts=-1"
+        batch_set_sys_conf ".*failed_login_attempts_per_user=.*" "failed_login_attempts_per_user=10"
+        batch_set_sys_conf ".*password_lock_time_minutes=.*" "password_lock_time_minutes=1"
 EOF
 
     if [ $? -eq 0 ]; then
@@ -159,8 +168,11 @@ configure_datanode() {
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
         batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
-        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
+        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=false"
         batch_set_sys_conf ".*enable_separation_of_powers=.*" "enable_separation_of_powers=false"
+        batch_set_sys_conf ".*failed_login_attempts=.*" "failed_login_attempts=-1"
+        batch_set_sys_conf ".*failed_login_attempts_per_user=.*" "failed_login_attempts_per_user=10"
+        batch_set_sys_conf ".*password_lock_time_minutes=.*" "password_lock_time_minutes=1"
 
 
 EOF
@@ -401,63 +413,22 @@ v_last_dn_sum_err_log=$((v_last_dn_sum_err_log+v_current_dn_sum_err_log))
 fi
 
 }
-# test default param failed_login_attempts=5
+# auto unlocked 
+# failed_login_attempts=-1
+# failed_login_attempts_per_user=10
+# password_lock_time_minutes=1
+
 function testcase1()
 {
    # create javadi
    fail_flag=0
-   test_user=javadi
-   other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${other_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${other_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${other_user}"
-
-   echo "">${current_dir}/tmp.out 
-   for i in {1..5}
-   do
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
-   done
-   check_res "Authentication failed" 5 "${test_user} wrong passwored exec show cluster expect 5 times Authentication failed but"
-#   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} default right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
-# drop locked user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
-
-   check_log testcase1
-   if [[ ${fail_flag} -gt 0 ]];then
-      let sum_fail_flag++
-      v_warnMessage="${v_warnMessage}testcase1 failed."      
-   fi
-}
-
-# test default param failed_login_attempts=5 user@ip locked ,conn another ip
-function testcase2()
-{
+   db_ip=${query_ip}
    # create javadi
-   fail_flag=0
    test_user=javadi
    other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${other_user}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
    check_res "success" 1 "grant system to user ${test_user}"
@@ -465,204 +436,161 @@ function testcase2()
    check_res "success" 1 "grant system to user ${other_user}"
 
    echo "">${current_dir}/tmp.out
-   for i in {1..5}
+   for i in {1..10}
    do
    ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
    done
-   check_res "Authentication failed" 5 "${test_user} wrong passwored exec show cluster expect 5 times Authentication failed but"
-#   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
+   check_res "801: Authentication failed" 10 "${test_user} input 10 times wrong password;"
    cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} default right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
-# conn ip2
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip2} -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "Running" ${node_num} "${test_user}@${query_ip2} is not locked so exp success but"
-   cat ${current_dir}/tmp.out
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} at shell client ip is locked"
 
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
+   # db_ip right password
+   ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} global locked at ${db_ip} login"
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} global locked at shell client ip is locked"
+
+# other user failed 5 ,is not locked
+   echo "">${current_dir}/tmp.out
+   for i in {1..5}
+   do
+   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
+   done
+   check_res "Authentication failed" 5 "${other_user} at this shell ip 5 times wrong password"
+   echo "">${current_dir}/tmp.out
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${other_user} is not locked"
+
+   # db_ip right password
+   ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${other_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${other_user} is not locked"
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${other_user} is not locked"
+   sleep 61
+# this client ip right password,auto unlocked
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${test_user} after 60s auto unlocked"
+
+   # db_ip right password
+   ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${test_user} after 60s auto unlocked at ${db_ip}"
+# remote client ip right password
+   ssh ${remote_cli_os_user}@${remote_cli_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${test_user} after 60s auto unlocked at ${remote_cli_ip}"
+# drop user
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
+
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "drop user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "drop user ${other_user}"
+   check_log "testcase1"
+   if [[ ${fail_flag} -gt 0 ]];then
+      let sum_fail_flag++
+      v_warnMessage="${v_warnMessage}testcase1 failed."
+   fi
+
+
+}
+
+## enable_separation_of_powers=false ,failed_login_attempts=-1 ,failed_login_attempts_per_user=10（默认值1000）,password_lock_time_minutes=1 
+#用户在2个客户端，总次数被锁，用户被锁，等待自动解锁 
+function testcase2()
+{
+   # create javadi
+   fail_flag=0
+   db_ip=${query_ip}
+   # create javadi
+   test_user=javadi
+   other_user=santos
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   check_res "success" 1 "create user ${test_user}" 
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   check_res "success" 1 "create user ${other_user}" 
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
+   check_res "success" 1 "grant system to user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${other_user};">${current_dir}/tmp.out
+   check_res "success" 1 "grant system to user ${other_user}"
+
+  echo "">${current_dir}/tmp.out
+   for i in {1..9}
+   do
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
+   done
+   check_res "Authentication failed" 9 "${test_user} at shell client ip input 9 times wrong password"
+   echo "">${current_dir}/tmp.out
+   for i in {9..10}
+   do
+      ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw wrongpassword -h ${query_ip}  -e \"show cluster;\"">>${current_dir}/tmp.out
+   done
+      check_res "Authentication failed" 1 "${test_user} at ${db_ip} input 10th times wrong password"
+      check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} at ${db_ip} input 11th times wrong password"
+   echo "">${current_dir}/tmp.out
+
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} global locked at shell ip login"
+
+   # db_ip right password
+   ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} global locked at ${db_ip} login"
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} global locked at shell ip login"
+# other user failed 5 ,is not locked
+   echo "">${current_dir}/tmp.out
+   for i in {1..5}
+   do
+   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
+   done
+   check_res "Authentication failed" 5 "${other_user} input 5 times wrong password"
+   echo "">${current_dir}/tmp.out
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${other_user} is not locked"
+
+   # db_ip right password
+   ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${other_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${other_user} is not locked"
+# this client ip right password
+   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${other_user} is not locked"
+   sleep 61
+# this client ip right password,auto unlocked
+   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${test_user} after 60s auto unlocked"
+
+   # db_ip right password
+   ssh ${os_name}@${db_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${test_user} after 60s auto unlocked"
+# remote client ip right password
+   ssh ${remote_cli_os_user}@${remote_cli_ip} "${db_dir}/sbin/start-cli.sh -u ${test_user} -pw TimechoDB@2021 -h ${query_ip}  -e \"show cluster;\"">${current_dir}/tmp.out
+   check_res "Running" ${node_num} "${test_user} after 60s auto unlocked"
 
 # drop locked user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
 
-   check_log testcase2
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "drop user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "drop user ${other_user}"
+   check_log "testcase2"
    if [[ ${fail_flag} -gt 0 ]];then
       let sum_fail_flag++
       v_warnMessage="${v_warnMessage}testcase2 failed."
    fi
 }
-
-# test default param failed_login_attempts=5 user@ip locked ,drop user ,create same name user,conn this ip
-function testcase3()
-{
-   # create javadi
-   fail_flag=0
-   test_user=javadi
-   other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${other_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${other_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${other_user}"
-
-   echo "">${current_dir}/tmp.out
-   for i in {1..5}
-   do
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
-   done
-   check_res "Authentication failed" 5 "${test_user} wrong passwored exec show cluster expect 5 times Authentication failed but"
-#   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} default right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "list user;"
-# drop test_user,create same name
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "list user;"
-
-# conn same ip
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "803: No permissions for this operation, please add privilege SYSTEM" 1 "${test_user} no privilege exp 803 but"
-   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${test_user}"
-
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${test_user}@${query_ip} is not locked because it is a new user but"
-
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
-
-# drop locked user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
-
-   check_log testcase3
-   if [[ ${fail_flag} -gt 0 ]];then
-      let sum_fail_flag++
-      v_warnMessage="${v_warnMessage}testcase3 failed."
-   fi
-}
-
-# test default param failed_login_attempts=5 user@ip locked ,restart datanode
-function testcase4()
-{
-   # create javadi
-   fail_flag=0
-   test_user=javadi
-   other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
-   check_res "success" 1 "create user ${other_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${other_user};">${current_dir}/tmp.out
-   check_res "success" 1 "grant system to user ${other_user}"
-
-   echo "">${current_dir}/tmp.out
-   for i in {1..5}
-   do
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB -e "show cluster;">>${current_dir}/tmp.out
-   done
-   check_res "Authentication failed" 5 "${test_user} wrong passwored exec show cluster expect 5 times Authentication failed but"
-#   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -e "show cluster;" >${current_dir}/tmp.out
-# update log
-   check_res "822: Account is blocked due to consecutive failed logins" 1 "${test_user} default right password but locked so expect 1 time 822: Account is blocked due to consecutive failed logins but"
-   cat ${current_dir}/tmp.out
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
-# stop datanode
-  ssh ${os_user_name}@${query_ip} "${db_dir}/sbin/stop-datanode.sh"
-  sleep 3
-  while true
-  do
-     v_dn_pid=`ssh ${os_user_name}@${query_ip} "jps|grep DataNode|wc -l"`
-     if [[ ${v_dn_pid} -gt 0 ]];then
-        sleep 3
-     else
-        sleep 3
-        break
-     fi
-  done 
-# start datnaode
-  v_start_time=`date +%s`
-  ssh ${os_user_name}@${query_ip} "${db_dir}/sbin/start-datanode.sh -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
-  sleep 3
-  while true
-  do
-     v_dn_pid=`${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "show datanodes;"|grep "${query_ip}|"|grep Running|wc -l`
-     if [[ ${v_dn_pid} -gt 0 ]];then
-        break 
-     else
-        sleep 3
-     fi
-  done
-
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "list user;"
-
-# conn same ip
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${test_user}@${query_ip} is not locked because dn restart but"
-   cat ${current_dir}/tmp.out
-
-   ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${test_user}@${query_ip} is not locked because dn restart but"
-
-# other user is not lock
-   ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
-   check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
-
-# drop  user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
-
-   check_log testcase4
-   if [[ ${fail_flag} -gt 0 ]];then
-      let sum_fail_flag++
-      v_warnMessage="${v_warnMessage}testcase4 failed."
-   fi
-}
-
 
 # start cluster 
 echo "">${log_file}
@@ -671,8 +599,6 @@ start_db
 v_start_test_time=`date +%s`
 testcase1
 testcase2
-testcase3
-testcase4
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
 # record test result
@@ -686,9 +612,9 @@ function write_result()
    if [[ ${fail_flag} -gt 0 ]];then
            ${cli_dir}/sbin/start-cli.sh -h ${v_result_iotdb_ip} -e "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','FAIL',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
  
-           echo "testcase1 fail"
+           echo "test fail"
    else
-           echo "testcase1 pass"
+           echo "test pass"
            ${cli_dir}/sbin/start-cli.sh -h ${v_result_iotdb_ip} -e "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','PASS',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
  
 

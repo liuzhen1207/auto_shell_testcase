@@ -1,0 +1,10 @@
+sudo cp -rp ./data/datanode/data/sequence/root.tmp1.g_0/10/1/1774492150060-8-0-0.tsfile ./data/datanode/data/sequence/root.tmp1.g_0/10/1/1774492107671-3-0-0.tsfile
+sudo cp -rp ./data/datanode/data/sequence/root.tmp1.g_0/10/1/1774492150060-8-0-0.tsfile.resource ./data/datanode/data/sequence/root.tmp1.g_0/10/1/1774492107671-3-0-0.tsfile.resource
+sudo cp -rp ./data/datanode/data/sequence/root.tmp2.g_0/9/1/1774492155594-6-0-0.tsfile ./data/datanode/data/sequence/root.tmp2.g_0/9/1/1774492102384-2-0-0.tsfile
+sudo cp -rp ./data/datanode/data/sequence/root.tmp2.g_0/9/1/1774492155594-6-0-0.tsfile.resource ./data/datanode/data/sequence/root.tmp2.g_0/9/1/1774492102384-2-0-0.tsfile.resource 
+sudo cp -rp /data1/iotdb_data/v1371_release/data/datanode/data/sequence/root.test.g_0/4/0/1774491953966-2-0-0.tsfile /data3/iotdb_data/v1371_release/data/datanode/data/sequence/root.test.g_0/4/0/1774492014533-9-0-0.tsfile
+sudo cp -rp /data1/iotdb_data/v1371_release/data/datanode/data/sequence/root.test.g_0/4/0/1774491953966-2-0-0.tsfile.resource /data3/iotdb_data/v1371_release/data/datanode/data/sequence/root.test.g_0/4/0/1774492014533-9-0-0.tsfile.resource
+
+sudo cp -rp /data1/iotdb_data/v1371_release/data_backup2 data1_backup
+sudo cp -rp /data3/iotdb_data/v1371_release/data_backup2 data3_backup
+cp -rp /data2/v1371_release/data_backup2/ ./data2_backup
