@@ -26,14 +26,14 @@ v_consensus="IoTConsensus"
 CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
-data3_dir="/data3/iotdb_data/${testdb}/data"
 data1_dir_parent="/data1/iotdb_data/${testdb}/"
 data3_dir_parent="/data3/iotdb_data/${testdb}/"
+data3_dir="/data3/iotdb_data/${testdb}/data"
 ssl_str=""
 backup_log_flag=0
 backup_data_log_flag=0
-bm_dir="${cur_dir}/../benchmark/bm_20251220_38c839b_v20"
-backup_dir=/data2/tc2026_data_backup/v2061_rc7_0915_802dd96_ms_dev_ttl_iot
+bm_dir="${cur_dir}/../benchmark/bm_20251220_38c839b_v20_object"
+#backup_dir=/data2/tc2026_data_backup/v2061_rc7_0915_802dd96_ms_dev_ttl_iot
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -324,46 +324,6 @@ start_db() {
        exit 1
    fi
   
-     # copy data
- exec 3<${nodeinfo_dir}/datanode.txt
- while read line<&3
- do
-         if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
-         fi
-         if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
-         fi
-
-         ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data1_backup ${data1_dir}"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
-         ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data2_backup ${db_dir}/data"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
-         ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data3_backup ${data3_dir}"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
-         sleep 1
- done
-
-
    # 启动集群
    sh -x "${prepare_env_dir}/start_cluster_v20.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
    if [ $? -eq 0 ]; then
@@ -407,11 +367,15 @@ nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf2 >> ${bm_log_dir}/${t
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf3 >> ${bm_log_dir}/${t}_bm3.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf4 >> ${bm_log_dir}/${t}_bm4.out &
 wait
+nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf1_unseq >> ${bm_log_dir}/${t}_unseq_bm1.out &
+nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf2_unseq >> ${bm_log_dir}/${t}_unseq_bm2.out &
+nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf3_unseq >> ${bm_log_dir}/${t}_unseq_bm3.out &
+nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf4_unseq >> ${bm_log_dir}/${t}_unseq_bm4.out &
+wait
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf5 >> ${bm_log_dir}/${t}_bm5.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf6 >> ${bm_log_dir}/${t}_bm6.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf7 >> ${bm_log_dir}/${t}_bm7.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf8 >> ${bm_log_dir}/${t}_bm8.out &
-
 wait
 }
 function check_res_eq()
@@ -764,22 +728,6 @@ function testcase1()
 {
 # check data
 #before ttl check data
-sleep 61
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
-
-	while true
-	do
-		v_rec_start_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation with task ID\" ${db_dir}/logs/*datanode*all*|wc -l") 
-		v_rec_end_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation completed with task ID\" ${db_dir}/logs/*datanode*all*|wc -l")
-	       if [[ ${v_rec_start_num} = ${v_rec_end_num} ]];then
-		       break
-	       else
-		       sleep 5
-	       fi	       
-	done
-done
 check_data_consistent
 #check log
 #TTL SEC 1768953600 date -d"2000-01-22T08:00:01" +%s
@@ -820,7 +768,7 @@ check_log
 echo "">${log_file}
 start_db
 v_start_test_time=`date +%s`
-#start_bm
+start_bm
 testcase1
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
@@ -829,9 +777,9 @@ v_elp_time=$((v_end_test_time-v_start_test_time))
 function write_result()
 {
         test_time=$(date +"%Y-%m-%dT%H:%M:%S.%3N%:z")
-   v_bm_max_value=0
+   v_bm_max_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out|awk '{print $8}'|sort -n|tail -1`
 
-   v_bm_sum_value=0
+   v_bm_sum_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out| awk '{print $8}' | sort -n | awk '{sum+=$1} END {print sum}'`
    # 写入表头
    v_exist_flag=`grep Time,testTimechoDB $CSV_FILE|wc -l`
    if [[ ${v_exist_flag} -gt 0 ]];then

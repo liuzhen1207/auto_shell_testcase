@@ -13,6 +13,7 @@ testdb=$(grep ^v_testdb "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_parent_dir=$(grep ^v_db_parent_dir "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 cli_dir=${db_parent_dir}/${testdb}
 db_dir=${db_parent_dir}/${testdb}
+v20_root_pw=`cat ${conf_file}|grep ^v20_root_pw=|awk -F '=' '{print $2}'`
 clean_env_dir="${cur_dir}/../clean_env"
 prepare_env_dir="${cur_dir}/../prepare_env"
 cn_num=3
@@ -27,13 +28,10 @@ CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
 data3_dir="/data3/iotdb_data/${testdb}/data"
-data1_dir_parent="/data1/iotdb_data/${testdb}/"
-data3_dir_parent="/data3/iotdb_data/${testdb}/"
 ssl_str=""
+bm_dir="${cur_dir}/../benchmark/bm_20241230_2e6ffbf_v13"
 backup_log_flag=0
 backup_data_log_flag=0
-bm_dir="${cur_dir}/../benchmark/bm_20251220_38c839b_v20"
-backup_dir=/data2/tc2026_data_backup/v2061_rc7_0915_802dd96_ms_dev_ttl_iot
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -47,7 +45,6 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 fail_flag=0
 test_begin_sec=$(date +%s)
 
-max_concurrent=7     # 最大并发数，根据数据库性能调整（建议5-10）
 
 
 # ===================== 工具函数 =====================
@@ -78,7 +75,7 @@ clean_env() {
 configure_confignode() {
     local node_ip=$1
     log "INFO" "开始配置ConfigNode: ${node_ip}"
-    
+
     # 整合所有ConfigNode修改命令，一次SSH执行
     ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
         # 修改env.sh配置
@@ -95,7 +92,7 @@ configure_confignode() {
             else
                 echo "\$content" >> "\$file"
             fi
-        }
+        } # ✅ 这里补上 }，语法 100% 正确
 
         # 批量执行system.properties配置
         batch_set_sys_conf ".*cn_seed_config_node=.*" "cn_seed_config_node=${seed_cn_ip}"
@@ -107,12 +104,11 @@ configure_confignode() {
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
         batch_set_sys_conf ".*schema_region_group_extension_policy=.*" "schema_region_group_extension_policy=CUSTOM"
         batch_set_sys_conf ".*data_region_group_extension_policy=.*" "data_region_group_extension_policy=CUSTOM"
-        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=2"
-        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=2"
-        batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
-        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ms"
+        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=5"
+        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=5"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
-
+        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ns"
+        batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
 EOF
 
     if [ $? -eq 0 ]; then
@@ -122,7 +118,6 @@ EOF
         return 1
     fi
 }
-
 # 单个DataNode配置函数
 configure_datanode() {
     local node_ip=$1
@@ -162,12 +157,11 @@ configure_datanode() {
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
         batch_set_sys_conf ".*schema_region_group_extension_policy=.*" "schema_region_group_extension_policy=CUSTOM"
         batch_set_sys_conf ".*data_region_group_extension_policy=.*" "data_region_group_extension_policy=CUSTOM"
-        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=2"
-        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=2"
-        batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
-        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ms"
+        batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=5"
+        batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=5"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
-
+        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ns"
+        batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
 
 EOF
 
@@ -239,7 +233,6 @@ set_conf() {
     # 找出混合节点（交集）
     mixed_ips=()
     for ip in "${cn_ips[@]}"; do
-        # 低版本Bash兼容的字符串包含判断
         if grep -q "^${ip}$" /tmp/dn_ips.tmp; then
             mixed_ips+=("${ip}")
         fi
@@ -263,25 +256,26 @@ set_conf() {
 
     # -------------------- 步骤3：并行配置节点 --------------------
     pids=()
+    fail_flag_local=0
 
     # 配置仅CN节点
     log "INFO" "启动仅ConfigNode节点并行配置: ${only_cn_ips[*]}"
     for ip in "${only_cn_ips[@]}"; do
-        configure_confignode "${ip}" &
+        (configure_confignode "${ip}" || touch /tmp/conf_fail.flag) &
         pids+=($!)
     done
 
     # 配置仅DN节点
     log "INFO" "启动仅DataNode节点并行配置: ${only_dn_ips[*]}"
     for ip in "${only_dn_ips[@]}"; do
-        configure_datanode "${ip}" &
+        (configure_datanode "${ip}" || touch /tmp/conf_fail.flag) &
         pids+=($!)
     done
 
     # 配置混合节点
     log "INFO" "启动混合节点（CN+DN）并行配置: ${mixed_ips[*]}"
     for ip in "${mixed_ips[@]}"; do
-        configure_mixed_node "${ip}" &
+        (configure_mixed_node "${ip}" || touch /tmp/conf_fail.flag) &
         pids+=($!)
     done
 
@@ -292,19 +286,27 @@ set_conf() {
             log "INFO" "进程PID ${pid} 执行成功"
         else
             log "ERROR" "进程PID ${pid} 执行失败"
+            fail_flag_local=1
         fi
     done
+
+    # 检查是否有配置失败
+    if [ -f /tmp/conf_fail.flag ]; then
+        fail_flag_local=1
+        rm -f /tmp/conf_fail.flag
+    fi
 
     # 清理临时文件
     rm -f /tmp/cn_ips.tmp /tmp/dn_ips.tmp
 
-    if [ ${fail_flag} -eq 0 ]; then
-        log "INFO" "所有节点配置完成！日志文件：${log_file}"
-    else
+    # 同步全局fail_flag
+    if [ ${fail_flag_local} -eq 1 ]; then
+        fail_flag=1
         log "ERROR" "部分节点配置失败，请查看日志：${log_file}"
+    else
+        log "INFO" "所有节点配置完成！日志文件：${log_file}"
     fi
 }
-
 # 启动数据库集群函数
 start_db() {
    log "INFO" "开始启动数据库集群..."
@@ -316,56 +318,15 @@ start_db() {
        log "ERROR" "环境清理失败，终止启动流程"
 #       exit 1
    fi
-
    # 配置节点
    set_conf
    if [ ${fail_flag} -eq 1 ]; then
        log "ERROR" "节点配置失败，终止启动流程"
        exit 1
    fi
-  
-     # copy data
- exec 3<${nodeinfo_dir}/datanode.txt
- while read line<&3
- do
-         if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
-         fi
-         if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
-         fi
-
-         ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data1_backup ${data1_dir}"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
-         ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data2_backup ${db_dir}/data"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
-         ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data3_backup ${data3_dir}"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
-         sleep 1
- done
-
-
+   
    # 启动集群
-   sh -x "${prepare_env_dir}/start_cluster_v20.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
+   sh -x "${prepare_env_dir}/start_cluster_v13.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
    if [ $? -eq 0 ]; then
        log "INFO" "集群启动成功"
    else
@@ -376,21 +337,21 @@ start_db() {
 }
 function start_bm()
 {
-bm_conf=ttl_partition_seq
+bm_conf=partition_table_ns
 #get root password
 #test time 15h
 #v_bm_test_time=54000000
 #v_bm_test_time=36000000
-v_20_pass=`grep ^passwd_param= ${db_dir}/sbin/start-cli.sh |grep TimechoDB|wc -l`
-if [[ ${v_20_pass} -gt 0 ]];then
-        bm_root_pw="TimechoDB@2021"
-else
-
-        bm_root_pw="root"
-fi
+#v_20_pass=`grep ^passwd_param= ${db_dir}/sbin/start-cli.sh |grep TimechoDB|wc -l`
+#if [[ ${v_20_pass} -gt 0 ]];then
+#        bm_root_pw="TimechoDB@2021"
+#else
+#
+#        bm_root_pw="root"
+#fi
 #sed -i 's/CREATE_SCHEMA=.*/CREATE_SCHEMA=true/g' ${bm_dir}/${bm_conf}/conf*/config.*
 #sed -i 's/START_TIME=.*/START_TIME=1970-01-01T08:00:00+08:00/g' ${bm_dir}/${bm_conf}/conf*/config.*
-sed -i "s/^PASSWORD=.*/PASSWORD=${bm_root_pw}/g" ${bm_dir}/${bm_conf}/conf*/config.properties
+#sed -i "s/^PASSWORD=.*/PASSWORD=${bm_root_pw}/g" ${bm_dir}/${bm_conf}/conf*/config.properties
 #sed -i "s/^TEST_MAX_TIME=.*/TEST_MAX_TIME=${v_bm_test_time}/g" ${bm_dir}/${bm_conf}/conf*/config.properties
 bm_log_dir="${bm_dir}/${testdb}"
 # 核心逻辑：判断目录是否不存在，不存在则创建
@@ -404,15 +365,23 @@ fi
 t=`date +%Y_%m_%d_%H_%M_%S`
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf1 >> ${bm_log_dir}/${t}_bm1.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf2 >> ${bm_log_dir}/${t}_bm2.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf3 >> ${bm_log_dir}/${t}_bm3.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf4 >> ${bm_log_dir}/${t}_bm4.out &
 wait
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf5 >> ${bm_log_dir}/${t}_bm5.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf6 >> ${bm_log_dir}/${t}_bm6.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf7 >> ${bm_log_dir}/${t}_bm7.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf8 >> ${bm_log_dir}/${t}_bm8.out &
-
 wait
+}
+function check_res()
+{
+        v_exp_msg=$1
+        v_exp_num=$2
+        v_act_num=$(grep ${v_exp_msg} ${cur_dir}/tmp.out|wc -l)
+        if [[ ${v_act_num} -ge ${v_exp_num} ]];then
+                echo "pass"
+        else
+                let fail_flag++
+                v_warnMessage="${v_warnMessage}check_res ${v_exp_msg} exp num>=${v_exp_num} failed."
+                cat ${cur_dir}/tmp.out
+        fi
 }
 function check_res_eq()
 {
@@ -428,11 +397,68 @@ function check_res_eq()
         fi
 }
 
+function check_log()
+{
+exec 3<${nodeinfo_dir}/confignode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "sudo gunzip ${db_dir}/logs/*confignode*all*"
+   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err1=`ssh ${os_user_name}@${line} "grep BufferUnderflowException ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
+   if [[ ${v_npe} -gt 0 ]];then
+	   let fail_flag++
+	   let backup_log_flag++
+	   echo "CN ${line} NullPointer : ${v_npe}"
+	   v_warnMessage="${v_warnMessage}CN NPE." 
+   fi
+   v_cn_err_total=$((v_cn_err1+v_cn_err2))
+   if [[ ${v_cn_err_total} -gt 0 ]];then
+           let fail_flag++
+           let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}CN HAS_MORE_STATE." 
+           echo "CN ${line} has error: ${v_npe}"
+   fi
+done
+exec 3<${nodeinfo_dir}/datanode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "sudo gunzip ${db_dir}/logs/*datanode*all*"
+   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err=`ssh ${os_user_name}@${line} "grep CompactionTableSchemaNotMatchException ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err2=`ssh ${os_user_name}@${line} "grep \"has overlapped data\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err3=`ssh ${os_user_name}@${line} "grep \"which should be later than the last time\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err4=`ssh ${os_user_name}@${line} "grep \"DataTypeInconsistentException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err5=`ssh ${os_user_name}@${line} "grep \"ArrayIndexOutOfBoundsException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err6=`ssh ${os_user_name}@${line} "grep \"Alter timeseries .* data type from null to\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err7=`ssh ${os_user_name}@${line} "grep \"StatisticsClassException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err10=`ssh ${os_user_name}@${line} "grep \"RuntimeException: data type not matched\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
+
+   if [[ ${v_npe} -gt 0 ]];then
+           let fail_flag++
+	   let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}DN NPE." 
+           echo "DN ${line} NullPointer : ${v_npe}"
+   fi
+   if [[ ${v_dn_total_err} -gt 0 ]];then
+	   let fail_flag++
+	   let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}DN unexp log." 
+	   echo "DN ${line} has error: ${v_dn_total_err}"
+   fi
+
+done
+
+
+}
 function wait_sync_done()
 {
 local max_wait_time=$1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} -pw ${v20_root_pw} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} -pw ${v20_root_pw} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
    cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
    mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
    exec 3<${cur_dir}/tmp.out
@@ -495,99 +521,94 @@ do
 
 done
 }
-
 function check_data_consistent()
 {
 wait_sync_done 180
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name}  -pw ${v20_root_pw} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
    cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
-   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp_node.out
+   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
    sql1="select count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from root.test.g_0.** align by device;"
    sql2="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table1_0 group by device_id order by device_id;"
    sql3="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table2_0 group by device_id order by device_id;"
-   sql4="count timeslotid where database=root.test.g_0;"
-   sql5="count timepartition where database=root.test.g_0;"
-   sql6="show timepartition where database=root.test.g_0;"
-   sql7="show timeslotid where database=root.test.g_0;"
-   sql8="select count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from root.test.g_0.** where time>=1970-01-09T09:00:03.000+08:00 and time<=2026-01-22T10:46:42.000+08:00 align by device;"
-   sql9="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table1_0 where time>=1970-01-09T09:00:03.000+08:00 and time<=2026-01-22T10:46:42.000+08:00 group by device_id order by device_id;"
-   sql10="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table2_0 where time>=1970-01-09T09:00:03.000+08:00 and time<=2026-01-22T10:46:42.000+08:00 group by device_id order by device_id;"
    # all online
    exception_num=0
    while true
    do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} -pw ${v20_root_pw} ${ssl_str} -h ${query_ip}  -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
    v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
-   v_row_num=`grep root.test ${cur_dir}/q_all_online_tree.out|wc -l`
+   v_exp_row=$(grep root.test ${cur_dir}/q_all_online_tree.out|wc -l)
    if [[ ${v_exception_num} = 0 ]];then
+	   if [[ ${v_exp_row} != 20 ]];then
+		   let fail_flag++
+		   v_warnMessage="${v_warnMessage}${sql1} expect rows num is not right."
+	   fi
 	   break
    else
            let exception_num++
+	   echo ${cur_dir}/q_all_online_tree.out
 	   sleep 1
    fi
    if [[ ${exception_num} -ge 10 ]];then
 	   let fail_flag++
+           v_warnMessage="${v_warnMessage}${sql1} 10 times failed."
 	   break
    fi
    done
-   if [[ ${v_row_num} != 20 ]];then
-	   let fail_flag++
-	   v_warnMessage="${v_warnMessage}tree all online query row num != 20."
-   fi
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql4}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql5}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql6}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql7}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql8}" >${cur_dir}/q_all_online_tree_q8.out 
-   v_row_num=`grep root.test ${cur_dir}/q_all_online_tree_q8.out|wc -l`
-   if [[ ${v_row_num} != 20 ]];then
-           let fail_flag++
-           v_warnMessage="${v_warnMessage}tree all online query sql8 row num != 20."
-   fi
 
-   exception_num=0
-   while true
-   do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table1.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql3}" >${cur_dir}/q_all_online_table2.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql9}" >${cur_dir}/q_all_online_table1_q9.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql10}" >${cur_dir}/q_all_online_table2_q10.out
-   v_exception_num1=`grep Exception ${cur_dir}/q_all_online_table1.out|wc -l`
-   v_exception_num2=`grep Exception ${cur_dir}/q_all_online_table2.out|wc -l`
-   v_exception_num3=`grep Exception ${cur_dir}/q_all_online_table1_q9.out|wc -l`
-   v_exception_num4=`grep Exception ${cur_dir}/q_all_online_table2_q10.out|wc -l`
-   v_row_num1=`grep d_ ${cur_dir}/q_all_online_table1.out|wc -l`
-   v_row_num2=`grep d_ ${cur_dir}/q_all_online_table2.out|wc -l`
-   v_row_num3=`grep d_ ${cur_dir}/q_all_online_table1_q9.out|wc -l`
-   v_row_num4=`grep d_ ${cur_dir}/q_all_online_table2_q10.out|wc -l`
-   v_exception_num=$((v_exception_num1+v_exception_num2+v_exception_num3+v_exception_num4))
-   if [[ ${v_exception_num} = 0 ]];then
-           break
-   else
-	   let exception_num++
-           sleep 1
-   fi
-   if [[ ${exception_num} -ge 10 ]];then
-           let fail_flag++
-           break
-   fi
-   done
-   if [[ ${v_row_num1} != 10 ]]|| [[ ${v_row_num2} != 10 ]] || [[ ${v_row_num3} != 10 ]] || [[ ${v_row_num4} != 10 ]];then
-           let fail_flag++
-           v_warnMessage="${v_warnMessage}table all online query row num != 20."
-   fi    
+#      exception_num=0
+#   while true
+#   do
+#   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table1.out
+#   v_exception_num=`grep Exception ${cur_dir}/q_all_online_table1.out|wc -l`
+#   v_exp_row=$(grep "Total line number = 10" ${cur_dir}/q_all_online_table1.out|wc -l)
+#   if [[ ${v_exception_num} = 0 ]];then
+#	   if [[ ${v_exp_row} != 1 ]];then
+#		   let fail_flag++
+#		   v_warnMessage="${v_warnMessage}${sql2} expect rows num is not right."
+#	   fi
+#           break
+#   else
+#           let exception_num++
+#           echo ${cur_dir}/q_all_online_table1.out
+#           sleep 1
+#   fi
+#   if [[ ${exception_num} -ge 10 ]];then
+#           let fail_flag++
+#           v_warnMessage="${v_warnMessage}${sql2} 10 times failed."
+#           break
+#   fi
+#   done
+#      exception_num=0
+#   while true
+#   do
+#   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 36000 -e "${sql3}" >${cur_dir}/q_all_online_table2.out
+#   v_exp_row=$(grep "Total line number = 10" ${cur_dir}/q_all_online_table2.out|wc -l)
+#   v_exception_num=`grep Exception ${cur_dir}/q_all_online_table1.out|wc -l`
+#   if [[ ${v_exception_num} = 0 ]];then
+#	   if [[ ${v_exp_row} != 1 ]];then
+#                   let fail_flag++
+#                   v_warnMessage="${v_warnMessage}${sql3} expect rows num is not right."
+#           fi
+#           break
+#   else
+#           let exception_num++
+#           echo ${cur_dir}/q_all_online_table2.out
+#           sleep 1
+#   fi
+#   if [[ ${exception_num} -ge 10 ]];then
+#           let fail_flag++
+#           v_warnMessage="${v_warnMessage}${sql3} 10 times failed."
+#           break
+#   fi
+#   done
+
+
    # stop dn
-   exec 3<${cur_dir}/tmp_node.out
+   exec 3<${cur_dir}/tmp.out
    while read line<&3
    do
-   query_ip=`head -1 ${cur_dir}/tmp_node.out`
-   query_ip2=`tail -1 ${cur_dir}/tmp_node.out`
+   query_ip=`head -1 ${cur_dir}/tmp.out`
+   query_ip2=`tail -1 ${cur_dir}/tmp.out`
 
       # stop dn
       ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};sudo ./sbin/stop-datanode.sh"
@@ -599,92 +620,80 @@ wait_sync_done 180
       exception_num=0
       while true
       do
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
+      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} -pw ${v20_root_pw} ${ssl_str} -h ${query_ip}  -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
       v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_tree.out|wc -l`
       if [[ ${v_exception_num} = 0 ]];then
            break
       else
 	      let exception_num++
+	      echo ${cur_dir}/q_stop_ip${v_ip}_tree.out
            sleep 1
       fi
       if [[ ${exception_num} -ge 10 ]];then
 	      let fail_flag++
-	      break
-      fi
-      done
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql4}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql5}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql6}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql7}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql8}" >${cur_dir}/q_stop_ip${v_ip}_tree_q8.out
-   v_row_num=`grep root.test ${cur_dir}/q_stop_ip${v_ip}_tree_q8.out|wc -l`
-   if [[ ${v_row_num} != 20 ]];then
-           let fail_flag++
-           v_warnMessage="${v_warnMessage}tree stop_ip${v_ip} query sql8 row num != 20."
-   fi
-
-      exception_num=0
-      while true
-      do
-
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table1.out
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql3}" >${cur_dir}/q_stop_ip${v_ip}_table2.out
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql9}" >${cur_dir}/q_stop_ip${v_ip}_table1_q9.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql10}" >${cur_dir}/q_stop_ip${v_ip}_table2_q10.out
-   v_exception_num1=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table1.out|wc -l`
-   v_exception_num2=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table2.out|wc -l`
-   v_exception_num3=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table1_q9.out|wc -l`
-   v_exception_num4=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table2_q10.out|wc -l`
-   v_row_num1=`grep d_ ${cur_dir}/q_stop_ip${v_ip}_table1.out|wc -l`
-   v_row_num2=`grep d_ ${cur_dir}/q_stop_ip${v_ip}_table2.out|wc -l`
-   v_row_num3=`grep d_ ${cur_dir}/q_stop_ip${v_ip}_table1_q9.out|wc -l`
-   v_row_num4=`grep d_ ${cur_dir}/q_stop_ip${v_ip}_table2_q10.out|wc -l`
-   v_exception_num=$((v_exception_num1+v_exception_num2+v_exception_num3+v_exception_num4))
-
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table.out|wc -l`
-      if [[ ${v_exception_num} = 0 ]];then
-           break
-      else
-	      let exception_num++
-           sleep 1
-      fi
-      if [[ ${exception_num} -ge 10 ]];then
-	      let fail_flag++
+	      v_warnMessage="${v_warnMessage}stop ${v_ip} ${sql1} 10 times failed."
 	      break
       fi
       done
 
-      v_diff_tree=`diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root.test"|wc -l`
-      v_diff_tree1=`diff ${cur_dir}/q_all_online_tree_q8.out ${cur_dir}/q_stop_ip${v_ip}_tree_q8.out|grep "root.test"|wc -l`
-      v_diff_table1=`diff ${cur_dir}/q_all_online_table1.out ${cur_dir}/q_stop_ip${v_ip}_table1.out|egrep "d_"|wc -l`
-      v_diff_table1_q9=`diff ${cur_dir}/q_all_online_table1_q9.out ${cur_dir}/q_stop_ip${v_ip}_table1_q9.out|egrep "d_"|wc -l`
-      v_diff_table2=`diff ${cur_dir}/q_all_online_table2.out ${cur_dir}/q_stop_ip${v_ip}_table2.out|egrep "d_"|wc -l`
-      v_diff_table2_q10=`diff ${cur_dir}/q_all_online_table2_q10.out ${cur_dir}/q_stop_ip${v_ip}_table2_q10.out|egrep "d_"|wc -l`
-      v_diff_total=$((v_diff_tree+v_diff_table1+v_diff_table2+v_diff_tree1+v_diff_table1_q9+v_diff_table2_q10))
-      if [[ ${v_diff_total} -gt 0 ]];then
+#      exception_num=0
+#      while true
+#      do
+#      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table1.out
+#      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table1.out|wc -l`
+#      if [[ ${v_exception_num} = 0 ]];then
+#           break
+#      else
+#              let exception_num++
+#              echo ${cur_dir}/q_stop_ip${v_ip}_table1.out
+#           sleep 1
+#      fi
+#      if [[ ${exception_num} -ge 10 ]];then
+#              let fail_flag++
+#              v_warnMessage="${v_warnMessage}stop ${v_ip} ${sql1} 10 times failed."
+#              break
+#      fi
+#      done
+#
+#      exception_num=0
+#      while true
+#      do
+#      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip}  -timeout 36000 -e "${sql3}" >${cur_dir}/q_stop_ip${v_ip}_table2.out
+#      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table1.out|wc -l`
+#      if [[ ${v_exception_num} = 0 ]];then
+#           break
+#      else
+#              let exception_num++
+#              echo ${cur_dir}/q_stop_ip${v_ip}_table2.out
+#           sleep 1
+#      fi
+#      if [[ ${exception_num} -ge 10 ]];then
+#              let fail_flag++
+#              v_warnMessage="${v_warnMessage}stop ${v_ip} ${sql3} 10 times failed."
+#              break
+#      fi
+#      done
+
+      v_diff_tree=`diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"|wc -l`
+#      v_diff_table1=`diff ${cur_dir}/q_all_online_table1.out ${cur_dir}/q_stop_ip${v_ip}_table1.out|grep "d_"|wc -l`
+#      v_diff_table2=`diff ${cur_dir}/q_all_online_table2.out ${cur_dir}/q_stop_ip${v_ip}_table2.out|grep "d_"|wc -l`
+#      v_diff_num=$((v_diff_tree+v_diff_table1+v_diff_table2))
+      v_diff_num=$v_diff_tree
+      if [[ ${v_diff_num} -gt 0 ]];then
          let fail_flag++
-	 v_warnMessage="${v_warnMessage}.data inconsistent"
 	 let backup_data_log_flag++
 	 diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out
-	 diff ${cur_dir}/q_all_online_table1.out ${cur_dir}/q_stop_ip${v_ip}_table1.out
-	 diff ${cur_dir}/q_all_online_table2.out ${cur_dir}/q_stop_ip${v_ip}_table2.out
-	 diff ${cur_dir}/q_all_online_tree_q8.out ${cur_dir}/q_stop_ip${v_ip}_tree_q8.out
-	 diff ${cur_dir}/q_all_online_table1_q9.out ${cur_dir}/q_stop_ip${v_ip}_table1_q9.out
-	 diff ${cur_dir}/q_all_online_table2_q10.out ${cur_dir}/q_stop_ip${v_ip}_table2_q10.out
-         echo "diff : ${v_diff_total}"
+#	 diff ${cur_dir}/q_all_online_table1.out ${cur_dir}/q_stop_ip${v_ip}_table1.out
+#	 diff ${cur_dir}/q_all_online_table2.out ${cur_dir}/q_stop_ip${v_ip}_table2.out
+	 v_warnMessage="${v_warnMessage}data inconsistent."
+         echo "diff : ${v_diff_num}"
       fi
       # restart
       v_start_time=`date +%s`
       ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};sudo ./sbin/start-datanode.sh -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
       while true
       do
-      v_start_ok=`${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${line}  -timeout 3600 -e "show datanodes;"|grep "${line}|"|grep Running|wc -l`
+      v_start_ok=`${cli_dir}/sbin/start-cli.sh -u ${db_user_name} -pw ${v20_root_pw} ${ssl_str} -h ${line}  -timeout 3600 -e "show datanodes;"|grep "${line}|"|grep Running|wc -l`
       if [[ ${v_start_ok} -gt 0 ]];then
          break
       else
@@ -699,128 +708,59 @@ wait_sync_done 180
       fi
       done
    done
-}
-
-function check_log()
-{
-exec 3<${nodeinfo_dir}/confignode.txt
-while read line<&3
-do
-   ssh ${os_user_name}@${line} "sudo gunzip ${db_dir}/logs/*confignode*all*"
-   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*confignode*all*|wc -l"`
-   v_cn_err1=`ssh ${os_user_name}@${line} "grep BufferUnderflowException ${db_dir}/logs/*confignode*all*|wc -l"`
-   v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
-   v_cn_err3=`ssh ${os_user_name}@${line} "grep \"ClassCastException\" ${db_dir}/logs/*confignode*all*|wc -l"`
-   if [[ ${v_npe} -gt 0 ]];then
-	   let fail_flag++
-	   let backup_log_flag++
-	   echo "CN ${line} NullPointer : ${v_npe}"
-	   v_warnMessage="${v_warnMessage}CN ${line} NullPointer: ${v_npe}."
-   fi
-   v_cn_err_total=$((v_cn_err1+v_cn_err2+v_cn_err3))
-   if [[ ${v_cn_err_total} -gt 0 ]];then
-           let fail_flag++
-           let backup_log_flag++
-           echo "CN ${line} has error: ${v_cn_err_total}"
-	   v_warnMessage="${v_warnMessage}CN ${line} unexpected log : ${v_cn_err_total}."
-   fi
-done
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
-   ssh ${os_user_name}@${line} "sudo gunzip ${db_dir}/logs/*datanode*all*"
-   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err=`ssh ${os_user_name}@${line} "grep CompactionTableSchemaNotMatchException ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err2=`ssh ${os_user_name}@${line} "grep \"has overlapped data\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err3=`ssh ${os_user_name}@${line} "grep \"which should be later than the last time\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err4=`ssh ${os_user_name}@${line} "grep \"DataTypeInconsistentException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err5=`ssh ${os_user_name}@${line} "grep \"ArrayIndexOutOfBoundsException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err6=`ssh ${os_user_name}@${line} "grep \"Alter timeseries .* data type from null to\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err7=`ssh ${os_user_name}@${line} "grep \"StatisticsClassException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_err10=`ssh ${os_user_name}@${line} "grep \"ClassCastException\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
-
-   if [[ ${v_npe} -gt 0 ]];then
-           let fail_flag++
-	   let backup_log_flag++
-	   v_warnMessage="${v_warnMessage}DN ${line} NullPointer: ${v_npe}."
-           echo "DN ${line} NullPointer : ${v_npe}"
-   fi
-   if [[ ${v_dn_total_err} -gt 0 ]];then
-	   let fail_flag++
-	   let backup_log_flag++
-	   v_warnMessage="${v_warnMessage}DN ${line} unexpected log : ${v_dn_total_err}."
-	   echo "DN ${line} has error: ${v_dn_total_err}"
-   fi
-
-done
-
 
 }
 
 function testcase1()
 {
-# check data
-#before ttl check data
-sleep 61
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
 
-	while true
-	do
-		v_rec_start_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation with task ID\" ${db_dir}/logs/*datanode*all*|wc -l") 
-		v_rec_end_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation completed with task ID\" ${db_dir}/logs/*datanode*all*|wc -l")
-	       if [[ ${v_rec_start_num} = ${v_rec_end_num} ]];then
-		       break
-	       else
-		       sleep 5
-	       fi	       
-	done
-done
+# set ttl
+${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -pw ${v20_root_pw} -e "show timepartition where database=root.test.g_0;">${cur_dir}/bef_ttl_tmp1.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip}   -pw ${v20_root_pw} -e "show data regions;"|grep DataRegion|awk -F '|' '{gsub(" ","");print $2","$4","$5","$6}' >${cur_dir}/bef_ttl_tmp2.out
+v_ttl_time=946659600
+v_cur_time=$(date +%s)
+v_ttl_time_sec=$((v_cur_time-v_ttl_time))
+v_ttl_time_ms=$((v_ttl_time_sec*1000))
+for i in {0..9}
+{
+v_ttl_time_ms_2=$((v_ttl_time_ms+i))
+${cli_dir}/sbin/start-cli.sh -pw ${v20_root_pw} -h ${query_ip}  -e "set ttl to root.test.g_0.d1_${i} ${v_ttl_time_ms_2};"
+v_ttl_time_ms_2=$((v_ttl_time_ms_2+1))
+${cli_dir}/sbin/start-cli.sh -pw ${v20_root_pw} -h ${query_ip}  -e "set ttl to root.test.g_0.d2_${i} ${v_ttl_time_ms_2};"
+
+}
+#${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -e "ALTER TABLE db_g_0.table1_0 set properties TTL=${v_ttl_time_ms};"
+#${cli_dir}/sbin/start-cli.sh -h ${query_ip}  -e "ALTER TABLE db_g_0.table2_0 set properties TTL=${v_ttl_time_ms_2};"
+#flush
+${cli_dir}/sbin/start-cli.sh -pw ${v20_root_pw} -h ${query_ip}  -e "flush;"
+${cli_dir}/sbin/start-cli.sh -pw ${v20_root_pw} -h ${query_ip}  -e "flush;"
+
+${cli_dir}/sbin/start-cli.sh -pw ${v20_root_pw} -h ${query_ip}  -e "show timepartition where database=root.test.g_0;">${cur_dir}/aft_ttl_tmp1.out
+${cli_dir}/sbin/start-cli.sh -pw ${v20_root_pw} -h ${query_ip}   -e "show data regions;"|grep DataRegion|awk -F '|' '{gsub(" ","");print $2","$4","$5","$6}' >${cur_dir}/aft_ttl_tmp2.out
+v_diff1=$(diff ${cur_dir}/bef_ttl_tmp1.out ${cur_dir}/aft_ttl_tmp1.out|grep 08:00|wc -l)
+v_diff2=$(diff ${cur_dir}/bef_ttl_tmp2.out ${cur_dir}/aft_ttl_tmp2.out|wc -l)
+if [[ ${v_diff1} -gt 0 ]]||[[ ${v_diff2} -gt 0 ]];then
+let fail_flag++
+v_warnMessage="${v_warnMessage}before ttl and after ttl timepartition diff."
+fi
 check_data_consistent
-#check log
-#TTL SEC 1768953600 date -d"2000-01-22T08:00:01" +%s
-#ttl_time_point=948499201000
-#v_cur_sec=$(date +%s)
-#v_cur_ms=$((v_cur_sec*1000))
-#v_ttl_value=$((v_cur_ms-ttl_time_point))
-## set ttl
-#${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "set ttl to root.test.g_0.d1_4 ${v_ttl_value};"
-#${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "set ttl to root.test.g_0.d2_4 ${v_ttl_value};"
-#${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -e "ALTER TABLE db_g_0.table1_0 set properties TTL=${v_ttl_value};"
-#${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -e "ALTER TABLE db_g_0.table2_0 set properties TTL=${v_ttl_value};"
-# sleep 
-#sleep 20
-#check_data_consistent
 sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
-sh -x "${prepare_env_dir}/start_cluster_v20.sh" "2" "${total_node_num}" >> "${log_file}" 2>&1
+   # 启动集群
+   sh -x "${prepare_env_dir}/start_cluster_v20.sh" "2" "${total_node_num}" >> "${log_file}" 2>&1
+   if [ $? -eq 0 ]; then
+       log "INFO" "集群启动成功"
+   else
+       log "ERROR" "集群启动失败"
+       let fail_flag++
+   fi
 check_data_consistent
 check_log
-#v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
-#v_backup_time=`date "+%Y_%m_%d_%H_%M_%S"`
-#if [[ ${backup_data_log_flag} -gt 0 ]];then
-#   sh ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time}_${v_backup_desc}
-#   backup_log_flag=0  
-#fi
-#if [[ ${backup_log_flag} -gt 0 ]];then
-#	v_backup_time=`date +%s`
-#    sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc} 
-#fi
-#   if [[ ${fail_flag} -gt 0 ]];then
-#	   echo "testcase1 fail"
-#   else
-#	   echo "testcase1 pass"
-#
-#   fi
 }
 # start cluster 
 echo "">${log_file}
 start_db
 v_start_test_time=`date +%s`
-#start_bm
+start_bm
 testcase1
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
@@ -829,9 +769,9 @@ v_elp_time=$((v_end_test_time-v_start_test_time))
 function write_result()
 {
         test_time=$(date +"%Y-%m-%dT%H:%M:%S.%3N%:z")
-   v_bm_max_value=0
+   v_bm_max_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out|awk '{print $8}'|sort -n|tail -1`
 
-   v_bm_sum_value=0
+   v_bm_sum_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out| awk '{print $8}' | sort -n | awk '{sum+=$1} END {print sum}'`
    # 写入表头
    v_exist_flag=`grep Time,testTimechoDB $CSV_FILE|wc -l`
    if [[ ${v_exist_flag} -gt 0 ]];then

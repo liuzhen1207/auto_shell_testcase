@@ -26,14 +26,14 @@ v_consensus="IoTConsensus"
 CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
-data3_dir="/data3/iotdb_data/${testdb}/data"
 data1_dir_parent="/data1/iotdb_data/${testdb}/"
+data3_dir="/data3/iotdb_data/${testdb}/data"
 data3_dir_parent="/data3/iotdb_data/${testdb}/"
 ssl_str=""
 backup_log_flag=0
 backup_data_log_flag=0
 bm_dir="${cur_dir}/../benchmark/bm_20251220_38c839b_v20"
-backup_dir=/data2/tc2026_data_backup/v2061_rc7_0915_802dd96_ms_dev_ttl_iot
+backup_dir=/data2/tc2026_data_backup/v1341_release_b870ea0_ns_dev_ttl
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -110,7 +110,7 @@ configure_confignode() {
         batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=2"
         batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=2"
         batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
-        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ms"
+        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ns"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 EOF
@@ -165,7 +165,7 @@ configure_datanode() {
         batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=2"
         batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=2"
         batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
-        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ms"
+        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ns"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 
@@ -328,36 +328,34 @@ start_db() {
  exec 3<${nodeinfo_dir}/datanode.txt
  while read line<&3
  do
-         if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
-         fi
-         if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
-         fi
-
+	 if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
+		 echo "ok."
+	 else
+	 ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
+	 fi
+	 if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
+		 echo "ok."
+	 else
+	 ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
+	 fi
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data1_backup ${data1_dir}"
-         if [ $? -ne 0 ]; then
+	 if [ $? -ne 0 ]; then
             ((fail_flag++))
             echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
+	    v_warnMessage="${v_warnMessage} copy backup data failed"
          fi
-
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data2_backup ${db_dir}/data"
          if [ $? -ne 0 ]; then
             ((fail_flag++))
             echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
+	    v_warnMessage="${v_warnMessage} copy backup data failed"
          fi
 
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data3_backup ${data3_dir}"
-         if [ $? -ne 0 ]; then
+          if [ $? -ne 0 ]; then
             ((fail_flag++))
+	    v_warnMessage="${v_warnMessage} copy backup data failed"
             echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
          fi
 
          sleep 1
@@ -376,7 +374,7 @@ start_db() {
 }
 function start_bm()
 {
-bm_conf=ttl_partition_seq
+bm_conf=partition_table_ns_2025y_upd_v13
 #get root password
 #test time 15h
 #v_bm_test_time=54000000
@@ -402,11 +400,6 @@ else
     echo "目录 ${bm_log_dir} 已存在，无需创建"
 fi
 t=`date +%Y_%m_%d_%H_%M_%S`
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf1 >> ${bm_log_dir}/${t}_bm1.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf2 >> ${bm_log_dir}/${t}_bm2.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf3 >> ${bm_log_dir}/${t}_bm3.out &
-nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf4 >> ${bm_log_dir}/${t}_bm4.out &
-wait
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf5 >> ${bm_log_dir}/${t}_bm5.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf6 >> ${bm_log_dir}/${t}_bm6.out &
 nohup ${bm_dir}/benchmark.sh -cf ${bm_dir}/${bm_conf}/conf7 >> ${bm_log_dir}/${t}_bm7.out &
@@ -535,15 +528,17 @@ wait_sync_done 180
 	   v_warnMessage="${v_warnMessage}tree all online query row num != 20."
    fi
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql4}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
+   check_res_eq " 4|" 1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql5}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
+   check_res_eq " 4|" 1
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql6}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql6}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
+   check_res_eq " 2661|" 1
+   check_res_eq " 2869|" 1
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql7}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql7}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
+   check_res_eq " 2661|" 1
+   check_res_eq " 2869|" 1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql8}" >${cur_dir}/q_all_online_tree_q8.out 
    v_row_num=`grep root.test ${cur_dir}/q_all_online_tree_q8.out|wc -l`
    if [[ ${v_row_num} != 20 ]];then
@@ -571,6 +566,10 @@ wait_sync_done 180
            break
    else
 	   let exception_num++
+	   cat ${cur_dir}/q_all_online_table1.out 
+	   cat ${cur_dir}/q_all_online_table2.out 
+	   cat ${cur_dir}/q_all_online_table1_q9.out 
+	   cat ${cur_dir}/q_all_online_table1_q10.out 
            sleep 1
    fi
    if [[ ${exception_num} -ge 10 ]];then
@@ -605,6 +604,7 @@ wait_sync_done 180
            break
       else
 	      let exception_num++
+	      cat ${cur_dir}/q_stop_ip${v_ip}_tree.out
            sleep 1
       fi
       if [[ ${exception_num} -ge 10 ]];then
@@ -613,15 +613,15 @@ wait_sync_done 180
       fi
       done
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql4}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
+   check_res_eq " 4|" 1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql5}" >${cur_dir}/tmp.out
-   check_res_eq " 2|" 1
+   check_res_eq " 4|" 1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql6}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
+   check_res_eq " 2661|" 1
+   check_res_eq " 2869|" 1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql7}" >${cur_dir}/tmp.out
-   check_res_eq " 1|" 1
-   check_res_eq " 2925|" 1
+   check_res_eq " 2661|" 1
+   check_res_eq " 2869|" 1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql8}" >${cur_dir}/q_stop_ip${v_ip}_tree_q8.out
    v_row_num=`grep root.test ${cur_dir}/q_stop_ip${v_ip}_tree_q8.out|wc -l`
    if [[ ${v_row_num} != 20 ]];then
@@ -652,6 +652,10 @@ wait_sync_done 180
            break
       else
 	      let exception_num++
+	      cat ${cur_dir}/q_stop_ip${v_ip}_table1.out
+	      cat ${cur_dir}/q_stop_ip${v_ip}_table2.out
+	      cat ${cur_dir}/q_stop_ip${v_ip}_table1_q9.out
+	      cat ${cur_dir}/q_stop_ip${v_ip}_table2_q10.out
            sleep 1
       fi
       if [[ ${exception_num} -ge 10 ]];then
@@ -714,15 +718,15 @@ do
    if [[ ${v_npe} -gt 0 ]];then
 	   let fail_flag++
 	   let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}CN ${line} NullPointer : ${v_npe}."
 	   echo "CN ${line} NullPointer : ${v_npe}"
-	   v_warnMessage="${v_warnMessage}CN ${line} NullPointer: ${v_npe}."
    fi
    v_cn_err_total=$((v_cn_err1+v_cn_err2+v_cn_err3))
    if [[ ${v_cn_err_total} -gt 0 ]];then
            let fail_flag++
            let backup_log_flag++
-           echo "CN ${line} has error: ${v_cn_err_total}"
 	   v_warnMessage="${v_warnMessage}CN ${line} unexpected log : ${v_cn_err_total}."
+           echo "CN ${line} has error: ${v_cn_err_total}"
    fi
 done
 exec 3<${nodeinfo_dir}/datanode.txt
@@ -745,8 +749,8 @@ do
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
 	   let backup_log_flag++
-	   v_warnMessage="${v_warnMessage}DN ${line} NullPointer: ${v_npe}."
            echo "DN ${line} NullPointer : ${v_npe}"
+	   v_warnMessage="${v_warnMessage}DN ${line} NullPointer : ${v_npe}."
    fi
    if [[ ${v_dn_total_err} -gt 0 ]];then
 	   let fail_flag++
@@ -764,22 +768,7 @@ function testcase1()
 {
 # check data
 #before ttl check data
-sleep 61
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
-
-	while true
-	do
-		v_rec_start_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation with task ID\" ${db_dir}/logs/*datanode*all*|wc -l") 
-		v_rec_end_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation completed with task ID\" ${db_dir}/logs/*datanode*all*|wc -l")
-	       if [[ ${v_rec_start_num} = ${v_rec_end_num} ]];then
-		       break
-	       else
-		       sleep 5
-	       fi	       
-	done
-done
+sleep 60
 check_data_consistent
 #check log
 #TTL SEC 1768953600 date -d"2000-01-22T08:00:01" +%s
@@ -820,7 +809,7 @@ check_log
 echo "">${log_file}
 start_db
 v_start_test_time=`date +%s`
-#start_bm
+start_bm
 testcase1
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))

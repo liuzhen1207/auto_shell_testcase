@@ -27,13 +27,11 @@ CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
 data3_dir="/data3/iotdb_data/${testdb}/data"
-data1_dir_parent="/data1/iotdb_data/${testdb}/"
-data3_dir_parent="/data3/iotdb_data/${testdb}/"
 ssl_str=""
 backup_log_flag=0
 backup_data_log_flag=0
 bm_dir="${cur_dir}/../benchmark/bm_20251220_38c839b_v20"
-backup_dir=/data2/tc2026_data_backup/v2061_rc7_0915_802dd96_ms_dev_ttl_iot
+backup_dir=/data2/tc2026_data_backup/v1341_release_b870ea0_ns_dev_ttl
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -110,7 +108,7 @@ configure_confignode() {
         batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=2"
         batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=2"
         batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
-        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ms"
+        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ns"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 EOF
@@ -165,7 +163,7 @@ configure_datanode() {
         batch_set_sys_conf ".*default_schema_region_group_num_per_database=.*" "default_schema_region_group_num_per_database=2"
         batch_set_sys_conf ".*default_data_region_group_num_per_database=.*" "default_data_region_group_num_per_database=2"
         batch_set_sys_conf ".*ttl_check_interval=.*" "ttl_check_interval=10000"
-        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ms"
+        batch_set_sys_conf ".*timestamp_precision=.*" "timestamp_precision=ns"
         batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 
@@ -309,13 +307,39 @@ set_conf() {
 start_db() {
    log "INFO" "开始启动数据库集群..."
    # 清理环境
+cn_num=3
+dn_num=4
+# 清理旧节点文件，复制新配置
+rm -rf "${nodeinfo_dir}/confignode.txt"
+rm -rf "${nodeinfo_dir}/datanode.txt"
+cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
+cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
 
    clean_env
 
+cn_num=1
+dn_num=4
+rm -rf "${nodeinfo_dir}/confignode.txt"
+rm -rf "${nodeinfo_dir}/datanode.txt"
+cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
+cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
+clean_env
    if [ ${fail_flag} -eq 1 ]; then
        log "ERROR" "环境清理失败，终止启动流程"
 #       exit 1
    fi
+  # 1C4D
+cn_num=3
+dn_num=3
+total_node_num=$((cn_num+dn_num))
+# 清理旧节点文件，复制新配置
+rm -rf "${nodeinfo_dir}/confignode.txt"
+rm -rf "${nodeinfo_dir}/datanode.txt"
+cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
+cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
+# 读取种子节点IP（兼容低版本）
+seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
+query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 
    # 配置节点
    set_conf
@@ -328,38 +352,9 @@ start_db() {
  exec 3<${nodeinfo_dir}/datanode.txt
  while read line<&3
  do
-         if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
-         fi
-         if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
-                 echo "ok."
-         else    
-         ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
-         fi
-
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data1_backup ${data1_dir}"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data2_backup ${db_dir}/data"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data3_backup ${data3_dir}"
-         if [ $? -ne 0 ]; then
-            ((fail_flag++))
-            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
-            v_warnMessage="${v_warnMessage} copy backup data failed"
-         fi
-
          sleep 1
  done
 
@@ -714,15 +709,15 @@ do
    if [[ ${v_npe} -gt 0 ]];then
 	   let fail_flag++
 	   let backup_log_flag++
+	   v_warnMessage="${v_warnMessage}CN ${line} NullPointer : ${v_npe}."
 	   echo "CN ${line} NullPointer : ${v_npe}"
-	   v_warnMessage="${v_warnMessage}CN ${line} NullPointer: ${v_npe}."
    fi
    v_cn_err_total=$((v_cn_err1+v_cn_err2+v_cn_err3))
    if [[ ${v_cn_err_total} -gt 0 ]];then
            let fail_flag++
            let backup_log_flag++
-           echo "CN ${line} has error: ${v_cn_err_total}"
 	   v_warnMessage="${v_warnMessage}CN ${line} unexpected log : ${v_cn_err_total}."
+           echo "CN ${line} has error: ${v_cn_err_total}"
    fi
 done
 exec 3<${nodeinfo_dir}/datanode.txt
@@ -745,8 +740,8 @@ do
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
 	   let backup_log_flag++
-	   v_warnMessage="${v_warnMessage}DN ${line} NullPointer: ${v_npe}."
            echo "DN ${line} NullPointer : ${v_npe}"
+	   v_warnMessage="${v_warnMessage}DN ${line} NullPointer : ${v_npe}."
    fi
    if [[ ${v_dn_total_err} -gt 0 ]];then
 	   let fail_flag++
@@ -764,22 +759,6 @@ function testcase1()
 {
 # check data
 #before ttl check data
-sleep 61
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
-
-	while true
-	do
-		v_rec_start_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation with task ID\" ${db_dir}/logs/*datanode*all*|wc -l") 
-		v_rec_end_num=$(ssh ${os_user_name}@${line} "grep \"DataPartitionTable generation completed with task ID\" ${db_dir}/logs/*datanode*all*|wc -l")
-	       if [[ ${v_rec_start_num} = ${v_rec_end_num} ]];then
-		       break
-	       else
-		       sleep 5
-	       fi	       
-	done
-done
 check_data_consistent
 #check log
 #TTL SEC 1768953600 date -d"2000-01-22T08:00:01" +%s

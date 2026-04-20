@@ -26,6 +26,8 @@ v_consensus="IoTConsensus"
 CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
+data1_dir_parent="/data1/iotdb_data/${testdb}/"
+data3_dir_parent="/data3/iotdb_data/${testdb}/"
 data3_dir="/data3/iotdb_data/${testdb}/data"
 ssl_str=""
 backup_log_flag=0
@@ -307,39 +309,13 @@ set_conf() {
 start_db() {
    log "INFO" "开始启动数据库集群..."
    # 清理环境
-cn_num=3
-dn_num=4
-# 清理旧节点文件，复制新配置
-rm -rf "${nodeinfo_dir}/confignode.txt"
-rm -rf "${nodeinfo_dir}/datanode.txt"
-cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
-cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
 
    clean_env
 
-cn_num=1
-dn_num=4
-rm -rf "${nodeinfo_dir}/confignode.txt"
-rm -rf "${nodeinfo_dir}/datanode.txt"
-cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
-cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
-clean_env
    if [ ${fail_flag} -eq 1 ]; then
        log "ERROR" "环境清理失败，终止启动流程"
 #       exit 1
    fi
-  # 1C4D
-cn_num=3
-dn_num=3
-total_node_num=$((cn_num+dn_num))
-# 清理旧节点文件，复制新配置
-rm -rf "${nodeinfo_dir}/confignode.txt"
-rm -rf "${nodeinfo_dir}/datanode.txt"
-cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
-cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
-# 读取种子节点IP（兼容低版本）
-seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
-query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 
    # 配置节点
    set_conf
@@ -352,9 +328,38 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
  exec 3<${nodeinfo_dir}/datanode.txt
  while read line<&3
  do
+         if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
+                 echo "ok."
+         else    
+         ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
+         fi
+         if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
+                 echo "ok."
+         else    
+         ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
+         fi
+
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data1_backup ${data1_dir}"
+          if [ $? -ne 0 ]; then
+            ((fail_flag++))
+            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
+            v_warnMessage="${v_warnMessage} copy backup data failed"
+         fi
+
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data2_backup ${db_dir}/data"
+          if [ $? -ne 0 ]; then
+            ((fail_flag++))
+            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
+            v_warnMessage="${v_warnMessage} copy backup data failed"
+         fi
+
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data3_backup ${data3_dir}"
+          if [ $? -ne 0 ]; then
+            ((fail_flag++))
+            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
+            v_warnMessage="${v_warnMessage} copy backup data failed"
+         fi
+
          sleep 1
  done
 

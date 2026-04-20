@@ -27,6 +27,8 @@ CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g
 log_file="${cur_dir}/set_conf_parallel.log"
 data1_dir="/data1/iotdb_data/${testdb}/data"
 data3_dir="/data3/iotdb_data/${testdb}/data"
+data1_dir_parent="/data1/iotdb_data/${testdb}/"
+data3_dir_parent="/data3/iotdb_data/${testdb}/"
 ssl_str=""
 bm_dir="${cur_dir}/../benchmark/bm_20251220_38c839b_v20"
 backup_log_flag=0
@@ -326,9 +328,38 @@ start_db() {
  exec 3<${nodeinfo_dir}/datanode.txt
  while read line<&3
  do
+         if ssh ${os_user_name}@${line} test -d ${data1_dir_parent}; then
+                 echo "ok."
+         else    
+         ssh ${os_user_name}@${line} "sudo mkdir ${data1_dir_parent}"
+         fi
+         if ssh ${os_user_name}@${line} test -d ${data3_dir_parent}; then
+                 echo "ok."
+         else    
+         ssh ${os_user_name}@${line} "sudo mkdir ${data3_dir_parent}"
+         fi
+
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data1_backup ${data1_dir}"
+         if [ $? -ne 0 ]; then
+            ((fail_flag++))
+            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
+            v_warnMessage="${v_warnMessage} copy backup data failed"
+         fi
+
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data2_backup ${db_dir}/data"
+         if [ $? -ne 0 ]; then
+            ((fail_flag++))
+            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
+            v_warnMessage="${v_warnMessage} copy backup data failed"
+         fi
+
          ssh ${os_user_name}@${line} "sudo cp -rp ${backup_dir}/data3_backup ${data3_dir}"
+         if [ $? -ne 0 ]; then
+            ((fail_flag++))
+            echo "【失败】远程文件复制失败，fail_flag 已累加：$fail_flag"
+            v_warnMessage="${v_warnMessage} copy backup data failed"
+         fi
+
          sleep 1
  done
 
