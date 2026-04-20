@@ -1,0 +1,17 @@
+++ cat ./test.conf
+++ grep v_testdb=
+++ awk -F = '{print $2}'
++ desc=v2091rc5_0417_089c5437
++ mkdir v2091rc5_0417_089c5437
+mkdir: cannot create directory ‘v2091rc5_0417_089c5437’: File exists
++ i=1
+++ date +%Y_%m_%d_%H_%M_%S
++ v_cur_time=2026_04_17_13_10_08
++ exec
++ read line
+++ date +%Y_%m_%d_%H_%M_%S
++ v_cur_time=2026_04_17_13_10_08
+++ echo password_stale_warning_days_tc_sep_priv.sh
+++ awk -F . '{print $1}'
++ v_tc=password_stale_warning_days_tc_sep_priv
++ sh -x password_stale_warning_days_tc_sep_priv.sh

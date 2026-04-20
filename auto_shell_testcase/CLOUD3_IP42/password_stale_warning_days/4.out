@@ -1,0 +1,7 @@
+383  [main] WARN  o.apache.iotdb.jdbc.IoTDBConnection - Warning: Your password has not been changed for over 1 days. For security best practices, please consider updating your password. 
++----+
+|Time|
++----+
++----+
+Empty set.
+It costs 0.013s

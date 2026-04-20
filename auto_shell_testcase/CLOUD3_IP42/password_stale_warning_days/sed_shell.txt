@@ -1,0 +1,1 @@
+sed -i '/start-cli.sh/ s/-e/${ssl_str} &/' alter_user_rename_test_safe.sh
