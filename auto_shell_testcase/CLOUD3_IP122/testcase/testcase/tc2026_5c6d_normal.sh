@@ -10,8 +10,6 @@ nodeinfo_dir="${cur_dir}/../conf"
 os_user_name=$(grep ^os_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 os_name=${os_user_name}
 db_user_name=$(grep ^db_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-db_admin_name="root"
-db_sec_admin_name="root"
 testdb=$(grep ^v_testdb "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_parent_dir=$(grep ^v_db_parent_dir "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 shell_client_db_parent_dir=$(grep "^v_shell_client_db_parent_dir=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
@@ -454,111 +452,162 @@ do
 
 done
 }
-# 监控 Total Sync Lag 直到所有 DataNode 连续 5 分钟为 0
-wait_for_monitor_sync_completion() {
-    # Prometheus服务器信息
-    local PROMETHEUS_URL=$(grep ^monitor_url "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-    local PROMETHEUS_USER=admin
-    local PROMETHEUS_PASS=admin
+#  - 只检查 ${nodeinfo_dir}/datanode.txt 里的 DN
+#  - 缺失指标不退出，只持续等待
+#  - syncLag > 0 持续存在时保留现场，不进入下个用例
+#  - 缺失/恢复、非 0/恢复 0 只在状态变化时打印一次
+#  - 轮询间隔改为 5 秒
 
-    # 连续时间（秒）- 120秒
-    local TARGET_DURATION=120
-    local current_duration=0
-    local start_time=$(date +%s)
+  wait_for_monitor_sync_completion() {
+      local PROMETHEUS_URL
+      PROMETHEUS_URL=$(grep '^monitor_url' "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+      local PROMETHEUS_USER=admin
+      local PROMETHEUS_PASS=admin
+      local TARGET_DURATION=300
+      local SLEEP_INTERVAL=5
+      local dn_file="${nodeinfo_dir}/datanode.txt"
 
-    # 关联数组：追踪每个DataNode上一次的sync lag状态（true=上一次>0，false=上一次=0）
-    declare -A last_node_status
+      local zero_start_time=0
 
-    echo "开始监控 Total Sync Lag，目标连续 ${TARGET_DURATION} 秒所有 DataNode 均为 0..."
+      declare -A target_nodes
+      declare -A seen_nodes
+      declare -A last_node_status
+      declare -A missing_warned
 
-    while true; do
-        # 获取当前时间
-        local current_time=$(date +%s)
-        local elapsed_time=$((current_time - start_time))
-        local all_zero=true  # 标记本次检测是否所有节点都为0
-        local has_non_zero=false  # 标记本次是否有节点>0
+      if [[ ! -f "$dn_file" ]]; then
+          echo "错误: 找不到 $dn_file"
+          return 1
+      fi
 
-        # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
-        local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22ioTConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
+      local dn_list=()
+      while read -r dn_ip; do
+          [[ -z "$dn_ip" ]] && continue
+          [[ "$dn_ip" =~ ^# ]] && continue
+          dn_list+=("$dn_ip")
+          target_nodes["$dn_ip"]=1
+      done < "$dn_file"
 
-        # 检查响应是否成功
-        if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 错误: 无法从 Prometheus 获取数据"
-            echo "响应: $response"
-            sleep 1
-            continue
-        fi
+      local expected_count=${#dn_list[@]}
+      if [[ "$expected_count" -eq 0 ]]; then
+          echo "错误: $dn_file 中未解析到任何 DataNode"
+          return 1
+      fi
 
-        # 提取结果列表，避免重复解析jq
-        local results=$(echo "$response" | jq -r '.data.result')
-        local result_count=$(echo "$results" | jq -r 'length')
+      local instance_regex=""
+      local ip
+      for ip in "${dn_list[@]}"; do
+          local escaped_ip=${ip//./\\.}
+          [[ -n "$instance_regex" ]] && instance_regex="${instance_regex}|"
+          instance_regex="${instance_regex}${escaped_ip}(:[0-9]+)?"
+      done
+      instance_regex="^(${instance_regex})$"
 
-        if [[ $result_count -eq 0 ]]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 警告: 未找到 Total Sync Lag 指标数据"
-            sleep 1
-            continue
-        fi
+      echo "开始监控 Total Sync Lag，仅检查 ${dn_file} 中的 ${expected_count} 个 DataNode"
+      echo "Prometheus instance 过滤正则: ${instance_regex}"
 
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] 找到 $result_count 个 Total Sync Lag 指标"
+      while true; do
+          local now
+          now=$(date +%s)
 
-        # 遍历每个DataNode的指标
-        for ((i=0; i<result_count; i++)); do
-            # 一次性提取当前节点的所有信息
-            local instance=$(echo "$results" | jq -r ".[$i].metric.instance")
-            local sync_lag=$(echo "$results" | jq -r ".[$i].value[1]")
-            local cluster=$(echo "$results" | jq -r ".[$i].metric.cluster")
-            local node_type=$(echo "$results" | jq -r ".[$i].metric.nodeType")
+          local query
+          query="sum(iot_consensus{instance=~\"${instance_regex}\",name=\"ioTConsensusServerImpl\",type=\"syncLag\"}) by (instance)"
 
-            echo "  实例 $instance: Total Sync Lag = $sync_lag (集群: $cluster, 类型: $node_type)"
+          local response
+          response=$(curl -s -u "${PROMETHEUS_USER}:${PROMETHEUS_PASS}" --get \
+              --data-urlencode "query=${query}" \
+              "${PROMETHEUS_URL}/api/v1/query")
 
-            # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
-            if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
-                has_non_zero=true
-                all_zero=false
+          if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
+              echo "[$(date '+%F %T')] 错误: 无法从 Prometheus 获取数据"
+              echo "响应: $response"
+              zero_start_time=0
+              sleep "${SLEEP_INTERVAL}"
+              continue
+          fi
 
-                # 核心逻辑：只有上一次状态也是>0时，才累加fail_flag
-                if [[ ${last_node_status[$instance]} == "true" ]]; then
-                    ((fail_flag++))
-                    ((sync_fail_flag++))
-                    v_warnMessage="sync lag > 0: 实例 $instance 持续大于0，fail_flag 累加至 $fail_flag"
-                    echo "  ⚠️  $v_warnMessage"
-                else
-                    # 首次检测到>0，仅更新状态，不累加
-                    v_warnMessage="sync lag > 0: 实例 $instance 首次大于0，暂不累加fail_flag"
-                    echo "  ⚠️  $v_warnMessage"
-                fi
+          seen_nodes=()
+          local matched_count=0
+          local zero_count=0
+          local has_non_zero=false
+          local non_zero_nodes=()
+          local missing_nodes=()
 
-                # 更新当前节点的状态为>0
-                last_node_status[$instance]="true"
-            else
-                # sync lag=0，更新状态为false，不累加
-                last_node_status[$instance]="false"
-            fi
-        done
+          while IFS='|' read -r instance sync_lag; do
+              [[ -z "$instance" ]] && continue
 
-        # 重置计时逻辑：仅当本次有节点>0时，才重置连续为0的计时
-        if $has_non_zero; then
-            current_duration=0
-            start_time=$(date +%s)
-            echo "  ❌ 存在DataNode Sync Lag>0，重置连续为0计时"
-        else
-            # 所有节点都为0，累计连续时长
-            current_duration=$((current_time - start_time))
-            echo "✅ 所有 DataNode 的 Total Sync Lag 均为 0，已持续 ${current_duration} 秒"
+              local instance_host="${instance%%:*}"
+              [[ -z "${target_nodes[$instance_host]}" ]] && continue
 
-            # 检查是否达到目标时长
-            if [[ $current_duration -ge $TARGET_DURATION ]]; then
-                echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒均为 0"
-                echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
-                return 0
-            fi
-        fi
+              seen_nodes["$instance_host"]=1
+              ((matched_count++))
 
-        # 间隔1秒检测一次
-        sleep 1
-    done
-}
+              if [[ ${missing_warned[$instance_host]} == "true" ]]; then
+                  echo "[$(date '+%F %T')] INFO: 节点 ${instance_host} 的 syncLag 指标已恢复"
+                  missing_warned["$instance_host"]="false"
+              fi
+
+              if awk "BEGIN {exit !($sync_lag > 0.0001)}"; then
+                  has_non_zero=true
+                  non_zero_nodes+=("${instance_host}=${sync_lag}")
+
+                  if [[ ${last_node_status[$instance_host]} == "true" ]]; then
+                      ((fail_flag++))
+                      ((sync_fail_flag++))
+                  else
+                      echo "[$(date '+%F %T')] WARN: 节点 ${instance_host} 首次检测到 syncLag=${sync_lag}"
+                  fi
+
+                  last_node_status["$instance_host"]="true"
+              else
+                  if [[ ${last_node_status[$instance_host]} == "true" ]]; then
+                      echo "[$(date '+%F %T')] INFO: 节点 ${instance_host} 的 syncLag 已恢复为 0"
+                  fi
+                  last_node_status["$instance_host"]="false"
+                  ((zero_count++))
+              fi
+          done < <(
+              echo "$response" | jq -r '.data.result[] | "\(.metric.instance)|\(.value[1])"'
+          )
+
+          for ip in "${dn_list[@]}"; do
+              if [[ -z "${seen_nodes[$ip]}" ]]; then
+                  missing_nodes+=("$ip")
+                  if [[ ${missing_warned[$ip]} != "true" ]]; then
+                      echo "[$(date '+%F %T')] WARN: 节点 ${ip} 未查到 syncLag 指标"
+                      missing_warned["$ip"]="true"
+                  fi
+              fi
+          done
+
+          if [[ ${#missing_nodes[@]} -gt 0 ]]; then
+              zero_start_time=0
+              echo "[$(date '+%F %T')] 等待中: 指标缺失 ${#missing_nodes[@]}/${expected_count}，缺失节点: ${missing_nodes[*]}"
+              sleep "${SLEEP_INTERVAL}"
+              continue
+          fi
+
+          if $has_non_zero; then
+              zero_start_time=0
+              echo "[$(date '+%F %T')] 等待中: ${zero_count}/${expected_count} 个 DN syncLag=0，非零节点: ${non_zero_nodes[*]}，fail_flag=${fail_flag}，sync_fail_flag=${sync_fail_flag}"
+          else
+              if [[ "$zero_start_time" -eq 0 ]]; then
+                  zero_start_time=$now
+              fi
+
+              local current_duration=$((now - zero_start_time))
+              echo "[$(date '+%F %T')] 正常: ${expected_count}/${expected_count} 个 DN syncLag=0，已持续 ${current_duration}/${TARGET_DURATION} 秒"
+
+              if [[ "$current_duration" -ge "$TARGET_DURATION" ]]; then
+                  echo "[$(date '+%F %T')] 同步完成: ${dn_file} 中所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒为 0"
+                  echo "最终 fail_flag=${fail_flag}, sync_fail_flag=${sync_fail_flag}"
+                  return 0
+              fi
+          fi
+
+          sleep "${SLEEP_INTERVAL}"
+      done
+  }
+
 function create_user()
 {
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER  rainer 'TimechoDB@2021';">${cur_dir}/tmp.out
@@ -570,13 +619,13 @@ check_res success 1 "CREATE USER  winder"
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER  sunner 'TimechoDB@2021';">${cur_dir}/tmp.out
 check_res success 1 "CREATE USER  sunner"
 # grant privelege
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "GRANT ALL ON DATABASE usr_sod0 TO USER rainer;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER rainer;">${cur_dir}/tmp.out
 check_res success 1 "grant USER  rainer"
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "GRANT ALL ON DATABASE usr_sod0 TO USER colder;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER colder;">${cur_dir}/tmp.out
 check_res success 1 "grant USER  colder"
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "GRANT ALL ON DATABASE tod_sod0 TO USER winder;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER winder;">${cur_dir}/tmp.out
 check_res success 1 "grant USER  winder"
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "GRANT ALL ON DATABASE tod_sod0 TO USER sunner;">${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER sunner;">${cur_dir}/tmp.out
 check_res success 1 "grant USER  sunner"
 
 
@@ -588,7 +637,42 @@ mkdir -p ${v_jstack_dir}
 datanode_file="${nodeinfo_dir}/datanode.txt"
 confignode_file="${nodeinfo_dir}/confignode.txt"
 
-# 时间戳（统一时间，避免每个文件时间不一样）
+dump_remote_process_debug() {
+    local ip=$1
+    local process_name=$2
+    local outfile=$3
+
+    ssh root@"${ip}" bash -s -- "${process_name}" > "${outfile}" 2>&1 <<'EOF'
+process_name="$1"
+pid=$(pgrep -f "${process_name}" | head -n1)
+
+echo "==== ${process_name} Debug Info ===="
+if [ -z "${pid}" ]; then
+    echo "${process_name} pid not found"
+    exit 0
+fi
+
+echo "pid: ${pid}"
+echo "---- Established Peers ----"
+peer_summary=$(ss -tunp state established 2>/dev/null \
+    | awk -v pid="${pid}" '$0 ~ ("pid=" pid ",") {print $5}' \
+    | rev | cut -d":" -f2- | rev \
+    | grep -v -E '^(127\.|::1|\[::1\]|localhost)$' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n \
+    | uniq -c)
+
+if [ -n "${peer_summary}" ]; then
+    echo "${peer_summary}"
+else
+    echo "no non-local established peers"
+fi
+
+echo
+echo "---- Jstack ----"
+jstack "${pid}"
+EOF
+}
+
 time=$(date +%Y%m%d_%H%M%S)
 
 echo "==== 开始批量抓取 jstack，结果保存在当前目录 ===="
@@ -597,11 +681,11 @@ echo "==== 开始批量抓取 jstack，结果保存在当前目录 ===="
 if [ -f "$confignode_file" ]; then
     echo -e "\n>>>> 开始处理 ConfigNode 节点 <<<<"
     for ip in $(cat "$confignode_file" | grep -v '^$'); do
-        outfile="${v_cluster_num_info}_cn_ip${ip}_${v_jstack_num}_${time}_jstack.out"
+	    v_ip=$(echo ${ip}|awk -F '.' '{print $4}')
+        outfile="${v_cluster_num_info}_cn_ip${v_ip}_${v_jstack_num}_${time}_jstack.out"
         echo "节点 $ip -> 输出到 $outfile"
 
-        # 远程执行 jstack ConfigNode，输出直接到本地文件
-        ssh root@"$ip" "jstack \$(pgrep -f 'ConfigNode')" > "${v_jstack_dir}/$outfile" 2>&1
+        dump_remote_process_debug "$ip" "ConfigNode" "${v_jstack_dir}/$outfile"
     done
 fi
 
@@ -609,43 +693,135 @@ fi
 if [ -f "$datanode_file" ]; then
     echo -e "\n>>>> 开始处理 DataNode 节点 <<<<"
     for ip in $(cat "$datanode_file" | grep -v '^$'); do
-        outfile="${v_cluster_num_info}_dn_ip${ip}_${v_jstack_num}_${time}_jstack.out"
+	    v_ip=$(echo ${ip}|awk -F '.' '{print $4}')
+        outfile="${v_cluster_num_info}_dn_ip${v_ip}_${v_jstack_num}_${time}_jstack.out"
         echo "节点 $ip -> 输出到 $outfile"
 
-        # 远程执行 jstack DataNode，输出直接到本地文件
-        ssh root@"$ip" "jstack \$(pgrep -f 'DataNode')" > "${v_jstack_dir}/$outfile" 2>&1
+        dump_remote_process_debug "$ip" "DataNode" "${v_jstack_dir}/$outfile"
     done
 fi
 
 echo -e "\n==== 全部完成！所有 jstack 文件已保存在当前目录 ===="
-	let v_jstack_num++
+let v_jstack_num++
 }
 function start_bm()
 {
 v_bm_time=$(date +%Y%m%d_%H%M%S)
-ssh root@${bm1_ip} "nohup ${bm_dir}/start_bm.sh ${testdb}_${v_cluster_num_info}_${v_bm_time} > /dev/null 2>&1 &"
-ssh root@${bm2_ip} "nohup ${bm_dir}/start_bm.sh ${testdb}_${v_cluster_num_info}_${v_bm_time} > /dev/null 2>&1 &"
+arg="${testdb}_${v_cluster_num_info}_${v_bm_time}"
+
+echo "==== 后台启动 BM 进程 ===="
+
+start_bm_remote() {
+    local host=$1
+    local launcher_log="${bm_dir}/${arg}_launcher.log"
+
+    ssh root@${host} "cd '${bm_dir}' || exit 1
+nohup bash ./start_bm.sh '${arg}' > '${launcher_log}' 2>&1 < /dev/null &
+sleep 1
+pgrep -af \"start_bm.sh ${arg}\" >/dev/null"
+}
+
+if ! start_bm_remote "${bm1_ip}"; then
+    echo "[ERROR] BM launcher 启动失败: ${bm1_ip}"
+    let fail_flag++
+    return 1
+fi
+
+if ! start_bm_remote "${bm2_ip}"; then
+    echo "[ERROR] BM launcher 启动失败: ${bm2_ip}"
+    let fail_flag++
+    return 1
+fi
+
+echo "BM 已提交后台启动，启动日志位于 ${bm_dir}/${arg}_launcher.log"
 }
 function check_bm()
 {
 while true
 do
-    echo "==== 开始检查 BM 进程 (App) 是否存在 ===="
+    echo "==== 开始检查 BM benchmark 输出结果是否已完成 ===="
 
-    # 检查 BM1
-    bm1_alive=$(ssh root@${bm1_ip} "pgrep -f 'App' | wc -l")
-    # 检查 BM2
-    bm2_alive=$(ssh root@${bm2_ip} "pgrep -f 'App' | wc -l")
+    bm1_status=$(ssh root@${bm1_ip} "
+launcher_alive=0
+bm1_alive=0
+bm2_alive=0
+bm1_done=0
+bm2_done=0
 
-    echo "BM1 进程数：$bm1_alive"
-    echo "BM2 进程数：$bm2_alive"
+bm1_out=\"${bm_dir}/${arg}_bm1.out\"
+bm2_out=\"${bm_dir}/${arg}_bm2.out\"
 
-    # 判断规则：任意一台 App 不存在 = 测试完成
-    if [ $bm1_alive -eq 0 ] || [ $bm2_alive -eq 0 ]; then
-        echo "[INFO] BM 测试已完成（进程 App 不存在）"
-        return 0  # 0 = 完成
+pgrep -af \"start_bm.sh ${arg}\" >/dev/null && launcher_alive=1
+
+if [ -f \"${bm_dir}/${arg}_bm1.pid\" ] && kill -0 \$(cat \"${bm_dir}/${arg}_bm1.pid\") 2>/dev/null; then
+    bm1_alive=1
+fi
+
+if [ -f \"${bm_dir}/${arg}_bm2.pid\" ] && kill -0 \$(cat \"${bm_dir}/${arg}_bm2.pid\") 2>/dev/null; then
+    bm2_alive=1
+fi
+
+if [ -f \"\$bm1_out\" ] \
+   && grep -q \"Test elapsed time (not include schema creation):\" \"\$bm1_out\" \
+   && grep -q \"Result Matrix\" \"\$bm1_out\"; then
+    bm1_done=1
+fi
+
+if [ -f \"\$bm2_out\" ] \
+   && grep -q \"Test elapsed time (not include schema creation):\" \"\$bm2_out\" \
+   && grep -q \"Result Matrix\" \"\$bm2_out\"; then
+    bm2_done=1
+fi
+
+echo \"\$bm1_done,\$bm2_done|\$launcher_alive,\$bm1_alive,\$bm2_alive\"
+")
+
+    bm2_status=$(ssh root@${bm2_ip} "
+launcher_alive=0
+bm1_alive=0
+bm2_alive=0
+bm1_done=0
+bm2_done=0
+
+bm1_out=\"${bm_dir}/${arg}_bm1.out\"
+bm2_out=\"${bm_dir}/${arg}_bm2.out\"
+
+pgrep -af \"start_bm.sh ${arg}\" >/dev/null && launcher_alive=1
+
+if [ -f \"${bm_dir}/${arg}_bm1.pid\" ] && kill -0 \$(cat \"${bm_dir}/${arg}_bm1.pid\") 2>/dev/null; then
+    bm1_alive=1
+fi
+
+if [ -f \"${bm_dir}/${arg}_bm2.pid\" ] && kill -0 \$(cat \"${bm_dir}/${arg}_bm2.pid\") 2>/dev/null; then
+    bm2_alive=1
+fi
+
+if [ -f \"\$bm1_out\" ] \
+   && grep -q \"Test elapsed time (not include schema creation):\" \"\$bm1_out\" \
+   && grep -q \"Result Matrix\" \"\$bm1_out\"; then
+    bm1_done=1
+fi
+
+if [ -f \"\$bm2_out\" ] \
+   && grep -q \"Test elapsed time (not include schema creation):\" \"\$bm2_out\" \
+   && grep -q \"Result Matrix\" \"\$bm2_out\"; then
+    bm2_done=1
+fi
+
+echo \"\$bm1_done,\$bm2_done|\$launcher_alive,\$bm1_alive,\$bm2_alive\"
+")
+
+    echo "BM1 主机状态: $bm1_status"
+    echo "BM2 主机状态: $bm2_status"
+
+    bm1_done_info=${bm1_status%%|*}
+    bm2_done_info=${bm2_status%%|*}
+
+    if [[ "$bm1_done_info" == "1,1" && "$bm2_done_info" == "1,1" ]]; then
+        echo "[INFO] BM 测试已完成（bm1.out 和 bm2.out 都已输出结果）"
+        return 0
     else
-        echo "[INFO] BM 仍在运行"
+        echo "[INFO] BM 结果尚未全部输出完成"
         sleep 300 
     fi
 done

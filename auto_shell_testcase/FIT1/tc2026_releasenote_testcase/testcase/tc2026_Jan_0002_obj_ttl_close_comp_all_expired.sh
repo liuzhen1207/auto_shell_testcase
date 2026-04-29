@@ -21,7 +21,7 @@ dr_rep_num=2
 sr_rep_num=3
 total_node_num=$((cn_num+dn_num))
 v_warnNum=0
-v_warnMessage="No Warn."
+v_warnMessage="."
 v_consensus="IoTConsensus"
 CSV_FILE=$(grep ^CSV_FILE "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 fail_flag_total=0
@@ -337,6 +337,60 @@ function check_res()
       cat ${cur_dir}/tmp.out
    fi
 }
+function check_log()
+{
+exec 3<${nodeinfo_dir}/confignode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "sudo gunzip ${db_dir}/logs/*confignode*all*"
+   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err1=`ssh ${os_user_name}@${line} "grep BufferUnderflowException ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
+   if [[ ${v_npe} -gt 0 ]];then
+           let fail_flag++
+           echo "CN ${line} NullPointer : ${v_npe}"
+           v_warnMessage="${v_warnMessage}CN NPE."
+   fi
+   v_cn_err_total=$((v_cn_err1+v_cn_err2))
+   if [[ ${v_cn_err_total} -gt 0 ]];then
+           let fail_flag++
+           v_warnMessage="${v_warnMessage}CN HAS_MORE_STATE."
+           echo "CN ${line} has error: ${v_npe}"
+   fi
+done
+exec 3<${nodeinfo_dir}/datanode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "sudo gunzip ${db_dir}/logs/*datanode*all*"
+   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err=`ssh ${os_user_name}@${line} "grep CompactionTableSchemaNotMatchException ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err2=`ssh ${os_user_name}@${line} "grep \"has overlapped data\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err3=`ssh ${os_user_name}@${line} "grep \"which should be later than the last time\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err4=`ssh ${os_user_name}@${line} "grep \"DataTypeInconsistentException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err5=`ssh ${os_user_name}@${line} "grep \"ArrayIndexOutOfBoundsException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err6=`ssh ${os_user_name}@${line} "grep \"Alter timeseries .* data type from null to\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err7=`ssh ${os_user_name}@${line} "grep \"StatisticsClassException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err10=`ssh ${os_user_name}@${line} "grep \"RuntimeException: data type not matched\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err11=`ssh ${os_user_name}@${line} "grep \"StringIndexOutOfBoundsException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11))
+
+   if [[ ${v_npe} -gt 0 ]];then
+           let fail_flag++
+           v_warnMessage="${v_warnMessage}DN NPE."
+           echo "DN ${line} NullPointer : ${v_npe}"
+   fi
+   if [[ ${v_dn_total_err} -gt 0 ]];then
+           let fail_flag++
+           v_warnMessage="${v_warnMessage}DN unexp log."
+           echo "DN ${line} has error: ${v_dn_total_err}"
+   fi
+
+done
+
+
+}
 
 function testcase1()
 {
@@ -385,6 +439,24 @@ for i in $(seq 0 99); do
         echo "('${TIMESTAMP}', '${DEVICE}', '${COLOR}', '${AGE}', '${DEPT}', '${FILE_TYPE}', to_object(true,0,X'${CONTENT}'))," >> ${SQL_FILE}
     fi
 done
+# before SQL
+bef_ttl_obj_total_count=0
+exec 3<${nodeinfo_dir}/datanode.txt
+while read line<&3
+do
+   v_data2_obj_count=`ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
+   v_data1_obj_count=`ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
+   v_data3_obj_count=`ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
+   bef_ttl_obj_total_count=$((bef_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
+   ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\""
+   ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\""
+   ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\""
+done
+exp_obj_num=0
+if [[ ${bef_ttl_obj_total_count} != ${exp_obj_num} ]];then
+        echo "bef_ttl_obj_total_count ${bef_ttl_obj_total_count} != ${exp_obj_num}"
+        let fail_flag++
+fi
 
 # 执行SQL
 echo "生成完成：${SQL_FILE}"
@@ -403,6 +475,9 @@ do
    v_data1_obj_count=`ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
    v_data3_obj_count=`ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
    bef_ttl_obj_total_count=$((bef_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
+   ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\""
+   ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\""
+   ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\""
 done
 exp_obj_num=$((dr_rep_num*100))
 if [[ ${bef_ttl_obj_total_count} != ${exp_obj_num} ]];then
@@ -453,6 +528,7 @@ start_db
 v_start_test_time=`date +%s`
 testcase1
 testcase2
+check_log
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
 fail_flag=$((fail_flag_total+fail_flag))
@@ -480,6 +556,9 @@ function write_result()
 # remove bm logs
 #        rm -rf ${bm_log_dir}/${t}_bm.out
    fi
+           v_backup_time=`date +%s`
+           v_backup_desc=`echo ${SCRIPT_NAME} |awk -F '.' '{print $1}'`
+           sh ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time}_${v_backup_desc}
 
 }
 write_result
