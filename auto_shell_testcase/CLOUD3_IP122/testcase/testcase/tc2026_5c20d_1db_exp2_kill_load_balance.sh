@@ -1,0 +1,1381 @@
+#!/bin/bash
+set -uo pipefail
+cur_dir="$( cd "$( dirname "$0"  )" && pwd  )"
+current_dir=${cur_dir}
+SCRIPT_NAME=$(basename "$0")
+conf_file="${cur_dir}/../conf/test.conf"
+nodeinfo_dir="${cur_dir}/../conf"
+
+# 读取配置文件（去空格，兼容低版本）
+os_user_name=$(grep ^os_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+os_name=${os_user_name}
+db_user_name=$(grep ^db_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+testdb=$(grep ^v_testdb "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+db_parent_dir=$(grep ^v_db_parent_dir "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+shell_client_db_parent_dir=$(grep "^v_shell_client_db_parent_dir=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+cli_dir=${shell_client_db_parent_dir}/${testdb}
+db_dir=${db_parent_dir}/${testdb}
+cn_db_parent_dir=`cat ${conf_file}|grep ^v_cn_db_parent_dir|awk -F '=' '{print $2}'`
+cn_db_dir=${cn_db_parent_dir}/${testdb}
+remote_cli_os_user=$(grep "^remote_cli_os_user=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+remote_cli_ip=$(grep "^remote_cli_ip=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+bm1_ip=$(grep "^bm1_ip=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+bm2_ip=$(grep "^bm2_ip=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+bm_dir=$(grep "^bm_dir=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+this_shell_ip=$(grep "^this_shell_ip=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
+benchmark_ip_list_file="${nodeinfo_dir}/benchmark_ip_list.txt"
+bm_conf="weather_6h_diff"
+bm_ips=()
+clean_env_dir="${cur_dir}/../clean_env"
+prepare_env_dir="${cur_dir}/../prepare_env"
+CLUSTER_ID=$(grep ^CLUSTER_NAME "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+cn_num=5
+dn_num=20
+v_cluster_num_info="${cn_num}C${dn_num}D"
+dr_rep_num=3
+sr_rep_num=5
+total_node_num=$((cn_num+dn_num))
+node_num=${total_node_num}
+log_file="${cur_dir}/set_conf_parallel.log"
+ssl_str=""
+backup_flag=0
+backup_log_flag=0
+v_warnNum=0
+v_warnMessage="."
+v_consensus="IoTConsensus"
+v_sec_super_user="root"
+v_sys_super_user="root"
+v_jstack_num=0
+arg=""
+v_testtime=""
+benchmark_start_time=""
+v_remove_cn_id=-1
+v_remove_dn_id=-1
+v_shutdown_ip1=""
+# 清理旧节点文件，复制新配置
+rm -rf "${nodeinfo_dir}/confignode.txt"
+rm -rf "${nodeinfo_dir}/datanode.txt"
+cp -rp "${nodeinfo_dir}/confignode_${cn_num}c.txt" "${nodeinfo_dir}/confignode.txt"
+cp -rp "${nodeinfo_dir}/datanode_${dn_num}d.txt" "${nodeinfo_dir}/datanode.txt"
+
+# 读取种子节点IP（兼容低版本）
+seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
+query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
+query_ip2=$(tail -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
+v_new_cn_ip=$(sed -n "7p" "${nodeinfo_dir}/datanode.txt")
+v_new_cn_leader_ip=${query_ip}
+fail_flag=0
+sum_fail_flag=0
+sync_fail_flag=0
+
+# ===================== 工具函数 =====================
+# 日志输出函数（带时间戳）
+log() {
+    local level=$1
+    local msg=$2
+    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+    echo "[${timestamp}] [${level}] ${msg}" >> "${log_file}"
+    echo "[${timestamp}] [${level}] ${msg}"
+}
+
+# 清理环境函数
+clean_env() {
+   log "INFO" "开始清理集群环境..."
+   local cleanup_failed=0
+   sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1 || cleanup_failed=1
+   sh -x "${clean_env_dir}/clean_cluster.sh" >> "${log_file}" 2>&1 || cleanup_failed=1
+   sh -x "${clean_env_dir}/reset_conf.sh" >> "${log_file}" 2>&1 || cleanup_failed=1
+   sh -x "${clean_env_dir}/clear_cache.sh" >> "${log_file}" 2>&1 || cleanup_failed=1
+   if [ ${cleanup_failed} -eq 0 ]; then
+       log "INFO" "集群环境清理完成"
+   else
+       let fail_flag++
+       log "ERROR" "集群环境清理失败"
+   fi
+}
+
+# 单个ConfigNode配置函数
+configure_confignode() {
+    local node_ip=$1
+    log "INFO" "开始配置ConfigNode: ${node_ip}"
+    
+    # 整合所有ConfigNode修改命令，一次SSH执行
+    ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
+        # 修改env.sh配置
+        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="4G"/g' ${cn_db_dir}/conf/confignode-env.sh
+        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="1G"/g' ${cn_db_dir}/conf/confignode-env.sh
+        
+        # 定义批量修改system.properties的函数
+        batch_set_sys_conf() {
+            local search_str=\$1
+            local content=\$2
+            local file="${cn_db_dir}/conf/iotdb-system.properties"
+            if grep -q "\$search_str" "\$file"; then
+                sed -i "s|\$search_str|\$content|g" "\$file"
+            else
+                echo "\$content" >> "\$file"
+            fi
+        }
+
+        # 批量执行system.properties配置
+        batch_set_sys_conf ".*cn_seed_config_node=.*" "cn_seed_config_node=${seed_cn_ip}"
+        batch_set_sys_conf ".*cn_internal_address=.*" "cn_internal_address=${node_ip}"
+        batch_set_sys_conf ".*cn_metric_reporter_list=.*" "cn_metric_reporter_list=PROMETHEUS"
+        batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
+        batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
+        batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
+        batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
+        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
+        batch_set_sys_conf ".*auditable_query_event_type=.*" "auditable_query_event_type=SLOW_OPERATION"
+        batch_set_sys_conf ".*auditable_operation_type=.*" "auditable_operation_type=QUERY"
+        batch_set_sys_conf ".*query_cost_stat_window=.*" "query_cost_stat_window=5"
+        batch_set_sys_conf ".*time_partition_interval=.*" "time_partition_interval=3600000"
+        batch_set_sys_conf ".*region_migration_speed_limit_bytes_per_second=.*" "region_migration_speed_limit_bytes_per_second=150994944"
+EOF
+
+    if [ $? -eq 0 ]; then
+        log "INFO" "ConfigNode ${node_ip} 配置完成"
+    else
+        log "ERROR" "ConfigNode ${node_ip} 配置失败"
+        return 1
+    fi
+}
+
+# 单个DataNode配置函数
+configure_datanode() {
+    local node_ip=$1
+    # 读取坏盘节点IP（兼容文件不存在）
+
+    # 整合所有DataNode修改命令，一次SSH执行
+    ssh -o ConnectTimeout=10 "${os_user_name}@${node_ip}" bash -s <<EOF >> "${log_file}" 2>&1
+        # 修改env.sh配置
+        sed -i 's/#ON_HEAP_MEMORY=.*/ON_HEAP_MEMORY="48G"/g' ${db_dir}/conf/datanode-env.sh
+        sed -i 's/#OFF_HEAP_MEMORY=.*/OFF_HEAP_MEMORY="4G"/g' ${db_dir}/conf/datanode-env.sh
+        
+        # 定义批量修改函数
+        batch_set_sys_conf() {
+            local search_str=\$1
+            local content=\$2
+            local file="${db_dir}/conf/iotdb-system.properties"
+            if grep -q "\$search_str" "\$file"; then
+                sed -i "s|\$search_str|\$content|g" "\$file"
+            else
+                echo "\$content" >> "\$file"
+            fi
+        }
+
+        # 通用DataNode配置
+        batch_set_sys_conf ".*dn_seed_config_node=.*" "dn_seed_config_node=${seed_cn_ip}"
+        batch_set_sys_conf ".*dn_internal_address=.*" "dn_internal_address=${node_ip}"
+        batch_set_sys_conf ".*dn_rpc_address=.*" "dn_rpc_address=${node_ip}"
+        batch_set_sys_conf ".*dn_metric_reporter_list=.*" "dn_metric_reporter_list=PROMETHEUS"
+        batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
+        batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
+        batch_set_sys_conf ".*cluster_name=.*" "cluster_name=${CLUSTER_ID}"
+        batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
+        batch_set_sys_conf ".*enable_audit_log=.*" "enable_audit_log=true"
+        batch_set_sys_conf ".*auditable_query_event_type=.*" "auditable_query_event_type=SLOW_OPERATION"
+        batch_set_sys_conf ".*auditable_operation_type=.*" "auditable_operation_type=QUERY"
+        batch_set_sys_conf ".*query_cost_stat_window=.*" "query_cost_stat_window=5"
+        batch_set_sys_conf ".*time_partition_interval=.*" "time_partition_interval=3600000"
+        batch_set_sys_conf ".*region_migration_speed_limit_bytes_per_second=.*" "region_migration_speed_limit_bytes_per_second=150994944"
+
+
+EOF
+
+    if [ $? -eq 0 ]; then
+        log "INFO" "DataNode ${node_ip} 配置完成"
+    else
+        log "ERROR" "DataNode ${node_ip} 配置失败"
+        return 1
+    fi
+}
+
+# 混合节点配置函数
+configure_mixed_node() {
+    local node_ip=$1
+    log "INFO" "开始配置混合节点（CN+DN）: ${node_ip}"
+    configure_confignode "${node_ip}"
+    if [ $? -eq 0 ]; then
+        configure_datanode "${node_ip}"
+    fi
+    log "INFO" "混合节点 ${node_ip} 配置完成"
+}
+
+# ===================== 主配置函数（完全兼容低版本Bash） =====================
+set_conf() {
+    log "INFO" "开始并行配置所有节点（适配同IP场景）..."
+
+    # -------------------- 步骤1：用临时文件读取节点IP（替代进程替换） --------------------
+    # 生成去重的CN IP临时文件
+    grep -v '^$' "${nodeinfo_dir}/confignode.txt" | sed 's/ //g' | sort -u > /tmp/cn_ips.tmp
+    # 生成去重的DN IP临时文件
+    grep -v '^$' "${nodeinfo_dir}/datanode.txt" | sed 's/ //g' | sort -u > /tmp/dn_ips.tmp
+
+    # 读取CN IP列表（低版本Bash兼容）
+    cn_ips=()
+    while read -r line; do
+        if [[ -n "${line}" ]]; then
+            cn_ips+=("${line}")
+        fi
+    done < /tmp/cn_ips.tmp
+
+    # 读取DN IP列表（低版本Bash兼容）
+    dn_ips=()
+    while read -r line; do
+        if [[ -n "${line}" ]]; then
+            dn_ips+=("${line}")
+        fi
+    done < /tmp/dn_ips.tmp
+
+    # -------------------- 步骤2：分类节点IP --------------------
+    # 找出混合节点（交集）
+    mixed_ips=()
+    for ip in "${cn_ips[@]}"; do
+        # 低版本Bash兼容的字符串包含判断
+        if grep -q "^${ip}$" /tmp/dn_ips.tmp; then
+            mixed_ips+=("${ip}")
+        fi
+    done
+
+    # 找出仅CN的IP
+    only_cn_ips=()
+    for ip in "${cn_ips[@]}"; do
+        if ! grep -q "^${ip}$" /tmp/dn_ips.tmp; then
+            only_cn_ips+=("${ip}")
+        fi
+    done
+
+    # 找出仅DN的IP
+    only_dn_ips=()
+    for ip in "${dn_ips[@]}"; do
+        if ! grep -q "^${ip}$" /tmp/cn_ips.tmp; then
+            only_dn_ips+=("${ip}")
+        fi
+    done
+
+    # -------------------- 步骤3：并行配置节点 --------------------
+    pids=()
+
+    # 配置仅CN节点
+    log "INFO" "启动仅ConfigNode节点并行配置: ${only_cn_ips[*]}"
+    for ip in "${only_cn_ips[@]}"; do
+        configure_confignode "${ip}" &
+        pids+=($!)
+    done
+
+    # 配置仅DN节点
+    log "INFO" "启动仅DataNode节点并行配置: ${only_dn_ips[*]}"
+    for ip in "${only_dn_ips[@]}"; do
+        configure_datanode "${ip}" &
+        pids+=($!)
+    done
+
+# 配置混合节点（新增空值判断）
+if [ ${#mixed_ips[@]} -gt 0 ]; then
+    log "INFO" "启动混合节点（CN+DN）并行配置: ${mixed_ips[*]}"
+    for ip in "${mixed_ips[@]}"; do
+        configure_mixed_node "${ip}" &
+        pids+=($!)
+    done
+else
+    log "INFO" "未检测到混合节点（CN+DN），跳过混合节点配置"
+fi
+
+    # -------------------- 步骤4：等待所有进程完成 --------------------
+    log "INFO" "等待所有节点配置进程完成..."
+    for pid in "${pids[@]}"; do
+        if wait "${pid}"; then
+            log "INFO" "进程PID ${pid} 执行成功"
+        else
+            let fail_flag++
+            log "ERROR" "进程PID ${pid} 执行失败"
+        fi
+    done
+
+    # 清理临时文件
+    rm -f /tmp/cn_ips.tmp /tmp/dn_ips.tmp
+
+    if [ ${fail_flag} -eq 0 ]; then
+        log "INFO" "所有节点配置完成！日志文件：${log_file}"
+    else
+        log "ERROR" "部分节点配置失败，请查看日志：${log_file}"
+    fi
+}
+
+# 启动数据库集群函数
+start_db() {
+   log "INFO" "开始启动数据库集群..."
+   # 清理环境
+clean_env
+   if [ ${fail_flag} -gt 0 ]; then
+       log "ERROR" "环境清理失败，终止启动流程"
+#       exit 1
+   fi
+
+   # 配置节点
+   set_conf
+   if [ ${fail_flag} -gt 0 ]; then
+       log "ERROR" "节点配置失败，终止启动流程"
+       exit 1
+   fi
+   
+   # 启动集群
+   sh -x "${prepare_env_dir}/start_cluster_v20.sh" "1" "${total_node_num}" >> "${log_file}" 2>&1
+   if [ $? -eq 0 ]; then
+       log "INFO" "集群启动成功"
+   else
+       log "ERROR" "集群启动失败"
+       let fail_flag++
+       exit 1
+   fi
+}
+function check_res()
+{
+   exp_res=$1
+   exp_num=$2
+   tc_desc=$3
+   v_act_num=`cat ${cur_dir}/tmp.out|grep "${exp_res}"|wc -l`
+   if [[ ${v_act_num} = ${exp_num} ]];then
+      echo "${tc_desc} PASS."
+   else
+      echo "${tc_desc} FAIL."
+      let fail_flag++
+      v_warnMessage="${v_warnMessage}${tc_desc} failed."
+
+      cat ${cur_dir}/tmp.out
+      echo "${v_warnMessage}"
+      exit -1
+   fi
+}
+function check_log()
+{
+exec 3<${nodeinfo_dir}/confignode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "gunzip ${db_dir}/logs/*confignode*all*"
+   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err1=`ssh ${os_user_name}@${line} "grep BufferUnderflowException ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
+   if [[ ${v_npe} -gt 0 ]];then
+	   let fail_flag++
+           v_warnMessage="${v_warnMessage}CN NPE."
+	   echo "CN ${line} NullPointer : ${v_npe}"
+   fi
+   v_cn_err_total=$((v_cn_err1+v_cn_err2))
+   if [[ ${v_cn_err_total} -gt 0 ]];then
+           let fail_flag++
+           v_warnMessage="${v_warnMessage}CN HAS_MORE_STATE."
+           echo "CN ${line} has error: ${v_npe}"
+   fi
+done
+
+exec 3<${nodeinfo_dir}/datanode.txt
+while read line<&3
+do
+   ssh ${os_user_name}@${line} "gunzip ${db_dir}/logs/*datanode*all*"
+   v_npe=`ssh ${os_user_name}@${line} "grep NullPointer ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err=`ssh ${os_user_name}@${line} "grep CompactionTableSchemaNotMatchException ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err2=`ssh ${os_user_name}@${line} "grep \"has overlapped data\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err3=`ssh ${os_user_name}@${line} "grep \"which should be later than the last time\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err4=`ssh ${os_user_name}@${line} "grep \"DataTypeInconsistentException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err5=`ssh ${os_user_name}@${line} "grep \"ArrayIndexOutOfBoundsException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err6=`ssh ${os_user_name}@${line} "grep \"Alter timeseries .* data type from null to\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err7=`ssh ${os_user_name}@${line} "grep \"StatisticsClassException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err10=`ssh ${os_user_name}@${line} "grep \"is not in tsFileMetaData\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err11=`ssh ${os_user_name}@${line} "grep \"The memory cost to be released is larger\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err12=`ssh ${os_user_name}@${line} "grep \"tsfile error\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err13=`ssh ${os_user_name}@${line} "grep \"which has not released all memory\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_err14=`ssh ${os_user_name}@${line} "grep \"Error while reading timeseries metadata\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_err12+v_err13+v_err14))
+   if [[ ${v_npe} -gt 0 ]];then
+           let fail_flag++
+           v_warnMessage="${v_warnMessage}DN NPE."
+           echo "DN ${line} NullPointer : ${v_npe}"
+   fi
+   if [[ ${v_dn_total_err} -gt 0 ]];then
+	   let fail_flag++
+           v_warnMessage="${v_warnMessage}DN unexp log."
+	   echo "DN ${line} has error: ${v_dn_total_err}"
+   fi
+done
+
+}
+function wait_logs_sync_done()
+{
+local max_wait_time=${1:-120}
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
+   cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
+   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
+   exec 3<${cur_dir}/tmp.out
+   while read line<&3
+   do
+   while true
+   do
+   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep usr_sod">${cur_dir}/tmp1.out
+   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep tod_sod">${cur_dir}/tmp2.out
+   last_time_str1=$(tail -n 1 "${cur_dir}/tmp1.out" | awk -F',' '{print $1}')
+   last_time_str2=$(tail -n 1 "${cur_dir}/tmp2.out" | awk -F',' '{print $1}')
+   last_timestamp1=$(date -d "$last_time_str1" +%s 2>/dev/null)
+   last_timestamp2=$(date -d "$last_time_str2" +%s 2>/dev/null)
+   if [[ ${last_timestamp1} -gt ${last_timestamp2} ]];then
+      last_timestamp=${last_timestamp1}
+   else
+      last_timestamp=${last_timestamp2}
+
+   fi
+current_timestamp=$(date +%s)
+
+# 计算时间差（秒）
+time_diff=$((current_timestamp - last_timestamp))
+# 判断是否超过1分钟（120秒）
+if [ $time_diff -gt ${max_wait_time} ]; then
+    echo "最后一条日志距离现在已超过（${time_diff}秒）"
+    break
+else
+    v_sleep=$((max_wait_time-time_diff+1))
+    sleep ${v_sleep}
+#    echo "最后一条日志距离现在（${time_diff}秒）"
+fi
+   done
+   done
+
+}
+function check_dn_jps()
+{
+   local v_dn_ip=$1
+   local max_wait_time=$2
+local t1=`date +%s`
+while true
+do
+   v_dn_str=`ssh ${os_user_name}@${v_dn_ip} "jps|grep DataNode"`
+   v_dn_pid=`echo ${v_dn_str}|awk '{print $1}'`
+   if [[ ${v_dn_pid} -gt 0 ]];then
+      sleep 5
+   else
+      break
+   fi
+      t2=`date +%s`
+      t_elp=$((t2-t1))
+      if [[ ${t_elp} -gt ${max_wait_time} ]];then
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}Stopping takes too long."
+# kill -9
+         ssh ${os_user_name}@${v_dn_ip} "kill -9 ${v_dn_pid}"
+         break
+      fi
+
+done
+t1=`date +%s`
+while true
+do
+   v_dn_str=`ssh ${os_user_name}@${v_dn_ip} "jps|grep ConfigNode"`
+   v_dn_pid=`echo ${v_dn_str}|awk '{print $1}'`
+   if [[ ${v_dn_pid} -gt 0 ]];then
+      sleep 5
+   else
+      break
+   fi
+      t2=`date +%s`
+      t_elp=$((t2-t1))
+      if [[ ${t_elp} -gt ${max_wait_time} ]];then
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}Stopping takes too long."
+# kill -9
+         ssh ${os_user_name}@${v_dn_ip} "kill -9 ${v_dn_pid}"
+         break
+      fi
+
+done
+
+
+}
+#  - 只检查 ${nodeinfo_dir}/datanode.txt 与当前集群 Running DN 的交集
+#  - 缺失指标不退出，只持续等待
+#  - syncLag > 0 持续存在时保留现场，不进入下个用例
+#  - 缺失/恢复、非 0/恢复 0 只在状态变化时打印一次
+#  - 轮询间隔改为 5 秒
+
+  wait_for_monitor_sync_completion() {
+      local PROMETHEUS_URL
+      PROMETHEUS_URL=$(grep '^monitor_url' "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+      local PROMETHEUS_USER=admin
+      local PROMETHEUS_PASS=admin
+      local TARGET_DURATION=300
+      local SLEEP_INTERVAL=5
+      local dn_file="${nodeinfo_dir}/datanode.txt"
+      local cluster_dn_file="${cur_dir}/cluster_running_datanodes.out"
+
+      local zero_start_time=0
+      local last_target_list_key=""
+      declare -A seen_nodes
+      declare -A last_node_status
+      declare -A missing_warned
+
+      if [[ ! -f "$dn_file" ]]; then
+          echo "错误: 找不到 $dn_file"
+          return 1
+      fi
+
+      while true; do
+          local now
+          now=$(date +%s)
+
+          ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">"${cur_dir}/tmp.out"
+          grep Running "${cur_dir}/tmp.out" | awk -F "|" '{gsub(" ","");print $4}' | sed '/^$/d' | sort -u > "${cluster_dn_file}"
+
+          local dn_list=()
+          declare -A target_nodes=()
+          while read -r dn_ip; do
+              [[ -z "$dn_ip" ]] && continue
+              [[ "$dn_ip" =~ ^# ]] && continue
+              if grep -qx "$dn_ip" "${cluster_dn_file}"; then
+                  dn_list+=("$dn_ip")
+                  target_nodes["$dn_ip"]=1
+              fi
+          done < "$dn_file"
+
+          local expected_count=${#dn_list[@]}
+          if [[ "$expected_count" -eq 0 ]]; then
+              zero_start_time=0
+              echo "[$(date '+%F %T')] 等待中: show datanodes 未解析到当前集群 Running DN，跳过非集群节点后无可检查目标"
+              sleep "${SLEEP_INTERVAL}"
+              continue
+          fi
+
+          local target_list_key="${dn_list[*]}"
+          if [[ "$target_list_key" != "$last_target_list_key" ]]; then
+              echo "[$(date '+%F %T')] 开始监控 Total Sync Lag，仅检查当前集群中的 ${expected_count} 个 DataNode: ${target_list_key}"
+              last_target_list_key="$target_list_key"
+          fi
+
+          local instance_regex=""
+          local ip
+          for ip in "${dn_list[@]}"; do
+              local promql_safe_ip=${ip//./[.]}
+              [[ -n "$instance_regex" ]] && instance_regex="${instance_regex}|"
+              instance_regex="${instance_regex}${promql_safe_ip}(:[0-9]+)?"
+          done
+          instance_regex="^(${instance_regex})$"
+
+          local query
+          query="sum(iot_consensus{instance=~\"${instance_regex}\",name=\"ioTConsensusServerImpl\",type=\"syncLag\"}) by (instance)"
+
+          local response
+          response=$(curl -s -u "${PROMETHEUS_USER}:${PROMETHEUS_PASS}" --get \
+              --data-urlencode "query=${query}" \
+              "${PROMETHEUS_URL}/api/v1/query")
+
+          if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
+              echo "[$(date '+%F %T')] 错误: 无法从 Prometheus 获取数据"
+              echo "响应: $response"
+              zero_start_time=0
+              sleep "${SLEEP_INTERVAL}"
+              continue
+          fi
+
+          seen_nodes=()
+          local matched_count=0
+          local zero_count=0
+          local has_non_zero=false
+          local non_zero_nodes=()
+          local missing_nodes=()
+
+          while IFS='|' read -r instance sync_lag; do
+              [[ -z "$instance" ]] && continue
+
+              local instance_host="${instance%%:*}"
+              [[ -z "${target_nodes[$instance_host]}" ]] && continue
+
+              seen_nodes["$instance_host"]=1
+              ((matched_count++))
+
+              if [[ ${missing_warned[$instance_host]:-false} == "true" ]]; then
+                  echo "[$(date '+%F %T')] INFO: 节点 ${instance_host} 的 syncLag 指标已恢复"
+                  missing_warned["$instance_host"]="false"
+              fi
+
+              if awk "BEGIN {exit !($sync_lag > 0.0001)}"; then
+                  has_non_zero=true
+                  non_zero_nodes+=("${instance_host}=${sync_lag}")
+
+                  if [[ ${last_node_status[$instance_host]:-false} != "true" ]]; then
+                      echo "[$(date '+%F %T')] WARN: 节点 ${instance_host} 首次检测到 syncLag=${sync_lag}"
+                  fi
+
+                  last_node_status["$instance_host"]="true"
+              else
+                  if [[ ${last_node_status[$instance_host]:-false} == "true" ]]; then
+                      echo "[$(date '+%F %T')] INFO: 节点 ${instance_host} 的 syncLag 已恢复为 0"
+                  fi
+                  last_node_status["$instance_host"]="false"
+                  ((zero_count++))
+              fi
+          done < <(
+              echo "$response" | jq -r '.data.result[] | "\(.metric.instance)|\(.value[1])"'
+          )
+
+          for ip in "${dn_list[@]}"; do
+              if [[ -z "${seen_nodes[$ip]:-}" ]]; then
+                  missing_nodes+=("$ip")
+                  if [[ ${missing_warned[$ip]:-false} != "true" ]]; then
+                      echo "[$(date '+%F %T')] WARN: 节点 ${ip} 未查到 syncLag 指标"
+                      missing_warned["$ip"]="true"
+                  fi
+              fi
+          done
+
+          if [[ ${#missing_nodes[@]} -gt 0 ]]; then
+              zero_start_time=0
+              echo "[$(date '+%F %T')] 等待中: 指标缺失 ${#missing_nodes[@]}/${expected_count}，缺失节点: ${missing_nodes[*]}"
+              sleep "${SLEEP_INTERVAL}"
+              continue
+          fi
+
+          if $has_non_zero; then
+              zero_start_time=0
+              echo "[$(date '+%F %T')] 等待中: ${zero_count}/${expected_count} 个 DN syncLag=0，非零节点: ${non_zero_nodes[*]}，fail_flag=${fail_flag}，sync_fail_flag=${sync_fail_flag}"
+          else
+              if [[ "$zero_start_time" -eq 0 ]]; then
+                  zero_start_time=$now
+              fi
+
+              local current_duration=$((now - zero_start_time))
+              echo "[$(date '+%F %T')] 正常: ${expected_count}/${expected_count} 个 DN syncLag=0，已持续 ${current_duration}/${TARGET_DURATION} 秒"
+
+              if [[ "$current_duration" -ge "$TARGET_DURATION" ]]; then
+                  echo "[$(date '+%F %T')] 同步完成: ${dn_file} 中所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒为 0"
+                  echo "最终 fail_flag=${fail_flag}, sync_fail_flag=${sync_fail_flag}"
+                  return 0
+              fi
+          fi
+
+          sleep "${SLEEP_INTERVAL}"
+      done
+  }
+
+function create_user()
+{
+	# database ttl 3 hours
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "CREATE DATABASE usr_sod0 WITH (ttl=10800000);">${cur_dir}/tmp.out
+check_res success 1 "CREATE DATABASE with ttl "
+
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER  rainer 'TimechoDB@2021';">${cur_dir}/tmp.out
+check_res success 1 "CREATE USER  rainer"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER  colder 'TimechoDB@2021';">${cur_dir}/tmp.out
+check_res success 1 "CREATE USER  colder"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER  winder 'TimechoDB@2021';">${cur_dir}/tmp.out
+check_res success 1 "CREATE USER  winder"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sec_super_user} -e "CREATE USER  sunner 'TimechoDB@2021';">${cur_dir}/tmp.out
+check_res success 1 "CREATE USER  sunner"
+# grant privelege
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER rainer;">${cur_dir}/tmp.out
+check_res success 1 "grant USER  rainer"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER colder;">${cur_dir}/tmp.out
+check_res success 1 "grant USER  colder"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER winder;">${cur_dir}/tmp.out
+check_res success 1 "grant USER  winder"
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -u ${v_sys_super_user} -sql_dialect table -e "GRANT ALL TO USER sunner;">${cur_dir}/tmp.out
+check_res success 1 "grant USER  sunner"
+
+
+}
+function exec_jstack()
+{
+v_jstack_dir=${cur_dir}/${testdb}/jstack_result
+mkdir -p ${v_jstack_dir}
+datanode_file="${nodeinfo_dir}/datanode.txt"
+confignode_file="${nodeinfo_dir}/confignode.txt"
+
+dump_remote_process_debug() {
+    local ip=$1
+    local process_name=$2
+    local outfile=$3
+
+    ssh root@"${ip}" bash -s -- "${process_name}" > "${outfile}" 2>&1 <<'EOF'
+process_name="$1"
+pid=$(pgrep -f "${process_name}" | head -n1)
+
+echo "==== ${process_name} Debug Info ===="
+if [ -z "${pid}" ]; then
+    echo "${process_name} pid not found"
+    exit 0
+fi
+
+echo "pid: ${pid}"
+echo "---- Established Peers ----"
+peer_summary=$(ss -tunp state established 2>/dev/null \
+    | awk -v pid="${pid}" '$0 ~ ("pid=" pid ",") {print $5}' \
+    | rev | cut -d":" -f2- | rev \
+    | grep -v -E '^(127\.|::1|\[::1\]|localhost)$' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n \
+    | uniq -c)
+
+if [ -n "${peer_summary}" ]; then
+    echo "${peer_summary}"
+else
+    echo "no non-local established peers"
+fi
+
+echo
+echo "---- Jstack ----"
+jstack "${pid}"
+EOF
+}
+
+time=$(date +%Y%m%d_%H%M%S)
+
+echo "==== 开始批量抓取 jstack，结果保存在当前目录 ===="
+
+# ===================== 处理 ConfigNode =====================
+if [ -f "$confignode_file" ]; then
+    echo -e "\n>>>> 开始处理 ConfigNode 节点 <<<<"
+    for ip in $(cat "$confignode_file" | grep -v '^$'); do
+	    v_ip=$(echo ${ip}|awk -F '.' '{print $4}')
+        outfile="${v_cluster_num_info}_cn_ip${v_ip}_${v_jstack_num}_${time}_jstack.out"
+        echo "节点 $ip -> 输出到 $outfile"
+
+        dump_remote_process_debug "$ip" "ConfigNode" "${v_jstack_dir}/$outfile"
+    done
+fi
+
+# ===================== 处理 DataNode =====================
+if [ -f "$datanode_file" ]; then
+    echo -e "\n>>>> 开始处理 DataNode 节点 <<<<"
+    for ip in $(cat "$datanode_file" | grep -v '^$'); do
+	    v_ip=$(echo ${ip}|awk -F '.' '{print $4}')
+        outfile="${v_cluster_num_info}_dn_ip${v_ip}_${v_jstack_num}_${time}_jstack.out"
+        echo "节点 $ip -> 输出到 $outfile"
+
+        dump_remote_process_debug "$ip" "DataNode" "${v_jstack_dir}/$outfile"
+    done
+fi
+
+echo -e "\n==== 全部完成！所有 jstack 文件已保存在当前目录 ===="
+let v_jstack_num++
+}
+function start_bm()
+{
+    local host
+    local start_failed=0
+    local v_bm_time
+
+    if ! load_benchmark_ips; then
+        let fail_flag++
+        return 1
+    fi
+
+    v_bm_time=$(date +%s)
+    v_testtime="${testdb}_${v_cluster_num_info}_$(date +%Y%m%d_%H%M%S)"
+    benchmark_start_time=$(date -d "@${v_bm_time}" '+%Y-%m-%dT%H:%M:%S%:z')
+
+    echo "==== 后台启动 BM 进程 ===="
+    log "INFO" "开始启动 benchmark，bm_conf=${bm_conf}，benchmark_ip=${bm_ips[*]}，统一 START_TIME=${benchmark_start_time}"
+
+    for host in "${bm_ips[@]}"
+    do
+        if start_benchmark_on_host "${host}" "conf_w" "bmw"; then
+            log "INFO" "写 benchmark 已启动: ${host} -> ${bm_dir}/${testdb}/${v_testtime}_bmw.out"
+        else
+            log "ERROR" "写 benchmark 启动失败: ${host}"
+            start_failed=1
+        fi
+    done
+
+    if [[ ${start_failed} -ne 0 ]]; then
+        let fail_flag++
+        return 1
+    fi
+
+    log "INFO" "全部写 benchmark 已启动，等待 60 秒后启动只读 benchmark"
+    sleep 60
+
+    for host in "${bm_ips[@]}"
+    do
+        if start_benchmark_on_host "${host}" "conf_r1" "bmr1"; then
+            log "INFO" "只读 benchmark-1 已启动: ${host} -> ${bm_dir}/${testdb}/${v_testtime}_bmr1.out"
+        else
+            log "ERROR" "只读 benchmark-1 启动失败: ${host}"
+            start_failed=1
+        fi
+    done
+
+    for host in "${bm_ips[@]}"
+    do
+        if start_benchmark_on_host "${host}" "conf_r2" "bmr2"; then
+            log "INFO" "只读 benchmark-2 已启动: ${host} -> ${bm_dir}/${testdb}/${v_testtime}_bmr2.out"
+        else
+            log "ERROR" "只读 benchmark-2 启动失败: ${host}"
+            start_failed=1
+        fi
+    done
+
+    if [[ ${start_failed} -ne 0 ]]; then
+        let fail_flag++
+        return 1
+    fi
+
+    log "INFO" "全部 benchmark 已提交完成，统一 v_testtime=${v_testtime}"
+}
+load_benchmark_ips() {
+    bm_ips=()
+
+    if [[ ! -f "${benchmark_ip_list_file}" ]]; then
+        log "ERROR" "benchmark ip 列表不存在: ${benchmark_ip_list_file}"
+        return 1
+    fi
+
+    while read -r line
+    do
+        line=$(echo "${line}" | sed 's/[[:space:]]//g')
+        if [[ -z "${line}" ]]; then
+            continue
+        fi
+        case "${line}" in
+            \#*) continue
+                ;;
+        esac
+        bm_ips+=("${line}")
+    done < "${benchmark_ip_list_file}"
+
+    if [[ ${#bm_ips[@]} -eq 0 ]]; then
+        log "ERROR" "benchmark ip 列表为空: ${benchmark_ip_list_file}"
+        return 1
+    fi
+
+    return 0
+}
+resolve_benchmark_ssh_user() {
+    local host=$1
+
+    if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@"${host}" "true" >/dev/null 2>&1; then
+        echo "root"
+        return 0
+    fi
+
+    if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no ubuntu@"${host}" "true" >/dev/null 2>&1; then
+        echo "ubuntu"
+        return 0
+    fi
+
+    return 1
+}
+run_benchmark_ssh() {
+    local host=$1
+    local remote_cmd=$2
+    local ssh_user
+
+    ssh_user=$(resolve_benchmark_ssh_user "${host}") || return 1
+    ssh -o StrictHostKeyChecking=no "${ssh_user}@${host}" "${remote_cmd}"
+}
+start_benchmark_on_host() {
+    local host=$1
+    local conf_name=$2
+    local log_suffix=$3
+
+    run_benchmark_ssh "${host}" "
+source /etc/profile >/dev/null 2>&1 || true
+mkdir -p '${bm_dir}/${testdb}' || exit 1
+if [ ! -d '${bm_dir}/${bm_conf}/${conf_name}' ]; then
+    echo 'missing benchmark conf: ${bm_dir}/${bm_conf}/${conf_name}' >&2
+    exit 2
+fi
+conf_file='${bm_dir}/${bm_conf}/${conf_name}/config.properties'
+if [ ! -f \"\$conf_file\" ]; then
+    echo 'missing benchmark config.properties: '\"\${conf_file}\" >&2
+    exit 4
+fi
+if grep -q '^START_TIME=' \"\$conf_file\"; then
+    sed -i 's|^START_TIME=.*|START_TIME=${benchmark_start_time}|' \"\$conf_file\" || exit 5
+else
+    printf 'START_TIME=%s\n' '${benchmark_start_time}' >> \"\$conf_file\" || exit 5
+fi
+if grep -q '^RESULT_PRINT_INTERVAL=' \"\$conf_file\"; then
+    sed -i 's|^RESULT_PRINT_INTERVAL=.*|RESULT_PRINT_INTERVAL=60|' \"\$conf_file\" || exit 6
+else
+    printf 'RESULT_PRINT_INTERVAL=%s\n' '60' >> \"\$conf_file\" || exit 6
+fi
+cd '${bm_dir}' || exit 1
+nohup ./benchmark.sh -cf '${bm_dir}/${bm_conf}/${conf_name}' > '${bm_dir}/${testdb}/${v_testtime}_${log_suffix}.out' 2>&1 < /dev/null &
+for i in 1 2 3 4 5 6 7 8 9 10
+do
+    if ps -ef | grep '[c]n.edu.tsinghua.iot.benchmark.App' | grep -F -- '${bm_dir}/${bm_conf}/${conf_name}' >/dev/null; then
+        exit 0
+    fi
+    sleep 2
+done
+exit 3
+"
+}
+function check_bm()
+{
+    local host
+    local status
+    local all_done=1
+
+    if [[ -z "${v_testtime:-}" ]]; then
+        log "ERROR" "未设置 v_testtime，无法检查 benchmark 状态"
+        return 1
+    fi
+
+    if [[ ${#bm_ips[@]} -eq 0 ]]; then
+        load_benchmark_ips || return 1
+    fi
+
+    while true
+    do
+        echo "==== 开始检查 BM benchmark 进程是否已退出 ===="
+        all_done=1
+
+        for host in "${bm_ips[@]}"
+        do
+            status=$(run_benchmark_ssh "${host}" "
+write_alive=0
+read1_alive=0
+read2_alive=0
+
+if ps -ef | grep '[c]n.edu.tsinghua.iot.benchmark.App' | grep -F -- '${bm_dir}/${bm_conf}/conf_w' >/dev/null; then
+    write_alive=1
+fi
+if ps -ef | grep '[c]n.edu.tsinghua.iot.benchmark.App' | grep -F -- '${bm_dir}/${bm_conf}/conf_r1' >/dev/null; then
+    read1_alive=1
+fi
+if ps -ef | grep '[c]n.edu.tsinghua.iot.benchmark.App' | grep -F -- '${bm_dir}/${bm_conf}/conf_r2' >/dev/null; then
+    read2_alive=1
+fi
+
+echo \"\$write_alive,\$read1_alive,\$read2_alive\"
+") || status="1,1,1"
+
+            echo "BM 主机 ${host} 状态: ${status}"
+            if [[ "${status}" != "0,0,0" ]]; then
+                all_done=0
+            fi
+        done
+
+        if [[ ${all_done} -eq 1 ]]; then
+            echo "[INFO] BM benchmark 进程已全部退出"
+            for host in "${bm_ips[@]}"
+            do
+                v_bm_error_num=$(run_benchmark_ssh "${host}" "find '${bm_dir}/${testdb}' -maxdepth 1 -type f -name '${v_testtime}_*.out' -exec grep -h ERROR {} + 2>/dev/null | wc -l" 2>/dev/null)
+                if [[ ${v_bm_error_num:-0} -gt 0 ]]; then
+                    let fail_flag++
+                    v_warnMessage="${v_warnMessage}${host} benchmark has ${v_bm_error_num} errors."
+                fi
+            done
+            return 0
+        fi
+
+        echo "[INFO] BM benchmark 进程仍在运行"
+        sleep 600
+    done
+}
+function kill_dn_cn() {
+    v_kill_ip=$1
+
+    # 校验IP是否传入
+    if [[ -z "${v_kill_ip}" ]]; then
+        echo "ERROR: 未传入IP"
+        return 1
+    fi
+                            # show regions
+                            v_show_time=`date +"%Y_%m_%d_%H_%M_%S"`
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect table  -e "show regions;" >${cur_dir}/testcase2_before_kill9_cnleader_dn_table_show_regions_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_before_kill9_cnleader_dn_table_show_regions_${v_show_time}.out 
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show regions;" >${cur_dir}/testcase2_before_kill9_cnleader_dn_tree_show_regions_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_before_kill9_cnleader_dn_tree_show_regions_${v_show_time}.out 
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show cluster;" >${cur_dir}/testcase2_kill9_cnleader_dn_show_cluster_${v_show_time}.out
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show confignodes;" >>${cur_dir}/testcase2_kill9_cnleader_dn_show_cluster_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_kill9_cnleader_dn_show_cluster_${v_show_time}.out
+
+    echo "===== 开始杀死 ${v_kill_ip} 上的 ConfigNode 和 DataNode ====="
+
+    # 1. 先查看进程
+    ssh ${os_user_name}@${v_kill_ip} "pgrep -f 'ConfigNode|DataNode'"
+
+    # 2. 强制杀死进程
+    ssh ${os_user_name}@${v_kill_ip} "pkill -9 -f 'ConfigNode|DataNode'"
+    check_dn_jps ${v_kill_ip} 180
+    # 3. 等待进程消失（循环检查）
+    while true; do
+        v_kill_node_num=$(ssh ${os_user_name}@${v_kill_ip} "ps aux | grep -E 'ConfigNode|DataNode' | grep -v grep | wc -l")
+        if [[ ${v_kill_node_num} -gt 0 ]]; then
+            echo "等待进程退出，剩余：${v_kill_node_num} 个，5秒后重试..."
+            sleep 5
+        else
+            echo "✅ 进程 kill -9 success."
+            break
+        fi
+    done
+
+    # 4. 检查集群状态（等待节点变成 unknown）
+    echo "===== 检查集群状态 ====="
+    while true; do
+        if [[ ${v_kill_ip} = ${query_ip} ]]; then
+            v_kill_node_num=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip2} -e "show cluster;" | grep "${v_kill_ip}|" | grep -i unknown | wc -l)
+        else
+            v_kill_node_num=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show cluster;" | grep "${v_kill_ip}|" | grep -i unknown | wc -l)
+        fi
+
+        # 原逻辑是 =2 代表两个节点都 unknown
+        if [[ ${v_kill_node_num} -ge 2 ]]; then
+            echo "✅ 集群状态检查成功，节点已下线"
+            break
+        else
+            echo "集群状态未就绪，当前 unknown 节点数：${v_kill_node_num}，5秒后重试..."
+            sleep 5
+        fi
+    done
+
+    echo "===== ${v_kill_ip} 节点杀死完成 ====="
+    # set v_new_cn_leader_ip
+    if [[ ${v_kill_ip} = ${query_ip} ]]; then
+	    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip2} -e "show confignodes;"|grep Leader|awk -F '|' '{gsub(" ","");print $4}'>${cur_dir}/tmp.out
+            v_new_cn_leader_ip=$(head -1 ${cur_dir}/tmp.out)
+
+    else
+            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show confignodes;"|grep Leader|awk -F '|' '{gsub(" ","");print $4}'>${cur_dir}/tmp.out
+            v_new_cn_leader_ip=$(head -1 ${cur_dir}/tmp.out)
+ 
+    fi
+    echo "v_new_cn_leader_ip : ${v_new_cn_leader_ip} "
+}
+function add_new_cn_remove_bad_cn()
+{
+	# set ${v_new_cn_ip} 's cn_seed_config_node=127.0.0.1:10710 : ${v_new_cn_leader_ip}
+	ssh ${os_user_name}@${v_new_cn_ip} "sed -i 's/cn_seed_config_node=.*/cn_seed_config_node=${v_new_cn_leader_ip}:10710/g' ${cn_db_dir}/conf/iotdb-system.properties"
+	ssh ${os_user_name}@${v_new_cn_ip} "sed -i 's/cn_internal_address=.*/cn_internal_address=${v_new_cn_ip}/g' ${cn_db_dir}/conf/iotdb-system.properties"
+	# start new cn
+        # 拼接并执行启动命令
+	v_start_time=$(date +%s)
+        start_cn_cmd="source /etc/profile; nohup ${cn_db_dir}/sbin/start-confignode.sh -H ${cn_db_dir}/cn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
+        echo "节点${v_new_cn_ip} 执行启动命令：ssh ${os_user_name}@${v_new_cn_ip} '${start_cn_cmd}'"
+
+        ssh_exit_code=0
+        ssh -o ConnectTimeout=10 "${os_user_name}@${v_new_cn_ip}" "${start_cn_cmd}" || ssh_exit_code=$?
+
+        if [[ ${ssh_exit_code} -eq 0 ]]; then
+            echo "节点${v_new_cn_ip} ConfigNode启动命令执行成功（退出码：${ssh_exit_code}）"
+            sleep 2
+        else
+            echo "ERROR 节点${v_new_cn_ip} ConfigNode启动命令执行失败（退出码：${ssh_exit_code}）"
+        fi
+	    #  检查集群状态（等待节点变成 unknown）
+    echo "===== 检查集群状态 ====="
+    while true; do
+            v_new_cn_num=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -e "show confignodes;" | grep "${v_new_cn_ip}|" | grep -i Running| wc -l)
+
+        if [[ ${v_new_cn_num} -ge 1 ]]; then
+            echo "✅  集群状态检查成功，节点已上线"
+	    echo "${v_new_cn_ip}" >> ${nodeinfo_dir}/confignode.txt 
+	    remove_cn_bad
+            break
+        else
+            echo "CN状态未就绪，当前 Running 节点数：${v_new_cn_num}，5秒后重试..."
+            sleep 5
+        fi
+    done
+
+    echo "===== ${v_new_cn_num} 节点online success ====="
+
+
+}
+
+function remove_cn_bad()
+{
+    if [[ ${v_remove_cn_id} -ge 0 ]];then
+         ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -e "remove confignode  ${v_remove_cn_id};" >${cur_dir}/tmp.out
+	 v_exp_succ=$(cat ${cur_dir}/tmp.out |grep success|wc -l)
+	 if [[ ${v_exp_succ} -gt 0 ]];then
+		 # check cn
+		 while true
+		 do
+                        v_new_cn_num=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -e "show confignodes;" | grep "${v_shutdown_ip1}|" |wc -l)
+
+			if [[ ${v_new_cn_num} -ge 1 ]]; then
+			    echo "CN ${v_new_cn_num} is not removed，10秒后重试..."
+			    sleep 10 
+			else
+			    echo "CN ${v_new_cn_num} is removed successfully."
+			    break 
+			fi
+ 
+		 done
+	 else
+		 let fail_flag++
+		 v_warnMessage="${v_warnMessage}remove confignode  ${v_remove_cn_id} failed."
+	 fi
+    else
+	 let fail_flag++
+	 v_warnMessage="${v_warnMessage}remove confignode  ${v_remove_cn_id} invalid."
+
+    fi
+}
+function remove_dn_bad_norestart()
+{
+    if [[ ${v_remove_dn_id} -ge 0 ]];then
+         ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -e "remove datanode ${v_remove_dn_id};" >${cur_dir}/tmp.out
+         v_exp_succ=$(cat ${cur_dir}/tmp.out |grep success|wc -l)
+         if [[ ${v_exp_succ} -gt 0 ]];then
+                 # check dn
+                 while true
+                 do
+                        v_new_cn_num=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -e "show datanodes;" | grep "${v_shutdown_ip1}|" |wc -l)
+
+                        if [[ ${v_new_cn_num} -ge 1 ]]; then
+                            echo "DN ${v_new_cn_num} is not removed，5秒后重试..."
+                            sleep 60
+                        else
+                            echo "DN ${v_new_cn_num} is removed successfully."
+			    # check data size
+			    ssh ${os_user_name}@${v_shutdown_ip1} "du -sh ${db_dir}/data" 
+			    ssh ${os_user_name}@${v_shutdown_ip1} "du -sh ${db_dir}/data/datanode" 
+			    ssh ${os_user_name}@${v_shutdown_ip1} "du -sh ${db_dir}/data/confignode"
+			    # remove data/datanode
+#			    ssh ${os_user_name}@${v_shutdown_ip1} "mv ${db_dir}/data  ${db_dir}/data_removed"
+			    sleep 10
+			    # show regions
+			    v_show_time=`date +"%Y_%m_%d_%H_%M_%S"`
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect table  -e "show regions;" >${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_table_show_regions_${v_show_time}.out
+			    cat ${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_table_show_regions_${v_show_time}.out
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show regions;" >${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_tree_show_regions_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_tree_show_regions_${v_show_time}.out
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show cluster;" >${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_show_cluster_${v_show_time}.out
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show confignodes;" >>${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_show_cluster_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_after_remove_dn${v_remove_dn_id}_show_cluster_${v_show_time}.out 
+
+			    # do not restart this dn
+#			    restart_dn_bad 
+                            break
+                        fi
+
+                 done
+         else
+                 let fail_flag++
+                 v_warnMessage="${v_warnMessage}remove datanode  ${v_remove_cn_id} failed."
+         fi
+    else
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}remove datanode  ${v_remove_cn_id} invalid."
+
+    fi
+}
+function load_balance()
+{
+   for i in {1..3}
+   do
+            # execute rebalance
+            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -timeout 3600 -sql_dialect table -e "LOAD BALANCE;">${cur_dir}/tmp.out
+            v_exp_succ=$(cat ${cur_dir}/tmp.out |grep success|wc -l)
+            if [[ ${v_exp_succ} -gt 0 ]];then
+                    echo "LOAD BALANCE SUCCESS."
+                    while true
+                    do
+                            sleep 600
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_shutdown_ip1} -timeout 3600 -sql_dialect table -e "show regions;">${cur_dir}/tmp.out
+                            v_add_num=$(grep Adding ${cur_dir}/tmp.out|wc -l)
+                            v_remove_num=$(grep Removing ${cur_dir}/tmp.out|wc -l)
+                            v_rm_num=$((v_add_num+v_remove_num))
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_shutdown_ip1} -timeout 3600 -sql_dialect table -e "show migrations;">${cur_dir}/tmp.out
+                            v_mig_empty_num=$(grep "Empty set" ${cur_dir}/tmp.out|wc -l)
+                            if [[ ${v_rm_num} -gt 0 ]] && [[ ${v_mig_empty_num} = 0 ]];then
+                                    sleep 600
+                                    echo "Adding ${v_add_num},Removing ${v_remove_num}."
+                            else
+                                    echo "no Adding ,no Removing."
+				    sleep 10
+				    # show regions
+                            v_show_time=`date +"%Y_%m_%d_%H_%M_%S"`
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect table  -e "show regions;" >${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_table_show_regions_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_table_show_regions_${v_show_time}.out 
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show regions;" >${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_tree_show_regions_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_tree_show_regions_${v_show_time}.out 
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show cluster;" >${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_show_cluster_${v_show_time}.out
+                            ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_new_cn_ip} -sql_dialect tree  -e "show confignodes;" >>${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_show_cluster_${v_show_time}.out
+                            cat ${cur_dir}/testcase2_after_balance_dn${v_remove_dn_id}_show_cluster_${v_show_time}.out 
+
+                                    break
+                            fi
+
+                    done
+		    return 0
+            else
+                    let fail_flag++
+                    v_warnMessage="${v_warnMessage}LOAD BALANCE failed."
+            fi
+    done
+
+}
+function restart_dn_bad()
+{
+        # set ${v_new_cn_ip} 's dn_seed_config_node=127.0.0.1:10710 : ${v_new_cn_leader_ip}
+        ssh ${os_user_name}@${v_shutdown_ip1} "sed -i 's/dn_seed_config_node=.*/dn_seed_config_node=${v_new_cn_leader_ip}:10710/g' ${db_dir}/conf/iotdb-system.properties"
+        sleep 1
+        # start new dn
+        # 拼接并执行启动命令
+        v_start_time=$(date +%s)
+        start_cn_cmd="source /etc/profile; nohup ${cn_db_dir}/sbin/start-datanode.sh -g -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
+        echo "节点${v_shutdown_ip1} 执行启动命令：ssh ${os_user_name}@${v_shutdown_ip1} '${start_cn_cmd}'"
+
+        ssh_exit_code=0
+        ssh -o ConnectTimeout=10 "${os_user_name}@${v_shutdown_ip1}" "${start_cn_cmd}" || ssh_exit_code=$?
+
+        if [[ ${ssh_exit_code} -eq 0 ]]; then
+            echo "节点${v_shutdown_ip1} DataNode启动命令执行成功（退出码：${ssh_exit_code}）"
+            sleep 2
+        else
+            echo "ERROR 节点${v_shutdown_ip1} DataNode启动命令执行失败（退出码：${ssh_exit_code}）"
+        fi
+            #  检查集群状态（等待节点变成 unknown）
+    echo "===== 检查集群状态 ====="
+    while true; do
+            v_new_cn_num=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_shutdown_ip1} -e "show datanodes;" | grep "${v_shutdown_ip1}|" | grep -i Running| wc -l)
+
+        if [[ ${v_new_cn_num} -ge 1 ]]; then
+            echo "✅   集群状态检查成功，节点已上线"
+	    # execute rebalance
+	    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_shutdown_ip1} -sql_dialect table -e "LOAD BALANCE;">${cur_dir}/tmp.out
+	    v_exp_succ=$(cat ${cur_dir}/tmp.out |grep success|wc -l)
+	    if [[ ${v_exp_succ} -gt 0 ]];then
+		    echo "LOAD BALANCE SUCCESS."
+		    while true
+		    do
+			    sleep 600
+			    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${v_shutdown_ip1} -sql_dialect table -e "show regions;">${cur_dir}/tmp.out
+			    v_add_num=$(grep Adding ${cur_dir}/tmp.out|wc -l)
+			    v_remove_num=$(grep Removing ${cur_dir}/tmp.out|wc -l)
+			    v_rm_num=$((v_add_num+v_remove_num))
+			    if [[ ${v_rm_num} -gt 0 ]];then
+				    sleep 600
+				    echo "Adding ${v_add_num},Removing ${v_remove_num}."
+			    else
+				    echo "no Adding ,no Removing."
+				    break
+			    fi
+
+		    done
+	    else
+		    let fail_flag++
+		    v_warnMessage="${v_warnMessage}LOAD BALANCE failed."
+		    break
+	    fi
+            break
+        else
+            echo "DN状态未就绪，当前 Running 节点数：${v_new_cn_num}，5秒后重试..."
+            sleep 10 
+        fi
+    done
+
+    echo "===== ${v_new_cn_num} 节点online success ====="
+
+}
+function only_exec_remove_balance()
+{
+	sleep 3600
+#	add_new_cn_remove_bad_cn
+# only remove bad cn
+        remove_cn_bad
+        remove_dn_bad_norestart	
+	load_balance
+}
+function testcase()
+{
+	create_user
+	start_bm
+	for i in {1..6}
+	do
+
+                sleep 3600	
+		exec_jstack
+		if [[ ${i} = 3 ]];then
+			v_remove_cn_id=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show confignodes;"|grep Leader|awk -F '|' '{gsub(" ","");print $2}')
+                ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show confignodes;"|grep Leader|awk -F '|' '{gsub(" ","");print $4}'>${cur_dir}/tmp.out
+		v_shutdown_ip1=$(head -1 ${cur_dir}/tmp.out)
+			v_remove_dn_id=$(${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;"|grep "${v_shutdown_ip1}|"|awk -F '|' '{gsub(" ","");print $2}')
+		local v_stop_timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+		echo "kill -9 ${v_shutdown_ip1} DN and CN at ${v_stop_timestamp}"
+		kill_dn_cn ${v_shutdown_ip1}
+	        sleep 20
+	        exec_jstack
+                only_exec_remove_balance &
+		fi
+	done
+	wait
+	check_bm
+	wait_logs_sync_done 120
+	wait_for_monitor_sync_completion
+ #check cluster status
+${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show cluster;">${cur_dir}/tmp.out
+cat ${cur_dir}/tmp.out
+check_res Running ${total_node_num} "show cluster expect ${total_node_num} Running but "
+${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show regions;">${cur_dir}/tmp.out
+cat ${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -e "show regions;">${cur_dir}/tmp.out
+cat ${cur_dir}/tmp.out
+
+	# stop cluster
+#        sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
+	check_log
+	#backup logs
+        v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
+        v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
+sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
+#sh -x ${clean_env_dir}/backup_cluster_cn_data ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
+}
+# start cluster 
+echo "">${log_file}
+#while true
+#do
+#	v_last_test=$(ps -ef | grep tc2026_5c20d_ttl_now_shutdown.sh | grep -v grep | wc -l)
+#	if [[ ${v_last_test} -gt 0 ]];then
+#		sleep 1200
+#	else
+#		echo "last test finish."
+#		break
+#	fi
+#done
+#sleep 600
+start_db
+exec_jstack
+# start test time
+v_start_test_time=`date +%s`
+testcase
+v_end_test_time=`date +%s`
+v_elp_time=$((v_end_test_time-v_start_test_time))
+# record test result
+function write_result()
+{
+   v_result_iotdb_ip=$(grep ^test_result_iotdb_ip "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+   v_bm_max_value=0
+
+   v_bm_sum_value=0
+   sum_fail_flag=${fail_flag}
+   if [[ ${fail_flag} -gt 0 ]];then
+#           ${cli_dir}/sbin/start-cli.sh -h ${v_result_iotdb_ip} -e "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','FAIL',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
+           echo "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','FAIL',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
+ 
+           echo "test fail"
+   else
+           echo "test pass"
+#           ${cli_dir}/sbin/start-cli.sh -h ${v_result_iotdb_ip} -e "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','PASS',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
+           echo "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','PASS',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
+ 
+
+backup_log_flag=1
+   fi
+
+# backup logs?
+#if [[ ${backup_log_flag} -gt 0 ]];then
+## stop cluster
+#v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
+#v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
+##sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
+#sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
+#
+#fi
+
+}
+write_result
