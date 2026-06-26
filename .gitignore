@@ -1,0 +1,12 @@
+# === 大文件 / 数据备份：禁止提交到仓库（超过 GitHub 2GB pack / 100MB 单文件限制）===
+
+# 3.8GB 数据库备份（曾导致 git push 失败）
+auto_shell_testcase/FIT1/databackup_20260416/tc2026_data_backup_20260416.tar.gz
+
+# 56MB benchmark 备份
+auto_shell_testcase/CLOUD3_IP122/testcase/bm_20260519_writeview_v20.tar.gz
+
+# 提示：如需忽略整类大文件，可按需取消下面注释（注意已跟踪的小压缩包不会被影响）：
+# auto_shell_testcase/**/databackup_*/
+# *.tar.gz
+# *.zip
