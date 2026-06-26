@@ -371,7 +371,9 @@ do
    v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err10=`ssh ${os_user_name}@${line} "grep \"is not in tsFileMetaData\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
+   v_err11=`ssh ${os_user_name}@${line} "grep \"The memory cost to be released is larger\" ${db_dir}/logs/*datanode*all*|wc -l"`
+
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11))
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
            v_warnMessage="${v_warnMessage}DN NPE."
@@ -452,7 +454,7 @@ do
 
 done
 }
-#  - 只检查 ${nodeinfo_dir}/datanode.txt 里的 DN
+#  - 只检查 ${nodeinfo_dir}/datanode.txt 与当前集群 Running DN 的交集
 #  - 缺失指标不退出，只持续等待
 #  - syncLag > 0 持续存在时保留现场，不进入下个用例
 #  - 缺失/恢复、非 0/恢复 0 只在状态变化时打印一次
@@ -466,10 +468,10 @@ done
       local TARGET_DURATION=300
       local SLEEP_INTERVAL=5
       local dn_file="${nodeinfo_dir}/datanode.txt"
+      local cluster_dn_file="${cur_dir}/cluster_running_datanodes.out"
 
       local zero_start_time=0
-
-      declare -A target_nodes
+      local last_target_list_key=""
       declare -A seen_nodes
       declare -A last_node_status
       declare -A missing_warned
@@ -479,35 +481,46 @@ done
           return 1
       fi
 
-      local dn_list=()
-      while read -r dn_ip; do
-          [[ -z "$dn_ip" ]] && continue
-          [[ "$dn_ip" =~ ^# ]] && continue
-          dn_list+=("$dn_ip")
-          target_nodes["$dn_ip"]=1
-      done < "$dn_file"
-
-      local expected_count=${#dn_list[@]}
-      if [[ "$expected_count" -eq 0 ]]; then
-          echo "错误: $dn_file 中未解析到任何 DataNode"
-          return 1
-      fi
-
-      local instance_regex=""
-      local ip
-      for ip in "${dn_list[@]}"; do
-          local escaped_ip=${ip//./\\.}
-          [[ -n "$instance_regex" ]] && instance_regex="${instance_regex}|"
-          instance_regex="${instance_regex}${escaped_ip}(:[0-9]+)?"
-      done
-      instance_regex="^(${instance_regex})$"
-
-      echo "开始监控 Total Sync Lag，仅检查 ${dn_file} 中的 ${expected_count} 个 DataNode"
-      echo "Prometheus instance 过滤正则: ${instance_regex}"
-
       while true; do
           local now
           now=$(date +%s)
+
+          ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">"${cur_dir}/tmp.out"
+          grep Running "${cur_dir}/tmp.out" | awk -F "|" '{gsub(" ","");print $4}' | sed '/^$/d' | sort -u > "${cluster_dn_file}"
+
+          local dn_list=()
+          declare -A target_nodes=()
+          while read -r dn_ip; do
+              [[ -z "$dn_ip" ]] && continue
+              [[ "$dn_ip" =~ ^# ]] && continue
+              if grep -qx "$dn_ip" "${cluster_dn_file}"; then
+                  dn_list+=("$dn_ip")
+                  target_nodes["$dn_ip"]=1
+              fi
+          done < "$dn_file"
+
+          local expected_count=${#dn_list[@]}
+          if [[ "$expected_count" -eq 0 ]]; then
+              zero_start_time=0
+              echo "[$(date '+%F %T')] 等待中: show datanodes 未解析到当前集群 Running DN，跳过非集群节点后无可检查目标"
+              sleep "${SLEEP_INTERVAL}"
+              continue
+          fi
+
+          local target_list_key="${dn_list[*]}"
+          if [[ "$target_list_key" != "$last_target_list_key" ]]; then
+              echo "[$(date '+%F %T')] 开始监控 Total Sync Lag，仅检查当前集群中的 ${expected_count} 个 DataNode: ${target_list_key}"
+              last_target_list_key="$target_list_key"
+          fi
+
+          local instance_regex=""
+          local ip
+          for ip in "${dn_list[@]}"; do
+              local promql_safe_ip=${ip//./[.]}
+              [[ -n "$instance_regex" ]] && instance_regex="${instance_regex}|"
+              instance_regex="${instance_regex}${promql_safe_ip}(:[0-9]+)?"
+          done
+          instance_regex="^(${instance_regex})$"
 
           local query
           query="sum(iot_consensus{instance=~\"${instance_regex}\",name=\"ioTConsensusServerImpl\",type=\"syncLag\"}) by (instance)"
@@ -541,7 +554,7 @@ done
               seen_nodes["$instance_host"]=1
               ((matched_count++))
 
-              if [[ ${missing_warned[$instance_host]} == "true" ]]; then
+              if [[ ${missing_warned[$instance_host]:-false} == "true" ]]; then
                   echo "[$(date '+%F %T')] INFO: 节点 ${instance_host} 的 syncLag 指标已恢复"
                   missing_warned["$instance_host"]="false"
               fi
@@ -550,16 +563,13 @@ done
                   has_non_zero=true
                   non_zero_nodes+=("${instance_host}=${sync_lag}")
 
-                  if [[ ${last_node_status[$instance_host]} == "true" ]]; then
-                      ((fail_flag++))
-                      ((sync_fail_flag++))
-                  else
+                  if [[ ${last_node_status[$instance_host]:-false} != "true" ]]; then
                       echo "[$(date '+%F %T')] WARN: 节点 ${instance_host} 首次检测到 syncLag=${sync_lag}"
                   fi
 
                   last_node_status["$instance_host"]="true"
               else
-                  if [[ ${last_node_status[$instance_host]} == "true" ]]; then
+                  if [[ ${last_node_status[$instance_host]:-false} == "true" ]]; then
                       echo "[$(date '+%F %T')] INFO: 节点 ${instance_host} 的 syncLag 已恢复为 0"
                   fi
                   last_node_status["$instance_host"]="false"
@@ -570,9 +580,9 @@ done
           )
 
           for ip in "${dn_list[@]}"; do
-              if [[ -z "${seen_nodes[$ip]}" ]]; then
+              if [[ -z "${seen_nodes[$ip]:-}" ]]; then
                   missing_nodes+=("$ip")
-                  if [[ ${missing_warned[$ip]} != "true" ]]; then
+                  if [[ ${missing_warned[$ip]:-false} != "true" ]]; then
                       echo "[$(date '+%F %T')] WARN: 节点 ${ip} 未查到 syncLag 指标"
                       missing_warned["$ip"]="true"
                   fi
@@ -844,6 +854,9 @@ cat ${cur_dir}/tmp.out
 check_res Running ${total_node_num} "show cluster expect ${total_node_num} Running but "
 ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show regions;">${cur_dir}/tmp.out
 cat ${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -e "show regions;">${cur_dir}/tmp.out
+cat ${cur_dir}/tmp.out
+
 	# stop cluster
         sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
 	check_log

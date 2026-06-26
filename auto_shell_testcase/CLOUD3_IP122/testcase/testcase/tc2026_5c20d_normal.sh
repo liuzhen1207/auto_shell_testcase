@@ -371,7 +371,8 @@ do
    v_err8=`ssh ${os_user_name}@${line} "grep \"BufferUnderflowException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err9=`ssh ${os_user_name}@${line} "grep \"NegativeArraySizeException\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err10=`ssh ${os_user_name}@${line} "grep \"is not in tsFileMetaData\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10))
+   v_err11=`ssh ${os_user_name}@${line} "grep \"The memory cost to be released is larger\" ${db_dir}/logs/*datanode*all*|wc -l"`
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11))
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
            v_warnMessage="${v_warnMessage}DN NPE."
@@ -496,9 +497,9 @@ done
       local instance_regex=""
       local ip
       for ip in "${dn_list[@]}"; do
-          local escaped_ip=${ip//./\\.}
+          local promql_safe_ip=${ip//./[.]}
           [[ -n "$instance_regex" ]] && instance_regex="${instance_regex}|"
-          instance_regex="${instance_regex}${escaped_ip}(:[0-9]+)?"
+          instance_regex="${instance_regex}${promql_safe_ip}(:[0-9]+)?"
       done
       instance_regex="^(${instance_regex})$"
 
@@ -844,6 +845,9 @@ cat ${cur_dir}/tmp.out
 check_res Running ${total_node_num} "show cluster expect ${total_node_num} Running but "
 ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show regions;">${cur_dir}/tmp.out
 cat ${cur_dir}/tmp.out
+${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -e "show regions;">${cur_dir}/tmp.out
+cat ${cur_dir}/tmp.out
+
 	# stop cluster
         sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
 	check_log

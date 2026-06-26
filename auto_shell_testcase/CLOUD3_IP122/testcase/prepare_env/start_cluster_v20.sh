@@ -15,6 +15,7 @@ testdb=$(grep "^v_testdb=" "${conf_file}" 2>/dev/null | awk -F '=' '{gsub(/ /,""
 db_parent_dir=$(grep "^v_db_parent_dir=" "${conf_file}" 2>/dev/null | awk -F '=' '{gsub(/ /,""); print $2}' || echo "")
 shell_client_db_parent_dir=$(grep "^v_shell_client_db_parent_dir=" "${conf_file}" 2>/dev/null | awk -F '=' '{gsub(/ /,""); print $2}' || echo "")
 cn_db_parent_dir=$(grep "^v_cn_db_parent_dir=" "${conf_file}" 2>/dev/null | awk -F '=' '{gsub(/ /,""); print $2}' || echo "")
+local_java_home=$(grep "^local_java_home=" "${conf_file}" 2>/dev/null | awk -F '=' '{gsub(/ /,""); print $2}' || echo "")
 
 # 校验配置项非空
 if [[ -z "${os_user_name}" || -z "${testdb}" || -z "${db_parent_dir}" || -z "${cn_db_parent_dir}" ]]; then
@@ -41,6 +42,35 @@ if [[ -z "${query_host}" ]]; then
     echo "[$(date +%F_%T)] ERROR: 未从datanode.txt读取到查询节点IP！" | tee -a "${log_file}"
     exit 1
 fi
+
+ensure_local_java_env() {
+    if [[ -n "${JAVA_HOME:-}" && -x "${JAVA_HOME}/bin/java" ]]; then
+        export PATH="${JAVA_HOME}/bin:${PATH}"
+        return 0
+    fi
+
+    if [[ -n "${local_java_home}" && -x "${local_java_home}/bin/java" ]]; then
+        export JAVA_HOME="${local_java_home}"
+        export PATH="${JAVA_HOME}/bin:${PATH}"
+        return 0
+    fi
+
+    if command -v java >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local candidate
+    for candidate in /usr/local/jdk-17.0.12 /usr/local/jdk-17 /usr/lib/jvm/java-17-openjdk-amd64 /usr/lib/jvm/java-11-openjdk-amd64
+    do
+        if [[ -x "${candidate}/bin/java" ]]; then
+            export JAVA_HOME="${candidate}"
+            export PATH="${JAVA_HOME}/bin:${PATH}"
+            return 0
+        fi
+    done
+
+    return 1
+}
 
 # ====================== 日志函数（增强版） ======================
 log() {
@@ -72,6 +102,13 @@ check_node_process() {
 start_cluster() {
     log "INFO" "==================== 集群启动开始 ===================="
     log "INFO" "启动参数：总节点数=${total_node_num}，查询节点=${query_host}，启动时间戳=${v_start_time}"
+
+    if ensure_local_java_env; then
+        log "INFO" "本地CLI使用 Java: $(command -v java)"
+    else
+        log "ERROR" "本地CLI缺少可用Java环境，无法执行集群状态检查"
+        exit 1
+    fi
 
     # -------------------- 步骤1：启动ConfigNode --------------------
     cn_conf="${cur_dir}/../conf/confignode.txt"
@@ -116,7 +153,7 @@ start_cluster() {
         fi
 
         # 拼接并执行启动命令
-        start_cn_cmd="source /etc/profile; nohup ${cn_db_dir}/sbin/start-confignode.sh -H ${cn_db_dir}/cn_${v_start_time}_heapdump.hprof > ${cn_db_dir}/start_cn_${v_start_time}.log 2>&1 &"
+        start_cn_cmd="source /etc/profile; nohup ${cn_db_dir}/sbin/start-confignode.sh -H ${cn_db_dir}/cn_${v_start_time}_heapdump.hprof > /dev/null  2>&1 &"
         log "INFO" "节点${cn_ip} 执行启动命令：ssh ${os_user_name}@${cn_ip} '${start_cn_cmd}'"
 
         ssh_exit_code=0
@@ -159,7 +196,7 @@ start_cluster() {
         log "INFO" "-------------------- 处理DataNode节点：${dn_ip} --------------------"
 
         # 拼接并执行启动命令
-        start_dn_cmd="source /etc/profile; nohup ${db_dir}/sbin/start-datanode.sh -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > ${db_dir}/start_dn_${v_start_time}.log 2>&1 &"
+        start_dn_cmd="source /etc/profile; nohup ${db_dir}/sbin/start-datanode.sh -g -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
         log "INFO" "节点${dn_ip} 执行启动命令：ssh ${os_user_name}@${dn_ip} '${start_dn_cmd}'"
 
         ssh_exit_code=0
@@ -191,16 +228,18 @@ while [[ ${wait_count} -lt ${max_wait} ]]; do
 
     # 执行show cluster（增加3次重试，避免临时网络问题）
     cluster_status=""
+    cluster_status_err=""
     cli_retry=0
     while [[ ${cli_retry} -lt 3 && -z "${cluster_status}" ]]; do
-        cluster_status=$("${cli_dir}/sbin/start-cli.sh" -h "${query_host}" -e "show cluster;" 2>/dev/null || echo "")
+        cluster_status=$("${cli_dir}/sbin/start-cli.sh" -h "${query_host}" -e "show cluster;" 2>"${cur_dir}/start_cluster_cli.err" || true)
+        cluster_status_err=$(tail -n 5 "${cur_dir}/start_cluster_cli.err" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')
         cli_retry=$((cli_retry + 1))
         sleep 1  # 重试间隔1秒
     done
 
     # 处理空值/连接错误（但不再直接continue，而是标记为0）
     if [[ -z "${cluster_status}" || "${cluster_status}" =~ becauseConnection\ Error ]]; then
-        log "WARN" "第${wait_count}秒：CLI执行失败（重试${cli_retry}次），错误信息：${cluster_status}"
+        log "WARN" "第${wait_count}秒：CLI执行失败（重试${cli_retry}次），stdout=${cluster_status} stderr=${cluster_status_err}"
         v_ok_num=0  # 强制设置为0，避免未定义
     else
         # 精准统计：只统计实际节点行的Running/ReadOnly状态
