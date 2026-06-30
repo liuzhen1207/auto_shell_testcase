@@ -11,7 +11,7 @@ db_dir=${db_parent_dir}/${testdb}
 function reset_conf()
 {
 
-exec 3<${cur_dir}/../conf/confignode.txt
+exec 3<${cur_dir}/../conf/confignode_1c.txt
 while read line <&3
 do
    if ssh ${os_user_name}@${line} test -d ${db_dir}/conf; then
@@ -22,7 +22,7 @@ do
    fi
 done
 
-exec 3<${cur_dir}/../conf/datanode.txt
+exec 3<${cur_dir}/../conf/datanode_4d.txt
 while read line <&3
 do
    if ssh ${os_user_name}@${line} test -d ${db_dir}/conf; then
