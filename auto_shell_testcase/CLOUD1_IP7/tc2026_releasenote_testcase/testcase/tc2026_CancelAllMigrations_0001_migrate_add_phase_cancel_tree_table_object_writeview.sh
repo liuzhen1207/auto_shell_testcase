@@ -663,26 +663,43 @@ wait_all_migrations_in_transfer() {
     begin_time=$(date +%s)
     # 每个 slot 是否已确认过"传输中"(按 slot 索引存, 只处理传入的 slot)
     local slot_ready=("0" "0" "0")
+    # 每个 slot 的 migration 行是否曾在 show migrations 中出现过(row 存在即 seen).
+    # rc=0(in-transfer) / rc=1(已存在但未传输) 都意味着 row 存在 -> seen=1.
+    # rc=3(row 不在 show migrations 中): 若从未 seen 则仅是 migrate/extend 还没启动 -> 继续等.
+    local slot_seen=("0" "0" "0")
+    local slot_done=("0" "0" "0")
     while true; do
+        done_count=0
         ready=0
         for i in ${slots}; do
             [ -z "${mig_region_id[$i]}" ] && continue
+            if [ "${slot_done[$i]}" = "1" ]; then done_count=$((done_count+1)); continue; fi
             if [ "${slot_ready[$i]}" = "1" ]; then ready=$((ready+1)); continue; fi
             migration_in_add_transfer "${i}"
             rc=$?
             case "${rc}" in
-                0) slot_ready[$i]=1; ready=$((ready+1))
+                0) slot_ready[$i]=1; ready=$((ready+1)); slot_seen[$i]=1
                    log "INFO" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} is transferring snapshot (Progress files X/Y, X<Y)";;
+                1) slot_seen[$i]=1 ;;   # row 存在但尚未传输, 继续等
                 2) let fail_flag++; v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] show migrations failed while waiting transfer.";;
-                3) let fail_flag++
-                   v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] region ${mig_region_id[$i]} completed before caught in-transfer (too small/fast)."
-                   log "ERROR" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} finished before in-transfer window"
-                   slot_ready[$i]=done;;   # 标记为不可再等
-                *) : ;;                    # 1: 继续等
+                3) if [ "${slot_seen[$i]}" = "1" ]; then
+                       # row 曾出现后消失 → 真跑完了, 抓窗失败
+                       let fail_flag++
+                       v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] region ${mig_region_id[$i]} completed before caught in-transfer (too small/fast)."
+                       log "ERROR" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} finished before in-transfer window"
+                       slot_done[$i]=1
+                   fi
+                   # 从未 seen → 还没启动(CLI 连接延迟) → 继续等, 不算 fail
+                   ;;
+                *) : ;;                    # 不会走到这里
             esac
         done
 
         # 本批全部 slot 都已就绪(传输中) -> 立即取消
+        if [ "${ready}" -eq 0 ] && [ "${done_count}" -eq "${want}" ]; then
+            log "ERROR" "All ${want} slots completed before caught (too fast)"
+            return 1
+        fi
         if [ "${ready}" -eq "${want}" ]; then
             log "INFO" "All ${want} migrations of this batch [${slots}] are in-transfer -> CANCEL now"
             return 0
