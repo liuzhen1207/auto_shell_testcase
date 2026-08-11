@@ -45,6 +45,11 @@ v_load_balance_cost_sec=0
 v_removed_dn_ip=""
 v_removed_dn_id=""
 data_consistency_failed=0
+v_show_regions_tsfile_negative_reported=0
+v_show_regions_object_size_mismatch_reported=0
+remove_datanode_timeout_sec=14400
+remove_process_stop_timeout_sec=1800
+load_balance_timeout_sec=14400
 
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -478,6 +483,8 @@ delete_first_2h_data() {
 
 remove_datanode_once() {
   local rm_dn_ip=$1
+  local rm_wait_start
+  local process_wait_start
   log "INFO" "开始单次缩容 DataNode ${rm_dn_ip}"
 
   query_ip2=$(tail -1 "${nodeinfo_dir}/datanode.txt")
@@ -503,6 +510,7 @@ remove_datanode_once() {
   fi
 
   rm_t1=$(date +%s)
+  rm_wait_start=${rm_t1}
   while true; do
       v_rm_suc=$("${cli_dir}/sbin/start-cli.sh" -u "${db_sys_admin}" -pw "${bm_conn_pw}" -h "${query_ip}" -e "show datanodes;" | grep "${rm_dn_ip}" | wc -l)
       if [[ ${v_rm_suc} -gt 0 ]]; then
@@ -536,11 +544,24 @@ remove_datanode_once() {
           fi
           break
       fi
+      if [[ $(( $(date +%s) - rm_wait_start )) -gt ${remove_datanode_timeout_sec} ]]; then
+          let fail_flag++
+          v_warnMessage="${v_warnMessage}.remove datanode ${rm_dn_ip} timeout after ${remove_datanode_timeout_sec}s"
+          log "ERROR" "remove datanode ${rm_dn_ip} timeout after ${remove_datanode_timeout_sec}s"
+          return 1
+      fi
   done
 
+  process_wait_start=$(date +%s)
   while true; do
       v_rm_dn_pid=$(ssh "${os_user_name}@${rm_dn_ip}" "sudo jps|grep -i datanode|wc -l")
       if [[ ${v_rm_dn_pid} -gt 0 ]]; then
+          if [[ $(( $(date +%s) - process_wait_start )) -gt ${remove_process_stop_timeout_sec} ]]; then
+              let fail_flag++
+              v_warnMessage="${v_warnMessage}.removed datanode ${rm_dn_ip} process did not stop within ${remove_process_stop_timeout_sec}s"
+              log "ERROR" "removed datanode ${rm_dn_ip} process stop timeout"
+              return 1
+          fi
           sleep 60
       else
           break
@@ -581,8 +602,119 @@ add_removed_datanode_back() {
   log "INFO" "${rm_dn_ip} 已重新加入集群"
 }
 
+check_show_regions_abnormal_metrics() {
+    local stage=$1
+    local artifact_dir="${cur_dir}/show_regions_check_${test_begin_sec}"
+    local out_file="${artifact_dir}/${stage}_show_regions.out"
+    local negative_file="${artifact_dir}/${stage}_negative_tsfile_size.out"
+    local object_mismatch_file="${artifact_dir}/${stage}_object_size_mismatch.out"
+    local rc
+
+    mkdir -p "${artifact_dir}"
+    "${cli_dir}/sbin/start-cli.sh" -u "${db_sys_admin}" -pw "${bm_conn_pw}" ${ssl_str} -h "${query_ip}" -timeout 3600 -sql_dialect table -e "show regions;" > "${out_file}" 2>&1
+    rc=$?
+    sed -i 's/\r$//' "${out_file}"
+    if [[ ${rc} -ne 0 ]] || grep -Eq "Exception|ERROR|Error:" "${out_file}"; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}.${stage} show regions failed, rc=${rc}, see ${out_file}."
+        log "ERROR" "${stage} show regions failed, rc=${rc}"
+        return 1
+    fi
+
+    awk -F'|' '
+        function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+        /^\+/ { next }
+        /\|/ {
+            if (!header_found && $0 ~ /\|[[:space:]]*TsFileSize[[:space:]]*\|/) {
+                for (i = 1; i <= NF; i++) {
+                    col = trim($i)
+                    if (col == "RegionId") region_idx = i
+                    else if (col == "Type") type_idx = i
+                    else if (col == "DataNodeId") dn_idx = i
+                    else if (col == "RpcAddress") rpc_idx = i
+                    else if (col == "TsFileSize") tsfile_idx = i
+                }
+                header_found = 1
+                next
+            }
+            if (header_found && trim($type_idx) == "DataRegion" && trim($tsfile_idx) ~ /^-/) {
+                print "RegionId=" trim($region_idx) ", DataNodeId=" trim($dn_idx) ", RpcAddress=" trim($rpc_idx) ", TsFileSize=" trim($tsfile_idx)
+            }
+        }
+    ' "${out_file}" > "${negative_file}"
+
+    if [[ -s "${negative_file}" && ${v_show_regions_tsfile_negative_reported} -eq 0 ]]; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}.${stage} show regions TsFileSize has negative value, see ${out_file}."
+        log "ERROR" "${stage} show regions TsFileSize has negative value"
+        cat "${negative_file}" >> "${log_file}"
+        v_show_regions_tsfile_negative_reported=1
+    fi
+
+    awk -F'|' '
+        function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+        function bytes(value, parts, number, unit) {
+            value = trim(value)
+            if (value == "Unknown" || value == "") return -1
+            split(value, parts, /[[:space:]]+/)
+            number = parts[1] + 0
+            unit = parts[2]
+            if (unit == "KB") return number * 1000
+            if (unit == "MB") return number * 1000000
+            if (unit == "GB") return number * 1000000000
+            if (unit == "TB") return number * 1000000000000
+            return number
+        }
+        /^\+/ { next }
+        /\|/ {
+            if (!header_found && $0 ~ /\|[[:space:]]*ObjectSize[[:space:]]*\|/) {
+                for (i = 1; i <= NF; i++) {
+                    col = trim($i)
+                    if (col == "RegionId") region_idx = i
+                    else if (col == "Type") type_idx = i
+                    else if (col == "Status") status_idx = i
+                    else if (col == "DataNodeId") dn_idx = i
+                    else if (col == "RpcAddress") rpc_idx = i
+                    else if (col == "ObjectSize") object_idx = i
+                }
+                header_found = 1
+                next
+            }
+            if (header_found && trim($type_idx) == "DataRegion" && trim($status_idx) == "Running") {
+                region = trim($region_idx)
+                size = bytes($object_idx)
+                if (size >= 0) {
+                    count[region]++
+                    if (!(region in min) || size < min[region]) { min[region] = size; min_node[region] = trim($dn_idx) "@" trim($rpc_idx) }
+                    if (!(region in max) || size > max[region]) { max[region] = size; max_node[region] = trim($dn_idx) "@" trim($rpc_idx) }
+                }
+            }
+        }
+        END {
+            for (region in count) {
+                if (count[region] > 1 && max[region] > 0 && min[region] < max[region] * 0.8) {
+                    print "RegionId=" region ", min=" min[region] " bytes at " min_node[region] ", max=" max[region] " bytes at " max_node[region]
+                }
+            }
+        }
+    ' "${out_file}" > "${object_mismatch_file}"
+
+    if [[ -s "${object_mismatch_file}" && ${v_show_regions_object_size_mismatch_reported} -eq 0 ]]; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}.${stage} show regions Running replica ObjectSize differs by more than 20%, see ${out_file}."
+        log "ERROR" "${stage} Running replica ObjectSize differs by more than 20%"
+        cat "${object_mismatch_file}" >> "${log_file}"
+        v_show_regions_object_size_mismatch_reported=1
+    fi
+
+    return 0
+}
+
+
 wait_load_balance_done() {
   local target_ip=$1
+  local wait_start_time
+  wait_start_time=$(date +%s)
 
   while true; do
       "${cli_dir}/sbin/start-cli.sh" -u "${db_sys_admin}" -pw "${bm_conn_pw}" -h "${query_ip}" -sql_dialect table -timeout 3600 -e "show migrations;" > "${cur_dir}/load_balance_migrations_table.out" 2>&1
@@ -597,7 +729,13 @@ wait_load_balance_done() {
 
       if [[ ${v_tab_emp_num} -gt 0 ]] && [[ ${v_tree_emp_num} -gt 0 ]]; then
           log "INFO" "LOAD BALANCE 迁移完成，show migrations 已为空，目标节点 ${target_ip}"
+	  check_show_regions_abnormal_metrics "after_load_balance"
           return 0
+      fi
+
+      if [[ $(( $(date +%s) - wait_start_time )) -gt ${load_balance_timeout_sec} ]]; then
+          log "ERROR" "LOAD BALANCE timeout after ${load_balance_timeout_sec}s"
+          return 1
       fi
 
       sleep 60
@@ -649,6 +787,7 @@ run_mid_benchmark_actions() {
   delete_first_2h_data
   sleep 5
   remove_datanode_once "${v_removed_dn_ip}" || return 1
+  check_show_regions_abnormal_metrics "after_remove_${v_removed_dn_ip}"
   add_removed_datanode_back "${v_removed_dn_ip}" || return 1
   run_load_balance_once "${v_removed_dn_ip}" || return 1
 }
@@ -879,6 +1018,57 @@ check_data_consistent() {
 }
 
 check_log() {
+  check_split_layout_for_link_fallback() {
+    local dn_ip=$1
+
+    ssh "${os_user_name}@${dn_ip}" bash -s <<EOF
+awk '
+/Cannot create link from / {
+  line = \$0
+  sub(/^.*Cannot create link from /, "", line)
+  split(line, parts, " to ")
+  if (length(parts) < 2) {
+    next
+  }
+  target = parts[2]
+  sub(/, fallback to copy.*/, "", target)
+
+  base = target
+  sub(/\.resource$/, "", base)
+  sub(/\.mods[0-9]*$/, "", base)
+
+  parent = target
+  sub(/\/[^/]+$/, "", parent)
+
+  seen[base SUBSEP parent] = 1
+}
+END {
+  found = 0
+  for (key in seen) {
+    split(key, values, SUBSEP)
+    base = values[1]
+    parent = values[2]
+    dir_count[base]++
+    if (dir_list[base] == "") {
+      dir_list[base] = parent
+    } else {
+      dir_list[base] = dir_list[base] "," parent
+    }
+  }
+
+  for (base in dir_count) {
+    if (dir_count[base] > 1) {
+      print base "\t" dir_list[base]
+      found = 1
+    }
+  }
+
+  exit found ? 10 : 0
+}
+' ${db_dir}/logs/*datanode*all*
+EOF
+  }
+
   exec 3<"${nodeinfo_dir}/confignode.txt"
   while read line<&3; do
      ssh "${os_user_name}@${line}" "sudo gunzip -f ${db_dir}/logs/*confignode*all*.gz >/dev/null 2>&1 || true"
@@ -914,12 +1104,24 @@ check_log() {
      v_err16=$(ssh "${os_user_name}@${line}" "grep \"which has not released all memory\" ${db_dir}/logs/*datanode*all*|wc -l")
      v_err18=$(ssh "${os_user_name}@${line}" "grep INTERNAL_SERVER_ERROR ${db_dir}/logs/*datanode*all*|wc -l")
      v_err19=$(ssh "${os_user_name}@${line}" "grep \"Cannot create link from\" ${db_dir}/logs/*datanode*all*|wc -l")
-     v_err_total=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_err12+v_err13+v_err14+v_err15+v_err16+v_err17+v_err18+v_err19))
+     v_err_total=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_err12+v_err13+v_err14+v_err15+v_err16+v_err17+v_err18))
      if [[ ${v_err_total} -gt 0 ]]; then
          let fail_flag++
          let backup_log_flag++
          v_warnMessage="${v_warnMessage}DN unexpected log."
          echo "DN ${line} unexpected log count : ${v_err_total}"
+     fi
+     if [[ ${v_err19} -gt 0 ]]; then
+         v_link_split=$(check_split_layout_for_link_fallback "${line}")
+         if [[ -n "${v_link_split}" ]]; then
+             let fail_flag++
+             let backup_log_flag++
+             v_link_split_sample=$(echo "${v_link_split}" | head -1 | tr '\t' ' ')
+             v_warnMessage="${v_warnMessage}DN ${line} link fallback caused split tsfile/resource/mods dirs: ${v_link_split_sample}."
+             echo "DN ${line} link fallback split detected: ${v_link_split_sample}"
+         else
+             echo "DN ${line} link fallback exists but tsfile/resource/mods target dirs stay consistent."
+         fi
      fi
      if [[ ${v_npe} -gt 0 ]]; then
          let fail_flag++
@@ -1035,6 +1237,7 @@ wait_sync_lag_zero() {
 testcase1() {
   wait_sync_lag_zero 36000
   sleep 300
+  check_show_regions_abnormal_metrics "final_after_sync"
   capture_table_region_layout
   check_data_consistent
   if [[ ${data_consistency_failed} -eq 0 ]]; then
@@ -1044,12 +1247,12 @@ testcase1() {
   if [[ ${backup_flag} -gt 0 ]]; then
       v_backup_time=$(date +%s)
       sh -x "${clean_env_dir}/stop_cluster.sh" 2>&1
-      sh -x "${clean_env_dir}/backup_cluster_logs.sh" "${v_backup_time}" 2>&1
-#      sh -x "${clean_env_dir}/backup_cluster_logs_data.sh" "${v_backup_time}" 2>&1
-  fi
+      sh -x "${clean_env_dir}/backup_cluster_logs_data.sh" "${v_backup_time}" 2>&1
+  elif [[ ${backup_log_flag} -gt 0 ]]; then
       v_backup_time=$(date +%s)
       sh -x "${clean_env_dir}/stop_cluster.sh" 2>&1
       sh -x "${clean_env_dir}/backup_cluster_logs.sh" "${v_backup_time}" 2>&1
+  fi
 }
 
 write_result() {

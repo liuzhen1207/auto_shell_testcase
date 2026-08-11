@@ -103,7 +103,7 @@ configure_confignode() {
         batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
         batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
-
+batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 EOF
 
     if [ $? -eq 0 ]; then
@@ -151,6 +151,7 @@ configure_datanode() {
         batch_set_sys_conf ".*schema_replication_factor=.*" "schema_replication_factor=${sr_rep_num}"
         batch_set_sys_conf ".*data_replication_factor=.*" "data_replication_factor=${dr_rep_num}"
         batch_set_sys_conf ".*enable_auto_repair_compaction=.*" "enable_auto_repair_compaction=false"
+batch_set_sys_conf ".*data_region_consensus_protocol_class=.*" "data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.${v_consensus}"
 
 EOF
 

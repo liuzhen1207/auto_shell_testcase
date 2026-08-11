@@ -390,8 +390,25 @@ function remove_datanode()
         rm_dn_ip=$1
 	echo "remove datanode ${rm_dn_ip} at `date "+%Y-%m-%d %H:%M:%S"`"
 	query_ip2=`tail -1 ${nodeinfo_dir}/datanode.txt`
-        v_rm_datanode_id=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "show datanodes;"|grep ${rm_dn_ip}|awk -F '|' '{gsub(" ","");print $2}'`
+        while true
+        do
+                v_rm_datanode_id=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "show datanodes;"|grep ${rm_dn_ip}|awk -F '|' '{gsub(" ","");print $2}'`
+                if [[ -n ${v_rm_datanode_id} ]];then
+                        break
+                fi
+                echo "Failed to get DataNode ID for ${rm_dn_ip}, retry after 1 second."
+                sleep 1
+        done
         if [[ ${rm_dn_ip} = ${query_ip} ]];then
+           ${cli_dir}/sbin/start-cli.sh -h ${query_ip2} -sql_dialect table -e "set configuration region_migration_concurrency_limit='10';">${cur_dir}/tmp.out
+	   v_exp_suc=$(grep successfully ${cur_dir}/tmp.out|wc -l)
+	   if [[ ${v_exp_suc} -gt 0 ]];then
+		   echo "set configuration region_migration_concurrency_limit='10' successfully"
+	   else
+              let fail_flag++
+              v_warnMessage="${v_warnMessage}.set configuration region_migration_concurrency_limit='10' failed"
+	      cat ${cur_dir}/tmp.out
+	   fi
            ${cli_dir}/sbin/start-cli.sh -h ${query_ip2} -e "remove datanode ${v_rm_datanode_id};"
         else
            ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "remove datanode ${v_rm_datanode_id};"
@@ -584,7 +601,7 @@ wait_sync_done 180
 	 let backup_flag++
 	 diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out
 	 diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out
-	 v_warnMessage="data inconsistent"
+	 v_warnMessage="${v_warnMessage}.data inconsistent"
          echo "diff : ${v_diff_total}"
       fi
       # restart

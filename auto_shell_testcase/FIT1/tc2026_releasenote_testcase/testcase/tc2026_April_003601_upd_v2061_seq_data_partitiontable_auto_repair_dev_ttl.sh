@@ -711,19 +711,36 @@ do
    v_cn_err1=`ssh ${os_user_name}@${line} "grep BufferUnderflowException ${db_dir}/logs/*confignode*all*|wc -l"`
    v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
    v_cn_err3=`ssh ${os_user_name}@${line} "grep \"ClassCastException\" ${db_dir}/logs/*confignode*all*|wc -l"`
+   v_cn_err4=`ssh ${os_user_name}@${line} "grep \"Error waiting for roll back the REQUEST_PARTITION_TABLES state due to thread interruption\" ${db_dir}/logs/*confignode*all*|wc -l"`
    if [[ ${v_npe} -gt 0 ]];then
 	   let fail_flag++
 	   let backup_log_flag++
 	   echo "CN ${line} NullPointer : ${v_npe}"
 	   v_warnMessage="${v_warnMessage}CN ${line} NullPointer: ${v_npe}."
    fi
-   v_cn_err_total=$((v_cn_err1+v_cn_err2+v_cn_err3))
+   v_cn_err_total=$((v_cn_err1+v_cn_err2+v_cn_err3+v_cn_err4))
    if [[ ${v_cn_err_total} -gt 0 ]];then
            let fail_flag++
            let backup_log_flag++
            echo "CN ${line} has error: ${v_cn_err_total}"
 	   v_warnMessage="${v_warnMessage}CN ${line} unexpected log : ${v_cn_err_total}."
    fi
+   #check logs 大小
+   # 检查目录是否存在
+    if ssh ${os_user_name}@${line} test -d ${db_dir}; then
+        echo "节点 $line：目录 ok"
+    else
+        ((fail_flag++))
+        v_warnMessage="${v_warnMessage} ${line} ${db_dir} not exist"
+    fi
+
+    # ====================== 这里检查日志大小 ======================
+    size=$(ssh ${os_user_name}@${line} "du -sm ${db_dir}/logs 2>/dev/null | awk '{print \$1}'")
+    if [ -n "$size" ] && [ "$size" -gt 500 ]; then
+        ((fail_flag++))
+        echo "【警告】节点 $line ${db_dir}/logs 大小 ${size}M > 500M"
+        v_warnMessage="${v_warnMessage} 节点 $line 日志目录超过500M"
+    fi
 done
 exec 3<${nodeinfo_dir}/datanode.txt
 while read line<&3
@@ -813,9 +830,9 @@ v_elp_time=$((v_end_test_time-v_start_test_time))
 function write_result()
 {
         test_time=$(date +"%Y-%m-%dT%H:%M:%S.%3N%:z")
-   v_bm_max_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out|awk '{print $8}'|sort -n|tail -1`
+   v_bm_max_value=0
 
-   v_bm_sum_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out| awk '{print $8}' | sort -n | awk '{sum+=$1} END {print sum}'`
+   v_bm_sum_value=0
    # 写入表头
    v_exist_flag=`grep Time,testTimechoDB $CSV_FILE|wc -l`
    if [[ ${v_exist_flag} -gt 0 ]];then

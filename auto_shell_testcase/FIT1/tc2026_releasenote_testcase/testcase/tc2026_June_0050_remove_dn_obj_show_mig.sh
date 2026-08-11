@@ -44,6 +44,8 @@ seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
 query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 
 fail_flag=0
+v_show_regions_tsfile_negative_reported=0
+v_show_regions_object_size_mismatch_reported=0
 test_begin_sec=$(date +%s)
 
 # ===================== 工具函数 =====================
@@ -536,18 +538,21 @@ local check_tag=$2
 local safe_tag=""
 local output_file=""
 local abnormal_file=""
+local object_mismatch_file=""
 
    safe_tag=`echo "${check_tag}" | sed 's/[^0-9A-Za-z._-]/_/g'`
    output_file="${cur_dir}/${safe_tag}.out"
-   abnormal_file="${cur_dir}/${safe_tag}_abnormal.out"
+   abnormal_file="${cur_dir}/${safe_tag}_negative_tsfile_size.out"
+   object_mismatch_file="${cur_dir}/${safe_tag}_object_size_mismatch.out"
 
    ${cli_dir}/sbin/start-cli.sh -h ${check_host} -sql_dialect table -timeout 3600 -e "show regions;" > "${output_file}" 2>&1
+   v_regions_cli_rc=$?
    cat "${output_file}"
 
    v_regions_exception_num=`grep -E "Exception|Error:" "${output_file}"|wc -l`
-   if [[ ${v_regions_exception_num} -gt 0 ]];then
+   if [[ ${v_regions_cli_rc} -ne 0 || ${v_regions_exception_num} -gt 0 ]];then
       let fail_flag++
-      v_warnMessage="${v_warnMessage}.show regions execute failed on ${check_host}."
+      v_warnMessage="${v_warnMessage}.show regions execute failed on ${check_host}, rc=${v_regions_cli_rc}."
       return 1
    fi
 
@@ -559,22 +564,117 @@ local abnormal_file=""
    /^\+/ {next}
    /^Total line number/ {next}
    /^It costs/ {next}
-   /RegionId/ {next}
-   NF < 15 {next}
-   {
-      region_type=trim($3)
-      ts_file_size=trim($14)
-      compression_ratio=trim($15)
-      if (region_type == "DataRegion" && (ts_file_size ~ /^-/ || compression_ratio ~ /^-/)) {
-         print $0
+   /\|/ {
+      if (!header_found && $0 ~ /\|[ \t]*TsFileSize[ \t]*\|/) {
+         for (i = 1; i <= NF; i++) {
+            col = trim($i)
+            if (col == "RegionId") {
+               region_idx = i
+            } else if (col == "Type") {
+               type_idx = i
+            } else if (col == "DataNodeId") {
+               dn_idx = i
+            } else if (col == "RpcAddress") {
+               rpc_idx = i
+            } else if (col == "TsFileSize") {
+               tsfile_idx = i
+            }
+         }
+         header_found = 1
+         next
+      }
+      if (header_found && tsfile_idx > 0) {
+         region_type = type_idx > 0 ? trim($type_idx) : ""
+         ts_file_size = trim($tsfile_idx)
+         if (region_type == "DataRegion" && ts_file_size ~ /^-/) {
+            region = region_idx > 0 ? trim($region_idx) : "unknown"
+            dn = dn_idx > 0 ? trim($dn_idx) : "unknown"
+            rpc = rpc_idx > 0 ? trim($rpc_idx) : "unknown"
+            print "RegionId=" region ", DataNodeId=" dn ", RpcAddress=" rpc ", TsFileSize=" ts_file_size
+            print $0
+         }
       }
    }' "${output_file}" > "${abnormal_file}"
 
    if [[ -s "${abnormal_file}" ]];then
-      let fail_flag++
-      v_warnMessage="${v_warnMessage}.show regions has negative DataRegion metrics on ${check_host}."
-      echo "show regions abnormal rows on ${check_host}:"
+      echo "show regions negative TsFileSize rows on ${check_host}:"
       cat "${abnormal_file}"
+      if [[ ${v_show_regions_tsfile_negative_reported} -eq 0 ]];then
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}.show regions TsFileSize has negative value on ${check_host}, see ${output_file}."
+         v_show_regions_tsfile_negative_reported=1
+      fi
+   fi
+
+   # Running replicas of the same DataRegion should have comparable object data sizes. A large
+   # difference means that AddPeer may have returned success after loading only part of a snapshot.
+   awk -F '|' '
+   function trim(str) {
+      gsub(/^[ \t]+|[ \t]+$/, "", str)
+      return str
+   }
+   function bytes(value, parts, number, unit) {
+      value = trim(value)
+      if (value == "Unknown" || value == "") return -1
+      split(value, parts, /[ \t]+/)
+      number = parts[1] + 0
+      unit = parts[2]
+      if (unit == "KB") return number * 1000
+      if (unit == "MB") return number * 1000000
+      if (unit == "GB") return number * 1000000000
+      if (unit == "TB") return number * 1000000000000
+      return number
+   }
+   /^\+/ {next}
+   /^Total line number/ {next}
+   /^It costs/ {next}
+   /\|/ {
+      if (!header_found && $0 ~ /\|[ \t]*ObjectSize[ \t]*\|/) {
+         for (i = 1; i <= NF; i++) {
+            col = trim($i)
+            if (col == "RegionId") region_idx = i
+            else if (col == "Type") type_idx = i
+            else if (col == "Status") status_idx = i
+            else if (col == "DataNodeId") dn_idx = i
+            else if (col == "RpcAddress") rpc_idx = i
+            else if (col == "ObjectSize") object_idx = i
+         }
+         header_found = 1
+         next
+      }
+      if (header_found && trim($type_idx) == "DataRegion" && trim($status_idx) == "Running") {
+         region = trim($region_idx)
+         size = bytes($object_idx)
+         if (size >= 0) {
+            count[region]++
+            if (!(region in min) || size < min[region]) {
+               min[region] = size
+               min_node[region] = trim($dn_idx) "@" trim($rpc_idx)
+            }
+            if (!(region in max) || size > max[region]) {
+               max[region] = size
+               max_node[region] = trim($dn_idx) "@" trim($rpc_idx)
+            }
+         }
+      }
+   }
+   END {
+      for (region in count) {
+         # More than 20% smaller than another Running replica is considered incomplete.
+         if (count[region] > 1 && max[region] > 0 && min[region] < max[region] * 0.8) {
+            print "RegionId=" region ", min=" min[region] " bytes at " min_node[region] \
+                  ", max=" max[region] " bytes at " max_node[region]
+         }
+      }
+   }' "${output_file}" > "${object_mismatch_file}"
+
+   if [[ -s "${object_mismatch_file}" ]];then
+      echo "show regions Running replica ObjectSize mismatch on ${check_host}:"
+      cat "${object_mismatch_file}"
+      if [[ ${v_show_regions_object_size_mismatch_reported} -eq 0 ]];then
+         v_warnMessage="${v_warnMessage}.Observed intermediate Running replica ObjectSize difference over 20%; final replica consistency check is authoritative, see ${output_file}."
+         v_show_regions_object_size_mismatch_reported=1
+      fi
    fi
 }
 function check_dn_jps()
@@ -617,8 +717,10 @@ wait_sync_done 180
    # all online
    while true
    do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
-   v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out 2>&1
+   v_cli_rc=$?
+   v_exception_num=`grep -E "Exception|Error:" ${cur_dir}/q_all_online_tree.out|wc -l`
+   v_exception_num=$((v_exception_num+(v_cli_rc!=0)))
    if [[ ${v_exception_num} = 0 ]];then
 	   break
    else
@@ -627,12 +729,15 @@ wait_sync_done 180
    done
    while true
    do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table2.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql3}" >${cur_dir}/q_all_online_table3.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql4}" >${cur_dir}/q_all_online_table4.out
-   v_exception_num2=`grep Exception ${cur_dir}/q_all_online_table.out|wc -l`
-   v_exception_num3=`grep Exception ${cur_dir}/q_all_online_table3.out|wc -l`
-   v_exception_num4=`grep Exception ${cur_dir}/q_all_online_table4.out|wc -l`
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table2.out 2>&1; v_cli_rc2=$?
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql3}" >${cur_dir}/q_all_online_table3.out 2>&1; v_cli_rc3=$?
+   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql4}" >${cur_dir}/q_all_online_table4.out 2>&1; v_cli_rc4=$?
+   v_exception_num2=`grep -E "Exception|Error:" ${cur_dir}/q_all_online_table2.out|wc -l`
+   v_exception_num3=`grep -E "Exception|Error:" ${cur_dir}/q_all_online_table3.out|wc -l`
+   v_exception_num4=`grep -E "Exception|Error:" ${cur_dir}/q_all_online_table4.out|wc -l`
+   v_exception_num2=$((v_exception_num2+(v_cli_rc2!=0)))
+   v_exception_num3=$((v_exception_num3+(v_cli_rc3!=0)))
+   v_exception_num4=$((v_exception_num4+(v_cli_rc4!=0)))
    v_exception_num=$((v_exception_num2+v_exception_num3+v_exception_num4))
    if [[ ${v_exception_num} = 0 ]];then
            break
@@ -657,8 +762,10 @@ wait_sync_done 180
       v_ip=`echo ${line}|awk -F '.' '{print $4}'`
       while true
       do
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_tree.out|wc -l`
+      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out 2>&1
+      v_cli_rc=$?
+      v_exception_num=`grep -E "Exception|Error:" ${cur_dir}/q_stop_ip${v_ip}_tree.out|wc -l`
+      v_exception_num=$((v_exception_num+(v_cli_rc!=0)))
       if [[ ${v_exception_num} = 0 ]];then
            break
       else
@@ -668,14 +775,16 @@ wait_sync_done 180
       while true
       do
 
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table2.out
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql3}" >${cur_dir}/q_stop_ip${v_ip}_table3.out
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql4}" >${cur_dir}/q_stop_ip${v_ip}_table4.out
-      v_exception_num2=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table2.out|wc -l`
-   v_exception_num3=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table3.out|wc -l`
-   v_exception_num4=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table4.out|wc -l`
+      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table2.out 2>&1; v_cli_rc2=$?
+      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql3}" >${cur_dir}/q_stop_ip${v_ip}_table3.out 2>&1; v_cli_rc3=$?
+      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql4}" >${cur_dir}/q_stop_ip${v_ip}_table4.out 2>&1; v_cli_rc4=$?
+      v_exception_num2=`grep -E "Exception|Error:" ${cur_dir}/q_stop_ip${v_ip}_table2.out|wc -l`
+   v_exception_num3=`grep -E "Exception|Error:" ${cur_dir}/q_stop_ip${v_ip}_table3.out|wc -l`
+   v_exception_num4=`grep -E "Exception|Error:" ${cur_dir}/q_stop_ip${v_ip}_table4.out|wc -l`
+      v_exception_num2=$((v_exception_num2+(v_cli_rc2!=0)))
+      v_exception_num3=$((v_exception_num3+(v_cli_rc3!=0)))
+      v_exception_num4=$((v_exception_num4+(v_cli_rc4!=0)))
       v_exception_num=$((v_exception_num2+v_exception_num3+v_exception_num4))
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table.out|wc -l`
       if [[ ${v_exception_num} = 0 ]];then
            break
       else
@@ -689,7 +798,7 @@ wait_sync_done 180
       v_diff_table4=`diff ${cur_dir}/q_all_online_table4.out ${cur_dir}/q_stop_ip${v_ip}_table4.out|grep "d_"|wc -l`
       v_diff_total=$((v_diff_tree+v_diff_table2+v_diff_table3+v_diff_table4))
       if [[ ${v_diff_total} -gt 0 ]];then
-#         let fail_flag++
+	 let fail_flag++
 	 let backup_flag++
 	 diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out
 	 diff ${cur_dir}/q_all_online_table2.out ${cur_dir}/q_stop_ip${v_ip}_table2.out
@@ -720,8 +829,73 @@ wait_sync_done 180
    done
 }
 
+# Reuse the HA DROP implementation maintained by the no-TTL variant so both cases
+# have identical node selection, Unknown/process checks, async wait and path checks.
+ha_drop_reference="${cur_dir}/tc2026_June_0050_remove_dn_obj_show_mig_no_ttl.sh"
+if [[ ! -f "${ha_drop_reference}" ]]; then
+   echo "Missing HA DROP reference script: ${ha_drop_reference}"
+   exit 1
+fi
+ha_drop_function_text=`sed -n '/^function test_drop_database_with_table_dr_dn_offline()/,/^function check_log()/p' "${ha_drop_reference}" | sed '$d'`
+if [[ -z "${ha_drop_function_text}" ]]; then
+   echo "Missing test_drop_database_with_table_dr_dn_offline in ${ha_drop_reference}"
+   exit 1
+fi
+eval "${ha_drop_function_text}"
+
 function check_log()
 {
+  check_split_layout_for_link_fallback() {
+    local dn_ip=$1
+
+    ssh "${os_user_name}@${dn_ip}" bash -s <<EOF
+awk '
+/Cannot create link from / {
+  line = \$0
+  sub(/^.*Cannot create link from /, "", line)
+  split(line, parts, " to ")
+  if (length(parts) < 2) {
+    next
+  }
+  target = parts[2]
+  sub(/, fallback to copy.*/, "", target)
+
+  base = target
+  sub(/\.resource$/, "", base)
+  sub(/\.mods[0-9]*$/, "", base)
+
+  parent = target
+  sub(/\/[^/]+$/, "", parent)
+
+  seen[base SUBSEP parent] = 1
+}
+END {
+  found = 0
+  for (key in seen) {
+    split(key, values, SUBSEP)
+    base = values[1]
+    parent = values[2]
+    dir_count[base]++
+    if (dir_list[base] == "") {
+      dir_list[base] = parent
+    } else {
+      dir_list[base] = dir_list[base] "," parent
+    }
+  }
+
+  for (base in dir_count) {
+    if (dir_count[base] > 1) {
+      print base "\t" dir_list[base]
+      found = 1
+    }
+  }
+
+  exit found ? 10 : 0
+}
+' ${db_dir}/logs/*datanode*all*
+EOF
+  }
+
 exec 3<${nodeinfo_dir}/confignode.txt
 while read line<&3
 do
@@ -758,7 +932,8 @@ do
    v_err16=`ssh ${os_user_name}@${line} "grep \"which has not released all memory\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err18=`ssh ${os_user_name}@${line} "grep INTERNAL_SERVER_ERROR ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err19=$(ssh "${os_user_name}@${line}" "grep \"Cannot create link from\" ${db_dir}/logs/*datanode*all*|wc -l")
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_err12+v_err13+v_err14+v_err15+v_err16+v_err17+v_err18+v_err19))
+   v_err20=$(ssh "${os_user_name}@${line}" "grep \"No seq or unseq files in snapshot\" ${db_dir}/logs/*datanode*all*|wc -l")
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_err12+v_err13+v_err14+v_err15+v_err16+v_err17+v_err18+v_err20))
 
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
@@ -772,6 +947,22 @@ do
 	   let backup_log_flag++
 	   v_warnMessage="${v_warnMessage}DN unexpected log ${v_dn_total_err}."
            echo "DN ${line} unexpected log: ${v_dn_total_err}"
+   fi
+   if [[ ${v_err19} -gt 0 ]]; then
+           v_link_split=$(check_split_layout_for_link_fallback "${line}")
+           if [[ -n "${v_link_split}" ]]; then
+                   let fail_flag++
+                   let backup_log_flag++
+                   v_link_split_sample=$(echo "${v_link_split}" | head -1 | tr '\t' ' ')
+                   v_warnMessage="${v_warnMessage}DN ${line} link fallback caused split tsfile/resource/mods dirs: ${v_link_split_sample}."
+                   echo "DN ${line} link fallback split detected: ${v_link_split_sample}"
+           else
+                   echo "DN ${line} link fallback exists but tsfile/resource/mods target dirs stay consistent."
+           fi
+   fi
+   if [[ ${v_err20} -gt 0 ]]; then
+           echo "DN ${line} skipped ${v_err20} snapshot directories because seq/unseq were absent; object files may have been skipped."
+           v_warnMessage="${v_warnMessage}DN ${line} snapshot loader skipped object-only receive directories."
    fi
 
 done
@@ -816,23 +1007,23 @@ done
 }
 function testcase1()
 {
+check_show_regions_abnormal_metrics "${query_ip}" "show_regions_before_replica_consistency"
 # check data
 check_data_consistent
 sleep 2h
 check_data_consistent
 sleep 1h
+# Multi-directory Object cleanup took 4h32m in RC3; keep an 8-hour default margin.
+V2_HA_DROP_TIMEOUT_SECONDS=${V2_HA_DROP_TIMEOUT_SECONDS:-28800}
+test_drop_database_with_table_dr_dn_offline
 #check log
 check_log
+v_backup_time=`date +%s`
+sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
 if [[ ${backup_flag} -gt 0 ]];then
-	v_backup_time=`date +%s`
-	sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
     sh -x ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time} 2>&1
 fi
-if [[ ${backup_log_flag} -gt 0 ]];then
-	v_backup_time=`date +%s`
-	sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
-    sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 2>&1
-fi
+sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 2>&1
 }
 # start cluster 
 echo "">${log_file}

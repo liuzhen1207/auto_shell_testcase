@@ -603,6 +603,7 @@ wait_sync_done 180
         echo "WARNING: 未找到耗时信息，输出如下："
         cat ${cur_dir}/tmp.out
         let fail_flag++	
+	v_warnMessage="${v_warnMessage}WARNING: 未找到耗时信息."
         return 1
     fi
 
@@ -611,10 +612,11 @@ wait_sync_done 180
         echo "ERROR: 耗时超标！耗时=${cost_time}s，阈值=${timeout_threshold}s"
         cat ${cur_dir}/tmp.out
         let fail_flag++	
-        return 1
+	v_warnMessage="${v_warnMessage}ERROR: 耗时超标！耗时=${cost_time}s，阈值=${timeout_threshold}s."
+#        return 1
     else
         echo "SUCCESS: 耗时正常，耗时=${cost_time}s"
-        return 0
+#        return 0
     fi
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/tmp.out 2>&1
    ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/tmp.out 2>&1
@@ -622,8 +624,9 @@ wait_sync_done 180
     if [ $? -ne 0 ]; then
         echo "ERROR: SQL执行失败！"
         let fail_flag++
+	v_warnMessage="${v_warnMessage}ERROR: SQL执行失败！."
         cat ${cur_dir}/tmp.out
-        return 1
+#        return 1
     fi
 
     # 提取耗时（匹配"It costs X.XXXs"格式）
@@ -634,7 +637,8 @@ wait_sync_done 180
         echo "WARNING: 未找到耗时信息，输出如下："
         cat ${cur_dir}/tmp.out
         let fail_flag++
-        return 1
+	v_warnMessage="${v_warnMessage}WARNING: 未找到耗时信息."
+#        return 1
     fi
 
     # 比较耗时是否超过阈值（浮点比较）
@@ -642,10 +646,11 @@ wait_sync_done 180
         echo "ERROR: 耗时超标！耗时=${cost_time}s，阈值=${timeout_threshold}s"
         cat ${cur_dir}/tmp.out
         let fail_flag++
-        return 1
+	v_warnMessage="${v_warnMessage}ERROR: 耗时超标！耗时=${cost_time}s，阈值=${timeout_threshold}s."
+#        return 1
     else
         echo "SUCCESS: 耗时正常，耗时=${cost_time}s"
-        return 0
+#        return 0
     fi
 
 }

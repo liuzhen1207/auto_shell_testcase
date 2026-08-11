@@ -9,6 +9,7 @@ nodeinfo_dir="${cur_dir}/../conf"
 # 读取配置文件（去空格，兼容低版本）
 os_user_name=$(grep ^os_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_user_name=$(grep ^db_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
+echo $db_user_name
 testdb=$(grep ^v_testdb "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_parent_dir=$(grep ^v_db_parent_dir "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 cli_dir=${db_parent_dir}/${testdb}
@@ -1082,9 +1083,9 @@ v_elp_time=$((v_end_test_time-v_start_test_time))
 function write_result()
 {
         test_time=$(date +"%Y-%m-%dT%H:%M:%S.%3N%:z")
-   v_bm_max_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out|awk '{print $8}'|sort -n|tail -1`
+   v_bm_max_value=0
 
-   v_bm_sum_value=`grep "Test elapsed" ${bm_log_dir}/${t}_bm*out| awk '{print $8}' | sort -n | awk '{sum+=$1} END {print sum}'`
+   v_bm_sum_value=0
    # 写入表头
    v_exist_flag=`grep Time,testTimechoDB $CSV_FILE|wc -l`
    if [[ ${v_exist_flag} -gt 0 ]];then

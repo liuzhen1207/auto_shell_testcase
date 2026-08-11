@@ -590,6 +590,29 @@ check_res_eq "chunkIndexFilteredRows:" ${v_query_statistics_num} "chunkIndexFilt
 check_res_eq "pageIndexFilteredRows:" ${v_query_statistics_num} "pageIndexFilteredRows expect = ${v_query_statistics_num}"
 check_res_eq "rowScanFilteredRows:" ${v_query_statistics_num} "rowScanFilteredRows expect = ${v_query_statistics_num}"
 
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "EXPLAIN ANALYZE VERBOSE  SELECT * FROM root.test.g_0.* ;">${cur_dir}/tmp.out
+v_isink_node_num=$(grep IdentitySinkNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "DownStreamPlanNodeId:" ${v_isink_node_num} "DownStreamPlanNodeId expect = ${v_isink_node_num}"
+v_exchangenode_num=$(grep ExchangeNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "size_in_bytes:" ${v_exchangenode_num} "size_in_bytes expect = ${v_exchangenode_num}"
+v_query_statistics_num=$(grep "Query Statistics" ${cur_dir}/tmp.out|wc -l)
+check_res_eq "timeSeriesIndexFilteredRows:" ${v_query_statistics_num} "timeSeriesIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "chunkIndexFilteredRows:" ${v_query_statistics_num} "chunkIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "pageIndexFilteredRows:" ${v_query_statistics_num} "pageIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "rowScanFilteredRows:" ${v_query_statistics_num} "rowScanFilteredRows expect = ${v_query_statistics_num}"
+
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "EXPLAIN ANALYZE SELECT * FROM root.test.g_0.* ;">${cur_dir}/tmp.out
+v_isink_node_num=$(grep IdentitySinkNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "DownStreamPlanNodeId:" ${v_isink_node_num} "DownStreamPlanNodeId expect = ${v_isink_node_num}"
+v_exchangenode_num=$(grep ExchangeNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "size_in_bytes:" ${v_exchangenode_num} "size_in_bytes expect = ${v_exchangenode_num}"
+v_query_statistics_num=$(grep "Query Statistics" ${cur_dir}/tmp.out|wc -l)
+check_res_eq "timeSeriesIndexFilteredRows:" ${v_query_statistics_num} "timeSeriesIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "chunkIndexFilteredRows:" ${v_query_statistics_num} "chunkIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "pageIndexFilteredRows:" ${v_query_statistics_num} "pageIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "rowScanFilteredRows:" 0 "rowScanFilteredRows expect = 0"
+
+
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "EXPLAIN ANALYZE SELECT * FROM db_g_0.table_0 where device_id='d1_6' and time>90000 order by time,device_id;">${cur_dir}/tmp.out
 v_isink_node_num=$(grep IdentitySinkNode ${cur_dir}/tmp.out|wc -l)
 check_res_eq "DownStreamPlanNodeId:" ${v_isink_node_num} "DownStreamPlanNodeId expect = ${v_isink_node_num}"
@@ -863,6 +886,29 @@ check_res_eq "timeSeriesIndexFilteredRows:" ${v_query_statistics_num} "timeSerie
 check_res_eq "chunkIndexFilteredRows:" ${v_query_statistics_num} "chunkIndexFilteredRows expect = ${v_query_statistics_num}"
 check_res_eq "pageIndexFilteredRows:" ${v_query_statistics_num} "pageIndexFilteredRows expect = ${v_query_statistics_num}"
 check_res_eq "rowScanFilteredRows:" ${v_query_statistics_num} "rowScanFilteredRows expect = ${v_query_statistics_num}"
+
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "EXPLAIN ANALYZE VERBOSE  SELECT * FROM root.test.g_0.* ;">${cur_dir}/tmp.out
+v_isink_node_num=$(grep IdentitySinkNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "DownStreamPlanNodeId:" ${v_isink_node_num} "DownStreamPlanNodeId expect = ${v_isink_node_num}"
+v_exchangenode_num=$(grep ExchangeNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "size_in_bytes:" ${v_exchangenode_num} "size_in_bytes expect = ${v_exchangenode_num}"
+v_query_statistics_num=$(grep "Query Statistics" ${cur_dir}/tmp.out|wc -l)
+check_res_eq "timeSeriesIndexFilteredRows:" ${v_query_statistics_num} "timeSeriesIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "chunkIndexFilteredRows:" ${v_query_statistics_num} "chunkIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "pageIndexFilteredRows:" ${v_query_statistics_num} "pageIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "rowScanFilteredRows:" ${v_query_statistics_num} "rowScanFilteredRows expect = ${v_query_statistics_num}"
+
+${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect tree -e "EXPLAIN ANALYZE SELECT * FROM root.test.g_0.* ;">${cur_dir}/tmp.out
+v_isink_node_num=$(grep IdentitySinkNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "DownStreamPlanNodeId:" ${v_isink_node_num} "DownStreamPlanNodeId expect = ${v_isink_node_num}"
+v_exchangenode_num=$(grep ExchangeNode ${cur_dir}/tmp.out|wc -l)
+check_res_eq "size_in_bytes:" ${v_exchangenode_num} "size_in_bytes expect = ${v_exchangenode_num}"
+v_query_statistics_num=$(grep "Query Statistics" ${cur_dir}/tmp.out|wc -l)
+check_res_eq "timeSeriesIndexFilteredRows:" ${v_query_statistics_num} "timeSeriesIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "chunkIndexFilteredRows:" ${v_query_statistics_num} "chunkIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "pageIndexFilteredRows:" ${v_query_statistics_num} "pageIndexFilteredRows expect = ${v_query_statistics_num}"
+check_res_eq "rowScanFilteredRows:" 0 "rowScanFilteredRows expect = 0"
+
 
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "EXPLAIN ANALYZE SELECT * FROM db_g_0.table_0 where device_id='d1_6' and time>90000 order by time,device_id;">${cur_dir}/tmp.out
 v_isink_node_num=$(grep IdentitySinkNode ${cur_dir}/tmp.out|wc -l)

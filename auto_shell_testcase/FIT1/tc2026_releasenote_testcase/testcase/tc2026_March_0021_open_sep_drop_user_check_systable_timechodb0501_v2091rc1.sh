@@ -480,7 +480,7 @@ function testcase1()
     ${cli_dir}/sbin/start-cli.sh  -u ${v_audit_user} -h "${query_ip}" -e "show devices root.__audit.password_history.*;" >${cur_dir}/tmp.out
     check_res "root.__audit.password_history" 3 
 
-
+    check_log
     if [ ${fail_flag} -eq 0 ]; then
         echo "===== testcase1 执行完成: PASS ====="
     else

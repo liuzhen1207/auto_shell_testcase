@@ -475,7 +475,7 @@ function testcase1()
     check_res "root.__audit.password_history._${v_kevin_id}" 0
     ${cli_dir}/sbin/start-cli.sh -h "${query_ip}" -e "show devices root.__audit.password_history.*;" >${cur_dir}/tmp.out
     check_res "root.__audit.password_history" 1
-
+    check_log
 
     if [ ${fail_flag} -eq 0 ]; then
         echo "===== testcase1 执行完成: PASS ====="
