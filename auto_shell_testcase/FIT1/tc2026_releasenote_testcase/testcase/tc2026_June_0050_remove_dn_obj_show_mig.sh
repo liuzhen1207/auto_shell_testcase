@@ -45,6 +45,7 @@ query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 
 fail_flag=0
 v_show_regions_tsfile_negative_reported=0
+v_show_regions_object_size_negative_reported=0
 v_show_regions_object_size_mismatch_reported=0
 test_begin_sec=$(date +%s)
 
@@ -538,11 +539,13 @@ local check_tag=$2
 local safe_tag=""
 local output_file=""
 local abnormal_file=""
+local object_negative_file=""
 local object_mismatch_file=""
 
    safe_tag=`echo "${check_tag}" | sed 's/[^0-9A-Za-z._-]/_/g'`
    output_file="${cur_dir}/${safe_tag}.out"
    abnormal_file="${cur_dir}/${safe_tag}_negative_tsfile_size.out"
+   object_negative_file="${cur_dir}/${safe_tag}_negative_object_size.out"
    object_mismatch_file="${cur_dir}/${safe_tag}_object_size_mismatch.out"
 
    ${cli_dir}/sbin/start-cli.sh -h ${check_host} -sql_dialect table -timeout 3600 -e "show regions;" > "${output_file}" 2>&1
@@ -603,6 +606,51 @@ local object_mismatch_file=""
          let fail_flag++
          v_warnMessage="${v_warnMessage}.show regions TsFileSize has negative value on ${check_host}, see ${output_file}."
          v_show_regions_tsfile_negative_reported=1
+      fi
+   fi
+
+   # A negative ObjectSize is invalid for a DataRegion and must fail this check.
+   awk -F '|' '
+   function trim(str) {
+      gsub(/^[ \t]+|[ \t]+$/, "", str)
+      return str
+   }
+   /^\+/ {next}
+   /^Total line number/ {next}
+   /^It costs/ {next}
+   /\|/ {
+      if (!header_found && $0 ~ /\|[ \t]*ObjectSize[ \t]*\|/) {
+         for (i = 1; i <= NF; i++) {
+            col = trim($i)
+            if (col == "RegionId") region_idx = i
+            else if (col == "Type") type_idx = i
+            else if (col == "DataNodeId") dn_idx = i
+            else if (col == "RpcAddress") rpc_idx = i
+            else if (col == "ObjectSize") object_idx = i
+         }
+         header_found = 1
+         next
+      }
+      if (header_found && trim($type_idx) == "DataRegion") {
+         value = trim($object_idx)
+         if (value != "" && value != "Unknown") {
+            split(value, parts, /[ \t]+/)
+            if ((parts[1] + 0) < 0) {
+               print "RegionId=" trim($region_idx) ", DataNodeId=" trim($dn_idx) \
+                     ", RpcAddress=" trim($rpc_idx) ", ObjectSize=" value
+               print $0
+            }
+         }
+      }
+   }' "${output_file}" > "${object_negative_file}"
+
+   if [[ -s "${object_negative_file}" ]];then
+      echo "show regions negative ObjectSize rows on ${check_host}:"
+      cat "${object_negative_file}"
+      if [[ ${v_show_regions_object_size_negative_reported} -eq 0 ]];then
+         let fail_flag++
+         v_warnMessage="${v_warnMessage}.show regions ObjectSize has negative value on ${check_host}, see ${output_file}."
+         v_show_regions_object_size_negative_reported=1
       fi
    fi
 

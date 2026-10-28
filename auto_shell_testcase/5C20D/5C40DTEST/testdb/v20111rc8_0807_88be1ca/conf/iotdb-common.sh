@@ -1,0 +1,351 @@
+#!/bin/bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# JVM option for selecting tsfile's runtime locale (log/exception messages).
+# Filtered by Maven at package time:
+#   - Default build: empty (English).
+#   - `with-zh-locale` profile: "-Dtsfile.locale=zh".
+TSFILE_LOCALE_JVM_OPT=""
+
+# Product name shown to users, filtered by Maven at package time:
+#   - Default build: "TimechoDB".
+#   - `iotdb` profile: "IoTDB".
+# Read by docker_v2/src/main/DockerCompose/entrypoint.sh, which is built outside the Maven reactor
+# and so has no other way to learn the edition. See CLAUDE.md, "Packaging Editions".
+IOTDB_BRAND_NAME="TimechoDB"
+
+
+# this function is for parsing the variables like "A=B" in  `start-server.sh -D A=B`
+# The command just parse IOTDB-prefixed variables and ignore all other variables
+checkEnvVariables()
+{
+
+  string="$1"
+  array=$(echo $string | tr '=' ' ')
+  eval set -- "$array"
+  case "$1" in
+          IOTDB_INCLUDE)
+               IOTDB_INCLUDE="$2"
+          ;;
+          IOTDB_HOME)
+               IOTDB_HOME="$2"
+          ;;
+          IOTDB_DATA_HOME)
+             IOTDB_DATA_HOME="$2"
+          ;;
+          IOTDB_CONF)
+             IOTDB_CONF="$2"
+          ;;
+          IOTDB_LOG_DIR)
+             IOTDB_LOG_DIR="$2"
+          ;;
+          IOTDB_LOG_CONFIG)
+             IOTDB_LOG_CONFIG="$2"
+          ;;
+          IOTDB_CLI_CONF)
+             IOTDB_CLI_CONF="$2"
+          ;;
+          *)
+            #we can not process it, so that we return back.
+            echo "$1=$2"
+          ;;
+  esac
+  echo ""
+}
+
+checkConfigNodeEnvVariables()
+{
+
+  string="$1"
+  array=$(echo $string | tr '=' ' ')
+  eval set -- "$array"
+  case "$1" in
+          IOTDB_INCLUDE)
+            IOTDB_INCLUDE="$2"
+          ;;
+          CONFIGNODE_HOME)
+              CONFIGNODE_HOME="$2"
+          ;;
+          CONFIGNODE_DATA_HOME)
+             CONFIGNODE_DATA_HOME="$2"
+          ;;
+          I_CONF)
+             IOTDB_CONF="$2"
+          ;;
+          CONFIGNODE_LOG_DIR)
+             CONFIGNODE_LOG_DIR="$2"
+          ;;
+          CONFIGNODE_LOG_CONFIG)
+             CONFIGNODE_LOG_CONFIG="$2"
+          ;;
+          *)
+            #we can not process it, so that we return back.
+            echo "$1=$2"
+          ;;
+  esac
+  echo ""
+}
+
+checkAllVariables()
+{
+  if [ -z "${IOTDB_INCLUDE}" ]; then
+    #do nothing
+    :
+  elif [ -r "$IOTDB_INCLUDE" ]; then
+      . "$IOTDB_INCLUDE"
+  fi
+
+  if [ -z "${IOTDB_HOME}" ]; then
+    export IOTDB_HOME="`dirname "$0"`/.."
+  fi
+
+  if [ -z "${IOTDB_DATA_HOME}" ]; then
+    export IOTDB_DATA_HOME=${IOTDB_HOME}
+  fi
+
+  if [ -z "${IOTDB_CONF}" ]; then
+    export IOTDB_CONF=${IOTDB_HOME}/conf
+  fi
+
+  if [ -z "${IOTDB_LOG_DIR}" ]; then
+    export IOTDB_LOG_DIR=${IOTDB_HOME}/logs
+  fi
+
+  if [ -z "${IOTDB_LOG_CONFIG}" ]; then
+    export IOTDB_LOG_CONFIG="${IOTDB_CONF}/logback-datanode.xml"
+  fi
+}
+
+checkAllConfigNodeVariables()
+{
+  if [ -z "${IOTDB_INCLUDE}" ]; then
+    #do nothing
+    :
+  elif [ -r "$IOTDB_INCLUDE" ]; then
+      . "$IOTDB_INCLUDE"
+  fi
+
+  if [ -z "${CONFIGNODE_HOME}" ]; then
+    export CONFIGNODE_HOME="`dirname "$0"`/.."
+  fi
+
+  if [ -z "${CONFIGNODE_DATA_HOME}" ]; then
+    export CONFIGNODE_DATA_HOME=${CONFIGNODE_HOME}
+  fi
+
+  if [ -z "${CONFIGNODE_CONF}" ]; then
+    export CONFIGNODE_CONF=${CONFIGNODE_HOME}/conf
+  fi
+
+  if [ -z "${CONFIGNODE_LOG_DIR}" ]; then
+    export CONFIGNODE_LOG_DIR=${CONFIGNODE_HOME}/logs
+  fi
+
+  if [ -z "${CONFIGNODE_LOG_CONFIG}" ]; then
+    export CONFIGNODE_LOG_CONFIG="${CONFIGNODE_CONF}/logback-confignode.xml"
+  fi
+}
+
+check_config_unique() {
+  local key=$1
+  local values=$2
+
+  line_count=$(echo "$values" | wc -l)
+
+  if [ "$line_count" -gt 1 ]; then
+    echo "Error: Duplicate $key entries found"
+    exit 1
+  fi
+}
+
+initEnv() {
+  if [ -f "$IOTDB_CONF/datanode-env.sh" ]; then
+      if [ "x$PRINT_GC" != "x" ]; then
+        . "$IOTDB_CONF/datanode-env.sh" "printgc"
+      else
+          . "$IOTDB_CONF/datanode-env.sh"
+      fi
+  elif [ -f "${IOTDB_HOME}/conf/datanode-env.sh" ]; then
+      if [ "x$PRINT_GC" != "x" ]; then
+        . "${IOTDB_HOME}/conf/datanode-env.sh" "printgc"
+      else
+        . "${IOTDB_HOME}/conf/datanode-env.sh"
+      fi
+  else
+      echo "Can't find $IOTDB_CONF/datanode-env.sh"
+  fi
+}
+
+initConfigNodeEnv() {
+  if [ -f "$CONFIGNODE_CONF/confignode-env.sh" ]; then
+      if [ "x$PRINT_GC" != "x" ]; then
+        . "$CONFIGNODE_CONF/confignode-env.sh" "printgc"
+      else
+          . "$CONFIGNODE_CONF/confignode-env.sh"
+      fi
+  elif [ -f "${CONFIGNODE_HOME}/conf/confignode-env.sh" ]; then
+      if [ "x$PRINT_GC" != "x" ]; then
+        . "${CONFIGNODE_HOME}/conf/confignode-env.sh" "printgc"
+      else
+        . "${CONFIGNODE_HOME}/conf/confignode-env.sh"
+      fi
+  else
+      echo "can't find $CONFIGNODE_CONF/confignode-env.sh"
+  fi
+}
+
+get_iotdb_include() {
+  #reset $1 to $* for this command
+  eval set -- "$1"
+  VARS=""
+  while true; do
+      case "$1" in
+          -D)
+              VARS="$VARS $(checkEnvVariables $2)"
+              shift 2
+          ;;
+          "")
+            #if we do not use getopt, we then have to process the case that there is no argument.
+            #in some systems, when there is no argument, shift command may throw error, so we skip directly
+              break
+          ;;
+          *)
+              VARS="$VARS $1"
+              shift
+          ;;
+      esac
+  done
+  echo "$VARS"
+}
+
+# Calculate ON_HEAP_MEMORY and OFF_HEAP_MEMORY from system resources.
+#
+# $1  numerator   of the suggested memory fraction  (e.g. 1 for DataNode, 3 for ConfigNode)
+# $2  denominator of the suggested memory fraction  (e.g. 2 for DataNode, 10 for ConfigNode)
+# $3  max suggested memory in MB; 0 means no cap    (e.g. 0 for DataNode, 8192 for ConfigNode)
+#
+# Respects the MEMORY_SIZE environment variable (e.g. '2G' or '2048M') when set.
+calculate_memory_sizes()
+{
+    local suggest_numerator=${1:-1}
+    local suggest_denominator=${2:-2}
+    local max_suggest_mb=${3:-0}
+
+    case "`uname`" in
+        Linux)
+            system_memory_in_mb=`free -m| sed -n '2p' | awk '{print $2}'`
+            # When running in a container/pod, use cgroup memory limit instead of host memory.
+            # This reads the root cgroup, which is what containers see; it does NOT walk
+            # /proc/self/cgroup, so cgroup-restricted processes on bare metal are not covered.
+            if [ -f /sys/fs/cgroup/memory.max ]; then
+                # cgroup v2
+                cgroup_mem=`cat /sys/fs/cgroup/memory.max`
+                if [ "$cgroup_mem" != "max" ]; then
+                    cgroup_mem_in_mb=`expr $cgroup_mem / 1024 / 1024`
+                    if [ "$cgroup_mem_in_mb" -lt "$system_memory_in_mb" ]; then
+                        system_memory_in_mb=$cgroup_mem_in_mb
+                    fi
+                fi
+            elif [ -f /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+                # v1 has no "max" sentinel — when unset, this file holds a huge integer (~PAGE_COUNTER_MAX);
+                # the -lt check below naturally rejects it, so no explicit guard is needed.
+                cgroup_mem=`cat /sys/fs/cgroup/memory/memory.limit_in_bytes`
+                cgroup_mem_in_mb=`expr $cgroup_mem / 1024 / 1024`
+                if [ "$cgroup_mem_in_mb" -lt "$system_memory_in_mb" ]; then
+                    system_memory_in_mb=$cgroup_mem_in_mb
+                fi
+            fi
+            system_cpu_cores=`egrep -c 'processor([[:space:]]+):.*' /proc/cpuinfo`
+        ;;
+        FreeBSD)
+            system_memory_in_bytes=`sysctl hw.physmem | awk '{print $2}'`
+            system_memory_in_mb=`expr $system_memory_in_bytes / 1024 / 1024`
+            system_cpu_cores=`sysctl hw.ncpu | awk '{print $2}'`
+        ;;
+        SunOS)
+            system_memory_in_mb=`prtconf | awk '/Memory size:/ {print $3}'`
+            system_cpu_cores=`psrinfo | wc -l`
+        ;;
+        Darwin)
+            system_memory_in_bytes=`sysctl hw.memsize | awk '{print $2}'`
+            system_memory_in_mb=`expr $system_memory_in_bytes / 1024 / 1024`
+            system_cpu_cores=`sysctl hw.ncpu | awk '{print $2}'`
+        ;;
+        *)
+            # assume reasonable defaults for e.g. a modern desktop or
+            # cheap server
+            system_memory_in_mb="2048"
+            system_cpu_cores="2"
+        ;;
+    esac
+
+    # some systems like the raspberry pi don't report cores, use at least 1
+    if [ "$system_cpu_cores" -lt "1" ]
+    then
+        system_cpu_cores="1"
+    fi
+
+    suggest_using_memory_in_mb=`expr $system_memory_in_mb / $suggest_denominator \* $suggest_numerator`
+
+    if [ -n "$MEMORY_SIZE" ]
+    then
+        if [ "${MEMORY_SIZE%"G"}" != "$MEMORY_SIZE" ] || [ "${MEMORY_SIZE%"M"}" != "$MEMORY_SIZE" ]
+        then
+          if [ "${MEMORY_SIZE%"G"}" != "$MEMORY_SIZE" ]
+          then
+              memory_size_in_mb=`expr ${MEMORY_SIZE%"G"} "*" 1024`
+          else
+              memory_size_in_mb=`expr ${MEMORY_SIZE%"M"}`
+          fi
+        else
+            echo "Invalid format of MEMORY_SIZE, please use the format like 2048M or 2G"
+            exit 1
+        fi
+    else
+        if [ "$max_suggest_mb" -gt "0" ] && [ "$suggest_using_memory_in_mb" -gt "$max_suggest_mb" ]
+        then
+            memory_size_in_mb=$max_suggest_mb
+        else
+            memory_size_in_mb=$suggest_using_memory_in_mb
+        fi
+    fi
+
+    # set on heap memory size
+    # when memory_size_in_mb is less than 4 * 1024, we will set on heap memory size to memory_size_in_mb / 4 * 3
+    # when memory_size_in_mb is greater than 4 * 1024 and less than 16 * 1024, we will set on heap memory size to memory_size_in_mb / 5 * 4
+    # when memory_size_in_mb is greater than 16 * 1024 and less than 128 * 1024, we will set on heap memory size to memory_size_in_mb / 8 * 7
+    # when memory_size_in_mb is greater than 128 * 1024, we will set on heap memory size to memory_size_in_mb - 16 * 1024
+    if [ "$memory_size_in_mb" -lt "4096" ]
+    then
+        on_heap_memory_size_in_mb=`expr $memory_size_in_mb / 4 \* 3`
+    elif [ "$memory_size_in_mb" -lt "16384" ]
+    then
+        on_heap_memory_size_in_mb=`expr $memory_size_in_mb / 5 \* 4`
+    elif [ "$memory_size_in_mb" -lt "131072" ]
+    then
+        on_heap_memory_size_in_mb=`expr $memory_size_in_mb / 8 \* 7`
+    else
+        on_heap_memory_size_in_mb=`expr $memory_size_in_mb - 16384`
+    fi
+    off_heap_memory_size_in_mb=`expr $memory_size_in_mb - $on_heap_memory_size_in_mb`
+
+    ON_HEAP_MEMORY="${on_heap_memory_size_in_mb}M"
+    OFF_HEAP_MEMORY="${off_heap_memory_size_in_mb}M"
+}

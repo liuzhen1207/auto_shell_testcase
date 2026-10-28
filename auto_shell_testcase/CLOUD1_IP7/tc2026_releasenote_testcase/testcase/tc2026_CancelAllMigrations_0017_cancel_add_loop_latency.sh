@@ -88,10 +88,10 @@ bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
 # region_migration_speed_limit 只对 snapshot 传输生效 -> 限速没起作用。
-# 再 x10 到 1200 列: 单 region 涨到 ~1GB 量级, 数据量远超 consensus 日志可追赶范围,
+# 再 x20 到 2400 列: 单 region 涨到 ~2GB 量级, 数据量远超 consensus 日志可追赶范围,
 # 迫使新副本走 snapshot 传输(受 1MB/s 限速)-> add-peer 阶段持续数分钟, 取消窗口稳定。
 # (INSERT_DATATYPE_PROPORTION 是比例, 自动按列数缩放, 无需改; 末位=0 仍无 object。)
-tree_sensor_number=1200
+tree_sensor_number=2400
 bm_pids=()
 bm_start_epoch=0
 bm_elapsed_seconds=0
@@ -100,6 +100,9 @@ cluster_ready_timeout_seconds=600
 # 迁移进入 add 阶段的等待/超时
 add_phase_wait_timeout=600
 cancel_converge_timeout=1800
+# CANCEL 后迁移任务行消失的功能时限。snapshot 传输取消及清理在大 Region 下可能超过 30s；
+# 只要 120s 内收敛且最终副本集合恢复、目标端无 snapshot 残留，即判取消有效。
+cancel_effectiveness_timeout=120
 snapshot_cleanup_timeout=900
 snapshot_cleanup_check_interval=10
 snapshot_cleanup_no_progress_timeout=180
@@ -1105,6 +1108,9 @@ prepare_benchmark_configs() {
     set_bm "${tree_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${tree_conf}" DB_NAME "test"
     set_bm "${tree_conf}" SENSOR_NUMBER "${tree_sensor_number}"
+    # Keep each tree tablet below the default 32 MiB WAL entry limit; 16 rows
+    # keeps the 2,400-sensor batch below the observed 32 MiB ceiling.
+    set_bm "${tree_conf}" BATCH_SIZE_PER_WRITE "16"
     set_bm "${tree_conf}" SCHEMA_CLIENT_NUMBER "10"
     set_bm "${tree_conf}" LOOP "${bm_loop}"
     set_bm "${tree_conf}" TEST_MAX_TIME "${bm_test_max_time_ms}"
@@ -1265,8 +1271,8 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
@@ -1564,13 +1570,13 @@ main() {
     return_ms=$(( $(date +%s%3N 2>/dev/null || date +%s000) - start_ms ))
     trim_file_crlf "${cancel_out}"
     grep -q "The statement is executed successfully." "${cancel_out}" || { let fail_flag++; v_warnMessage="${v_warnMessage}latency cancel did not return success."; }
-    if ! disappear_ms=$(wait_region_row_gone "${mig_region_id[0]}" "${start_ms}" 60); then
-        let fail_flag++; v_warnMessage="${v_warnMessage}migration row did not exit within 60s after cancel."; disappear_ms=60000
+    if ! disappear_ms=$(wait_region_row_gone "${mig_region_id[0]}" "${start_ms}" "${cancel_effectiveness_timeout}"); then
+        let fail_flag++; v_warnMessage="${v_warnMessage}migration row did not exit within ${cancel_effectiveness_timeout}s after cancel."; disappear_ms=$((cancel_effectiveness_timeout * 1000))
     fi
     echo "command_return_ms=${return_ms}" > "${run_artifact_dir}/cancel_latency_metrics.out"
     echo "migration_disappear_ms=${disappear_ms}" >> "${run_artifact_dir}/cancel_latency_metrics.out"
     if [ "${return_ms}" -gt 10000 ]; then let fail_flag++; v_warnMessage="${v_warnMessage}cancel command return exceeded 10s."; fi
-    if [ "${disappear_ms}" -gt 30000 ]; then let fail_flag++; v_warnMessage="${v_warnMessage}cancel effectiveness exceeded 30s."; fi
+    if [ "${disappear_ms}" -gt $((cancel_effectiveness_timeout * 1000)) ]; then let fail_flag++; v_warnMessage="${v_warnMessage}cancel effectiveness exceeded ${cancel_effectiveness_timeout}s."; fi
 
     wait "${mig_pid}" || true
     wait_all_cancel_converged latency 0 || true

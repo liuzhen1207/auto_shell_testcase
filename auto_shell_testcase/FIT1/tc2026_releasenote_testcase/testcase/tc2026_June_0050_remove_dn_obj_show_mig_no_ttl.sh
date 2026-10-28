@@ -832,6 +832,81 @@ wait_sync_done 180
    done
 }
 
+# Wait for one database to finish asynchronous cleanup; time starts before its DROP SQL.
+function wait_drop_database_cleanup()
+{
+local dialect=$1
+local drop_db=$2
+local region_ids_out=$3
+local drop_begin_sec=$4
+local output_prefix=$5
+local drop_label=$6
+local databases_out="${output_prefix}_show_databases.out"
+local migrations_out="${output_prefix}_show_migrations.out"
+local residual_out="${output_prefix}_residual_dirs.out"
+local timeout_sec=${V2_HA_DROP_TIMEOUT_SECONDS:-28800}
+local poll_sec=${V2_HA_DROP_POLL_SECONDS:-30}
+local start_sec=0 now_sec=0 elapsed_sec=0 drop_elapsed_sec=0
+local db_left=0 migration_left=0 residual_count=0 cli_rc=0 dn_ip=""
+   # DROP is asynchronous. Wait for catalog removal, related migration completion and
+   # final removal of TsFile/object/system-schema Region directories on every DataNode.
+   start_sec=`date +%s`
+   while true; do
+      db_left=0; migration_left=0; residual_count=0
+      run_cli_sql "${query_ip}" "${dialect}" "show databases;" "${databases_out}" 3600
+      cli_rc=$?
+      if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${databases_out}"; then
+         db_left=1
+      else
+         db_left=`awk -F '|' -v db="${drop_db}" '{for(i=1;i<=NF;i++){c=$i; gsub(/^[ \t]+|[ \t]+$/, "", c); if(c==db) count++}} END{print count+0}' "${databases_out}"`
+      fi
+      run_cli_sql "${query_ip}" table "show migrations;" "${migrations_out}" 3600
+      cli_rc=$?
+      if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${migrations_out}"; then
+         migration_left=1
+      fi
+      # DeleteDatabase submits asynchronous RemoveRegion procedures. OperationType may
+      # be empty, and replicas are removed serially, so wait until all Region migration
+      # rows created by this isolated DROP phase disappear instead of relying on the
+      # operation name or database name being present in the output.
+      if grep -Eq "SchemaRegion|DataRegion" "${migrations_out}"; then
+         migration_left=1
+      fi
+
+      : > "${residual_out}"
+      while read dn_ip; do
+         [[ -z "${dn_ip}" ]] && continue
+         # Check all cleanup paths involved in restart self-check and CN RemoveRegion:
+         # TsFile/object, system/schema, system/databases and both consensus types.
+         # Include files as well as directories because system metadata layout may vary.
+         ssh "${os_user_name}@${dn_ip}" "find '${db_dir}/data/datanode' '/data1/iotdb_data/${testdb}/data/datanode' '/data3/iotdb_data/${testdb}/data/datanode' 2>/dev/null" | \
+         awk -v db="${drop_db}" 'NR==FNR{if($1!="") ids[$1]=1; next} {p=$0; n=split(p,part,"/"); base=part[n]; hit=(index(p,"/" db "/")); region_path=(index(p,"/object/") || index(p,"/system/schema/") || index(p,"/system/databases/") || index(p,"/consensus/data_region/") || index(p,"/consensus/schema_region/")); if(region_path && (base in ids)) hit=1; if(hit) print}' "${region_ids_out}" - | \
+         sed "s|^|${dn_ip}:|" >> "${residual_out}"
+      done < "${nodeinfo_dir}/datanode.txt"
+      residual_count=`wc -l < "${residual_out}"`
+
+      if [[ ${db_left} -eq 0 && ${migration_left} -eq 0 && ${residual_count} -eq 0 ]]; then
+         drop_elapsed_sec=$((`date +%s`-drop_begin_sec))
+         echo "${drop_label} DROP cleanup completed in ${drop_elapsed_sec} seconds."
+         v_warnMessage="${v_warnMessage}.${drop_label} DROP DATABASE real elapsed time: ${drop_elapsed_sec}s (${dialect}=${drop_db}, result=completed)."
+         return 0
+      fi
+      now_sec=`date +%s`; elapsed_sec=$((now_sec-start_sec))
+      echo "${drop_label} DROP cleanup pending: databases=${db_left}, migrations=${migration_left}, residual_dirs=${residual_count}, elapsed=${elapsed_sec}s"
+      if [[ ${elapsed_sec} -gt ${timeout_sec} ]]; then
+         drop_elapsed_sec=$((`date +%s`-drop_begin_sec))
+         let fail_flag++
+         let backup_flag++
+         let backup_log_flag++
+         v_warnMessage="${v_warnMessage}.${drop_label} DROP DATABASE real elapsed time: ${drop_elapsed_sec}s (${dialect}=${drop_db}, result=timeout, db=${db_left}, migration=${migration_left}, residual=${residual_count})."
+         cat "${residual_out}"
+         cat "${migrations_out}"
+         return 1
+      fi
+      sleep "${poll_sec}"
+   done
+}
+
 # Verify asynchronous DROP DATABASE cleanup when a DataNode that owns a user Table
 # DataRegion is offline. This function is intentionally called even when the earlier
 # replica consistency check has increased fail_flag.
@@ -840,28 +915,26 @@ function test_drop_database_with_table_dr_dn_offline()
 local tree_db="root.test.g_0"
 local table_db="usr_sod0"
 local regions_out="${cur_dir}/ha_drop_show_regions_before.out"
+local tree_regions_out="${cur_dir}/ha_drop_tree_show_regions_before.out"
 local selected_out="${cur_dir}/ha_drop_selected_table_dr.out"
 local region_ids_out="${cur_dir}/ha_drop_region_ids.out"
+local tree_region_ids_out="${cur_dir}/online_drop_tree_region_ids.out"
+local region_db=""
+local saved_region_ids_out=""
+local region_source_out=""
 local drop_tree_out="${cur_dir}/ha_drop_tree.out"
 local drop_table_out="${cur_dir}/ha_drop_table.out"
 local migrations_out="${cur_dir}/ha_drop_show_migrations.out"
-local residual_out="${cur_dir}/ha_drop_residual_dirs.out"
-local timeout_sec=${V2_HA_DROP_TIMEOUT_SECONDS:-28800}
-local poll_sec=${V2_HA_DROP_POLL_SECONDS:-30}
 local stop_ip=""
 local stop_dn_id=""
 local alternate_query_ip=""
 local start_sec=0
 local now_sec=0
 local elapsed_sec=0
-local db_left=0
-local migration_left=0
-local residual_count=0
 local cli_rc=0
 local unknown_count=0
 local unknown_wait_start=0
 local drop_begin_sec=0
-local drop_elapsed_sec=0
 
    echo "========== HA DROP DATABASE with offline Table DataRegion DataNode =========="
    run_cli_sql "${query_ip}" table "show regions;" "${regions_out}" 3600
@@ -871,6 +944,18 @@ local drop_elapsed_sec=0
       let backup_log_flag++
       v_warnMessage="${v_warnMessage}.HA drop prerequisite SHOW REGIONS failed."
       cat "${regions_out}"
+      return 1
+   fi
+
+   # SHOW REGIONS is dialect-sensitive: table dialect omits tree Regions.
+   # Keep a separate tree-dialect snapshot for tree_db Region ID discovery.
+   run_cli_sql "${query_ip}" tree "show regions;" "${tree_regions_out}" 3600
+   cli_rc=$?
+   if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${tree_regions_out}"; then
+      let fail_flag++
+      let backup_log_flag++
+      v_warnMessage="${v_warnMessage}.HA drop prerequisite tree-dialect SHOW REGIONS failed."
+      cat "${tree_regions_out}"
       return 1
    fi
 
@@ -907,8 +992,15 @@ local drop_elapsed_sec=0
    stop_ip=`awk -F '|' 'NR==1{print $3}' "${selected_out}"`
    echo "Selected Table DataRegion owner: `cat ${selected_out}`"
 
-   # Save all Tree/Table Region IDs of the two user databases for filesystem cleanup checks.
-   awk -F '|' -v tree_db="${tree_db}" -v table_db="${table_db}" '
+   # Keep Region IDs separate so each phase checks only its own database cleanup.
+   for region_db in "${tree_db}" "${table_db}"; do
+   saved_region_ids_out="${region_ids_out}"
+   region_source_out="${regions_out}"
+   if [[ "${region_db}" = "${tree_db}" ]]; then
+      saved_region_ids_out="${tree_region_ids_out}"
+      region_source_out="${tree_regions_out}"
+   fi
+   awk -F '|' -v db="${region_db}" '
    function trim(s){gsub(/^[ \t]+|[ \t]+$/, "", s); return s}
    /^\+/ || /^Total line number/ || /^It costs/ {next}
    /\|/ {
@@ -918,14 +1010,18 @@ local drop_elapsed_sec=0
          }
          header=1; next
       }
-      if (header && (trim($database)==tree_db || trim($database)==table_db)) print trim($rid)
-   }' "${regions_out}" | sort -u > "${region_ids_out}"
-   if [[ ! -s "${region_ids_out}" ]]; then
+      if (header && trim($database)==db) print trim($rid)
+   }' "${region_source_out}" | sort -u > "${saved_region_ids_out}"
+   if [[ ! -s "${saved_region_ids_out}" ]]; then
       let fail_flag++
       let backup_log_flag++
-      v_warnMessage="${v_warnMessage}.No Region IDs found for ${tree_db}/${table_db} before HA drop."
+      v_warnMessage="${v_warnMessage}.No Region IDs found for ${region_db} before DROP; see ${region_source_out}."
+      echo "No Region IDs found for ${region_db}; relevant SHOW REGIONS output (${region_source_out}):"
+      cat "${region_source_out}"
       return 1
    fi
+
+   done
 
    alternate_query_ip=`grep -v '^$' "${nodeinfo_dir}/datanode.txt" | sed 's/ //g' | grep -v "^${stop_ip}$" | head -1`
    if [[ -z "${alternate_query_ip}" ]]; then
@@ -933,6 +1029,20 @@ local drop_elapsed_sec=0
       v_warnMessage="${v_warnMessage}.No alternate DataNode available for HA drop SQL."
       return 1
    fi
+
+   # Tree DROP DATABASE does not support HA yet. Finish its asynchronous cleanup
+   # while all DataNodes are online, before stopping the selected Table Region owner.
+   drop_begin_sec=`date +%s`
+   run_cli_sql "${query_ip}" tree "DROP DATABASE ${tree_db};" "${drop_tree_out}" 3600
+   cli_rc=$?
+   if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${drop_tree_out}"; then
+      let fail_flag++
+      let backup_log_flag++
+      v_warnMessage="${v_warnMessage}.DROP TREE DATABASE ${tree_db} failed."
+      cat "${drop_tree_out}"
+      return 1
+   fi
+   wait_drop_database_cleanup tree "${tree_db}" "${tree_region_ids_out}" "${drop_begin_sec}" "${cur_dir}/online_drop_tree" "ONLINE TREE" || return 1
 
    ssh "${os_user_name}@${stop_ip}" "source /etc/profile; cd ${db_dir}; sudo ./sbin/stop-datanode.sh"
    check_dn_jps "${stop_ip}" 180
@@ -944,7 +1054,7 @@ local drop_elapsed_sec=0
    fi
 
    query_ip="${alternate_query_ip}"
-   # DROP is allowed only after both conditions are observed: the DataNode process has
+   # Table DROP is allowed only after both conditions are observed: the DataNode process has
    # exited and SHOW DATANODES reports this exact DataNode as Unknown.
    unknown_wait_start=`date +%s`
    while true; do
@@ -975,17 +1085,9 @@ local drop_elapsed_sec=0
    done
    echo "DataNode ${stop_dn_id}@${stop_ip} process exited and SHOW DATANODES status is Unknown."
 
-   # Measure the real asynchronous DROP duration: from issuing the first DROP SQL until
+   # Measure the real asynchronous DROP duration: from issuing the Table DROP SQL until
    # catalog, migration procedures and all physical Region paths are fully removed.
    drop_begin_sec=`date +%s`
-   run_cli_sql "${query_ip}" tree "DROP DATABASE ${tree_db};" "${drop_tree_out}" 3600
-   cli_rc=$?
-   if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${drop_tree_out}"; then
-      let fail_flag++
-      let backup_log_flag++
-      v_warnMessage="${v_warnMessage}.DROP TREE DATABASE ${tree_db} failed."
-      cat "${drop_tree_out}"
-   fi
    run_cli_sql "${query_ip}" table "DROP DATABASE ${table_db};" "${drop_table_out}" 3600
    cli_rc=$?
    if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${drop_table_out}"; then
@@ -1013,56 +1115,8 @@ local drop_elapsed_sec=0
       sleep 5
    done
 
-   # DROP is asynchronous. Wait for catalog removal, related migration completion and
-   # final removal of TsFile/object/system-schema Region directories on every DataNode.
-   start_sec=`date +%s`
-   while true; do
-      db_left=0; migration_left=0; residual_count=0
-      run_cli_sql "${query_ip}" table "show databases;" "${cur_dir}/ha_drop_show_table_databases.out" 3600
-      grep -Eq "(^|\|)[[:space:]]*${table_db}[[:space:]]*(\||$)" "${cur_dir}/ha_drop_show_table_databases.out" && db_left=$((db_left+1))
-      run_cli_sql "${query_ip}" tree "show databases;" "${cur_dir}/ha_drop_show_tree_databases.out" 3600
-      grep -Eq "(^|\|)[[:space:]]*${tree_db}[[:space:]]*(\||$)" "${cur_dir}/ha_drop_show_tree_databases.out" && db_left=$((db_left+1))
-      run_cli_sql "${query_ip}" table "show migrations;" "${migrations_out}" 3600
-      # DeleteDatabase submits asynchronous RemoveRegion procedures. OperationType may
-      # be empty, and replicas are removed serially, so wait until all Region migration
-      # rows created by this isolated DROP phase disappear instead of relying on the
-      # operation name or database name being present in the output.
-      if grep -Eq "SchemaRegion|DataRegion" "${migrations_out}"; then
-         migration_left=1
-      fi
+   wait_drop_database_cleanup table "${table_db}" "${region_ids_out}" "${drop_begin_sec}" "${cur_dir}/ha_drop" "HA TABLE"
 
-      : > "${residual_out}"
-      while read dn_ip; do
-         [[ -z "${dn_ip}" ]] && continue
-         # Check all cleanup paths involved in restart self-check and CN RemoveRegion:
-         # TsFile/object, system/schema, system/databases and both consensus types.
-         # Include files as well as directories because system metadata layout may vary.
-         ssh "${os_user_name}@${dn_ip}" "find '${db_dir}/data/datanode' '/data1/iotdb_data/${testdb}/data/datanode' '/data3/iotdb_data/${testdb}/data/datanode' 2>/dev/null" | \
-         awk -v tree_db="${tree_db}" -v table_db="${table_db}" 'NR==FNR{if($1!="") ids[$1]=1; next} {p=$0; n=split(p,part,"/"); base=part[n]; hit=(index(p,"/" tree_db "/") || index(p,"/" table_db "/")); region_path=(index(p,"/object/") || index(p,"/system/schema/") || index(p,"/system/databases/") || index(p,"/consensus/data_region/") || index(p,"/consensus/schema_region/")); if(region_path && (base in ids)) hit=1; if(hit) print}' "${region_ids_out}" - | \
-         sed "s|^|${dn_ip}:|" >> "${residual_out}"
-      done < "${nodeinfo_dir}/datanode.txt"
-      residual_count=`wc -l < "${residual_out}"`
-
-      if [[ ${db_left} -eq 0 && ${migration_left} -eq 0 && ${residual_count} -eq 0 ]]; then
-         drop_elapsed_sec=$((`date +%s`-drop_begin_sec))
-         echo "HA DROP cleanup completed in ${drop_elapsed_sec} seconds."
-         v_warnMessage="${v_warnMessage}.HA DROP DATABASE real elapsed time: ${drop_elapsed_sec}s (tree=${tree_db}, table=${table_db}, result=completed)."
-         break
-      fi
-      now_sec=`date +%s`; elapsed_sec=$((now_sec-start_sec))
-      echo "HA DROP cleanup pending: databases=${db_left}, migrations=${migration_left}, residual_dirs=${residual_count}, elapsed=${elapsed_sec}s"
-      if [[ ${elapsed_sec} -gt ${timeout_sec} ]]; then
-         drop_elapsed_sec=$((`date +%s`-drop_begin_sec))
-         let fail_flag++
-         let backup_flag++
-         let backup_log_flag++
-         v_warnMessage="${v_warnMessage}.HA DROP DATABASE real elapsed time: ${drop_elapsed_sec}s (tree=${tree_db}, table=${table_db}, result=timeout, db=${db_left}, migration=${migration_left}, residual=${residual_count})."
-         cat "${residual_out}"
-         cat "${migrations_out}"
-         break
-      fi
-      sleep "${poll_sec}"
-   done
 }
 
 function check_log()

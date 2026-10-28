@@ -1369,8 +1369,8 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue

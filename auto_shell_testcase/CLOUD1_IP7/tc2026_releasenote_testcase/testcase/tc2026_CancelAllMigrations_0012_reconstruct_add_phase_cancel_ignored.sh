@@ -68,6 +68,11 @@ ssl_str=""
 
 # 迁移限速: 1MB/s，拉长新增副本窗口以便 CANCEL 命中(默认 48MB/s 太快)
 region_migration_speed_limit=1048576
+# Product default (48 MiB/s). The 1 MiB/s limit above is used only to make the
+# late RECONSTRUCT ADD window observable. Restore this value by hot reload as
+# soon as CANCEL returns, otherwise an ignored CANCEL leaves snapshot transfer
+# throttled and the testcase can time out before a healthy ADD finishes.
+region_migration_speed_limit_default=50331648
 migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
@@ -91,7 +96,7 @@ bm_table_conf="${bm_dir}/conf_table"            # 2) 可写视图表(usr_sod0.wr
 bm_table_plain_conf="${bm_dir}/conf_table_plain"  # 3) 普通表(usr_nrm0.normal_table_0, 无 object)
 bm_guard_seconds=$((2 * 3600))          # benchmark 进程硬看门狗
 bm_write_seconds=1200                    # benchmark 写入约 20 分钟(养大 Region)
-bm_test_max_time_ms=$((bm_write_seconds * 1000))
+bm_test_max_time_ms=$((bm_guard_seconds * 1000)) # Keep workload alive through migration and post-checks
 bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
@@ -111,6 +116,14 @@ cancel_converge_timeout=1800
 snapshot_cleanup_timeout=900
 snapshot_cleanup_check_interval=10
 snapshot_cleanup_no_progress_timeout=180
+# Polling intervals. A 1s ADD probe is sufficient because snapshot transfer is
+# deliberately throttled while constructing the CANCEL window. syncLag metrics
+# are comparatively expensive and do not need to be scraped every 5 seconds.
+add_phase_probe_interval=1
+sync_lag_check_interval=15
+# 重启一台 DN 后，等副本追平后再停下一台；二次确认之间的静默窗口（秒）。
+# 背景：CAM_P1_04 曾因“重启 DN12 后 2 秒就停掉 r19 唯一完整副本 DN13”误报 tree 副本不一致。
+post_restart_settle_seconds=120
 
 # --------------------------- 节点清单 ---------------------------------------
 rm -rf "${nodeinfo_dir}/confignode.txt"
@@ -492,6 +505,30 @@ start_one_datanode() {
     local dn_ip=$1
     ssh -n "${os_user_name}@${dn_ip}" "source /etc/profile; cd ${db_dir}; ./sbin/start-datanode.sh -H ${db_dir}/dn_$(date +%s)_heapdump.hprof > /dev/null 2>&1 &" >> "${log_file}" 2>&1
     wait_for_datanode_running "${dn_ip}" 600
+}
+
+# 重启 DN 后必须等它把副本追平，再继续停下一台。
+# 原因：RF=2 时，刚重启的 DN 在 region 重建/日志重拉完成前不是完整副本；
+# 此时若停掉它的对端（唯一完整副本），该 region 的尾部数据会暂时不可读，
+# 表现为 count 比 baseline 少（CAM_P1_04 在 2026-10-23 14:51 的失败正是此路径）。
+restart_one_datanode_and_wait_sync() {
+    local dn_ip=$1
+    if ! start_one_datanode "${dn_ip}"; then
+        return 1
+    fi
+    log "INFO" "DN ${dn_ip} restarted; waiting for replica catch-up before next step"
+    if ! wait_for_sync_lag_zero 900; then
+        log "ERROR" "replica catch-up after restarting ${dn_ip} did not converge in 900s"
+        return 1
+    fi
+    # 二次确认：避开“刚归零又回退”的瞬时状态
+    sleep "${post_restart_settle_seconds}"
+    if ! wait_for_sync_lag_zero 300; then
+        log "ERROR" "replica catch-up after restarting ${dn_ip} regressed"
+        return 1
+    fi
+    log "INFO" "DN ${dn_ip} replica catch-up confirmed; safe to continue"
+    return 0
 }
 
 # =============================================================================
@@ -1221,6 +1258,7 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_conf}" PORT "${benchmark_ports}"
     set_bm "${table_conf}" USERNAME "rainer"
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
     set_bm "${table_conf}" LOOP "${bm_loop}"
@@ -1235,6 +1273,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_plain_conf}" PORT "${benchmark_ports}"
     set_bm "${table_plain_conf}" USERNAME "rainer"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
@@ -1369,19 +1408,27 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # Under `sh -x`, assigning the full Prometheus response to `body`
+            # prints several MB of metrics on every poll. Temporarily suppress
+            # xtrace only for metrics collection; testcase tracing resumes
+            # immediately afterwards.
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1405,7 +1452,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep "${sync_lag_check_interval}"
     done
 }
 
@@ -1476,43 +1523,61 @@ check_data_consistency() {
             continue
         fi
 
+        # 停机前再确认一次全集群已同步：刚重启的 DN 可能还在重拉日志，
+        # 此时停掉它的对端会让该 region 只剩不完整副本（CAM_P1_04 原失败路径）。
+        if ! wait_for_sync_lag_zero 300; then
+            log "ERROR" "skip stopping ${dn_ip}: replicas are not in sync before stop"
+            continue
+        fi
+
         log "INFO" "Stop DN ${dn_ip}, query from ${query_host} and diff vs baseline"
         if ! stop_one_datanode "${dn_ip}"; then
-            start_one_datanode "${dn_ip}"
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true
             continue
         fi
 
         if ! run_consistency_query "${query_host}" tree "${tree_sql}" "${run_artifact_dir}/stop_${dn_ip}_tree.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true; continue
         fi
         if ! run_consistency_query "${query_host}" table "${table_sql}" "${run_artifact_dir}/stop_${dn_ip}_table.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true; continue
         fi
         if ! run_consistency_query "${query_host}" table "${table2_sql}" "${run_artifact_dir}/stop_${dn_ip}_table2.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true; continue
         fi
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_tree.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out"
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_table.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out"
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_table2.out" "${run_artifact_dir}/stop_${dn_ip}_table2.normalized.out"
 
-        if ! diff -u "${run_artifact_dir}/baseline_tree.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out" >> "${log_file}" 2>&1; then
+        local tree_diff table_diff table2_diff tree_lines=0 table_lines=0 table2_lines=0
+        tree_diff="${run_artifact_dir}/diff_${dn_ip}_tree.txt"
+        table_diff="${run_artifact_dir}/diff_${dn_ip}_table.txt"
+        table2_diff="${run_artifact_dir}/diff_${dn_ip}_table2.txt"
+
+        if ! diff -u "${run_artifact_dir}/baseline_tree.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out" > "${tree_diff}" 2>&1; then
+            tree_lines=$(grep -cE '^[-+]\|' "${tree_diff}" || true)
+            cat "${tree_diff}" >> "${log_file}"
             let fail_flag++
-            v_warnMessage="${v_warnMessage}tree replica inconsistent when ${dn_ip} down."
-            log "ERROR" "tree replica inconsistent when ${dn_ip} down"
+            v_warnMessage="${v_warnMessage}tree replica inconsistent when ${dn_ip} down (diff_lines=${tree_lines})."
+            log "ERROR" "tree replica inconsistent when ${dn_ip} down (diff_lines=${tree_lines})"
         fi
-        if ! diff -u "${run_artifact_dir}/baseline_table.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out" >> "${log_file}" 2>&1; then
+        if ! diff -u "${run_artifact_dir}/baseline_table.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out" > "${table_diff}" 2>&1; then
+            table_lines=$(grep -cE '^[-+]\|' "${table_diff}" || true)
+            cat "${table_diff}" >> "${log_file}"
             let fail_flag++
-            v_warnMessage="${v_warnMessage}writable-view replica inconsistent when ${dn_ip} down."
-            log "ERROR" "writable-view replica inconsistent when ${dn_ip} down"
+            v_warnMessage="${v_warnMessage}writable-view replica inconsistent when ${dn_ip} down (diff_lines=${table_lines})."
+            log "ERROR" "writable-view replica inconsistent when ${dn_ip} down (diff_lines=${table_lines})"
         fi
-        if ! diff -u "${run_artifact_dir}/baseline_table2.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table2.normalized.out" >> "${log_file}" 2>&1; then
+        if ! diff -u "${run_artifact_dir}/baseline_table2.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table2.normalized.out" > "${table2_diff}" 2>&1; then
+            table2_lines=$(grep -cE '^[-+]\|' "${table2_diff}" || true)
+            cat "${table2_diff}" >> "${log_file}"
             let fail_flag++
-            v_warnMessage="${v_warnMessage}plain-table replica inconsistent when ${dn_ip} down."
-            log "ERROR" "plain-table replica inconsistent when ${dn_ip} down"
+            v_warnMessage="${v_warnMessage}plain-table replica inconsistent when ${dn_ip} down (diff_lines=${table2_lines})."
+            log "ERROR" "plain-table replica inconsistent when ${dn_ip} down (diff_lines=${table2_lines})"
         fi
 
-        log "INFO" "Restart DN ${dn_ip} after consistency check"
-        start_one_datanode "${dn_ip}"
+        log "INFO" "Restart DN ${dn_ip} after consistency check; waiting for replica catch-up"
+        restart_one_datanode_and_wait_sync "${dn_ip}" || true
     done
 }
 
@@ -1652,6 +1717,24 @@ send_cancel_and_assert() {
     fi
 }
 
+restore_region_migration_speed_limit() {
+    local label=$1
+    local out="${run_artifact_dir}/restore_region_migration_speed_limit_${label}.out"
+    local sql="SET CONFIGURATION \"region_migration_speed_limit_bytes_per_second\"=\"${region_migration_speed_limit_default}\";"
+
+    log "INFO" "Restore region migration speed limit to product default ${region_migration_speed_limit_default}B/s by hot reload"
+    cli_tree "${query_ip}" "${sql}" > "${out}" 2>&1
+    trim_file_crlf "${out}"
+    if ! grep -q "The statement is executed successfully." "${out}"; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}${label} failed to hot-reload region migration speed limit to default."
+        log "ERROR" "SET CONFIGURATION failed; see ${out}"
+        return 1
+    fi
+    log "INFO" "Region migration speed limit hot-reloaded to ${region_migration_speed_limit_default}B/s on the cluster"
+    return 0
+}
+
 run_late_reconstruct_cancel() {
     local rid="${mig_region_id[0]}" tgt="${mig_tgt_dn_id[0]}"
     local out="${run_artifact_dir}/reconstruct_late_phase.out"
@@ -1667,7 +1750,7 @@ run_late_reconstruct_cancel() {
             END{exit(adding?0:1)}' "${reg_file}"; then
             hit=1; break
         fi
-        sleep 0.1
+        sleep "${add_phase_probe_interval}"
     done
     if [ "${hit}" -ne 1 ]; then
         let fail_flag++; v_warnMessage="${v_warnMessage}did not catch RECONSTRUCT add-new-peer phase."
@@ -1675,6 +1758,10 @@ run_late_reconstruct_cancel() {
     fi
     log "INFO" "Caught RECONSTRUCT add-new-peer phase on target ${tgt}"
     send_cancel_and_assert reconstruct_add_phase
+    # At this late safety point CANCEL may be accepted by the statement but is
+    # intentionally ignored by RECONSTRUCT. Remove the artificial throttle so
+    # the mandatory add-new-peer can finish within the convergence timeout.
+    restore_region_migration_speed_limit reconstruct_add_phase || true
     wait_all_cancel_converged late_reconstruct 0 || true
     wait "${pid}" || true
     migrate_dest_dn_id[0]="${tgt}"; migrate_dest_dn_ip[0]="${mig_tgt_dn_ip[0]}"

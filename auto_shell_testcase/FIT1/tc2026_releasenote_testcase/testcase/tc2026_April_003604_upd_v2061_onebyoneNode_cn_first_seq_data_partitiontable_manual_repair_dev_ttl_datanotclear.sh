@@ -52,6 +52,7 @@ seed_cn_ip=$(head -1 "${nodeinfo_dir}/confignode.txt" | sed 's/ //g'):10710
 query_ip=$(head -1 "${nodeinfo_dir}/datanode.txt" | sed 's/ //g')
 
 fail_flag=0
+v_stable_window_precondition_failed=0
 test_begin_sec=$(date +%s)
 diag_run_id=$(date +%Y%m%d_%H%M%S)
 diag_root="${cur_dir}/diag_003604_datanotclear_${diag_run_id}"
@@ -973,9 +974,9 @@ wait_iot_consensus_sync_lag_zero 300 || return 1
    sql7="show timeslotid where database=root.test.g_0;"
    # Use a window safely after the configured TTL cutoff. Full-range counts are dynamic while
    # TTL deletion advances and must not be used as the authoritative replica comparison.
-   sql8="select count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from root.test.g_0.** where time>=2026-01-21T08:10:00.000+08:00 and time<=2026-01-21T09:20:07.838+08:00 align by device;"
-   sql9="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table1_0 where time>=2026-01-21T08:10:00.000+08:00 and time<=2026-01-21T09:20:07.838+08:00 group by device_id order by device_id;"
-   sql10="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table2_0 where time>=2026-01-21T08:10:00.000+08:00 and time<=2026-01-21T09:20:07.838+08:00 group by device_id order by device_id;"
+   sql8="select count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from root.test.g_0.** where time>=1970-01-08T08:10:00.000+08:00 and time<=1970-01-08T09:20:07.838+08:00 align by device;"
+   sql9="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table1_0 where time>=1970-01-08T08:10:00.000+08:00 and time<=1970-01-08T09:20:07.838+08:00 group by device_id order by device_id;"
+   sql10="select device_id,count(s_0),count(s_1),count(s_2),count(s_3),count(s_4),count(s_5),count(s_6),count(s_7),count(s_8),count(s_9) from db_g_0.table2_0 where time>=1970-01-08T08:10:00.000+08:00 and time<=1970-01-08T09:20:07.838+08:00 group by device_id order by device_id;"
    # all online
    exception_num=0
    while true
@@ -1057,8 +1058,9 @@ wait_iot_consensus_sync_lag_zero 300 || return 1
    # sql9/sql10 使用 TTL 截止点之后的稳定窗口，仍必须各返回 10 个设备。
    if [[ ${v_row_num3} != 10 ]] || [[ ${v_row_num4} != 10 ]];then
            let fail_flag++
-           v_warnMessage="${v_warnMessage}table stable-window rows=${v_row_num3}/${v_row_num4}, expected 10/10."
-           log "ERROR" "table stable-window row check failed: table1=${v_row_num3}, table2=${v_row_num4}, expected 10/10"
+           v_stable_window_precondition_failed=1
+           v_warnMessage="${v_warnMessage}invalid stable-window fixture before DN stop: table rows=${v_row_num3}/${v_row_num4}; expected 10/10."
+           log "ERROR" "[PRECONDITION FAIL] Stable-window fixture is empty/incomplete before DN stop: table1=${v_row_num3}, table2=${v_row_num4}, expected 10/10. Check configured time range and restored data."
    fi    
    # Preserve the healthy baseline and actual replica layout before stopping any node.
    mkdir -p "${diag_root}/baseline"
@@ -1067,6 +1069,10 @@ wait_iot_consensus_sync_lag_zero 300 || return 1
    ${upd_cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show regions;" > "${diag_root}/baseline/show_regions.out" 2>&1 || true
    ${upd_cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show all ttl;" > "${diag_root}/baseline/show_all_ttl.out" 2>&1 || true
    log "INFO" "datanotclear diagnostics: ${diag_root}"
+   if [[ ${v_stable_window_precondition_failed} -eq 1 ]]; then
+      log "ERROR" "Skip DN fault injection because the healthy baseline has no rows in the required stable window."
+      return 1
+   fi
    # stop dn
    exec 3<${cur_dir}/tmp_node.out
    while read line<&3
@@ -1356,6 +1362,10 @@ sleep 180
 # All nodes now run the SQL-capable version; trigger repair explicitly.
 manual_partition_repair
 check_data_consistent
+if [[ ${v_stable_window_precondition_failed} -eq 1 ]]; then
+   log "ERROR" "Skipping remaining DN stop/restart checks because the stable-window baseline is invalid."
+   return 1
+fi
 #check log
 #TTL SEC 1768953600 date -d"2000-01-22T08:00:01" +%s
 #ttl_time_point=948499201000

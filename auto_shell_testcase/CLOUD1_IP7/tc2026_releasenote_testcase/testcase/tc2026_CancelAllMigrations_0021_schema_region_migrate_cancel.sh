@@ -64,6 +64,11 @@ migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
 dn_metric_port=9092
+sync_lag_check_interval=15
+# SchemaRegion ADD can last only about a second under load. Keep the SQL
+# fallback responsive; CN procedure logs are watched concurrently below.
+phase_probe_interval=0.2
+tree_series_ready_timeout_seconds=900
 
 # Thrift 最大帧大小: 调到 256MB。默认 0(不限)在大 region 迁移/大 object 写入时可能触发帧过大错误;
 # 显式设 256MB 与 tc0003 参考一致(CN/DN 均设 dn_thrift_max_frame_size)。
@@ -88,10 +93,10 @@ bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
 # region_migration_speed_limit 只对 snapshot 传输生效 -> 限速没起作用。
-# 再 x10 到 1200 列: 单 region 涨到 ~1GB 量级, 数据量远超 consensus 日志可追赶范围,
+# 再 x20 到 2400 列: tree schema/data 规模翻倍，为迁移保留更长窗口, 数据量远超 consensus 日志可追赶范围,
 # 迫使新副本走 snapshot 传输(受 1MB/s 限速)-> add-peer 阶段持续数分钟, 取消窗口稳定。
 # (INSERT_DATATYPE_PROPORTION 是比例, 自动按列数缩放, 无需改; 末位=0 仍无 object。)
-tree_sensor_number=1200
+tree_sensor_number=2400
 bm_pids=()
 bm_start_epoch=0
 bm_elapsed_seconds=0
@@ -137,6 +142,7 @@ mig_slot_name=("tree" "table_plain" "table_view")     # 展示名
 mig_slot_dialect=("tree" "table" "table")             # 触发/查询用方言
 mig_slot_db=("${TREE_DB_PATH}" "${TABLE2_DB_NAME}" "${TABLE_DB_NAME}")  # 0=root.test.g_0 1=usr_nrm0 2=usr_sod0
 mig_region_id=("" "" "")
+mig_proc_id=("" "" "")
 mig_src_dn_id=("" "" "")
 mig_src_dn_ip=("" "" "")
 mig_tgt_dn_id=("" "" "")
@@ -988,71 +994,99 @@ verify_receiver_snapshot_deleted() {
 
 # 断言5: ConfigNode 日志出现 cancel 相关标记
 check_cancel_logs() {
-    local hit_total=0 node_ip
+    local target_pid=$1 hit_total=0 node_ip
     local combined="${run_artifact_dir}/confignode_cancel_combined.out"
     : > "${combined}"
+    if [ -z "${target_pid}" ]; then
+        log "WARN" "skip pid-scoped ConfigNode log collection: target procedure id is missing"
+        return 0
+    fi
     while read -r node_ip; do
         [ -z "${node_ip}" ] && continue
         ssh -n "${os_user_name}@${node_ip}" "gunzip ${cn_db_dir}/logs/*confignode*all* >/dev/null 2>&1 || true"
         local h
-        h=$(ssh -n "${os_user_name}@${node_ip}" "grep -E 'CancelMigrations|cancel signal sent|cancelled at state|Successfully signalled .* migration' ${cn_db_dir}/logs/*confignode*all* 2>/dev/null | wc -l")
+        h=$(ssh -n "${os_user_name}@${node_ip}" "grep -E '\\[pid${target_pid}\\].*(CancelMigrations|cancel signal sent|cancelled at state|cancel request|Successfully signalled .* migration)' ${cn_db_dir}/logs/*confignode*all* 2>/dev/null | wc -l")
         h=${h:-0}
-        log "INFO" "ConfigNode ${node_ip} cancel-related log lines: ${h}"
+        log "INFO" "ConfigNode ${node_ip} pid${target_pid} cancel-related log lines: ${h}"
         hit_total=$((hit_total + h))
-        # 存证
-        ssh -n "${os_user_name}@${node_ip}" "grep -E 'CancelMigrations|cancel signal sent|cancelled at state|cancel request|Successfully signalled .* migration|MigrateRegion' ${cn_db_dir}/logs/*confignode*all* 2>/dev/null" \
+        ssh -n "${os_user_name}@${node_ip}" "grep -E '\\[pid${target_pid}\\].*(CancelMigrations|cancel signal sent|cancelled at state|cancel request|Successfully signalled .* migration|MigrateRegion|AddRegionPeer)' ${cn_db_dir}/logs/*confignode*all* 2>/dev/null" \
             >> "${run_artifact_dir}/confignode_cancel_log_${node_ip}.out" 2>/dev/null || true
         cat "${run_artifact_dir}/confignode_cancel_log_${node_ip}.out" >> "${combined}" 2>/dev/null || true
     done < "${nodeinfo_dir}/confignode.txt"
 
     if [ "${hit_total}" -le 0 ]; then
-        let fail_flag++
-        v_warnMessage="${v_warnMessage}no cancel-related marker found in any ConfigNode log."
-        log "ERROR" "no cancel-related marker found in ConfigNode logs"
+        log "WARN" "no pid${target_pid}-scoped cancellation marker found; outcome validator will decide"
     fi
 }
 
 validate_schema_cancel_outcome() {
     local actual_members=$1
+    local procedure_id="${mig_proc_id[0]}"
     local combined="${run_artifact_dir}/confignode_cancel_combined.out"
+    local cancel_output="${run_artifact_dir}/schema_cancel.out"
+    local active_migrations="${run_artifact_dir}/schema_active_tree_migrations.out"
     local expected_migrated
+    local cancel_state
+    if [ -z "${procedure_id}" ]; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}SchemaRegion cancel outcome cannot be correlated: target ProcedureId is missing."
+        return 1
+    fi
     expected_migrated=$(
         { printf '%s\n' ${mig_baseline_dn_ids[0]}; printf '%s\n' "${mig_tgt_dn_id[0]}"; } \
             | awk -v src="${mig_src_dn_id[0]}" '$1 != src && $1 != "" {print $1}' \
             | sort -n -u | tr '\n' ' ' | sed 's/ *$//'
     )
+    cancel_state=$(
+        awk -F'|' -v rid="${mig_region_id[0]}" -v pid="${procedure_id}" '
+            function t(s){gsub(/^[ \t]+|[ \t]+$/, "", s); return s}
+            /^\|/ && t($2) == pid && t($4) == rid && $0 ~ /MIGRATE/ {state=t($8)}
+            END {print state}
+        ' "${active_migrations}" 2>/dev/null
+    )
 
-    # CANCEL acknowledgement only means that a signal was delivered. The
-    # procedure log decides whether it was effective or ignored at a late
-    # safe point, and the topology must agree with that decision.
-    if grep -Eq 'cancel request ignored at state|cancel ignored at state' "${combined}"; then
-        if [ "${actual_members}" != "${expected_migrated}" ]; then
-            let fail_flag++
-            v_warnMessage="${v_warnMessage}SchemaRegion cancel was ignored, but final members [${actual_members}] differ from completed-migration topology [${expected_migrated}]."
-            return 1
-        fi
+    # Zero signalled is valid only after the rollback-safe boundary, when this
+    # same procedure completed and the requested target topology is present.
+    if grep -Eq 'Successfully signalled 0 migration\(s\) to cancel' "${cancel_output}" \
+            && [ "${cancel_state}" = "CHECK_REMOVE_REGION_PEER" ] \
+            && [ "${actual_members}" = "${expected_migrated}" ] \
+            && grep -Fq "[pid${procedure_id}][MigrateRegion] success" "${combined}"; then
         let v_warnNum++
-        v_warnMessage="${v_warnMessage}SchemaRegion CANCEL was validly ignored after the rollback-safe phase; migration completed and members changed to [${actual_members}]."
-        log "INFO" "SchemaRegion CANCEL ignored as expected; completed topology=[${actual_members}]"
+        v_warnMessage="${v_warnMessage}SchemaRegion pid${procedure_id} CANCEL signalled 0 at ${cancel_state}; migration completed with members [${actual_members}]."
+        log "INFO" "SchemaRegion pid${procedure_id} CANCEL validly ignored at ${cancel_state}; topology=[${actual_members}]"
         return 0
     fi
 
-    if grep -Eq 'cancelled at state|cancel request accepted|roll(ed)? back|rollback' "${combined}"; then
-        if [ "${actual_members}" != "${mig_baseline_dn_ids[0]}" ]; then
+    if grep -E "\\[pid${procedure_id}\\].*(cancel request ignored at state|cancel ignored at state)" "${combined}" >/dev/null; then
+        if [ "${actual_members}" != "${expected_migrated}" ]; then
             let fail_flag++
-            v_warnMessage="${v_warnMessage}SchemaRegion cancel took effect, but members [${actual_members}] did not roll back to baseline [${mig_baseline_dn_ids[0]}]."
+            v_warnMessage="${v_warnMessage}SchemaRegion pid${procedure_id} cancel was ignored, but final members [${actual_members}] differ from completed topology [${expected_migrated}]."
             return 1
         fi
-        v_warnMessage="${v_warnMessage}SchemaRegion CANCEL took effect and members rolled back to baseline [${actual_members}]."
-        log "INFO" "SchemaRegion CANCEL effective; rollback topology=[${actual_members}]"
+        let v_warnNum++
+        v_warnMessage="${v_warnMessage}SchemaRegion pid${procedure_id} CANCEL was ignored after rollback-safe phase; completed members [${actual_members}]."
+        log "INFO" "SchemaRegion pid${procedure_id} CANCEL ignored after rollback-safe phase; topology=[${actual_members}]"
+        return 0
+    fi
+
+    # Require both the CLI acceptance and the matching procedure-scoped
+    # ConfigNode signal. Then verify the final topology rolled back to baseline.
+    if grep -Eq 'Successfully signalled [1-9][0-9]* migration\(s\) to cancel' "${cancel_output}" \
+            && grep -Fq "[pid${procedure_id}][CancelMigrations] cancel signal sent to RegionMigrateProcedure" "${combined}"; then
+        if [ "${actual_members}" != "${mig_baseline_dn_ids[0]}" ]; then
+            let fail_flag++
+            v_warnMessage="${v_warnMessage}SchemaRegion pid${procedure_id} cancel was accepted, but members [${actual_members}] did not roll back to baseline [${mig_baseline_dn_ids[0]}]."
+            return 1
+        fi
+        v_warnMessage="${v_warnMessage}SchemaRegion pid${procedure_id} CANCEL accepted and rolled back to baseline [${actual_members}]."
+        log "INFO" "SchemaRegion pid${procedure_id} CANCEL effective; rollback topology=[${actual_members}]"
         return 0
     fi
 
     let fail_flag++
-    v_warnMessage="${v_warnMessage}SchemaRegion cancel outcome is ambiguous: no effective-rollback or ignored marker was found; final members=[${actual_members}]."
+    v_warnMessage="${v_warnMessage}SchemaRegion pid${procedure_id} cancel outcome ambiguous at ${cancel_state}: no matching accept/ignore marker; final members=[${actual_members}]."
     return 1
 }
-
 # =============================================================================
 # benchmark: 树(无object) + 表(可写视图+object) + 写当前时间, 运行约 20 分钟
 # =============================================================================
@@ -1309,19 +1343,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # Avoid expanding the full Prometheus response into shell xtrace output.
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1345,7 +1384,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep "${sync_lag_check_interval}"
     done
 }
 
@@ -1494,7 +1533,7 @@ check_log() {
         if [ "${v_npe}" -gt 0 ] || [ "${v_err}" -gt 0 ]; then
             let fail_flag++
             let backup_log_flag++
-            v_warnMessage="${v_warnMessage}datanode log error on ${line}."
+            v_warnMessage="${v_warnMessage}datanode log error on ${line} (NPE=${v_npe}, other_error_patterns=${v_err})."
             log "ERROR" "datanode log error on ${line} (NPE=${v_npe}, err=${v_err})"
         fi
         if [ "${v_snapshot_err}" -gt 0 ]; then
@@ -1576,17 +1615,88 @@ wait_global_clear() {
     let fail_flag++; v_warnMessage="${v_warnMessage}${label} migrations did not clear."; return 1
 }
 
+start_cn_add_phase_watchers() {
+    local node_ip watch_file
+    cn_phase_watch_pids=()
+    while read -r node_ip; do
+        [ -z "${node_ip}" ] && continue
+        watch_file="${run_artifact_dir}/cn_phase_watch_${node_ip}.out"
+        : > "${watch_file}"
+        ssh -n "${os_user_name}@${node_ip}" \
+            "tail -n0 -F ${cn_db_dir}/logs/*confignode*all* 2>/dev/null | grep --line-buffered -E '\\[MigrateRegion\\] (started|state (ADD_REGION_PEER|CHECK_ADD_REGION_PEER) complete)'" \
+            > "${watch_file}" 2>/dev/null &
+        cn_phase_watch_pids+=("$!")
+    done < "${nodeinfo_dir}/confignode.txt"
+}
+
+stop_cn_add_phase_watchers() {
+    local watcher_pid
+    for watcher_pid in "${cn_phase_watch_pids[@]:-}"; do
+        kill "${watcher_pid}" 2>/dev/null || true
+    done
+    cn_phase_watch_pids=()
+}
+
+find_cn_add_phase_event() {
+    local rid=$1 file
+    for file in "${run_artifact_dir}"/cn_phase_watch_*.out; do
+        [ -f "${file}" ] || continue
+        awk -v rid="${rid}" '
+            /\[MigrateRegion\] started/ && $0 ~ "SchemaRegion, id: *" rid "\\)" {
+                if (match($0, /\[pid[0-9]+\]/)) {
+                    pid=substr($0, RSTART+4, RLENGTH-5)
+                    target[pid]=1
+                }
+            }
+            /\[MigrateRegion\] state (ADD_REGION_PEER|CHECK_ADD_REGION_PEER) complete/ {
+                if (match($0, /\[pid[0-9]+\]/)) {
+                    pid=substr($0, RSTART+4, RLENGTH-5)
+                    if (pid in target) { print pid "|" $0; exit }
+                }
+            }
+        ' "${file}" && return 0
+    done
+    return 1
+}
+
+wait_for_tree_series_ready() {
+    local begin now count out
+    begin=$(date +%s)
+    out="${run_artifact_dir}/tree_series_count.out"
+    while true; do
+        cli_tree "${query_ip}" "count timeseries ${TREE_DB_PATH}.**;" > "${out}" 2>&1
+        count=$(awk -F'|' '
+            function trim(s){gsub(/^[ \t]+|[ \t]+$/,"",s);return s}
+            /^\|/ {for(i=2;i<NF;i++){v=trim($i);if(v~/^[0-9]+$/)n=v}}
+            END{if(n!="")print n}
+        ' "${out}")
+        if [[ "${count}" =~ ^[0-9]+$ ]] && [ "${count}" -ge "${tree_sensor_number}" ]; then
+            log "INFO" "Tree schema ready: ${count} timeseries under ${TREE_DB_PATH} (target >= ${tree_sensor_number})"
+            return 0
+        fi
+        now=$(date +%s)
+        if [ $((now-begin)) -ge "${tree_series_ready_timeout_seconds}" ]; then
+            let fail_flag++
+            v_warnMessage="${v_warnMessage}tree schema did not reach ${tree_sensor_number} timeseries within ${tree_series_ready_timeout_seconds}s (observed=${count:-unknown})."
+            log "ERROR" "Tree schema readiness timeout: count=${count:-unknown}, target=${tree_sensor_number}"
+            return 1
+        fi
+        log "INFO" "Waiting tree schema readiness: count=${count:-unknown}, target=${tree_sensor_number}"
+        sleep 5
+    done
+}
+
 select_schema_region_and_target() {
     refresh_running_datanodes
     collect_regions tree schema_select
     local file="${run_artifact_dir}/schema_select_tree_regions.out"
     local candidate="${run_artifact_dir}/schema_candidates.out"
-    awk -F'|' '
+    awk -F'|' -v tree_db="${TREE_DB_PATH}" '
         function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}
         FNR==NR {n=split($0, node, /[ \t]+/); if(n>=2 && node[1]~/^[0-9]+$/){dn[node[1]]=node[2]}; next}
-        /^\|/ {rid=t($2); type=t($3); state=t($4); id=t($8);
-                 # show regions columns are RegionId, Type, Status, ..., DataNodeId, RpcAddress.
-                 # The leading field before the first pipe shifts them to $2, $3, $4, ..., $8.
+        /^\|/ {rid=t($2); type=t($3); state=t($4); database=t($5); id=t($8);
+                 # Select only the SchemaRegion that stores this test tree data, not root.__audit.
+                 if(database!=tree_db) next
                  if(rid~/^[0-9]+$/ && type=="SchemaRegion" && state=="Running" && id in dn){members[rid]=members[rid] " " id; ips[id]=dn[id]}}
         END{for(rid in members){gsub(/^ /,"",members[rid]); split(members[rid],a," "); src=a[1];
             tgt=""; for(id in dn){if((" " members[rid] " ")!~(" " id " ")){tgt=id;break}}
@@ -1607,18 +1717,47 @@ main() {
     start_db || { finalize_test "${test_begin_time}"; return 1; }
     create_benchmark_users || { finalize_test "${test_begin_time}"; return 1; }
     start_benchmark || { finalize_test "${test_begin_time}"; return 1; }
-    sleep 120
+    wait_for_tree_series_ready || { finalize_test "${test_begin_time}"; return 1; }
+    cli_tree "${query_ip}" "flush;" >> "${log_file}" 2>&1 || true
     select_schema_region_and_target || { finalize_test "${test_begin_time}"; return 1; }
+    start_cn_add_phase_watchers
     ( cli_tree "${query_ip}" "migrate region ${mig_region_id[0]} from ${mig_src_dn_id[0]} to ${mig_tgt_dn_id[0]};" > "${run_artifact_dir}/schema_migrate_cmd.out" 2>&1 ) &
-    local mig_pid=$! begin mf seen=0
+    local mig_pid=$! begin mf seen=0 observed_proc_id observed_state state_row
     begin=$(date +%s)
-    while [ $(( $(date +%s) - begin )) -le 300 ]; do
+    while [ $(( $(date +%s) - begin )) -le "${add_phase_wait_timeout}" ]; do
         mf=$(collect_migrations tree schema_active)
-        if awk -F'|' -v rid="${mig_region_id[0]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}/^\|/{for(i=1;i<=NF;i++)if(t($i)==rid&&$0~/MIGRATE/)hit=1}END{exit(hit?0:1)}' "${mf}"; then seen=1; break; fi
-        sleep 0.1
+        state_row=$(awk -F'|' -v rid="${mig_region_id[0]}" '
+            function t(s){gsub(/^[ \t]+|[ \t]+$/,"",s);return s}
+            /^\|/ {if(t($3)=="MIGRATE" && t($4)==rid && t($5)=="SchemaRegion"){print t($2) "|" t($8);exit}}
+        ' "${mf}")
+        if [ -n "${state_row}" ]; then
+            observed_proc_id=${state_row%%|*}
+            observed_state=${state_row#*|}
+            mig_proc_id[0]="${observed_proc_id}"
+            if [ "${observed_state}" = "CHECK_ADD_REGION_PEER" ]; then
+                seen=1
+                log "INFO" "SchemaRegion migration pid=${mig_proc_id[0]} region=${mig_region_id[0]} reached state=${observed_state}; cancel now"
+                break
+            fi
+            log "INFO" "Waiting SchemaRegion migration pid=${mig_proc_id[0]} state=${observed_state} before cancel"
+        fi
+        if [ -z "${state_row}" ] || [ "${observed_state:-}" != "CHECK_ADD_REGION_PEER" ]; then
+            local cn_event
+            cn_event=$(find_cn_add_phase_event "${mig_region_id[0]}" || true)
+            if [ -n "${cn_event}" ]; then
+                mig_proc_id[0]="${cn_event%%|*}"
+                printf '%s\n' "${cn_event#*|}" >> "${run_artifact_dir}/cn_add_phase_event.out"
+                seen=1
+                log "INFO" "CN procedure log observed target SchemaRegion pid${mig_proc_id[0]} entering ADD phase; cancel now"
+                break
+            fi
+        fi
+        sleep "${phase_probe_interval}"
     done
+    stop_cn_add_phase_watchers
     if [ "${seen}" -ne 1 ]; then
-        let fail_flag++; v_warnMessage="${v_warnMessage}SchemaRegion MIGRATE completed before visible cancel window."
+        let fail_flag++; v_warnMessage="${v_warnMessage}SchemaRegion MIGRATE did not reach CHECK_ADD_REGION_PEER within ${add_phase_wait_timeout}s."
+        log "ERROR" "SchemaRegion migration did not reach CHECK_ADD_REGION_PEER within ${add_phase_wait_timeout}s"
     else
         cli_tree "${query_ip}" "CANCEL ALL MIGRATIONS;" > "${run_artifact_dir}/schema_cancel.out" 2>&1
         grep -q "The statement is executed successfully." "${run_artifact_dir}/schema_cancel.out" || { let fail_flag++; v_warnMessage="${v_warnMessage}SchemaRegion cancel failed."; }
@@ -1629,7 +1768,7 @@ main() {
     local now
     now=$(awk -F'|' -v rid="${mig_region_id[0]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}/^\|/{if(t($2)==rid)print t($8)}' "${run_artifact_dir}/schema_final_tree_regions.out" | sort -n | tr '
 ' ' ' | sed 's/ *$//')
-    check_cancel_logs || true
+    check_cancel_logs "${mig_proc_id[0]}" || true
     validate_schema_cancel_outcome "${now}" || true
     stop_benchmark_now
     finalize_test "${test_begin_time}"

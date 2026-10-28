@@ -447,7 +447,7 @@ wait_for_sync_completion() {
 
         # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
         local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=pipe_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22PipeConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
+            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus_v2%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22IoTConsensusV2ServerImpl%22%2Ctype%3D%22syncLag%22%7D")
 
         # 检查响应是否成功
         if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then

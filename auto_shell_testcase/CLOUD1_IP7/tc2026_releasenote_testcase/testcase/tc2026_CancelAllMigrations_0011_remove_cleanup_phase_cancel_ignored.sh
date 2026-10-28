@@ -76,6 +76,8 @@ migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
 dn_metric_port=9092
+sync_lag_check_interval=15
+phase_probe_interval=1
 
 # Thrift 最大帧大小: 调到 256MB。默认 0(不限)在大 region 迁移/大 object 写入时可能触发帧过大错误;
 # 显式设 256MB 与 tc0003 参考一致(CN/DN 均设 dn_thrift_max_frame_size)。
@@ -95,7 +97,7 @@ bm_table_conf="${bm_dir}/conf_table"            # 2) 可写视图表(usr_sod0.wr
 bm_table_plain_conf="${bm_dir}/conf_table_plain"  # 3) 普通表(usr_nrm0.normal_table_0, 无 object)
 bm_guard_seconds=$((2 * 3600))          # benchmark 进程硬看门狗
 bm_write_seconds=1200                    # benchmark 写入约 20 分钟(养大 Region)
-bm_test_max_time_ms=$((bm_write_seconds * 1000))
+bm_test_max_time_ms=$((bm_guard_seconds * 1000)) # Keep workload alive through migration and post-checks
 bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
@@ -1240,6 +1242,7 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_conf}" PORT "${benchmark_ports}"
     set_bm "${table_conf}" USERNAME "rainer"
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
     set_bm "${table_conf}" LOOP "${bm_loop}"
@@ -1254,6 +1257,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_plain_conf}" PORT "${benchmark_ports}"
     set_bm "${table_plain_conf}" USERNAME "rainer"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
@@ -1388,19 +1392,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # Avoid expanding the full Prometheus response into shell xtrace output.
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1424,7 +1433,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep "${sync_lag_check_interval}"
     done
 }
 
@@ -1497,18 +1506,18 @@ check_data_consistency() {
 
         log "INFO" "Stop DN ${dn_ip}, query from ${query_host} and diff vs baseline"
         if ! stop_one_datanode "${dn_ip}"; then
-            start_one_datanode "${dn_ip}"
+            start_one_datanode "${dn_ip}" || return 1
             continue
         fi
 
         if ! run_consistency_query "${query_host}" tree "${tree_sql}" "${run_artifact_dir}/stop_${dn_ip}_tree.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            start_one_datanode "${dn_ip}" || return 1; wait_for_sync_lag_zero 600 || return 1; continue
         fi
         if ! run_consistency_query "${query_host}" table "${table_sql}" "${run_artifact_dir}/stop_${dn_ip}_table.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            start_one_datanode "${dn_ip}" || return 1; wait_for_sync_lag_zero 600 || return 1; continue
         fi
         if ! run_consistency_query "${query_host}" table "${table2_sql}" "${run_artifact_dir}/stop_${dn_ip}_table2.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            start_one_datanode "${dn_ip}" || return 1; wait_for_sync_lag_zero 600 || return 1; continue
         fi
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_tree.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out"
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_table.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out"
@@ -1531,7 +1540,12 @@ check_data_consistency() {
         fi
 
         log "INFO" "Restart DN ${dn_ip} after consistency check"
-        start_one_datanode "${dn_ip}"
+        if ! start_one_datanode "${dn_ip}"; then
+            log "ERROR" "DN ${dn_ip} failed to return Running; abort remaining single-DN checks"
+            return 1
+        fi
+        # 下一轮停机前必须恢复为全节点在线且副本重新追平，避免形成双 DN 离线或用落后副本做校验。
+        wait_for_sync_lag_zero 600 || return 1
     done
 }
 
@@ -1719,7 +1733,7 @@ run_late_remove_cancel() {
             END{exit(hit?0:1)}' "${reg_file}"; then
             hit=1; break
         fi
-        sleep 0.1
+        sleep "${phase_probe_interval}"
     done
     if [ "${hit}" -ne 1 ]; then
         let fail_flag++; v_warnMessage="${v_warnMessage}did not catch region ${rid} Removing state."

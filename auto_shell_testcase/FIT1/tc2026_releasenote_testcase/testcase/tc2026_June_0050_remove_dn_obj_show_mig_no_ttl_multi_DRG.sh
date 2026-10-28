@@ -716,28 +716,73 @@ local object_mismatch_file=""
 function check_dn_jps()
 {
    local v_dn_ip=$1
-   local max_wait_time=$2
-local t1=`date +%s`
-while true
-do
-   v_dn_str=`ssh ${os_user_name}@${v_dn_ip} "sudo jps|grep DataNode"`
-   v_dn_pid=`echo ${v_dn_str}|awk '{print $1}'`
-   if [[ ${v_dn_pid} -gt 0 ]];then
-      sleep 5
-   else
-      break
-   fi
-      t2=`date +%s`
-      t_elp=$((t2-t1))
-      if [[ ${t_elp} -gt ${max_wait_time} ]];then
+   local max_wait_time=${2:-180}
+   local t1=$(date +%s)
+   local v_dn_str=""
+   local v_dn_pid=""
+   local v_dn_pid_after=""
+   local t_elp=0
+   local jstack_round=0
+   local kill_wait=0
+   local v_ssh_rc=0
+   local v_pid_alive=""
+
+   while true; do
+      v_dn_str=$(ssh "${os_user_name}@${v_dn_ip}" "sudo jps | grep DataNode || true" 2>/dev/null)
+      v_ssh_rc=$?
+      if [[ ${v_ssh_rc} -ne 0 ]]; then
+         echo "Failed to query DataNode ${v_dn_ip} process status (ssh rc=${v_ssh_rc})."
          let fail_flag++
-         echo "Stopping takes too long."
-# kill -9
-         ssh ${v_dn_ip}@${v_dn_ip} "sudo kill -9 ${v_dn_pid}."
-         break
+         return 1
+      fi
+      v_dn_pid=$(printf '%s\n' "${v_dn_str}" | awk 'NR == 1 {print $1}')
+      if [[ ! "${v_dn_pid}" =~ ^[0-9]+$ ]]; then
+         return 0
       fi
 
-done
+      t_elp=$(( $(date +%s) - t1 ))
+      if [[ ${t_elp} -gt ${max_wait_time} ]]; then
+         let fail_flag++
+         echo "Stopping DataNode ${v_dn_ip} (PID ${v_dn_pid}) took ${t_elp}s; collecting 3 jstacks before force kill."
+         for ((jstack_round=1; jstack_round<=3; jstack_round++)); do
+            echo "===== jstack ${jstack_round}/3 for DataNode ${v_dn_ip} (PID ${v_dn_pid}) ====="
+            ssh "${os_user_name}@${v_dn_ip}" "sudo jstack ${v_dn_pid}" 2>&1 || true
+            if [[ ${jstack_round} -lt 3 ]]; then
+               sleep 10
+            fi
+         done
+
+         echo "Force killing DataNode ${v_dn_ip} (PID ${v_dn_pid}) with kill -9."
+         ssh "${os_user_name}@${v_dn_ip}" "sudo kill -9 ${v_dn_pid}" 2>&1
+         v_ssh_rc=$?
+         if [[ ${v_ssh_rc} -ne 0 ]]; then
+            echo "kill -9 for DataNode ${v_dn_ip} (PID ${v_dn_pid}) returned rc=${v_ssh_rc}; waiting for the process to exit."
+         fi
+
+         # Do not let the caller restart the DataNode until the old PID is gone.
+         for ((kill_wait=1; kill_wait<=12; kill_wait++)); do
+            sleep 5
+            v_dn_str=$(ssh "${os_user_name}@${v_dn_ip}" "sudo jps | grep DataNode || true" 2>/dev/null)
+            v_ssh_rc=$?
+            if [[ ${v_ssh_rc} -eq 0 ]]; then
+               v_dn_pid_after=$(printf '%s\n' "${v_dn_str}" | awk -v pid="${v_dn_pid}" '$1 == pid {print $1; exit}')
+               if [[ -z "${v_dn_pid_after}" ]]; then
+                  echo "DataNode ${v_dn_ip} (PID ${v_dn_pid}) exited after kill -9."
+                  return 0
+               fi
+            fi
+         done
+
+         v_dn_str=$(ssh "${os_user_name}@${v_dn_ip}" "sudo jps | grep DataNode || true" 2>/dev/null)
+         v_dn_pid_after=$(printf '%s\n' "${v_dn_str}" | awk -v pid="${v_dn_pid}" '$1 == pid {print $1; exit}')
+         echo "DataNode ${v_dn_ip} (PID ${v_dn_pid}) is still running after kill -9; skip restart."
+         if [[ -n "${v_dn_pid_after}" ]]; then
+            echo "DataNode process still reported by jps as PID ${v_dn_pid_after}."
+         fi
+         return 1
+      fi
+      sleep 5
+   done
 }
 
 function check_data_consistent()
@@ -791,7 +836,10 @@ wait_sync_done 180
 
       # stop dn
       ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};sudo ./sbin/stop-datanode.sh"
-      check_dn_jps ${line} 120
+      if ! check_dn_jps "${line}" 180; then
+         echo "DataNode ${line} did not exit cleanly; skip restart."
+         return 1
+      fi
       if [[ ${query_ip} = ${line} ]];then
          query_ip=${query_ip2}
       fi
@@ -967,8 +1015,24 @@ local drop_elapsed_sec=0
       return 1
    fi
 
+   # 修改日期：2026-09-14；树模型暂不支持高可用 DROP DATABASE，需在停止 1 个 DN 前完成树模型删除。
+   # Measure the real asynchronous DROP duration: from issuing the Tree DROP SQL until
+   # catalog, migration procedures and all physical Region paths are fully removed.
+   drop_begin_sec=`date +%s`
+   run_cli_sql "${query_ip}" tree "DROP DATABASE ${tree_db};" "${drop_tree_out}" 3600
+   cli_rc=$?
+   if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${drop_tree_out}"; then
+      let fail_flag++
+      let backup_log_flag++
+      v_warnMessage="${v_warnMessage}.DROP TREE DATABASE ${tree_db} failed."
+      cat "${drop_tree_out}"
+   fi
    ssh "${os_user_name}@${stop_ip}" "source /etc/profile; cd ${db_dir}; sudo ./sbin/stop-datanode.sh"
-   check_dn_jps "${stop_ip}" 180
+   if ! check_dn_jps "${stop_ip}" 180; then
+      let backup_log_flag++
+      v_warnMessage="${v_warnMessage}.Failed to stop selected DataNode ${stop_dn_id}@${stop_ip}; old process was not confirmed stopped."
+      return 1
+   fi
    if ssh "${os_user_name}@${stop_ip}" "source /etc/profile; sudo jps | grep -q DataNode"; then
       let fail_flag++
       let backup_log_flag++
@@ -986,9 +1050,9 @@ local drop_elapsed_sec=0
       function trim(s){gsub(/^[ \t]+|[ \t]+$/, "", s); return s}
       /^\+/ || /^Total line number/ || /^It costs/ {next}
       /\|/ {
-         if (!header && $0 ~ /DataNodeId/ && $0 ~ /Status/) {
+         if (!header && ($0 ~ /DataNodeId/ || $0 ~ /NodeID/) && $0 ~ /Status/) {
             for(i=1;i<=NF;i++) {
-               c=trim($i); if(c=="DataNodeId") dn=i; else if(c=="Status") status=i; else if(c=="RpcAddress") rpc=i
+               c=trim($i); if(c=="DataNodeId" || c=="NodeID") dn=i; else if(c=="Status") status=i; else if(c=="RpcAddress") rpc=i
             }
             header=1; next
          }
@@ -1008,17 +1072,7 @@ local drop_elapsed_sec=0
    done
    echo "DataNode ${stop_dn_id}@${stop_ip} process exited and SHOW DATANODES status is Unknown."
 
-   # Measure the real asynchronous DROP duration: from issuing the first DROP SQL until
-   # catalog, migration procedures and all physical Region paths are fully removed.
-   drop_begin_sec=`date +%s`
-   run_cli_sql "${query_ip}" tree "DROP DATABASE ${tree_db};" "${drop_tree_out}" 3600
-   cli_rc=$?
-   if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${drop_tree_out}"; then
-      let fail_flag++
-      let backup_log_flag++
-      v_warnMessage="${v_warnMessage}.DROP TREE DATABASE ${tree_db} failed."
-      cat "${drop_tree_out}"
-   fi
+   # 停止 1 DN 后再验证表模型 DROP DATABASE。
    run_cli_sql "${query_ip}" table "DROP DATABASE ${table_db};" "${drop_table_out}" 3600
    cli_rc=$?
    if [[ ${cli_rc} -ne 0 ]] || grep -Eq "Exception|Error:" "${drop_table_out}"; then

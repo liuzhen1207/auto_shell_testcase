@@ -11,6 +11,8 @@ nodeinfo_dir="${cur_dir}/../conf"
 os_user_name=$(grep ^os_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_user_name=$(grep ^db_user_name "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_admin_name=${db_user_name}
+db_sec_admin_name=${db_user_name}
+
 testdb=$(grep ^v_testdb "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 db_parent_dir=$(grep ^v_db_parent_dir "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
 shell_client_db_parent_dir=$(grep "^v_shell_client_db_parent_dir=" "${conf_file}" | awk -F '=' '{gsub(/ /,""); print $2}')
@@ -408,9 +410,9 @@ function testcase1()
    fail_flag=0
    test_user=javadi
    other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${other_user}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
    check_res "success" 1 "grant system to user ${test_user}"
@@ -436,10 +438,15 @@ function testcase1()
    ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
    check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
 # drop locked user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
+  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
+
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${other_user}"
 
    check_log testcase1
    if [[ ${fail_flag} -gt 0 ]];then
@@ -455,9 +462,9 @@ function testcase2()
    fail_flag=0
    test_user=javadi
    other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${other_user}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
    check_res "success" 1 "grant system to user ${test_user}"
@@ -493,10 +500,15 @@ function testcase2()
    check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
 
 # drop locked user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
+  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
+
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${other_user}"
 
    check_log testcase2
    if [[ ${fail_flag} -gt 0 ]];then
@@ -512,9 +524,9 @@ function testcase3()
    fail_flag=0
    test_user=javadi
    other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${other_user}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
    check_res "success" 1 "grant system to user ${test_user}"
@@ -541,9 +553,14 @@ function testcase3()
    check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "list user;"
 # drop test_user,create same name
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
+
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${test_user}"
+  ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${test_user}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "list user;"
 
@@ -558,15 +575,24 @@ function testcase3()
    ${cli_dir}/sbin/start-cli.sh -u ${test_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
    check_res "Running" ${node_num} "${test_user}@${query_ip} is not locked because it is a new user but"
 
+   # restore SYSTEM so the unlocked user can run the privilege-gated SHOW CLUSTER check
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${other_user};">${current_dir}/tmp.out
+   check_res "success" 1 "grant system to user ${other_user}"
+
 # other user is not lock
    ${cli_dir}/sbin/start-cli.sh -u ${other_user} -h ${query_ip} -pw TimechoDB@2021 -e "show cluster;" >${current_dir}/tmp.out
    check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
 
 # drop locked user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
+  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
+
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${other_user}"
 
    check_log testcase3
    if [[ ${fail_flag} -gt 0 ]];then
@@ -582,9 +608,9 @@ function testcase4()
    fail_flag=0
    test_user=javadi
    other_user=santos
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${test_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "create user ${other_user} 'TimechoDB@2021';">${current_dir}/tmp.out
    check_res "success" 1 "create user ${other_user}"
    ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "grant system to user ${test_user};">${current_dir}/tmp.out
    check_res "success" 1 "grant system to user ${test_user}"
@@ -651,10 +677,15 @@ function testcase4()
    check_res "Running" ${node_num} "${other_user} is not locked so expect ${node_num} Running node but "
 
 # drop  user
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${test_user}"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
-   check_res "success" 1 "${db_admin_name} drop user ${other_user}"
+  ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_admin_name} -h ${query_ip} -sql_dialect table -e "revoke system from user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "revoke system from user ${other_user}"
+
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${test_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${test_user}"
+   ${cli_dir}/sbin/start-cli.sh -u ${db_sec_admin_name} -h ${query_ip} -e "drop user ${other_user} ;">${current_dir}/tmp.out
+   check_res "success" 1 "${db_sec_admin_name} drop user ${other_user}"
 
    check_log testcase4
    if [[ ${fail_flag} -gt 0 ]];then

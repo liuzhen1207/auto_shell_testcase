@@ -417,6 +417,12 @@ wait_for_sync_completion() {
 
             echo "  实例 $instance: Total Sync Lag = $sync_lag (集群: $cluster, 类型: $node_type)"
 
+            # ========== 关键修改1：初始化未定义的数组键 ==========
+            # 检查instance对应的键是否存在，不存在则初始化为false
+            if [[ ! -v last_node_status[$instance] ]]; then
+                last_node_status[$instance]="false"
+            fi
+
             # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
             if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
                 has_non_zero=true

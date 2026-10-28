@@ -385,7 +385,7 @@ wait_for_sync_completion() {
 
         # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
         local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=pipe_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22PipeConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
+            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus_v2%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22IoTConsensusV2ServerImpl%22%2Ctype%3D%22syncLag%22%7D")
 
         # 检查响应是否成功
         if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
@@ -417,11 +417,18 @@ wait_for_sync_completion() {
 
             echo "  实例 $instance: Total Sync Lag = $sync_lag (集群: $cluster, 类型: $node_type)"
 
+            # ========== 关键修改1：初始化未定义的数组键 ==========
+            # 检查instance对应的键是否存在，不存在则初始化为false
+            if [[ ! -v last_node_status[$instance] ]]; then
+                last_node_status[$instance]="false"
+            fi
+
             # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
             if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
                 has_non_zero=true
                 all_zero=false  # 只要有一个节点>0，就不满足退出条件
 
+                # ========== 关键修改2：安全访问数组键（已初始化） ==========
                 # 核心逻辑：只有上一次状态也是>0时，才累加fail_flag
                 if [[ ${last_node_status[$instance]} == "true" ]]; then
                     ((fail_flag++))
@@ -454,7 +461,6 @@ wait_for_sync_completion() {
         sleep 1
     done
 }
-
 function wait_sync_done()
 {
 local max_wait_time=$1

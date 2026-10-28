@@ -463,6 +463,26 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "delete from d
 #get bin_tmp count
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "flush;"
 sleep 2
+exp_obj_num=$((dr_rep_num*99))
+for wait_i in {1..30}
+do
+   bef_ttl_obj_total_count=0
+   exec 3<${nodeinfo_dir}/datanode.txt
+   while read line<&3
+   do
+      v_data2_obj_count=`ssh ${os_user_name}@${line} "find ${db_dir}/data/datanode/data/object -type f -name \"*.bin\" |wc -l"`
+      v_data1_obj_count=`ssh ${os_user_name}@${line} "find ${data1_dir}/datanode/data/object -type f -name \"*.bin\" |wc -l"`
+      v_data3_obj_count=`ssh ${os_user_name}@${line} "find ${data3_dir}/datanode/data/object -type f -name \"*.bin\" |wc -l"`
+      bef_ttl_obj_total_count=$((bef_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
+   done
+   echo "object files before TTL attempt ${wait_i}: ${bef_ttl_obj_total_count}/${exp_obj_num}"
+   if [[ ${bef_ttl_obj_total_count} = ${exp_obj_num} ]];then
+      break
+   fi
+   sleep 2
+done
+
+# Recount once after the replication wait; the 198-file assertion below is intentional.
 bef_ttl_obj_total_count=0
 exec 3<${nodeinfo_dir}/datanode.txt
 while read line<&3
@@ -472,7 +492,6 @@ do
    v_data3_obj_count=`ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
    bef_ttl_obj_total_count=$((bef_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
 done
-exp_obj_num=$((dr_rep_num*99))
 if [[ ${bef_ttl_obj_total_count} != ${exp_obj_num} ]];then
         echo "bef_ttl_obj_total_count ${bef_ttl_obj_total_count} != ${exp_obj_num}"
 	let fail_flag++
@@ -485,9 +504,9 @@ do
 	exec 3<${nodeinfo_dir}/datanode.txt
 	while read line<&3
 	do
-	   v_data2_obj_count=`ssh ${os_user_name}@${line} "find -name ${db_dir}/data/datanode/data/object -name *.bin |wc  -l"`
-	   v_data1_obj_count=`ssh ${os_user_name}@${line} "find -name ${data1_dir}/datanode/data/object -name *.bin |wc  -l"`
-	   v_data3_obj_count=`ssh ${os_user_name}@${line} "find -name ${data3_dir}/datanode/data/object -name *.bin |wc  -l"`
+	   v_data2_obj_count=`ssh ${os_user_name}@${line} "find ${db_dir}/data/datanode/data/object -type f -name '*.bin' |wc -l"`
+	   v_data1_obj_count=`ssh ${os_user_name}@${line} "find ${data1_dir}/datanode/data/object -type f -name '*.bin' |wc -l"`
+	   v_data3_obj_count=`ssh ${os_user_name}@${line} "find ${data3_dir}/datanode/data/object -type f -name '*.bin' |wc -l"`
 	   aft_ttl_obj_total_count=$((aft_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
 	done
 	if [[ ${aft_ttl_obj_total_count} -gt 0 ]];then

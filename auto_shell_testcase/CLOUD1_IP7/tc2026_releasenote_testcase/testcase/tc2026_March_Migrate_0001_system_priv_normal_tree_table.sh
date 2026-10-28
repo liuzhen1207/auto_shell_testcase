@@ -31,8 +31,15 @@ backup_flag=0
 backup_log_flag=0
 v_warnNum=0
 v_warnMessage="."
+v_audit_log_count=0
+v_audit_log_max_bytes=0
+v_audit_log_avg_bytes=0
+v_audit_log_summary="audit_log_count=0,max_bytes=0,avg_bytes=0,threshold_bytes=1048576"
 v_consensus="IoTConsensus"
 v_mig_user_name="migrate_user"
+# Use the same benchmark configuration for writes, gate targets and count queries.
+bm_dir=${cur_dir}/../benchmark/bm_20251017_b6be9bd_ssl
+bm_conf=tree_table_100w
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
 rm -rf "${nodeinfo_dir}/datanode.txt"
@@ -46,6 +53,7 @@ mig_from_ip=$(sed -n "2p" "${nodeinfo_dir}/datanode.txt")
 
 fail_flag=0
 sync_fail_flag=0
+result_writeback_fail=0
 # if > 0 exit test 
 prepare_fail_flag=0
 
@@ -58,6 +66,139 @@ log() {
     echo "[${timestamp}] [${level}] ${msg}" >> "${log_file}"
     echo "[${timestamp}] [${level}] ${msg}"
 }
+
+# Share the exact HA-0005 gate; fail before cluster setup if dependencies are absent.
+artifact_dir="${cur_dir}/MM-0001_$(date +%Y_%m_%d_%H_%M_%S)_$$"
+mkdir -p "$artifact_dir" || exit 1
+cluster_id=$CLUSTER_ID
+dn_metric_port=9091
+HA_SYNC_STABLE_SECONDS=${MM_SYNC_STABLE_SECONDS:-120}
+HA_SYNC_POLL_SECONDS=${MM_SYNC_POLL_SECONDS:-5}
+HA_GATE_CLI_TIMEOUT=${MM_SYNC_CLI_TIMEOUT:-30}
+sync_lag_timeout_seconds=${MM_SYNC_LAG_TIMEOUT:-600}
+ha_sync_support_dir=${HA_SYNC_SUPPORT_DIR:-$cur_dir}
+mm_check="$cur_dir/mm0001_check.py"
+if [ ! -f "$ha_sync_support_dir/ha_sync_gate.sh" ] && [ -f "$cur_dir/high_available/ha_sync_gate.sh" ]; then
+    ha_sync_support_dir="$cur_dir/high_available"
+fi
+record_fail() {
+    fail_flag=$((fail_flag+1))
+    v_warnMessage="$v_warnMessage $1."
+    log ERROR "$1"
+}
+for mm_dep in "$ha_sync_support_dir/ha_sync_gate.sh" "$ha_sync_support_dir/ha_sync_check.py" "$mm_check"; do
+    [ -s "$mm_dep" ] || { record_fail "SYNC_GATE_CONFIG missing $mm_dep"; exit 1; }
+done
+source "$ha_sync_support_dir/ha_sync_gate.sh" || exit 1
+ha_gate_setup || exit 1
+ha_sync_gate_failed=0
+ha_consistency_topology=''
+mm_stopped_dn=''
+v_audit_log_summary="audit_status=NOT_RUN"
+export PYTHONPATH="$ha_sync_support_dir${PYTHONPATH:+:$PYTHONPATH}"
+
+# MM-0001 ADAPTER FUNCTIONS BEGIN
+mm_cli() {
+    local host=$1 dialect=$2 sql=$3 output=$4 seconds=${5:-${MM_QUERY_TIMEOUT:-3600}}
+    timeout -k 5 "$seconds" "$cli_dir/sbin/start-cli.sh" -u "$db_user_name" ${ssl_str} \
+      -h "$host" -timeout "$seconds" -sql_dialect "$dialect" -e "$sql" >"$output" 2>&1 || return 1
+    [ -s "$output" ] && ! grep -Eqi 'Exception|(^|[^a-z])(error|failed)([^a-z]|$)' "$output"
+}
+wait_for_sync_lag_zero() {
+    if ! ha_wait_sync "$@"; then sync_fail_flag=1; return 1; fi
+    return 0
+}
+mm_prepare_benchmark() {
+    if ! "$ha_sync_python" "$mm_check" benchmark "$bm_dir/$bm_conf" \
+        >"$artifact_dir/benchmark_targets.tsv" 2>"$artifact_dir/benchmark_targets.err"; then
+        record_fail "BENCHMARK_CONFIG_ERROR see $artifact_dir/benchmark_targets.err"; return 1
+    fi
+    IFS=$'\t' read -r MM_TREE_PATH TABLE_DB MM_TABLE_NAME <"$artifact_dir/benchmark_targets.tsv" || return 1
+    log INFO "BENCHMARK_TARGETS config=$bm_dir/$bm_conf tree=$MM_TREE_PATH table=$TABLE_DB.$MM_TABLE_NAME"
+}
+mm_prepare_membership() {
+    # Freeze the expected four nodes from configuration, excluding only the
+    # intentionally removed source. An unexpected absent node must not disappear
+    # from the gate's expectations.
+    local ip removed=0
+    DN_IPS=()
+    while IFS= read -r ip; do
+        ip=${ip//[[:space:]]/}
+        [ -n "$ip" ] || continue
+        if [ "$ip" = "$mig_from_ip" ]; then removed=$((removed+1)); else DN_IPS+=("$ip"); fi
+    done <"$nodeinfo_dir/datanode.txt"
+    if [ "$removed" -ne 1 ] || [ "${#DN_IPS[@]}" -ne $((dn_num-1)) ]; then
+        record_fail 'SYNC_GATE_CONFIG invalid post-removal membership'; return 1
+    fi
+    query_ip=${DN_IPS[0]}
+    mm_cli "$query_ip" tree 'show regions' "$artifact_dir/resolve_tree_database.raw" 60 ||
+        { record_fail 'QUERY_ERROR resolve tree database'; return 1; }
+    TREE_DB=$("$ha_sync_python" "$mm_check" database "$artifact_dir/resolve_tree_database.raw" "$MM_TREE_PATH" \
+        2>"$artifact_dir/resolve_tree_database.err") ||
+        { record_fail 'SYNC_GATE_CONFIG cannot resolve benchmark database'; return 1; }
+    log INFO "SYNC_GATE expected DN=${DN_IPS[*]} databases=$TREE_DB,$TABLE_DB port=$dn_metric_port"
+}
+mm_capture_counts() {
+    local host=$1 prefix=$2 model sql rc=0
+    for model in tree table; do
+        if [ "$model" = tree ]; then
+            sql="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from ${MM_TREE_PATH}.** align by device"
+        else
+            sql="select device_id,count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from ${TABLE_DB}.${MM_TABLE_NAME} group by device_id order by device_id"
+        fi
+        printf '%s\n' "$sql" >"${prefix}_$model.sql" || return 1
+        if ! mm_cli "$host" "$model" "$sql" "${prefix}_$model.raw"; then rc=1; continue; fi
+        "$ha_sync_python" "$mm_check" counts "${prefix}_$model.raw" "$model" \
+          >"${prefix}_$model.normalized" 2>"${prefix}_$model.parse.err" || rc=1
+    done
+    return "$rc"
+}
+mm_compare_fixed() {
+    local host=$1 label=$2 model rc=0
+    mm_capture_counts "$host" "$artifact_dir/$label" ||
+        { record_fail "QUERY_ERROR $label via=$host"; return 1; }
+    for model in tree table; do
+        if ! diff -u "$artifact_dir/baseline_$model.normalized" "$artifact_dir/${label}_$model.normalized" \
+          >"$artifact_dir/${label}_$model.diff"; then
+            record_fail "DATA_MISMATCH $label model=$model via=$host"; rc=1
+        fi
+    done
+    return "$rc"
+}
+mm_compare_entries() {
+    local label=$1 ip rc=0
+    # An entry node is not a forced local-replica read.
+    for ip in "${DN_IPS[@]}"; do mm_compare_fixed "$ip" "${label}_$ip" || rc=1; done
+    return "$rc"
+}
+mm_stop_dn() {
+    local ip=$1 begin=$SECONDS state
+    mm_stopped_dn=$ip
+    timeout -k 5 150 ssh -n -o ConnectTimeout=10 "$os_user_name@$ip" \
+      "source /etc/profile; cd '$db_dir'; ./sbin/stop-datanode.sh" \
+      >"$artifact_dir/stop_$ip.log" 2>&1 ||
+        { record_fail "STOP_ERROR $ip"; return 1; }
+    while [ $((SECONDS-begin)) -lt 180 ]; do
+        state=$(timeout -k 5 20 ssh -n -o ConnectTimeout=10 "$os_user_name@$ip" \
+          "source /etc/profile; jps" 2>>"$artifact_dir/stop_$ip.log") || {
+            record_fail "STOP_CHECK_ERROR $ip"; return 1;
+        }
+        # An unreachable SSH host is never treated as proof of process exit.
+        if ! printf '%s\n' "$state" | grep -q DataNode; then return 0; fi
+        sleep 3
+    done
+    record_fail "STOP_TIMEOUT $ip"; return 1
+}
+mm_start_dn() {
+    local ip=$1
+    timeout -k 5 90 ssh -n -o ConnectTimeout=10 "$os_user_name@$ip" \
+      "source /etc/profile; cd '$db_dir'; ./sbin/start-datanode.sh -d >/dev/null 2>&1 </dev/null" \
+      >"$artifact_dir/start_$ip.log" 2>&1 ||
+        { record_fail "START_ERROR $ip"; return 1; }
+    # The subsequent common gate, not the launch acknowledgement, proves recovery.
+    mm_stopped_dn=''
+}
+# MM-0001 ADAPTER FUNCTIONS END
 
 # 清理环境函数
 clean_env() {
@@ -377,8 +518,6 @@ fi
 }
 function start_bm()
 {
-bm_dir=${cur_dir}/../benchmark/bm_20251017_b6be9bd_ssl
-bm_conf=tree_table_100w
 ts_num=500000
 #get root password
 #v_bm_test_time=54000000
@@ -419,304 +558,63 @@ do
 done
 sleep 60
 }
-function wait_sync_done()
-{
-local max_wait_time=$1
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
-   cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
-   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
-   exec 3<${cur_dir}/tmp.out
-   while read line<&3
-   do
-   while true
-   do
-   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep db_table">${cur_dir}/tmp1.out
-   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep root.test">${cur_dir}/tmp2.out
-   last_time_str1=$(tail -n 1 "${cur_dir}/tmp1.out" | awk -F',' '{print $1}')
-   last_time_str2=$(tail -n 1 "${cur_dir}/tmp2.out" | awk -F',' '{print $1}')
-   last_timestamp1=$(date -d "$last_time_str1" +%s 2>/dev/null)
-   last_timestamp2=$(date -d "$last_time_str2" +%s 2>/dev/null)
-   if [[ ${last_timestamp1} -gt ${last_timestamp2} ]];then
-      last_timestamp=${last_timestamp1}
-   else
-      last_timestamp=${last_timestamp2}
-
-   fi
-current_timestamp=$(date +%s)
-
-# 计算时间差（秒）
-time_diff=$((current_timestamp - last_timestamp))
-# 判断是否超过1分钟（120秒）
-if [ $time_diff -gt ${max_wait_time} ]; then
-    echo "最后一条日志距离现在已超过（${time_diff}秒）"
-    break
-else
-    v_sleep=$((max_wait_time-time_diff+1))
-    sleep ${v_sleep}
-#    echo "最后一条日志距离现在（${time_diff}秒）"
-fi
-   done
-   done
-
-}
-function check_dn_jps()
-{
-   local v_dn_ip=$1
-   local max_wait_time=$2
-local t1=`date +%s`
-while true
-do
-   v_dn_str=`ssh ${os_user_name}@${v_dn_ip} "jps|grep DataNode"`
-   v_dn_pid=`echo ${v_dn_str}|awk '{print $1}'`
-   if [[ ${v_dn_pid} -gt 0 ]];then
-      sleep 5
-   else
-      break
-   fi
-      t2=`date +%s`
-      t_elp=$((t2-t1))
-      if [[ ${t_elp} -gt ${max_wait_time} ]];then
-         let fail_flag++
-         echo "Stopping takes too long."
-# kill -9
-         ssh ${v_dn_ip}@${v_dn_ip} "kill -9 ${v_dn_pid}."
-         break
-      fi
-
-done
-}
-# 监控 Total Sync Lag 直到所有 DataNode 连续 5 分钟为 0
-wait_for_sync_completion() {
-    # Prometheus服务器信息
-    local PROMETHEUS_URL=$(grep ^monitor_url "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-    local PROMETHEUS_USER=admin
-    local PROMETHEUS_PASS=admin
-
-    # 连续时间（秒）- 120秒
-    local TARGET_DURATION=120
-    local current_duration=0
-    local start_time=$(date +%s)
-
-    # 关联数组：追踪每个DataNode上一次的sync lag状态（true=上一次>0，false=上一次=0）
-    declare -A last_node_status
-
-    echo "开始监控 Total Sync Lag，目标连续 ${TARGET_DURATION} 秒所有 DataNode 均为 0..."
-
-    while true; do
-        # 获取当前时间
-        local current_time=$(date +%s)
-        local elapsed_time=$((current_time - start_time))
-        local all_zero=true  # 标记本次检测是否所有节点都为0
-        local has_non_zero=false  # 标记本次是否有节点>0
-
-        # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
-        local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22ioTConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
-
-        # 检查响应是否成功
-        if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 错误: 无法从 Prometheus 获取数据"
-            echo "响应: $response"
-            sleep 1
-            continue
-        fi
-
-        # 提取结果列表，避免重复解析jq
-        local results=$(echo "$response" | jq -r '.data.result')
-        local result_count=$(echo "$results" | jq -r 'length')
-
-        if [[ $result_count -eq 0 ]]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 警告: 未找到 Total Sync Lag 指标数据"
-            sleep 1
-            continue
-        fi
-
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] 找到 $result_count 个 Total Sync Lag 指标"
-
-        # 遍历每个DataNode的指标
-        for ((i=0; i<result_count; i++)); do
-            # 一次性提取当前节点的所有信息
-            local instance=$(echo "$results" | jq -r ".[$i].metric.instance")
-            local sync_lag=$(echo "$results" | jq -r ".[$i].value[1]")
-            local cluster=$(echo "$results" | jq -r ".[$i].metric.cluster")
-            local node_type=$(echo "$results" | jq -r ".[$i].metric.nodeType")
-
-            echo "  实例 $instance: Total Sync Lag = $sync_lag (集群: $cluster, 类型: $node_type)"
-
-            # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
-            if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
-                has_non_zero=true
-                all_zero=false
-
-                # 核心逻辑：只有上一次状态也是>0时，才累加fail_flag
-                if [[ ${last_node_status[$instance]} == "true" ]]; then
-                    ((fail_flag++))
-                    ((sync_fail_flag++))
-                    v_warnMessage="sync lag > 0: 实例 $instance 持续大于0，fail_flag 累加至 $fail_flag"
-                    echo "  ⚠️  $v_warnMessage"
-                else
-                    # 首次检测到>0，仅更新状态，不累加
-                    v_warnMessage="sync lag > 0: 实例 $instance 首次大于0，暂不累加fail_flag"
-                    echo "  ⚠️  $v_warnMessage"
-                fi
-
-                # 更新当前节点的状态为>0
-                last_node_status[$instance]="true"
-            else
-                # sync lag=0，更新状态为false，不累加
-                last_node_status[$instance]="false"
-            fi
-        done
-
-        # 重置计时逻辑：仅当本次有节点>0时，才重置连续为0的计时
-        if $has_non_zero; then
-            current_duration=0
-            start_time=$(date +%s)
-            echo "  ❌ 存在DataNode Sync Lag>0，重置连续为0计时"
-        else
-            # 所有节点都为0，累计连续时长
-            current_duration=$((current_time - start_time))
-            echo "✅ 所有 DataNode 的 Total Sync Lag 均为 0，已持续 ${current_duration} 秒"
-
-            # 检查是否达到目标时长
-            if [[ $current_duration -ge $TARGET_DURATION ]]; then
-                echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒均为 0"
-                echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
-                return 0
-            fi
-        fi
-
-        # 间隔1秒检测一次
-        sleep 1
-    done
-}
-
 function check_data_consistent()
 {
-wait_sync_done 180
-wait_for_sync_completion
-${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;create or replace view table_0(device_id string tag) as root.test.g_0.**;"
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
-   cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
-   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
-   sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.testdb.g_0.** align by device;"
-   sql2="select device_id,count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from tabledb_g_0.table_0 group by device_id order by device_id;"
-   exception_num=0
-   # all online
-   while true
-   do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
-   v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
-   if [[ ${v_exception_num} = 0 ]];then
-	   break
-   else
-           let exception_num++
-	   sleep 1
-   fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
-   done
-   exception_num=0
-   while true
-   do
-   ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table.out
-   v_exception_num=`grep Exception ${cur_dir}/q_all_online_table.out|wc -l`
-   if [[ ${v_exception_num} = 0 ]];then
-           break
-   else
-           let exception_num++
-           sleep 1
-   fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
+    local ip peer pass round_bad
+    mm_prepare_membership || return 1
+    ha_consistency_topology=''
+    wait_for_sync_lag_zero "$sync_lag_timeout_seconds" initial || return 1
+    ha_consistency_topology=$ha_sync_ready_dir
+    mm_capture_counts "$query_ip" "$artifact_dir/baseline" ||
+        { record_fail 'QUERY_ERROR baseline'; return 1; }
+    for pass in 1 2; do mm_compare_entries "baseline_verify_$pass" || return 1; done
+    for ip in "${DN_IPS[@]}"; do
+        wait_for_sync_lag_zero "$sync_lag_timeout_seconds" "pre_stop_$ip" || return 1
+        mm_compare_entries "pre_stop_$ip" || return 1
+        peer=''
+        for peer in "${DN_IPS[@]}"; do [ "$peer" != "$ip" ] && break; done
+        round_bad=0
+        if mm_stop_dn "$ip"; then
+            mm_compare_fixed "$peer" "stop_$ip" || round_bad=1
+        else
+            round_bad=1
+        fi
+        # Restore even after a failed stop command/query/data assertion.
+        mm_start_dn "$ip" || return 1
+        wait_for_sync_lag_zero "$sync_lag_timeout_seconds" "post_recovery_$ip" "$peer" || return 1
+        mm_compare_entries "post_recovery_$ip" || return 1
+        [ "$round_bad" -eq 0 ] || return 1
+    done
+    log INFO 'MM-0001 consistency rounds complete'
+}
 
-   done
-
-   # stop dn
-   exec 3<${cur_dir}/tmp.out
-   while read line<&3
-   do
-   query_ip=`head -1 ${cur_dir}/tmp.out`
-   query_ip2=`tail -1 ${cur_dir}/tmp.out`
-
-      # stop dn
-      ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};./sbin/stop-datanode.sh"
-      check_dn_jps ${line} 120
-      if [[ ${query_ip} = ${line} ]];then
-         query_ip=${query_ip2}
-      fi
-      v_ip=`echo ${line}|awk -F '.' '{print $4}'`
-      exception_num=0
-      while true
-      do
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_tree.out|wc -l`
-      if [[ ${v_exception_num} = 0 ]];then
-           break
-      else
-           let exception_num++
-           sleep 1
-      fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
-
-      done
-   exception_num=0
-      while true
-      do
-
-      ${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table.out
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table.out|wc -l`
-      if [[ ${v_exception_num} = 0 ]];then
-           break
-      else
-           let exception_num++
-           sleep 1
-      fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
-
-      done
-
-      v_diff_tree=`diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"|wc -l`
-      v_diff_table=`diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"|wc -l`
-      v_diff_total=$((v_diff_tree+v_diff_table))
-      if [[ ${v_diff_total} -gt 0 ]];then
-         let fail_flag++
-         diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
-         diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"
-         v_warnMessage="Failed to check replica data consistency."
-         echo "diff : ${v_diff_total}"
-      fi
-      # restart
-      v_start_time=`date +%s`
-      ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};./sbin/start-datanode.sh -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
-      while true
-      do
-      v_start_ok=`${cli_dir}/sbin/start-cli.sh -u ${db_user_name} ${ssl_str} -h ${line}  -timeout 3600 -e "show datanodes;"|grep "${line}|"|grep Running|wc -l`
-      if [[ ${v_start_ok} -gt 0 ]];then
-         break
-      else
-         sleep 1
-      fi
-      v_cur_time=`date +%s`
-      v_elp_time=$((v_cur_time-v_start_time))
-      if [[ ${v_elp_time} -gt 180 ]];then
-         let fail_flag++
-         echo "restart ${line} failed."
-         return
-      fi
-      done
-   done
+function check_audit_log_size()
+{
+    local threshold=${TDB8_AUDIT_MAX_BYTES:-1048576}
+    local raw="$artifact_dir/audit_log_size.raw" parsed="$artifact_dir/audit_log_size.parsed"
+    local count size maximum devices average
+    v_audit_log_summary="audit_status=UNKNOWN"
+    if ! [[ "$threshold" =~ ^[1-9][0-9]*$ ]]; then
+        record_fail 'AUDIT_CONFIG_ERROR invalid threshold'; return 1
+    fi
+    if ! mm_cli "$query_ip" tree \
+      "select count(length(log)),sum(length(log)),max_value(length(log)) from root.__audit.log.** where time >= $((v_start_test_time*1000)) align by device" "$raw" 120; then
+        v_audit_log_summary='audit_status=QUERY_ERROR'
+        record_fail 'AUDIT_QUERY_ERROR'; return 1
+    fi
+    if ! "$ha_sync_python" "$mm_check" audit "$raw" >"$parsed" 2>"$artifact_dir/audit_log_size.parse.err"; then
+        v_audit_log_summary='audit_status=PARSE_ERROR'
+        record_fail 'AUDIT_QUERY_PARSE_ERROR'; return 1
+    fi
+    read -r count size maximum devices average <"$parsed"
+    v_audit_log_count=$count
+    v_audit_log_max_bytes=$maximum
+    v_audit_log_avg_bytes=$average
+    v_audit_log_summary="audit_log_count=$count,max_bytes=$maximum,avg_bytes=$average,threshold_bytes=$threshold"
+    log INFO "TDB-8 audit size: $v_audit_log_summary raw=$raw"
+    if [ "$count" = 0 ]; then record_fail 'audit_records_missing'; return 1; fi
+    if [ "$maximum" -gt "$threshold" ]; then record_fail 'audit_log_record_oversized'; return 1; fi
+    return 0
 }
 
 function check_log()
@@ -1160,9 +1058,13 @@ remove_datanode
 wait_benchmark
 # check data
 check_data_consistent
+# capture bounded audit evidence before write_result stops the cluster
+check_audit_log_size
 #check log
 check_log
 }
+# Validate naming before any cluster cleanup/start or benchmark workload.
+mm_prepare_benchmark || exit 1
 # start cluster 
 echo "">${log_file}
 start_db
@@ -1176,48 +1078,59 @@ fi
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
 # record test result
+function sql_escape_result()
+{
+    printf '%s' "$1" | tr '\r\n;' '  ,' | sed "s/'/''/g"
+}
 function write_result()
 {
-   v_result_iotdb_ip=$(grep ^test_result_iotdb_ip "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-   v_bm_max_value=`grep "Test elapsed" ${bm_log_dir}/${bm_test_time}*out|awk '{print $8}'|sort -n|tail -1`
-
-   v_bm_sum_value=`grep "Test elapsed" ${bm_log_dir}/${bm_test_time}*out | awk '{print $8}' | sort -n | awk '{sum+=$1} END {print sum}'`
-   if [[ ${fail_flag} -gt 0 ]];then
-           ${cli_dir}/sbin/start-cli.sh -h ${v_result_iotdb_ip} -e "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','FAIL',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
- 
-           echo "testcase1 fail"
-   else
-           echo "testcase1 pass"
-           ${cli_dir}/sbin/start-cli.sh -h ${v_result_iotdb_ip} -e "insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values(now(),'${testdb}','${SCRIPT_NAME}','${v_consensus}','PASS',${v_elp_time},${v_bm_max_value},${v_bm_sum_value},${v_warnNum},'${v_warnMessage}');"
- 
-# remove bm logs
-#        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm1.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm2.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm1.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm2.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm1.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
-   fi
-
-backup_log_flag=1
-# remove bm logs
-#        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm1.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_pre_bm2.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm1.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_tree_bm2.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm1.out
-#        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
-#   fi
-
-# backup logs?
-if [[ ${backup_log_flag} -gt 0 ]];then
-# stop cluster
-v_tc_name_pre=`echo ${SCRIPT_NAME}|awk -F '.' '{print $1}'`
-v_backup_time=`date +"%Y_%m_%d_%H_%M_%S"`
-sh -x "${clean_env_dir}/stop_cluster.sh" >> "${log_file}" 2>&1
-sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_tc_name_pre}_${v_backup_time}>> "${log_file}" 2>&1
-
-fi
-
+    local result result_message message_value escaped_message escaped_script escaped_db escaped_consensus
+    local out="$artifact_dir/write_result.out" verify_out="$artifact_dir/write_result_verify.out"
+    local stamp sql writeback_ok=0
+    v_result_iotdb_ip=$(grep ^test_result_iotdb_ip "$conf_file" | awk -F '=' '{print $2}' | tr -d '[:space:]')
+    v_bm_max_value=0
+    v_bm_sum_value=0
+    if [ -n "${bm_log_dir:-}" ] && [ -n "${bm_test_time:-}" ]; then
+        v_bm_max_value=$(grep "Test elapsed" "$bm_log_dir/$bm_test_time"*out 2>/dev/null | awk '{print $8}' | sort -n | tail -1)
+        v_bm_sum_value=$(grep "Test elapsed" "$bm_log_dir/$bm_test_time"*out 2>/dev/null | awk '{sum+=$8} END{print sum+0}')
+    fi
+    [[ "$v_bm_max_value" =~ ^[0-9]+([.][0-9]+)?$ ]] || v_bm_max_value=0
+    [[ "$v_bm_sum_value" =~ ^[0-9]+([.][0-9]+)?$ ]] || v_bm_sum_value=0
+    if [ "$fail_flag" -gt 0 ]; then result=FAIL; else result=PASS; fi
+    result_message="$v_warnMessage;$v_audit_log_summary;artifacts=$artifact_dir"
+    printf '%s\n' "$result_message" >"$artifact_dir/result_message.original.txt"
+    message_value=$(printf '%s' "$result_message" | tr '\r\n;' '  ,')
+    escaped_message=$(sql_escape_result "$result_message")
+    escaped_script=$(sql_escape_result "$SCRIPT_NAME")
+    escaped_db=$(sql_escape_result "$testdb")
+    escaped_consensus=$(sql_escape_result "$v_consensus")
+    stamp=$(date +%s%3N)
+    sql="insert into root.test.${CLUSTER_ID}(time,testTimechoDB,testCaseName,testConsensus,testResult,testElapsedTimeSeconds,maxBMTestTimeSec,sumBMTestTimeSec,warnNum,testOtherMessage)values($stamp,'$escaped_db','$escaped_script','$escaped_consensus','$result',$v_elp_time,$v_bm_max_value,$v_bm_sum_value,$v_warnNum,'$escaped_message')"
+    printf '%s\n' "$sql" >"$artifact_dir/write_result.sql"
+    if [ -n "$v_result_iotdb_ip" ] && mm_cli "$v_result_iotdb_ip" tree "$sql" "$out" 60; then
+        if mm_cli "$v_result_iotdb_ip" tree \
+          "select testResult,testCaseName,testOtherMessage from root.test.$CLUSTER_ID where time=$stamp" "$verify_out" 60 &&
+          "$ha_sync_python" "$mm_check" verify "$verify_out" "$SCRIPT_NAME" "$result" "$message_value" \
+             >"$artifact_dir/write_result_verify.status" 2>&1; then
+            writeback_ok=1
+        fi
+    fi
+    if [ "$writeback_ok" -eq 1 ]; then
+        result_writeback_fail=0
+        log INFO "RESULT_WRITEBACK_VERIFIED time=$stamp result=$result"
+    else
+        result_writeback_fail=1
+        log WARN 'RESULT_WRITEBACK_FAILED; preserve original testcase result in artifacts'
+    fi
+    printf 'result=%s\nfail_flag=%s\nwriteback_failed=%s\nartifacts=%s\n' \
+      "$result" "$fail_flag" "$result_writeback_fail" "$artifact_dir" >"$artifact_dir/result.status"
+    echo "testcase1 ${result,,}"
+    log INFO "RESULT fail_flag=${fail_flag} msg=${message_value:-.}"
+    backup_log_flag=1
+    v_tc_name_pre=${SCRIPT_NAME%.sh}
+    v_backup_time=$(date +%Y_%m_%d_%H_%M_%S)
+    sh -x "$clean_env_dir/stop_cluster.sh" >>"$log_file" 2>&1
+    sh -x "$clean_env_dir/backup_cluster_logs.sh" "${v_tc_name_pre}_$v_backup_time" >>"$log_file" 2>&1
 }
+
 write_result

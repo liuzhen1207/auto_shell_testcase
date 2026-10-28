@@ -72,6 +72,10 @@ migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
 dn_metric_port=9092
+# 重启 DN 后，等副本追平再继续停下一台；两次 syncLag 确认之间再静置一段时间（秒）。
+# 背景：CAM_P0_04 曾因 reconstruct 后的副本未追平就停对端，出现 tree 行数偏少。
+# 注意：syncLag 在副本重建/重拉早期可能短暂为 0，所以这里不只看 syncLag，还留固定静置窗口。
+post_restart_settle_seconds=120
 
 # Thrift 最大帧大小: 调到 256MB。默认 0(不限)在大 region 迁移/大 object 写入时可能触发帧过大错误;
 # 显式设 256MB 与 tc0003 参考一致(CN/DN 均设 dn_thrift_max_frame_size)。
@@ -91,7 +95,7 @@ bm_table_conf="${bm_dir}/conf_table"            # 2) 可写视图表(usr_sod0.wr
 bm_table_plain_conf="${bm_dir}/conf_table_plain"  # 3) 普通表(usr_nrm0.normal_table_0, 无 object)
 bm_guard_seconds=$((2 * 3600))          # benchmark 进程硬看门狗
 bm_write_seconds=1200                    # benchmark 写入约 20 分钟(养大 Region)
-bm_test_max_time_ms=$((bm_write_seconds * 1000))
+bm_test_max_time_ms=$((bm_guard_seconds * 1000)) # Keep workload alive through migration and post-checks
 bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
@@ -492,6 +496,30 @@ start_one_datanode() {
     local dn_ip=$1
     ssh -n "${os_user_name}@${dn_ip}" "source /etc/profile; cd ${db_dir}; ./sbin/start-datanode.sh -H ${db_dir}/dn_$(date +%s)_heapdump.hprof > /dev/null 2>&1 &" >> "${log_file}" 2>&1
     wait_for_datanode_running "${dn_ip}" 600
+}
+
+# 重启 DN 后等副本追平，再继续停下一台。
+# reconstruct（先删旧副本、再重建）在 RF=2 时中间只有一份完整副本；
+# 若重启后的副本还没追平就停掉对端，查询会少行（CAM_P0_04 的失败路径）。
+restart_one_datanode_and_wait_sync() {
+    local dn_ip=$1
+    if ! start_one_datanode "${dn_ip}"; then
+        return 1
+    fi
+    log "INFO" "DN ${dn_ip} restarted; waiting for replica catch-up before next step"
+    if ! wait_for_sync_lag_zero 900; then
+        log "ERROR" "replica catch-up after restarting ${dn_ip} did not converge in 900s"
+        return 1
+    fi
+    # 固定静置窗口：syncLag 在“重建/重拉刚开始”时可能短暂为 0，留时间让真实数据追平
+    log "INFO" "DN ${dn_ip} syncLag zero observed; settle ${post_restart_settle_seconds}s before re-check"
+    sleep "${post_restart_settle_seconds}"
+    if ! wait_for_sync_lag_zero 300; then
+        log "ERROR" "replica catch-up after restarting ${dn_ip} regressed after settle"
+        return 1
+    fi
+    log "INFO" "DN ${dn_ip} replica catch-up confirmed; safe to continue"
+    return 0
 }
 
 # =============================================================================
@@ -1221,6 +1249,7 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_conf}" PORT "${benchmark_ports}"
     set_bm "${table_conf}" USERNAME "rainer"
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
     set_bm "${table_conf}" LOOP "${bm_loop}"
@@ -1235,6 +1264,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_plain_conf}" PORT "${benchmark_ports}"
     set_bm "${table_plain_conf}" USERNAME "rainer"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
@@ -1369,19 +1399,22 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
-        local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
+        local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip metrics_file nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
-            body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
-            if [ -z "${body}" ]; then
+            # The testcase is launched with sh -x. Never capture the complete
+            # Prometheus response in a shell variable: xtrace would print the
+            # whole /metrics payload into the result log on every poll.
+            metrics_file="${run_artifact_dir}/syncLag_metrics_${dn_ip}.tmp"
+            if ! curl -sS -m 10 -o "${metrics_file}" "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null || [ ! -s "${metrics_file}" ]; then
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
-            nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            nz=$(awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }' "${metrics_file}")
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1405,7 +1438,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep 10
     done
 }
 
@@ -1476,43 +1509,61 @@ check_data_consistency() {
             continue
         fi
 
+        # 停机前再确认一次全集群已同步：刚重启的 DN 可能还在重拉数据，
+        # 此时停掉它的对端会让该 region 只剩不完整副本（CAM_P0_04 原失败路径）。
+        if ! wait_for_sync_lag_zero 300; then
+            log "ERROR" "skip stopping ${dn_ip}: replicas are not in sync before stop"
+            continue
+        fi
+
         log "INFO" "Stop DN ${dn_ip}, query from ${query_host} and diff vs baseline"
         if ! stop_one_datanode "${dn_ip}"; then
-            start_one_datanode "${dn_ip}"
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true
             continue
         fi
 
         if ! run_consistency_query "${query_host}" tree "${tree_sql}" "${run_artifact_dir}/stop_${dn_ip}_tree.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true; continue
         fi
         if ! run_consistency_query "${query_host}" table "${table_sql}" "${run_artifact_dir}/stop_${dn_ip}_table.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true; continue
         fi
         if ! run_consistency_query "${query_host}" table "${table2_sql}" "${run_artifact_dir}/stop_${dn_ip}_table2.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            restart_one_datanode_and_wait_sync "${dn_ip}" || true; continue
         fi
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_tree.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out"
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_table.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out"
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_table2.out" "${run_artifact_dir}/stop_${dn_ip}_table2.normalized.out"
 
-        if ! diff -u "${run_artifact_dir}/baseline_tree.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out" >> "${log_file}" 2>&1; then
+        local tree_diff table_diff table2_diff tree_lines=0 table_lines=0 table2_lines=0
+        tree_diff="${run_artifact_dir}/diff_${dn_ip}_tree.txt"
+        table_diff="${run_artifact_dir}/diff_${dn_ip}_table.txt"
+        table2_diff="${run_artifact_dir}/diff_${dn_ip}_table2.txt"
+
+        if ! diff -u "${run_artifact_dir}/baseline_tree.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out" > "${tree_diff}" 2>&1; then
+            tree_lines=$(grep -cE '^[-+]\|' "${tree_diff}" || true)
+            cat "${tree_diff}" >> "${log_file}"
             let fail_flag++
-            v_warnMessage="${v_warnMessage}tree replica inconsistent when ${dn_ip} down."
-            log "ERROR" "tree replica inconsistent when ${dn_ip} down"
+            v_warnMessage="${v_warnMessage}tree replica inconsistent when ${dn_ip} down (diff_lines=${tree_lines})."
+            log "ERROR" "tree replica inconsistent when ${dn_ip} down (diff_lines=${tree_lines})"
         fi
-        if ! diff -u "${run_artifact_dir}/baseline_table.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out" >> "${log_file}" 2>&1; then
+        if ! diff -u "${run_artifact_dir}/baseline_table.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out" > "${table_diff}" 2>&1; then
+            table_lines=$(grep -cE '^[-+]\|' "${table_diff}" || true)
+            cat "${table_diff}" >> "${log_file}"
             let fail_flag++
-            v_warnMessage="${v_warnMessage}writable-view replica inconsistent when ${dn_ip} down."
-            log "ERROR" "writable-view replica inconsistent when ${dn_ip} down"
+            v_warnMessage="${v_warnMessage}writable-view replica inconsistent when ${dn_ip} down (diff_lines=${table_lines})."
+            log "ERROR" "writable-view replica inconsistent when ${dn_ip} down (diff_lines=${table_lines})"
         fi
-        if ! diff -u "${run_artifact_dir}/baseline_table2.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table2.normalized.out" >> "${log_file}" 2>&1; then
+        if ! diff -u "${run_artifact_dir}/baseline_table2.normalized.out" "${run_artifact_dir}/stop_${dn_ip}_table2.normalized.out" > "${table2_diff}" 2>&1; then
+            table2_lines=$(grep -cE '^[-+]\|' "${table2_diff}" || true)
+            cat "${table2_diff}" >> "${log_file}"
             let fail_flag++
-            v_warnMessage="${v_warnMessage}plain-table replica inconsistent when ${dn_ip} down."
-            log "ERROR" "plain-table replica inconsistent when ${dn_ip} down"
+            v_warnMessage="${v_warnMessage}plain-table replica inconsistent when ${dn_ip} down (diff_lines=${table2_lines})."
+            log "ERROR" "plain-table replica inconsistent when ${dn_ip} down (diff_lines=${table2_lines})"
         fi
 
-        log "INFO" "Restart DN ${dn_ip} after consistency check"
-        start_one_datanode "${dn_ip}"
+        log "INFO" "Restart DN ${dn_ip} after consistency check; waiting for replica catch-up"
+        restart_one_datanode_and_wait_sync "${dn_ip}" || true
     done
 }
 

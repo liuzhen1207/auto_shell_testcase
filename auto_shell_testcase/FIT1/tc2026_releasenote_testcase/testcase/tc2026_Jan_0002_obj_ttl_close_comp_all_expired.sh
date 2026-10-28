@@ -337,8 +337,43 @@ function check_res()
       cat ${cur_dir}/tmp.out
    fi
 }
+
+# Count object files on all configured DataNodes and data directories.
+# A missing object directory is valid for a DataNode that does not host the DataRegion.
+function count_object_files()
+{
+   object_file_total_count=0
+   exec 3<${nodeinfo_dir}/datanode.txt
+   while read line<&3
+   do
+      v_data2_obj_count=`ssh ${os_user_name}@${line} "find ${db_dir}/data/datanode/data/object -type f -name \"*.bin\" 2>/dev/null |wc -l"`
+      v_data1_obj_count=`ssh ${os_user_name}@${line} "find ${data1_dir}/datanode/data/object -type f -name \"*.bin\" 2>/dev/null |wc -l"`
+      v_data3_obj_count=`ssh ${os_user_name}@${line} "find ${data3_dir}/datanode/data/object -type f -name \"*.bin\" 2>/dev/null |wc -l"`
+      object_file_total_count=$((object_file_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
+   done
+}
+
+# Object replica creation and deletion are asynchronous under IoTConsensus.
+# Wait for convergence without changing the caller's exact assertion value.
+function wait_object_file_count()
+{
+   expected_object_file_count=$1
+   count_desc=$2
+   for count_attempt in {1..30}
+   do
+      count_object_files
+      echo "${count_desc} attempt ${count_attempt}: ${object_file_total_count}/${expected_object_file_count}"
+      if [[ ${object_file_total_count} = ${expected_object_file_count} ]];then
+         return 0
+      fi
+      sleep 2
+   done
+   return 1
+}
+
 function check_log()
 {
+fail_flag=0
 exec 3<${nodeinfo_dir}/confignode.txt
 while read line<&3
 do
@@ -348,12 +383,14 @@ do
    v_cn_err2=`ssh ${os_user_name}@${line} "grep \"but return HAS_MORE_STATE\" ${db_dir}/logs/*confignode*all*|wc -l"`
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
+           let fail_flag_total++
            echo "CN ${line} NullPointer : ${v_npe}"
            v_warnMessage="${v_warnMessage}CN NPE."
    fi
    v_cn_err_total=$((v_cn_err1+v_cn_err2))
    if [[ ${v_cn_err_total} -gt 0 ]];then
            let fail_flag++
+           let fail_flag_total++
            v_warnMessage="${v_warnMessage}CN HAS_MORE_STATE."
            echo "CN ${line} has error: ${v_npe}"
    fi
@@ -378,11 +415,13 @@ do
 
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++
+           let fail_flag_total++
            v_warnMessage="${v_warnMessage}DN NPE."
            echo "DN ${line} NullPointer : ${v_npe}"
    fi
    if [[ ${v_dn_total_err} -gt 0 ]];then
            let fail_flag++
+           let fail_flag_total++
            v_warnMessage="${v_warnMessage}DN unexp log."
            echo "DN ${line} has error: ${v_dn_total_err}"
    fi
@@ -394,6 +433,7 @@ done
 
 function testcase1()
 {
+fail_flag=0
 #create table
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "create database IF NOT EXISTS db1;"
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "DROP TABLE IF EXISTS db1.t_object;"
@@ -440,22 +480,13 @@ for i in $(seq 0 99); do
     fi
 done
 # before SQL
-bef_ttl_obj_total_count=0
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
-   v_data2_obj_count=`ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
-   v_data1_obj_count=`ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
-   v_data3_obj_count=`ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
-   bef_ttl_obj_total_count=$((bef_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
-   ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\""
-   ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\""
-   ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\""
-done
 exp_obj_num=0
+wait_object_file_count ${exp_obj_num} "object files before insert"
+bef_ttl_obj_total_count=${object_file_total_count}
 if [[ ${bef_ttl_obj_total_count} != ${exp_obj_num} ]];then
         echo "bef_ttl_obj_total_count ${bef_ttl_obj_total_count} != ${exp_obj_num}"
         let fail_flag++
+        let fail_flag_total++
 fi
 
 # 执行SQL
@@ -467,36 +498,20 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "${v_sql_ins_1
 #get bin_tmp count
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "flush;"
 sleep 2
-bef_ttl_obj_total_count=0
-exec 3<${nodeinfo_dir}/datanode.txt
-while read line<&3
-do
-   v_data2_obj_count=`ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
-   v_data1_obj_count=`ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
-   v_data3_obj_count=`ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\" |wc  -l"`
-   bef_ttl_obj_total_count=$((bef_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
-   ssh ${os_user_name}@${line} "find  ${db_dir}/data/datanode/data/object -type f -name \"*.bin\""
-   ssh ${os_user_name}@${line} "find  ${data1_dir}/datanode/data/object -type f -name \"*.bin\""
-   ssh ${os_user_name}@${line} "find  ${data3_dir}/datanode/data/object -type f -name \"*.bin\""
-done
 exp_obj_num=$((dr_rep_num*100))
+wait_object_file_count ${exp_obj_num} "object files before TTL"
+bef_ttl_obj_total_count=${object_file_total_count}
 if [[ ${bef_ttl_obj_total_count} != ${exp_obj_num} ]];then
         echo "bef_ttl_obj_total_count ${bef_ttl_obj_total_count} != ${exp_obj_num}"
 	let fail_flag++
+	let fail_flag_total++
 fi
 # set ttl
 ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "flush;alter table db1.t_object set properties ttl=600000;"
 for i in {1..10}
 do
-	aft_ttl_obj_total_count=0
-	exec 3<${nodeinfo_dir}/datanode.txt
-	while read line<&3
-	do
-	   v_data2_obj_count=`ssh ${os_user_name}@${line} "find -name ${db_dir}/data/datanode/data/object -name *.bin |wc  -l"`
-	   v_data1_obj_count=`ssh ${os_user_name}@${line} "find -name ${data1_dir}/datanode/data/object -name *.bin |wc  -l"`
-	   v_data3_obj_count=`ssh ${os_user_name}@${line} "find -name ${data3_dir}/datanode/data/object -name *.bin |wc  -l"`
-	   aft_ttl_obj_total_count=$((aft_ttl_obj_total_count+v_data2_obj_count+v_data1_obj_count+v_data3_obj_count))
-	done
+	count_object_files
+	aft_ttl_obj_total_count=${object_file_total_count}
 	if [[ ${aft_ttl_obj_total_count} -gt 0 ]];then
 		echo "The TTL isn't working."
 		sleep 60
@@ -508,6 +523,7 @@ done
 if [[ ${aft_ttl_obj_total_count} -gt 0 ]];then
 	echo "The TTL isn't working."
 	let fail_flag++
+	let fail_flag_total++
 fi
 # 最终状态输出
 if [ ${fail_flag} -eq 0 ]; then
@@ -531,7 +547,7 @@ testcase2
 check_log
 v_end_test_time=`date +%s`
 v_elp_time=$((v_end_test_time-v_start_test_time))
-fail_flag=$((fail_flag_total+fail_flag))
+fail_flag=${fail_flag_total}
 # record test result
 function write_result()
 {

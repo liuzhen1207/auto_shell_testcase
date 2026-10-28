@@ -435,315 +435,337 @@ done
 sleep 60
 mig_from_ip=$(${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -e "show data regions;"|grep Running|grep -v audit|grep -v "${query_ip}|"|head -1|awk -F '|' '{gsub(" ","");print $9}')
 }
-function wait_sync_done()
-{
-local max_wait_time=$1
-   ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${query_ip} -e "flush;">${cur_dir}/tmp.out
-   ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
-   cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
-   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
-   exec 3<${cur_dir}/tmp.out
-   while read line<&3
-   do
-   while true
-   do
-   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep db_table">${cur_dir}/tmp1.out
-   ssh ${os_user_name}@${line} "grep \"create a new\" ${db_dir}/logs/log_datanode_all.log|grep root.test">${cur_dir}/tmp2.out
-   last_time_str1=$(tail -n 1 "${cur_dir}/tmp1.out" | awk -F',' '{print $1}')
-   last_time_str2=$(tail -n 1 "${cur_dir}/tmp2.out" | awk -F',' '{print $1}')
-   last_timestamp1=$(date -d "$last_time_str1" +%s 2>/dev/null)
-   last_timestamp2=$(date -d "$last_time_str2" +%s 2>/dev/null)
-   if [[ ${last_timestamp1} -gt ${last_timestamp2} ]];then
-      last_timestamp=${last_timestamp1}
-   else
-      last_timestamp=${last_timestamp2}
-
-   fi
-current_timestamp=$(date +%s)
-
-# 计算时间差（秒）
-time_diff=$((current_timestamp - last_timestamp))
-# 判断是否超过1分钟（120秒）
-if [ $time_diff -gt ${max_wait_time} ]; then
-    echo "最后一条日志距离现在已超过（${time_diff}秒）"
-    break
-else
-    v_sleep=$((max_wait_time-time_diff+1))
-    sleep ${v_sleep}
-#    echo "最后一条日志距离现在（${time_diff}秒）"
-fi
-   done
-   done
-
+# Embedded by build_priority1.py; no runtime dependency on this source file.
+# All assertions are fail-closed. The original fail_flag is never reset.
+p1_fail() {
+    fail_flag=$((fail_flag + 1))
+    backup_log_flag=1
+    v_warnMessage="${v_warnMessage}P1:$*."
+    log ERROR "[P1] $*; FAIL retained"
+    return 1
 }
-function check_dn_jps()
-{
-   local v_dn_ip=$1
-   local max_wait_time=$2
-local t1=`date +%s`
-while true
-do
-   v_dn_str=`ssh ${os_user_name}@${v_dn_ip} "jps|grep DataNode"`
-   v_dn_pid=`echo ${v_dn_str}|awk '{print $1}'`
-   if [[ ${v_dn_pid} -gt 0 ]];then
-      sleep 5
-   else
-      break
-   fi
-      t2=`date +%s`
-      t_elp=$((t2-t1))
-      if [[ ${t_elp} -gt ${max_wait_time} ]];then
-         let fail_flag++
-         echo "Stopping takes too long."
-# kill -9
-         ssh ${v_dn_ip}@${v_dn_ip} "kill -9 ${v_dn_pid}."
-         break
-      fi
 
-done
+p1_cli() {
+    local host=$1 dialect=$2 user=$3 sql=$4 out=$5
+    local args=(-h "$host" -u "$user") ssl_args=()
+    if [ -n "${ssl_str:-}" ]; then
+        read -r -a ssl_args <<< "$ssl_str"
+        args+=("${ssl_args[@]}")
+    fi
+    if ! timeout -k 5 "${P1_CLI_TIMEOUT:-60}" "${cli_dir}/sbin/start-cli.sh" \
+        "${args[@]}" -sql_dialect "$dialect" \
+        -timeout "${P1_CLI_TIMEOUT:-60}" -e "$sql" > "$out" 2>&1; then
+        return 1
+    fi
+    [ -s "$out" ] && ! grep -Eiq 'exception|(^|[^a-z])(error|failed)([^a-z]|$)' "$out"
 }
-# 监控 Total Sync Lag 直到所有 DataNode 连续 5 分钟为 0
-wait_for_sync_completion() {
-    # Prometheus服务器信息
-    local PROMETHEUS_URL=$(grep ^monitor_url "${conf_file}" | awk -F '=' '{print $2}' | sed 's/ //g')
-    local PROMETHEUS_USER=admin
-    local PROMETHEUS_PASS=admin
 
-    # 连续时间（秒）- 120秒
-    local TARGET_DURATION=120
-    local current_duration=0
-    local start_time=$(date +%s)
+p1_setup() {
+    p1_timeout=${P1_SYNC_TIMEOUT:-1800}
+    p1_stable=${P1_STABLE_SECONDS:-120}
+    p1_interval=${P1_POLL_SECONDS:-5}
+    local number tool
+    for number in "$p1_timeout" "$p1_stable" "$p1_interval" "${P1_CLI_TIMEOUT:-60}"; do
+        [[ "$number" =~ ^[1-9][0-9]*$ ]] || { p1_fail 'invalid timeout configuration'; return 1; }
+    done
+    [ "$p1_timeout" -gt "$p1_stable" ] || { p1_fail 'timeout must exceed stable window'; return 1; }
+    for tool in timeout curl awk sort cmp diff jps ssh; do
+        command -v "$tool" >/dev/null || { p1_fail "missing tool $tool"; return 1; }
+    done
+    p1_dir="${run_artifact_dir}/consistency_gate"
+    mkdir -p "$p1_dir" || { p1_fail 'cannot create evidence directory'; return 1; }
+    awk -v removed="${p1_removed:-}" '{gsub(/[\r \t]/, ""); if(length && $0!=removed) print}' \
+        "${nodeinfo_dir}/datanode.txt" | LC_ALL=C sort -u > "$p1_dir/expected_ips"
+    local expected=$dn_num
+    if [ -n "${p1_removed:-}" ]; then
+        awk -v ip="$p1_removed" '{gsub(/[\r \t]/, ""); if($0==ip) found=1} END{exit !found}' "${nodeinfo_dir}/datanode.txt" || {
+            p1_fail 'removed DataNode is not in configured membership'; return 1;
+        }
+        expected=$((expected - 1))
+    fi
+    [ "$(wc -l < "$p1_dir/expected_ips")" -eq "$expected" ] && [ "$expected" -ge 2 ] || {
+        p1_fail 'invalid expected DataNode membership'; return 1;
+    }
+    p1_seq=0
+}
 
-    # 关联数组：追踪每个DataNode上一次的sync lag状态（true=上一次>0，false=上一次=0）
-    declare -A last_node_status
+# Header-based parsing avoids assumptions about SHOW REGIONS column positions.
+p1_parse_nodes() {
+    awk -F'|' '
+    function t(s){gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s}
+    /^\|/ {
+        if(t($2)=="NodeID" || t($2)=="NodeId") {
+            for(i=2;i<NF;i++) h[t($i)]=i; header=1; next
+        }
+        if(t($2)~/^[0-9]+$/) {
+            if(!header || !h["Status"] || !h["RpcAddress"]) {bad=1; next}
+            print t($2),t($(h["RpcAddress"])),t($(h["Status"])); n++
+        }
+    }
+    END{if(!header || !n || bad) exit 1}' "$1"
+}
 
-    echo "开始监控 Total Sync Lag，目标连续 ${TARGET_DURATION} 秒所有 DataNode 均为 0..."
+p1_parse_regions() {
+    awk -F'|' '
+    function t(s){gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s}
+    /^\|/ {
+        if(t($2)=="RegionId") {
+            for(i=2;i<NF;i++) h[t($i)]=i; header=1; next
+        }
+        if(t($2)~/^[0-9]+$/) {
+            if(!header || !h["Type"] || !h["Status"] || !h["DataNodeId"] || !h["RpcAddress"]) {bad=1; next}
+            print t($(h["Type"])),t($2),t($(h["DataNodeId"])),t($(h["RpcAddress"])),t($(h["Status"])); n++
+        }
+    }
+    END{if(!header || !n || bad) exit 1}' "$1"
+}
 
-    while true; do
-        # 获取当前时间
-        local current_time=$(date +%s)
-        local elapsed_time=$((current_time - start_time))
-        local all_zero=true  # 标记本次检测是否所有节点都为0
-        local has_non_zero=false  # 标记本次是否有节点>0
+p1_topology() {
+    local dir=$1 host=$2 dialect
+    p1_cli "$host" tree "$p1_admin" 'show datanodes;' "$dir/nodes.out" || return 1
+    p1_parse_nodes "$dir/nodes.out" > "$dir/nodes" || return 1
+    awk '{print $2}' "$dir/nodes" | LC_ALL=C sort > "$dir/ips"
+    cmp -s "$dir/ips" "$p1_dir/expected_ips" || return 1
+    awk '$3!="Running"{bad=1} END{exit bad}' "$dir/nodes" || return 1
+    for dialect in tree table; do
+        p1_cli "$host" "$dialect" "$p1_admin" 'show migrations;' "$dir/migrations_$dialect.out" || return 1
+        grep -Eq 'Empty set|Total line number = 0' "$dir/migrations_$dialect.out" || return 1
+        # Require an explicit empty result, not a malformed or failed response.
+        if grep -Eq '^\|[[:space:]]*[0-9]+' "$dir/migrations_$dialect.out"; then return 1; fi
+        p1_cli "$host" "$dialect" "$p1_admin" 'show regions;' "$dir/regions_$dialect.out" || return 1
+        p1_parse_regions "$dir/regions_$dialect.out" > "$dir/regions_$dialect" || return 1
+    done
+    cat "$dir/regions_tree" "$dir/regions_table" | LC_ALL=C sort -u > "$dir/regions"
+    awk -v dr="$dr_rep_num" -v sr="$sr_rep_num" '
+    FILENAME==ARGV[1]{nodes[$1]=$2; next}
+    {
+        key=$1":"$2; peer=key":"$3
+        if($5!="Running" || nodes[$3]!=$4 || seen[peer]++) bad=1
+        if($1!="DataRegion" && $1!="SchemaRegion") bad=1
+        count[key]++; want[key]=($1=="DataRegion"?dr:sr)
+        if($1=="DataRegion") data++
+    }
+    END {for(k in count) if(count[k]!=want[k]) bad=1; if(!data) bad=1; exit bad}' \
+        "$dir/nodes" "$dir/regions" || return 1
+    if [ -f "$p1_dir/baseline_regions" ]; then
+        cmp -s "$p1_dir/baseline_regions" "$dir/regions" || return 1
+    fi
+    # A cancelled CAM migration must restore its original member set.
+    if [ "$p1_mode" = cam ]; then
+        local actual
+        actual=$(awk -v rid="${mig_region_id[0]}" '$1=="DataRegion" && $2==rid {print $3}' "$dir/regions" | sort -n | xargs)
+        [ -n "$actual" ] && [ "$actual" = "${mig_baseline_dn_ids[0]}" ] || return 1
+    fi
+}
 
-        # 调用 Prometheus API 获取 Total Sync Lag（使用 URL 编码）
-        local response=$(curl -s -u "$PROMETHEUS_USER:$PROMETHEUS_PASS" \
-            "$PROMETHEUS_URL/api/v1/query?query=iot_consensus%7Bcluster%3D%22$CLUSTER_ID%22%2CnodeType%3D%22DATANODE%22%2Cname%3D%22ioTConsensusServerImpl%22%2Ctype%3D%22syncLag%22%7D")
+# Direct HTTP samples are fetched in each poll; central Prometheus cache is not used.
+# Each DataRegion replica listed by SHOW REGIONS needs a finite zero-valued metric.
+p1_parse_metrics() {
+    awk '
+    /^iot_consensus\{/ && /type="syncLag"/ {
+        line=$0
+        if(!match(line,/region="DataRegion\[[0-9]+\]"/)) {bad=1; next}
+        rid=substr(line,RSTART,RLENGTH); gsub(/[^0-9]/,"",rid)
+        sub(/^.*\}[ \t]+/,"",line); split(line,a,/[ \t]+/)
+        if(a[1]!~/^[+]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$/ || a[1]+0!=0) bad=1
+        print rid; n++
+    }
+    END {if(bad || !n) exit 1}' "$1"
+}
 
-        # 检查响应是否成功
-        if [[ $(echo "$response" | jq -r '.status') != "success" ]]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 错误: 无法从 Prometheus 获取数据"
-            echo "响应: $response"
-            sleep 1
+p1_metrics() {
+    local dir=$1 id ip status rc=0
+    while read -r id ip status; do
+        awk -v id="$id" '$1=="DataRegion" && $3==id{print $2}' "$dir/regions" | sort -n > "$dir/expected_${id}"
+        # A node without DataRegion replicas legitimately exposes no syncLag.
+        if ! curl -fsS --connect-timeout 3 --max-time 10 "http://${ip}:${p1_metric_port}/metrics" \
+            > "$dir/metrics_${id}.out" 2> "$dir/metrics_${id}.err"; then rc=1; continue; fi
+        if [ ! -s "$dir/expected_${id}" ]; then
+            grep -q '^#\|^[a-zA-Z_].* [0-9]' "$dir/metrics_${id}.out" || rc=1
             continue
         fi
+        p1_parse_metrics "$dir/metrics_${id}.out" > "$dir/actual_${id}.raw" || rc=1
+        sort -n "$dir/actual_${id}.raw" > "$dir/actual_${id}"
+        cmp -s "$dir/expected_${id}" "$dir/actual_${id}" || rc=1
+    done < "$dir/nodes"
+    return "$rc"
+}
 
-        # 提取结果列表，避免重复解析jq
-        local results=$(echo "$response" | jq -r '.data.result')
-        local result_count=$(echo "$results" | jq -r 'length')
-
-        if [[ $result_count -eq 0 ]]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 警告: 未找到 Total Sync Lag 指标数据"
-            sleep 1
-            continue
+p1_wait_ready() {
+    local label=$1 host=$2 begin now stable_since=0 dir previous="" good
+    begin=$(date +%s)
+    while :; do
+        now=$(date +%s)
+        if [ $((now - begin)) -ge "$p1_timeout" ]; then
+            p1_fail "$label readiness timeout ${p1_timeout}s (topology/metrics); evidence=$p1_dir"; return 1
         fi
-
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] 找到 $result_count 个 Total Sync Lag 指标"
-
-        # 遍历每个DataNode的指标
-        for ((i=0; i<result_count; i++)); do
-            # 一次性提取当前节点的所有信息
-            local instance=$(echo "$results" | jq -r ".[$i].metric.instance")
-            local sync_lag=$(echo "$results" | jq -r ".[$i].value[1]")
-            local cluster=$(echo "$results" | jq -r ".[$i].metric.cluster")
-            local node_type=$(echo "$results" | jq -r ".[$i].metric.nodeType")
-
-            echo "  实例 $instance: Total Sync Lag = $sync_lag (集群: $cluster, 类型: $node_type)"
-
-            # 浮点数比较：判断当前sync lag是否>0（容忍微小精度误差）
-            if (( $(echo "$sync_lag > 0.0001" | bc -l) )); then
-                has_non_zero=true
-                all_zero=false
-
-                # 核心逻辑：只有上一次状态也是>0时，才累加fail_flag
-                if [[ ${last_node_status[$instance]} == "true" ]]; then
-                    ((fail_flag++))
-                    ((sync_fail_flag++))
-                    v_warnMessage="sync lag > 0: 实例 $instance 持续大于0，fail_flag 累加至 $fail_flag"
-                    echo "  ⚠️  $v_warnMessage"
-                else
-                    # 首次检测到>0，仅更新状态，不累加
-                    v_warnMessage="sync lag > 0: 实例 $instance 首次大于0，暂不累加fail_flag"
-                    echo "  ⚠️  $v_warnMessage"
-                fi
-
-                # 更新当前节点的状态为>0
-                last_node_status[$instance]="true"
-            else
-                # sync lag=0，更新状态为false，不累加
-                last_node_status[$instance]="false"
-            fi
-        done
-
-        # 重置计时逻辑：仅当本次有节点>0时，才重置连续为0的计时
-        if $has_non_zero; then
-            current_duration=0
-            start_time=$(date +%s)
-            echo "  ❌ 存在DataNode Sync Lag>0，重置连续为0计时"
-        else
-            # 所有节点都为0，累计连续时长
-            current_duration=$((current_time - start_time))
-            echo "✅ 所有 DataNode 的 Total Sync Lag 均为 0，已持续 ${current_duration} 秒"
-
-            # 检查是否达到目标时长
-            if [[ $current_duration -ge $TARGET_DURATION ]]; then
-                echo "🎉 同步完成！所有 DataNode 的 Total Sync Lag 已连续 ${TARGET_DURATION} 秒均为 0"
-                echo "最终 fail_flag: $fail_flag, sync_fail_flag: $sync_fail_flag"
+        p1_seq=$((p1_seq + 1)); dir="$p1_dir/${label}_${p1_seq}"
+        mkdir -p "$dir" || { p1_fail 'cannot save gate evidence'; return 1; }
+        date -u +%FT%TZ > "$dir/collected_at"
+        good=0
+        if p1_topology "$dir" "$host" && p1_metrics "$dir"; then good=1; fi
+        now=$(date +%s)
+        if [ $((now - begin)) -ge "$p1_timeout" ]; then
+            p1_fail "$label readiness timeout ${p1_timeout}s"; return 1
+        fi
+        if [ "$good" -eq 1 ]; then
+            if [ "$stable_since" -eq 0 ] || ! cmp -s "$previous" "$dir/regions"; then stable_since=$now; fi
+            previous="$dir/regions"
+            log INFO "[P1] $label healthy for $((now-stable_since))/${p1_stable}s; elapsed=$((now-begin))s"
+            if [ $((now-stable_since)) -ge "$p1_stable" ]; then
+                p1_ready_dir=$dir
                 return 0
             fi
+        else
+            stable_since=0; previous=""
+            log INFO "[P1] $label not ready; stable timer reset; evidence=$dir"
         fi
-
-        # 间隔1秒检测一次
-        sleep 1
+        sleep "$p1_interval"
     done
 }
 
-function check_data_consistent()
-{
-wait_sync_done 180
-wait_for_sync_completion
-   ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${query_ip} -e "show datanodes;">${cur_dir}/tmp.out
-   cat ${cur_dir}/tmp.out |grep Running|awk -F "|" '{gsub(" ","");print $4}'>${cur_dir}/tmp1.out
-   mv ${cur_dir}/tmp1.out ${cur_dir}/tmp.out
-   sql1="select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.treedb.g_0.** align by device;"
-   sql2="select device_id,count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from tabledb_g_0.table_0 group by device_id order by device_id;"
-   exception_num=0
-   # all online
-   while true
-   do
-   ${cli_dir}/sbin/start-cli.sh -u tree_user ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_all_online_tree.out
-   v_exp_num=`grep root.treedb ${cur_dir}/q_all_online_tree.out|wc -l`
-   v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
-   if [[ ${v_exception_num} = 0 ]];then
-      if [[ ${v_exp_num} != 50 ]];then
-         let fail_flag++
-         v_warnMessage="${v_warnMessage}query root.treedb line number is not expected."
-      fi
-           break
-   else
-           let exception_num++
-           sleep 1
-   fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
-   done
+p1_query() {
+    local host=$1 kind=$2 out=$3 dialect=${p1_dialects[$2]} user=${p1_users[$2]}
+    p1_cli "$host" "$dialect" "$user" "${p1_sqls[$kind]}" "$out" || return 1
+    # Preserve all cells. Remove only formatting and row order, never values.
+    awk -F'|' '
+    function t(s){gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s}
+    /^\|/ {if(!header++){next}; row=""; for(i=2;i<NF;i++) row=row "|" t($i); print row "|"; n++}
+    /^Total line number = / {line=$0; sub(/^Total line number = /,"",line); expected=line+0; footer=1}
+    END {if(!footer || n!=expected || n<1) exit 1}' "$out" > "$out.rows" || return 1
+    if [ "$p1_mode" != cam ] && [ "$(wc -l < "$out.rows")" -ne 50 ]; then return 1; fi
+    LC_ALL=C sort "$out.rows" > "$out.normalized"
+}
 
-   exception_num=0
-   while true
-   do
-   ${cli_dir}/sbin/start-cli.sh -u table_user ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_all_online_table.out
-   v_exp_num=`grep d_ ${cur_dir}//q_all_online_table.out|wc -l`
-   v_exception_num=`grep Exception ${cur_dir}/q_all_online_tree.out|wc -l`
-   v_exception_num=`grep Exception ${cur_dir}/q_all_online_table.out|wc -l`
-   if [[ ${v_exception_num} = 0 ]];then
-      if [[ ${v_exp_num} != 50 ]];then
-         let fail_flag++
-         v_warnMessage="${v_warnMessage}query tabledb line number is not expected."
-      fi
-           break
-   else
-           let exception_num++
-           sleep 1
-   fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
+p1_compare() {
+    local host=$1 label=$2 kind rc=0 out
+    for kind in "${!p1_sqls[@]}"; do
+        out="$p1_dir/${label}_${kind}.out"
+        if ! p1_query "$host" "$kind" "$out"; then
+            p1_fail "$label query failed ($kind)"; rc=1; continue
+        fi
+        if ! diff -u "$p1_dir/baseline_${kind}.out.normalized" "$out.normalized" > "$out.diff"; then
+            p1_fail "$label data mismatch ($kind), retained in $out.diff"; rc=1
+        fi
+    done
+    return "$rc"
+}
 
-   done
+p1_no_writers() {
+    local apps
+    apps=$(jps) || return 1
+    ! printf '%s\n' "$apps" | grep -Eq '(^|[ .])App$'
+}
 
-   # stop dn
-   exec 3<${cur_dir}/tmp.out
-   while read line<&3
-   do
-   query_ip=`head -1 ${cur_dir}/tmp.out`
-   query_ip2=`tail -1 ${cur_dir}/tmp.out`
+p1_flush() {
+    local dialect
+    p1_no_writers || { p1_fail 'benchmark still alive or jps failed'; return 1; }
+    for dialect in tree table; do
+        p1_cli "$query_ip" "$dialect" "$p1_admin" 'flush;' "$p1_dir/flush_$dialect.out" &&
+            grep -qi 'executed successfully' "$p1_dir/flush_$dialect.out" || {
+            p1_fail "$dialect flush failed"; return 1;
+        }
+    done
+}
 
-      # stop dn
-      ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};./sbin/stop-datanode.sh"
-      check_dn_jps ${line} 120
-      if [[ ${query_ip} = ${line} ]];then
-         query_ip=${query_ip2}
-      fi
-      v_ip=`echo ${line}|awk -F '.' '{print $4}'`
-      exception_num=0
-      while true
-      do
-      ${cli_dir}/sbin/start-cli.sh -u tree_user ${ssl_str} -h ${query_ip} -sql_dialect tree -timeout 36000 -e "${sql1}" >${cur_dir}/q_stop_ip${v_ip}_tree.out
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_tree.out|wc -l`
-      if [[ ${v_exception_num} = 0 ]];then
-           break
-      else
-           let exception_num++
-           sleep 1
-      fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
+p1_node_action() {
+    local ip=$1 action=$2 command stamp
+    if [ "$action" = start ]; then
+        stamp=$(date +%s)
+        # start-datanode.sh may stay in the foreground; detach only this target JVM.
+        command="source /etc/profile; cd '${db_dir}' && { nohup ./sbin/start-datanode.sh -H '${db_dir}/dn_p1_${stamp}_heapdump.hprof' > '${db_dir}/dn_p1_${stamp}_startup.log' 2>&1 < /dev/null & }"
+    elif [ "$action" = stop ]; then
+        command="source /etc/profile; cd '${db_dir}' && ./sbin/stop-datanode.sh"
+    else
+        return 1
+    fi
+    timeout -k 5 90 ssh -n -o BatchMode=yes -o ConnectTimeout=10 "${os_user_name}@${ip}" \
+        "$command" \
+        >> "$p1_dir/node_actions.log" 2>&1
+}
 
-      done
-   exception_num=0
-      while true
-      do
+p1_wait_stopped() {
+    local ip=$1 host=$2 begin now
+    begin=$(date +%s)
+    while :; do
+        if p1_cli "$host" tree "$p1_admin" 'show datanodes;' "$p1_dir/stopped_${ip}.out" &&
+            p1_parse_nodes "$p1_dir/stopped_${ip}.out" > "$p1_dir/stopped_${ip}.nodes"; then
+            if awk -v ip="$ip" '$2==ip{found++; if($3=="Unknown") ok++} END{exit !(found==1 && ok==1)}' \
+                "$p1_dir/stopped_${ip}.nodes"; then return 0; fi
+        fi
+        now=$(date +%s)
+        [ $((now-begin)) -lt 120 ] || return 1
+        sleep "$p1_interval"
+    done
+}
 
-      ${cli_dir}/sbin/start-cli.sh -u table_user ${ssl_str} -h ${query_ip} -sql_dialect table -timeout 36000 -e "${sql2}" >${cur_dir}/q_stop_ip${v_ip}_table.out
-      v_exception_num=`grep Exception ${cur_dir}/q_stop_ip${v_ip}_table.out|wc -l`
-      if [[ ${v_exception_num} = 0 ]];then
-           break
-      else
-           let exception_num++
-           sleep 1
-      fi
-   if [[ ${exception_num} -ge 10 ]];then
-      let fail_flag++
-      break
-   fi
+p1_run_consistency() {
+    p1_setup || return 1
+    # Any preceding scenario assertion failure is retained and blocks extra faults.
+    [ "$fail_flag" -eq 0 ] || { p1_fail 'preceding scenario failed; consistency skipped'; return 1; }
+    p1_flush || return 1
+    p1_wait_ready initial "$query_ip" || return 1
+    cp "$p1_ready_dir/regions" "$p1_dir/baseline_regions" || return 1
+    cp "$p1_ready_dir/nodes" "$p1_dir/baseline_nodes" || return 1
+    local hosts=() ip id status host1 host2 kind round bad=0
+    while read -r id ip status; do hosts+=("$ip"); done < "$p1_dir/baseline_nodes"
+    host1=${hosts[0]}; host2=${hosts[1]}
+    for kind in "${!p1_sqls[@]}"; do
+        p1_query "$host1" "$kind" "$p1_dir/baseline_${kind}.out" || {
+            p1_fail "baseline query failed ($kind)"; return 1;
+        }
+    done
+    # Two rounds from two entry nodes must match the same immutable baseline.
+    for round in 1 2; do
+        sleep "$p1_interval"
+        p1_compare "$host1" "baseline_verify_${round}_a" || return 1
+        p1_compare "$host2" "baseline_verify_${round}_b" || return 1
+    done
+    for ip in "${hosts[@]}"; do
+        p1_no_writers || { p1_fail 'writer appeared before fault injection'; return 1; }
+        local peer=$host1 round_bad=0
+        [ "$ip" != "$host1" ] || peer=$host2
+        log INFO "[P1] Stop DN $ip; query via $peer"
+        if ! p1_node_action "$ip" stop || ! p1_wait_stopped "$ip" "$peer"; then
+            p1_fail "could not confirm DN $ip stopped"; round_bad=1
+        else
+            if ! p1_compare "$peer" "stop_${ip}_first"; then
+                bad=1
+                sleep "$p1_interval"
+                # Diagnostic retry never replaces first evidence or clears FAIL.
+                if p1_compare "$peer" "stop_${ip}_recheck"; then
+                    log INFO "[P1] $ip discrepancy disappeared on recheck; first FAIL retained"
+                else
+                    log ERROR "[P1] $ip discrepancy persists on recheck"
+                fi
+            fi
+        fi
+        # Always attempt restart even after stop/query failure.
+        log INFO "[P1] Restart DN $ip"
+        p1_node_action "$ip" start || { p1_fail "restart command failed for $ip"; return 1; }
+        p1_wait_ready "recovered_${ip}" "$peer" || return 1
+        p1_compare "$host1" "recovered_${ip}_a" || return 1
+        p1_compare "$host2" "recovered_${ip}_b" || return 1
+        [ "$round_bad" -eq 0 ] || return 1
+    done
+    log INFO "[P1] completed ${#hosts[@]} DataNode rounds; fail_flag=$fail_flag; evidence=$p1_dir"
+    return "$bad"
+}
 
-      done
-
-      v_diff_tree=`diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"|wc -l`
-      v_diff_table=`diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"|wc -l`
-      v_diff_total=$((v_diff_tree+v_diff_table))
-      if [[ ${v_diff_total} -gt 0 ]];then
-         let fail_flag++
-         diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
-         diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"
-         v_warnMessage="Failed to check replica data consistency."
-         echo "diff : ${v_diff_total}"
-      fi
-      # restart
-      v_start_time=`date +%s`
-      ssh ${os_user_name}@${line} "source /etc/profile;cd ${db_dir};./sbin/start-datanode.sh -H ${db_dir}/dn_${v_start_time}_heapdump.hprof > /dev/null 2>&1 &"
-      while true
-      do
-      v_start_ok=`${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} ${ssl_str} -h ${line}  -timeout 3600 -e "show datanodes;"|grep "${line}|"|grep Running|wc -l`
-      if [[ ${v_start_ok} -gt 0 ]];then
-         break
-      else
-         sleep 1
-      fi
-      v_cur_time=`date +%s`
-      v_elp_time=$((v_cur_time-v_start_time))
-      if [[ ${v_elp_time} -gt 180 ]];then
-         let fail_flag++
-         echo "restart ${line} failed."
-         return
-      fi
-      done
-   done
+function check_data_consistent() {
+    p1_mode=migrate; p1_admin=$v_sys_super_user; p1_removed=$mig_from_ip; p1_metric_port=9091
+    run_artifact_dir="${cur_dir}/${SCRIPT_NAME%.sh}_$(date +%Y_%m_%d_%H_%M_%S)_${$}"
+    p1_dialects=(tree table)
+    p1_users=(tree_user table_user)
+    p1_sqls=(
+        "select count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from root.treedb.g_0.** align by device;"
+        "select device_id,count(s_0),count(s_1000),count(s_2000),count(s_3000),count(s_4000),count(s_5000),count(s_6000),count(s_7000),count(s_8000),count(s_9999) from tabledb_g_0.table_0 group by device_id order by device_id;"
+    )
+    local before=$fail_flag
+    if ! p1_run_consistency; then
+        [ "$fail_flag" -gt "$before" ] || p1_fail 'consistency gate failed'
+        return 1
+    fi
 }
 
 function check_log()
@@ -1165,17 +1187,15 @@ function remove_datanode() {
 }
 function wait_benchmark()
 {
-    while true
-    do
-        v_bm_num=`jps|grep App|wc -l`
-        if [[ ${v_bm_num} -gt 0 ]];then
-            sleep 120
-        else
-            ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -sql_dialect tree -e "flush;"
-            ${cli_dir}/sbin/start-cli.sh -u ${v_sys_super_user} -h ${query_ip} -sql_dialect table -e "flush;"
-            break
-            return 0
-        fi
+    local begin now listing limit=${P1_BENCHMARK_TIMEOUT:-7200}
+    [[ "$limit" =~ ^[1-9][0-9]*$ ]] || { p1_fail 'invalid benchmark timeout'; return 1; }
+    begin=$(date +%s)
+    while :; do
+        listing=$(jps) || { p1_fail 'cannot check benchmark completion'; return 1; }
+        if ! printf '%s\n' "$listing" | grep -Eq '(^|[ .])App$'; then return 0; fi
+        now=$(date +%s)
+        [ $((now-begin)) -lt "$limit" ] || { p1_fail 'benchmark did not finish within timeout'; return 1; }
+        sleep 5
     done
 }
 function testcase1()
@@ -1184,9 +1204,11 @@ function testcase1()
 exec_migrate_region
 remove_datanode
 # wait benchmark
-wait_benchmark
-# check data
-check_data_consistent
+if wait_benchmark; then
+    check_data_consistent || true
+else
+    log ERROR "[P1] write completion failed; consistency fault injection skipped"
+fi
 #check log
 check_log
 }
@@ -1235,6 +1257,7 @@ backup_log_flag=1
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
    fi
 
+printf '[%s] [INFO] RESULT fail_flag=%s msg=%s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${fail_flag:-1}" "$(printf '%s' "${v_warnMessage:-.}" | tr '\r\n' '  ')"
 # backup logs?
 if [[ ${backup_log_flag} -gt 0 ]];then
 # stop cluster

@@ -699,12 +699,16 @@ check_show_regions_abnormal_metrics() {
         }
     ' "${out_file}" > "${object_mismatch_file}"
 
-    if [[ -s "${object_mismatch_file}" && ${v_show_regions_object_size_mismatch_reported} -eq 0 ]]; then
-        let fail_flag++
+    if [[ -s "${object_mismatch_file}" ]]; then
         v_warnMessage="${v_warnMessage}.${stage} show regions Running replica ObjectSize differs by more than 20%, see ${out_file}."
-        log "ERROR" "${stage} Running replica ObjectSize differs by more than 20%"
+        if [[ "${stage}" == final_after_sync ]]; then
+            let fail_flag++
+            log "ERROR" "${stage} Running replica ObjectSize differs by more than 20%"
+        elif [[ ${v_show_regions_object_size_mismatch_reported} -eq 0 ]]; then
+            log "WARN" "${stage} Running replica ObjectSize differs by more than 20% during migration; final_after_sync is authoritative"
+            v_show_regions_object_size_mismatch_reported=1
+        fi
         cat "${object_mismatch_file}" >> "${log_file}"
-        v_show_regions_object_size_mismatch_reported=1
     fi
 
     return 0
@@ -1248,7 +1252,7 @@ testcase1() {
       v_backup_time=$(date +%s)
       sh -x "${clean_env_dir}/stop_cluster.sh" 2>&1
       sh -x "${clean_env_dir}/backup_cluster_logs_data.sh" "${v_backup_time}" 2>&1
-  elif [[ ${backup_log_flag} -gt 0 ]]; then
+  elif [[ ${backup_log_flag} -gt 0 || ${fail_flag} -gt 0 ]]; then
       v_backup_time=$(date +%s)
       sh -x "${clean_env_dir}/stop_cluster.sh" 2>&1
       sh -x "${clean_env_dir}/backup_cluster_logs.sh" "${v_backup_time}" 2>&1

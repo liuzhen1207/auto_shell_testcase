@@ -66,8 +66,11 @@ v_cluster_num_info="${cn_num}C${dn_num}D"
 v_consensus="IoTConsensus"
 ssl_str=""
 
-# 迁移限速: 1MB/s，拉长新增副本窗口以便 CANCEL 命中(默认 48MB/s 太快)
+# 迁移限速: 1MB/s，仅用于拉长 CANCEL 命中窗口。
 region_migration_speed_limit=1048576
+# CANCEL 命令返回后立即恢复到常规速度，避免安全补副本长时间受人工限速。
+# 该值是本用例原设定的恢复值，可通过环境变量覆盖。
+region_migration_speed_limit_default=${CAM0016_POST_CANCEL_SPEED_LIMIT:-50331648}
 migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
@@ -91,7 +94,7 @@ bm_table_conf="${bm_dir}/conf_table"            # 2) 可写视图表(usr_sod0.wr
 bm_table_plain_conf="${bm_dir}/conf_table_plain"  # 3) 普通表(usr_nrm0.normal_table_0, 无 object)
 bm_guard_seconds=$((2 * 3600))          # benchmark 进程硬看门狗
 bm_write_seconds=1200                    # benchmark 写入约 20 分钟(养大 Region)
-bm_test_max_time_ms=$((bm_write_seconds * 1000))
+bm_test_max_time_ms=$((bm_guard_seconds * 1000)) # Keep workload alive through migration and post-checks
 bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
@@ -107,7 +110,12 @@ bm_elapsed_seconds=0
 cluster_ready_timeout_seconds=600
 # 迁移进入 add 阶段的等待/超时
 add_phase_wait_timeout=600
-cancel_converge_timeout=1800
+# 48MiB/s 热恢复失败时，60 分钟仍可作为 2.60GB@1MiB/s 快照传输的兜底等待。
+cancel_converge_timeout=${CAM0016_CANCEL_CONVERGE_TIMEOUT:-3600}
+# 迁移已消失但副本未回到基线时，给状态传播/自动修复 30 分钟宽限。
+redundancy_settle_timeout=${CAM0016_REDUNDANCY_SETTLE_TIMEOUT:-1800}
+# 服务端已收敛后，CLI 应及时返回；限制本地进程回收等待，避免网络异常造成无限阻塞。
+reconstruct_cli_exit_timeout=${CAM0016_CLI_EXIT_TIMEOUT:-120}
 snapshot_cleanup_timeout=900
 snapshot_cleanup_check_interval=10
 snapshot_cleanup_no_progress_timeout=180
@@ -152,6 +160,7 @@ mig_tgt_dn_id=("" "" "")    # tgt = 当前持有者(移除目标, 与 MIGRATE/EX
 mig_tgt_dn_ip=("" "" "")
 mig_baseline_dn_ids=("" "" "")
 mig_cmd_pid=("" "" "")
+mig_cmd_pgid=("" "" "")
 mig_cancel_phase=("" "" "")
 mig_used_targets=""          # REMOVE 中不用于去重, 仅保留结构兼容
 # snapshot 接收端；RECONSTRUCT 固定为重建目标 tgt。
@@ -518,11 +527,20 @@ collect_migrations() {
         cli_table "${query_ip}" "show migrations;" > "${out_file}"
     fi
     trim_file_crlf "${out_file}"
-    {
-        echo "===== $(date +'%Y-%m-%d %H:%M:%S') stage=${stage} dialect=${dialect} show migrations ====="
-        cat "${out_file}"
-        echo
-    } >> "${run_artifact_dir}/show_migrations_trace.out"
+    # 高频轮询只在内容变化时记录完整结果，保留状态转换证据，避免重复刷屏。
+    local trace_file="${run_artifact_dir}/show_migrations_trace.out"
+    local signature_file="${run_artifact_dir}/.${stage}_${dialect}_migrations.cksum"
+    local signature previous_signature=""
+    signature=$(cksum "${out_file}" | awk '{print $1 ":" $2}')
+    [ -f "${signature_file}" ] && previous_signature=$(cat "${signature_file}")
+    if [ "${signature}" != "${previous_signature}" ]; then
+        {
+            echo "===== $(date +'%Y-%m-%d %H:%M:%S') stage=${stage} dialect=${dialect} show migrations changed ====="
+            cat "${out_file}"
+            echo
+        } >> "${trace_file}"
+        printf '%s\n' "${signature}" > "${signature_file}"
+    fi
     echo "${out_file}"
 }
 
@@ -754,23 +772,142 @@ assert_reconstruct_fields() {
 # 用法: run_reconstruct_then_cancel <label> <slot...>
 #   RECONSTRUCT 语法: `reconstruct region <regionId> on <tgt>`
 # =============================================================================
+restore_region_migration_speed_limit() {
+    local label=$1
+    local out="${run_artifact_dir}/restore_region_migration_speed_limit_${label}.out"
+    local sql="SET CONFIGURATION \"region_migration_speed_limit_bytes_per_second\"=\"${region_migration_speed_limit_default}\";"
+
+    log "INFO" "[${label}] CANCEL returned; restore migration speed limit to ${region_migration_speed_limit_default}B/s"
+    cli_tree "${query_ip}" "${sql}" > "${out}" 2>&1
+    trim_file_crlf "${out}"
+    cat "${out}" >> "${log_file}"
+    if ! grep -q "The statement is executed successfully." "${out}"; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}[${label}] failed to restore region migration speed limit to default."
+        log "ERROR" "[${label}] failed to hot-reload region migration speed limit; see ${out}"
+        return 1
+    fi
+    log "INFO" "[${label}] region migration speed limit restored to ${region_migration_speed_limit_default}B/s"
+    return 0
+}
+
+stop_reconstruct_cli_groups() {
+    local label="$1"; shift
+    local i pid pgid
+
+    for i in "$@"; do
+        pid="${mig_cmd_pid[$i]}"
+        pgid="${mig_cmd_pgid[$i]}"
+        [ -z "${pid}" ] && continue
+        if [ -n "${pgid}" ] && kill -0 -- "-${pgid}" 2>/dev/null; then
+            log "WARN" "[${label}/${mig_slot_name[$i]}] stop reconstruct CLI process group ${pgid} after prerequisite failure"
+            kill -TERM -- "-${pgid}" 2>/dev/null || true
+        elif kill -0 "${pid}" 2>/dev/null; then
+            log "WARN" "[${label}/${mig_slot_name[$i]}] stop reconstruct CLI launcher ${pid}; process group was not recorded"
+            kill -TERM "${pid}" 2>/dev/null || true
+        fi
+    done
+    sleep 2
+    for i in "$@"; do
+        pid="${mig_cmd_pid[$i]}"
+        pgid="${mig_cmd_pgid[$i]}"
+        [ -z "${pid}" ] && continue
+        if [ -n "${pgid}" ] && kill -0 -- "-${pgid}" 2>/dev/null; then
+            log "WARN" "[${label}/${mig_slot_name[$i]}] force stop reconstruct CLI process group ${pgid}"
+            kill -KILL -- "-${pgid}" 2>/dev/null || true
+        elif kill -0 "${pid}" 2>/dev/null; then
+            kill -KILL "${pid}" 2>/dev/null || true
+        fi
+        wait "${pid}" 2>/dev/null || true
+        mig_cmd_pid[$i]=""
+        mig_cmd_pgid[$i]=""
+    done
+}
+
+wait_reconstruct_cli_groups() {
+    local label="$1"; shift
+    local begin_time i pid pgid any_running elapsed
+    begin_time=$(date +%s)
+
+    while true; do
+        any_running=0
+        for i in "$@"; do
+            pid="${mig_cmd_pid[$i]}"
+            pgid="${mig_cmd_pgid[$i]}"
+            [ -z "${pid}" ] && continue
+            if { [ -n "${pgid}" ] && kill -0 -- "-${pgid}" 2>/dev/null; } || kill -0 "${pid}" 2>/dev/null; then
+                any_running=1
+            fi
+        done
+        if [ "${any_running}" -eq 0 ]; then
+            for i in "$@"; do
+                pid="${mig_cmd_pid[$i]}"
+                [ -z "${pid}" ] && continue
+                wait "${pid}" 2>/dev/null || true
+                mig_cmd_pid[$i]=""
+                mig_cmd_pgid[$i]=""
+            done
+            return 0
+        fi
+
+        elapsed=$(( $(date +%s) - begin_time ))
+        if [ "${elapsed}" -gt "${reconstruct_cli_exit_timeout}" ]; then
+            let fail_flag++
+            v_warnMessage="${v_warnMessage}[${label}] reconstruct CLI did not exit within ${reconstruct_cli_exit_timeout}s after convergence."
+            log "ERROR" "[${label}] reconstruct CLI did not exit within ${reconstruct_cli_exit_timeout}s after server convergence"
+            stop_reconstruct_cli_groups "${label}" "$@"
+            return 1
+        fi
+        sleep 1
+    done
+}
+
 run_reconstruct_then_cancel() {
     local label="$1"; shift
     local slots="$*"
     local i
+    if ! command -v setsid >/dev/null 2>&1; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}[${label}] setsid is unavailable; reconstruct CLI cannot be isolated."
+        log "ERROR" "[${label}] setsid is required to isolate and safely reap reconstruct CLI processes"
+        return 1
+    fi
     # 1) 后台并发触发 RECONSTRUCT
     for i in ${slots}; do
         [ -z "${mig_region_id[$i]}" ] && continue
         local mig_out="${run_artifact_dir}/migrate_cmd_${mig_slot_name[$i]}.out"
+        local pgid_file="${run_artifact_dir}/migrate_cmd_${mig_slot_name[$i]}.pgid"
+        rm -f "${pgid_file}" "${pgid_file}.status"
         log "INFO" "Trigger[${label}/${mig_slot_name[$i]}]: reconstruct region ${mig_region_id[$i]} on ${mig_tgt_dn_id[$i]} (dialect=${mig_slot_dialect[$i]})"
-        ( ${cli_dir}/sbin/start-cli.sh -u root ${ssl_str} -h "${query_ip}" -timeout 36000 -sql_dialect "${mig_slot_dialect[$i]}" \
-            -e "reconstruct region ${mig_region_id[$i]} on ${mig_tgt_dn_id[$i]};" > "${mig_out}" 2>&1 ) &
+        (
+            setsid sh -c 'pgid_file=$1; shift; printf "%s\n" "$$" > "${pgid_file}"; exec "$@"' sh "${pgid_file}" \
+                ${cli_dir}/sbin/start-cli.sh -u root ${ssl_str} -h "${query_ip}" -timeout 36000 -sql_dialect "${mig_slot_dialect[$i]}" \
+                -e "reconstruct region ${mig_region_id[$i]} on ${mig_tgt_dn_id[$i]};"
+            cli_status=$?
+            printf '%s\n' "${cli_status}" > "${pgid_file}.status"
+            exit "${cli_status}"
+        ) > "${mig_out}" 2>&1 &
         mig_cmd_pid[$i]=$!
+        local pgid_wait=0
+        while [ ! -s "${pgid_file}" ] && [ "${pgid_wait}" -lt 50 ]; do
+            sleep 0.1
+            pgid_wait=$((pgid_wait + 1))
+        done
+        mig_cmd_pgid[$i]=$(tr -d '[:space:]' < "${pgid_file}" 2>/dev/null || true)
+        case "${mig_cmd_pgid[$i]}" in
+            ''|*[!0-9]*)
+                let fail_flag++
+                v_warnMessage="${v_warnMessage}[${label}/${mig_slot_name[$i]}] failed to record reconstruct CLI process group."
+                log "ERROR" "[${label}/${mig_slot_name[$i]}] failed to record reconstruct CLI process group"
+                stop_reconstruct_cli_groups "${label}" ${slots}
+                return 1
+                ;;
+        esac
     done
 
     # 2) 等待 RECONSTRUCT 行出现在 show migrations(看到即 CANCEL)
     if ! wait_reconstruct_in_cancellable_state ${slots}; then
-        for i in ${slots}; do [ -n "${mig_cmd_pid[$i]}" ] && wait "${mig_cmd_pid[$i]}" 2>/dev/null || true; done
+        stop_reconstruct_cli_groups "${label}" ${slots}
         return 1
     fi
 
@@ -804,20 +941,36 @@ run_reconstruct_then_cancel() {
         v_warnMessage="${v_warnMessage}[${label}] CANCEL ALL MIGRATIONS not responsive (>${batch_return}s)."
     fi
 
-    # 4) 收敛
+    # 4) CANCEL 的可观测窗口已结束。无论有几条迁移接受取消，都不再保留
+    # 本用例人为设置的 1MiB/s 限速，使不可取消的安全补副本可及时完成。
+    if ! restore_region_migration_speed_limit "${label}"; then
+        log "WARN" "[${label}] speed-limit restore failed; continue convergence wait with ${cancel_converge_timeout}s timeout"
+    fi
+
     if ! wait_all_cancel_converged "${label}" ${slots}; then
-        for i in ${slots}; do [ -n "${mig_cmd_pid[$i]}" ] && wait "${mig_cmd_pid[$i]}" 2>/dev/null || true; done
+        stop_reconstruct_cli_groups "${label}" ${slots}
         cancel_batch_timings="${cancel_batch_timings}${label}:return=${batch_return}s,converge=NA."
         return 1
     fi
     batch_converge=${cancel_converge_seconds}
-    for i in ${slots}; do [ -n "${mig_cmd_pid[$i]}" ] && wait "${mig_cmd_pid[$i]}" 2>/dev/null || true; done
+    if ! wait_reconstruct_cli_groups "${label}" ${slots}; then
+        cancel_batch_timings="${cancel_batch_timings}${label}:return=${batch_return}s,converge=${batch_converge}s,cli_exit=timeout."
+        return 1
+    fi
 
     # 5) 校验成员集合、Running 状态和 tgt snapshot 清理
+    local verify_failed=0
     for i in ${slots}; do
         [ -z "${mig_region_id[$i]}" ] && continue
-        verify_reconstruct_result "${i}"
+        if ! verify_reconstruct_result "${i}"; then
+            verify_failed=1
+        fi
     done
+
+    if [ "${verify_failed}" -ne 0 ]; then
+        v_warnMessage="${v_warnMessage}[${label}] reconstruction verification failed; block node-stop checks."
+        return 1
+    fi
 
     cancel_batch_timings="${cancel_batch_timings}${label}:return=${batch_return}s,converge=${batch_converge}s."
     return 0
@@ -827,7 +980,7 @@ run_reconstruct_then_cancel() {
 wait_all_cancel_converged() {
     local label="$1"; shift
     local slots="$*"
-    local begin_time
+    local begin_time redundancy_wait_begin=0
     begin_time=$(date +%s)
     while true; do
         local elapsed
@@ -843,8 +996,8 @@ wait_all_cancel_converged() {
         local mig_empty=0
         grep -Eq '^Empty set' "${mig_file}" && mig_empty=1
 
-        # 本批各 region 是否都没有 Adding/Removing(分别查各自方言的 show regions)
-        local any_active=0 i
+        # 本批各 region 是否无 Adding/Removing，且副本成员与基线一致、全部 Running。
+        local any_active=0 topology_ready=1 i
         for i in ${slots}; do
             [ -z "${mig_region_id[$i]}" ] && continue
             collect_regions "${mig_slot_dialect[$i]}" "after_cancel_${label}_${mig_slot_name[$i]}"
@@ -855,12 +1008,38 @@ wait_all_cancel_converged() {
                 END{ exit(busy?0:1) }' "${reg_file}"; then
                 any_active=1
             fi
+            local now_members running_members
+            now_members=$(awk -F'|' -v rid="${mig_region_id[$i]}" '
+                function trim(s){gsub(/^[ \t]+|[ \t]+$/, "", s); return s}
+                /^\|/ && trim($2)==rid {print trim($8)}
+            ' "${reg_file}" | sort -n | tr '\n' ' ' | sed 's/ *$//')
+            running_members=$(awk -F'|' -v rid="${mig_region_id[$i]}" '
+                function trim(s){gsub(/^[ \t]+|[ \t]+$/, "", s); return s}
+                /^\|/ && trim($2)==rid && trim($4)=="Running" {print trim($8)}
+            ' "${reg_file}" | sort -n | tr '\n' ' ' | sed 's/ *$//')
+            if [ "${now_members}" != "${mig_baseline_dn_ids[$i]}" ] || [ "${running_members}" != "${mig_baseline_dn_ids[$i]}" ]; then
+                topology_ready=0
+            fi
         done
 
-        if [ "${mig_empty}" -eq 1 ] && [ "${any_active}" -eq 0 ]; then
+        if [ "${mig_empty}" -eq 1 ] && [ "${any_active}" -eq 0 ] && [ "${topology_ready}" -eq 1 ]; then
             cancel_converge_seconds=${elapsed}
-            log "INFO" "[${label}] cancels converged in ${elapsed}s: show migrations empty & no Adding/Removing for regions [${slots}]"
+            log "INFO" "[${label}] converged in ${elapsed}s: migrations empty, no Adding/Removing, baseline members all Running for regions [${slots}]"
             return 0
+        fi
+
+        if [ "${mig_empty}" -eq 1 ] && [ "${any_active}" -eq 0 ] && [ "${topology_ready}" -eq 0 ]; then
+            [ "${redundancy_wait_begin}" -eq 0 ] && redundancy_wait_begin=$(date +%s)
+            local redundancy_elapsed=$(( $(date +%s) - redundancy_wait_begin ))
+            log "INFO" "[${label}] migration ended but baseline redundancy is not restored, settle=${redundancy_elapsed}/${redundancy_settle_timeout}s"
+            if [ "${redundancy_elapsed}" -gt "${redundancy_settle_timeout}" ]; then
+                let fail_flag++
+                v_warnMessage="${v_warnMessage}[${label}] migration ended without restoring baseline redundancy."
+                log "ERROR" "[${label}] baseline members did not return to Running within ${redundancy_settle_timeout}s; block node-stop checks"
+                return 1
+            fi
+        else
+            redundancy_wait_begin=0
         fi
 
         if [ "${elapsed}" -gt "${cancel_converge_timeout}" ]; then
@@ -879,6 +1058,7 @@ wait_all_cancel_converged() {
 # 与 MIGRATE/EXTEND 相反: tgt 必须在成员中, 否则失败。
 verify_reconstruct_result() {
     local slot=$1
+    local fail_before=${fail_flag}
     local name="${mig_slot_name[$slot]}" dialect="${mig_slot_dialect[$slot]}"
     local rid="${mig_region_id[$slot]}" tgt="${mig_tgt_dn_id[$slot]}" base="${mig_baseline_dn_ids[$slot]}"
     refresh_running_datanodes
@@ -922,7 +1102,14 @@ verify_reconstruct_result() {
         v_warnMessage="${v_warnMessage}[${name}] region ${rid} still has Adding/Removing after cancel converged."
     fi
 
-    verify_receiver_snapshot_deleted "${slot}"
+    local snapshot_ok=0
+    if verify_receiver_snapshot_deleted "${slot}"; then
+        snapshot_ok=1
+    fi
+    if [ "${fail_flag}" -gt "${fail_before}" ] || [ "${snapshot_ok}" -ne 1 ]; then
+        return 1
+    fi
+    return 0
 }
 
 # =============================================================================
@@ -1221,6 +1408,7 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_conf}" PORT "${benchmark_ports}"
     set_bm "${table_conf}" USERNAME "rainer"
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
     set_bm "${table_conf}" LOOP "${bm_loop}"
@@ -1235,6 +1423,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_plain_conf}" PORT "${benchmark_ports}"
     set_bm "${table_plain_conf}" USERNAME "rainer"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
@@ -1369,19 +1558,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # /metrics 内容很大，禁止 shell xtrace 展开 body 及后续 printf。
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1418,7 +1612,10 @@ check_data_consistency() {
     local table2_sql="use ${TABLE2_DB_NAME}; select device_id,${count_expr} from ${TABLE2_NAME} group by device_id order by device_id;"
 
     # 一致性校验前: 先等副本同步延迟归零(benchmark 已停写+flush), 否则会误报不一致
-    wait_for_sync_lag_zero 600 || true
+    if ! wait_for_sync_lag_zero 600; then
+        log "ERROR" "Skip node-stop consistency checks because syncLag prerequisite is not satisfied"
+        return 1
+    fi
 
     refresh_running_datanodes
     cp -f "${run_artifact_dir}/running_datanodes.txt" "${run_artifact_dir}/baseline_running_datanodes.txt"
@@ -1478,18 +1675,25 @@ check_data_consistency() {
 
         log "INFO" "Stop DN ${dn_ip}, query from ${query_host} and diff vs baseline"
         if ! stop_one_datanode "${dn_ip}"; then
-            start_one_datanode "${dn_ip}"
+            start_one_datanode "${dn_ip}" || return 1
+            wait_for_sync_lag_zero 600 || return 1
             continue
         fi
 
         if ! run_consistency_query "${query_host}" tree "${tree_sql}" "${run_artifact_dir}/stop_${dn_ip}_tree.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            start_one_datanode "${dn_ip}" || return 1
+            wait_for_sync_lag_zero 600 || return 1
+            continue
         fi
         if ! run_consistency_query "${query_host}" table "${table_sql}" "${run_artifact_dir}/stop_${dn_ip}_table.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            start_one_datanode "${dn_ip}" || return 1
+            wait_for_sync_lag_zero 600 || return 1
+            continue
         fi
         if ! run_consistency_query "${query_host}" table "${table2_sql}" "${run_artifact_dir}/stop_${dn_ip}_table2.out"; then
-            start_one_datanode "${dn_ip}"; continue
+            start_one_datanode "${dn_ip}" || return 1
+            wait_for_sync_lag_zero 600 || return 1
+            continue
         fi
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_tree.out" "${run_artifact_dir}/stop_${dn_ip}_tree.normalized.out"
         normalize_query_result "${run_artifact_dir}/stop_${dn_ip}_table.out" "${run_artifact_dir}/stop_${dn_ip}_table.normalized.out"
@@ -1512,7 +1716,11 @@ check_data_consistency() {
         fi
 
         log "INFO" "Restart DN ${dn_ip} after consistency check"
-        start_one_datanode "${dn_ip}"
+        start_one_datanode "${dn_ip}" || return 1
+        if ! wait_for_sync_lag_zero 600; then
+            log "ERROR" "DN ${dn_ip} restarted but replicas did not resynchronize; block the next node-stop round"
+            return 1
+        fi
     done
 }
 
@@ -1668,13 +1876,20 @@ main() {
     local stop_file="${run_artifact_dir}/stop_safety_monitor"
     monitor_reconstruct_safety "${mig_region_id[0]}" "${mig_tgt_dn_id[0]}" "${stop_file}" &
     local monitor_pid=$!
-    run_reconstruct_then_cancel safety_reconstruct 0 || true
+    local reconstruct_ready=0
+    if run_reconstruct_then_cancel safety_reconstruct 0; then
+        reconstruct_ready=1
+    fi
     : > "${stop_file}"
     wait "${monitor_pid}" || true
     assert_safety_samples
     stop_benchmark_now
-    wait_for_sync_lag_zero || true
-    check_data_consistency || true
+    if [ "${reconstruct_ready}" -eq 1 ]; then
+        check_data_consistency || true
+    else
+        v_warnMessage="${v_warnMessage}node-stop checks skipped because reconstruction redundancy was not restored."
+        log "ERROR" "Skip node-stop consistency checks because reconstruction did not restore baseline redundancy"
+    fi
     check_cancel_logs || true
     finalize_test "${test_begin_time}"
     [ "${fail_flag}" -eq 0 ]

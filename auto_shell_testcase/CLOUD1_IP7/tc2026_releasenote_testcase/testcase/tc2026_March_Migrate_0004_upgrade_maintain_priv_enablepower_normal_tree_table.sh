@@ -1235,6 +1235,7 @@ backup_log_flag=1
 #        rm -rf ${bm_log_dir}/${bm_test_time}_view_bm2.out
 #   fi
 
+printf '[%s] [INFO] RESULT fail_flag=%s msg=%s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${fail_flag:-1}" "$(printf '%s' "${v_warnMessage:-.}" | tr '\r\n' '  ')"
 # backup logs?
 if [[ ${backup_log_flag} -gt 0 ]];then
 # stop cluster

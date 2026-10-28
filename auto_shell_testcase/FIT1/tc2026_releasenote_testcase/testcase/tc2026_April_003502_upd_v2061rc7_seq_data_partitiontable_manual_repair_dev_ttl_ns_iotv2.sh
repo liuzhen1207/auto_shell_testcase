@@ -384,12 +384,18 @@ testcase1() {
     log "INFO" "===== [DPR_A05] 修复前记录(数据应仍缺失) ====="
     query_data "0_before_repair"
     local b_sum=${g_data_sum}; local b_full=0
+    if [[ ${g_exc} -gt 0 ]]; then
+        log "ERROR" "[PRECONDITION FAIL] Baseline query failed before repair; skip manual repair and its log assertions."
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}invalid baseline query before repair."
+        return 1
+    fi
     [[ ${g_exc} -eq 0 && ${g_tree_rows} -eq 20 && ${g_t1_rows} -eq 10 && ${g_t2_rows} -eq 10 ]] && b_full=1
     if [[ ${b_full} -eq 1 ]]; then
-        log "WARN" "[NOTE] 修复前数据已完整——以修复日志判定是否有 loss"
-        v_warnMessage="${v_warnMessage} data already full before repair."
-    else
-        log "INFO" "[OK] 修复前数据不完整(数据点=${b_sum})，符合预期"
+        log "ERROR" "[PRECONDITION FAIL] Restored data is already complete before repair; this loss-repair scenario was not constructed. Skip REPAIR and post-repair log checks."
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}precondition failed: restored data is already complete before repair."
+        return 1
     fi
 
     # 手动 REPAIR

@@ -72,6 +72,7 @@ migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
 dn_metric_port=9092
+sync_lag_check_interval=15
 
 # Thrift 最大帧大小: 调到 256MB。默认 0(不限)在大 region 迁移/大 object 写入时可能触发帧过大错误;
 # 显式设 256MB 与 tc0003 参考一致(CN/DN 均设 dn_thrift_max_frame_size)。
@@ -1369,19 +1370,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # Avoid expanding the full Prometheus response into shell xtrace output.
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1405,7 +1411,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep "${sync_lag_check_interval}"
     done
 }
 
@@ -1630,9 +1636,9 @@ expect_denied() {
     local out="${run_artifact_dir}/${name}.out"
     ${cli_dir}/sbin/start-cli.sh -u cam_no_priv -pw 'TimechoDB@2021' -h "${query_ip}" -sql_dialect "${dialect}" -e "CANCEL ALL MIGRATIONS;" > "${out}" 2>&1 || true
     trim_file_crlf "${out}"
-    if ! grep -Eqi 'permission|privilege|access denied|not authorized|no permissions' "${out}"; then
+    if ! grep -Eq '(^|[^0-9])803:.*(SYSTEM|system)' "${out}"; then
         let fail_flag++
-        v_warnMessage="${v_warnMessage}${name} was not rejected for missing privilege."
+        v_warnMessage="${v_warnMessage}${name} did not return 803 with required SYSTEM privilege."
     fi
     grep -q "The statement is executed successfully." "${out}" && { let fail_flag++; v_warnMessage="${v_warnMessage}${name} unexpectedly succeeded."; }
 }
@@ -1654,7 +1660,7 @@ main() {
     : > "${log_file}"
     local test_begin_time
     test_begin_time=$(date +%s)
-    log "INFO" "Case: CAM_P0_07 MAINTAIN and SYSTEM privilege checks"
+    log "INFO" "Case: CAM_P0_07 SYSTEM privilege checks in tree and table dialects"
     start_db || { finalize_test "${test_begin_time}"; return 1; }
 
     cli_tree "${query_ip}" "CREATE USER cam_no_priv 'TimechoDB@2021';" > "${run_artifact_dir}/create_user.out" 2>&1
@@ -1664,12 +1670,9 @@ main() {
     expect_allowed tree root '' root_tree
     expect_allowed table root '' root_table
 
-    # Tree dialect authorizes CANCEL ALL MIGRATIONS with the SYSTEM privilege.
-    cli_tree "${query_ip}" "GRANT SYSTEM ON root.** TO USER cam_no_priv;" > "${run_artifact_dir}/grant_system_tree.out" 2>&1
-    check_cli_success "${run_artifact_dir}/grant_system_tree.out" "grant tree SYSTEM" || true
-    expect_allowed tree cam_no_priv 'TimechoDB@2021' allowed_tree_system
     cli_table "${query_ip}" "GRANT SYSTEM TO USER cam_no_priv;" > "${run_artifact_dir}/grant_system.out" 2>&1
     check_cli_success "${run_artifact_dir}/grant_system.out" "grant SYSTEM" || true
+    expect_allowed tree cam_no_priv 'TimechoDB@2021' allowed_tree_system
     expect_allowed table cam_no_priv 'TimechoDB@2021' allowed_table_system
 
     finalize_test "${test_begin_time}"

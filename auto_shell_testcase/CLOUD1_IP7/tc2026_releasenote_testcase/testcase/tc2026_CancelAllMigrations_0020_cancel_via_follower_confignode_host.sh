@@ -11,7 +11,7 @@
 #   3) 普通表  usr_nrm0.normal_table_0  (无 object)
 # 手动环境无 KillPoint，故用 region_migration_speed_limit_bytes_per_second=1MB/s
 # 拉长新增副本(add-peer)窗口。本用例同时迁移 3 个 DataRegion(树 / 普通表 / 可写视图各 1 个,
-# 目标 DN 互不撞车)，待三者都进入快照传输中(Progress files X/Y, X<Y)后,
+# 目标 DN 互不撞车)，待三者都观察到 show migrations 的 ADD 阶段状态后,
 # 只执行一次 CANCEL ALL MIGRATIONS 取消全部,验证"ALL"语义: 三者都在安全点回滚。
 #
 # 断言(对应 Excel CAM_P2_02 预期结果):
@@ -88,10 +88,10 @@ bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
 # region_migration_speed_limit 只对 snapshot 传输生效 -> 限速没起作用。
-# 再 x10 到 1200 列: 单 region 涨到 ~1GB 量级, 数据量远超 consensus 日志可追赶范围,
+# 再 x20 到 2400 列: 单 region 涨到 ~2GB 量级, 数据量远超 consensus 日志可追赶范围,
 # 迫使新副本走 snapshot 传输(受 1MB/s 限速)-> add-peer 阶段持续数分钟, 取消窗口稳定。
 # (INSERT_DATATYPE_PROPORTION 是比例, 自动按列数缩放, 无需改; 末位=0 仍无 object。)
-tree_sensor_number=1200
+tree_sensor_number=2400
 bm_pids=()
 bm_start_epoch=0
 bm_elapsed_seconds=0
@@ -611,13 +611,13 @@ select_large_region_and_target() {
 }
 
 # =============================================================================
-# 判断某个 slot 的迁移是否"正在传输快照"(新增副本阶段的可安全取消长任务)
-#   本 build 的 show migrations CurrentState 只到 CHECK_ADD_REGION_PEER(不出现 DO_ADD_REGION_PEER)，
-#   快照传输进度体现在 Progress 列: "files X/Y, size a MB/b MB"。
-#   方案 A: 要求 状态属于 ADD 家族 且 Progress 显示传输进行中(files X/Y 且 X<Y)。
-#   返回: 0=正在传输; 1=尚未进入/未在传输; 2=show migrations 出错; 3=该迁移行已消失(可能已传完)
+# 判断某个 slot 的迁移是否处于 ADD 阶段(可取消窗口)
+#   以 show migrations 的 CurrentState 为准: ADD_REGION_PEER、DO_ADD_REGION_PEER、
+#   CHECK_ADD_REGION_PEER 均表示尚处于新增副本阶段。Progress 可能为空(例如日志追赶路径)，
+#   因此不要求出现 snapshot 的 files X/Y 进度。
+#   返回: 0=处于 ADD 阶段; 1=迁移行存在但不在 ADD 阶段; 2=show migrations 出错; 3=迁移行已消失
 # =============================================================================
-migration_in_add_transfer() {
+migration_in_add_phase() {
     local slot=$1
     local dialect="${mig_slot_dialect[$slot]}"
     local rid="${mig_region_id[$slot]}"
@@ -626,45 +626,37 @@ migration_in_add_transfer() {
     if grep -Eq "Exception|ERROR|Error" "${mig_file}"; then
         return 2
     fi
-    # 该迁移行是否还存在
+    # 精确检查目标 MIGRATE 行是否仍存在
     if ! awk -F'|' -v rid="${rid}" '
         function trim(s){gsub(/^[ \t]+|[ \t]+$/,"",s);return s}
-        /^\|/ { for(i=1;i<=NF;i++) if(trim($i)==rid) hit=1 }
+        /^\|/ { if(trim($3)=="MIGRATE" && trim($4)==rid) hit=1 }
         END{ exit(hit?0:1) }' "${mig_file}"; then
         return 3
     fi
-    # 状态属于 ADD 家族 且 Progress 显示 files X/Y 且 X<Y(传输进行中)
+    # ADD CurrentState 本身就是取消窗口，不依赖 Progress 是否显示 snapshot 文件进度
     if awk -F'|' -v rid="${rid}" '
         function trim(s){gsub(/^[ \t]+|[ \t]+$/,"",s);return s}
         /^\|/ {
-            found_rid=0
-            for (i=1;i<=NF;i++) if (trim($i)==rid) found_rid=1
-            if (!found_rid) next
-            if ($0 !~ /ADD_REGION_PEER|DO_ADD_REGION_PEER|CHECK_ADD_REGION_PEER/) next
-            if (match($0, /files[ ]*[0-9]+\/[0-9]+/)) {
-                seg=substr($0, RSTART, RLENGTH)
-                n=split(seg, a, /[^0-9]+/)
-                xi=0; yi=0; cnt=0
-                for (k=1;k<=n;k++) if (a[k] ~ /^[0-9]+$/) { cnt++; if(cnt==1) xi=a[k]+0; else if(cnt==2) yi=a[k]+0 }
-                if (yi>0 && xi<yi) transferring=1
-            }
+            if (trim($3)!="MIGRATE" || trim($4)!=rid) next
+            state=trim($8)
+            if (state ~ /^(ADD_REGION_PEER|DO_ADD_REGION_PEER|CHECK_ADD_REGION_PEER)$/) in_add=1
         }
-        END { exit(transferring?0:1) }' "${mig_file}"; then
+        END { exit(in_add?0:1) }' "${mig_file}"; then
         return 0
     fi
     return 1
 }
 
-# 等待"全部 3 个 slot"都进入传输中(至少曾进入过传输中); 单个 slot 若在被抓到传输中前就传完,
-# 则视为该 slot 抓窗失败(记 fail 但不阻塞其它 slot)。返回 0 表示至少还有 slot 处于传输中可被取消。
-wait_all_migrations_in_transfer() {
+# 等待本批所有 slot 都进入 ADD 阶段; 单个 slot 若在被观察到 ADD 状态前就完成,
+# 则记该 slot 验证失败。返回 0 表示本批所有目标迁移都处于可取消的 ADD 阶段。
+wait_all_migrations_in_add_phase() {
     local slots="$*" want=$#
     local begin_time i rc ready
     begin_time=$(date +%s)
-    # 每个 slot 是否已确认过"传输中"(按 slot 索引存, 只处理传入的 slot)
+    # 每个 slot 是否已确认过 ADD 阶段(按 slot 索引存, 只处理传入的 slot)
     local slot_ready=("0" "0" "0")
     # 每个 slot 的 migration 行是否曾在 show migrations 中出现过(row 存在即 seen).
-    # rc=0(in-transfer) / rc=1(已存在但未传输) 都意味着 row 存在 -> seen=1.
+    # rc=0(ADD 阶段) / rc=1(存在但不在 ADD 阶段) 都意味着目标 row 存在 -> seen=1.
     # rc=3(row 不在 show migrations 中): 若从未 seen 则仅是 migrate/extend 还没启动 -> 继续等.
     local slot_seen=("0" "0" "0")
     local slot_done=("0" "0" "0")
@@ -675,18 +667,18 @@ wait_all_migrations_in_transfer() {
             [ -z "${mig_region_id[$i]}" ] && continue
             if [ "${slot_done[$i]}" = "1" ]; then done_count=$((done_count+1)); continue; fi
             if [ "${slot_ready[$i]}" = "1" ]; then ready=$((ready+1)); continue; fi
-            migration_in_add_transfer "${i}"
+            migration_in_add_phase "${i}"
             rc=$?
             case "${rc}" in
                 0) slot_ready[$i]=1; ready=$((ready+1)); slot_seen[$i]=1
-                   log "INFO" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} is transferring snapshot (Progress files X/Y, X<Y)";;
-                1) slot_seen[$i]=1 ;;   # row 存在但尚未传输, 继续等
-                2) let fail_flag++; v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] show migrations failed while waiting transfer.";;
+                   log "INFO" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} reached a cancellable ADD phase (snapshot progress may be empty)";;
+                1) slot_seen[$i]=1 ;;   # row 存在但当前不在 ADD 阶段, 继续等
+                2) let fail_flag++; v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] show migrations failed while waiting for ADD phase.";;
                 3) if [ "${slot_seen[$i]}" = "1" ]; then
                        # row 曾出现后消失 → 真跑完了, 抓窗失败
                        let fail_flag++
-                       v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] region ${mig_region_id[$i]} completed before caught in-transfer (too small/fast)."
-                       log "ERROR" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} finished before in-transfer window"
+                       v_warnMessage="${v_warnMessage}[${mig_slot_name[$i]}] region ${mig_region_id[$i]} completed before ADD phase was observed."
+                       log "ERROR" "[${mig_slot_name[$i]}] region ${mig_region_id[$i]} completed before ADD phase was observed"
                        slot_done[$i]=1
                    fi
                    # 从未 seen → 还没启动(CLI 连接延迟) → 继续等, 不算 fail
@@ -697,22 +689,22 @@ wait_all_migrations_in_transfer() {
 
         # 本批全部 slot 都已就绪(传输中) -> 立即取消
         if [ "${ready}" -eq 0 ] && [ "${done_count}" -eq "${want}" ]; then
-            log "ERROR" "All ${want} slots completed before caught (too fast)"
+            log "ERROR" "All ${want} migrations completed before ADD phase was observed"
             return 1
         fi
         if [ "${ready}" -eq "${want}" ]; then
-            log "INFO" "All ${want} migrations of this batch [${slots}] are in-transfer -> CANCEL now"
+            log "INFO" "All ${want} migrations of this batch [${slots}] reached ADD phase -> CANCEL now"
             return 0
         fi
         # 超时兜底: 只要至少有 1 个 slot 仍在传输中就取消(其它可能已传完或抓窗失败)
         if [ $(( $(date +%s) - begin_time )) -gt "${add_phase_wait_timeout}" ]; then
             if [ "${ready}" -ge 1 ]; then
-                log "WARN" "add-phase wait timeout, but ${ready}/${want} of batch [${slots}] still in-transfer -> CANCEL now"
+                log "WARN" "ADD-phase wait timeout, but ${ready}/${want} of batch [${slots}] are still cancellable -> CANCEL now"
                 return 0
             fi
             let fail_flag++
-            v_warnMessage="${v_warnMessage}no migration of batch [${slots}] reached in-transfer add phase within ${add_phase_wait_timeout}s."
-            log "ERROR" "no migration of batch [${slots}] reached in-transfer add phase in ${add_phase_wait_timeout}s"
+            v_warnMessage="${v_warnMessage}no migration of batch [${slots}] reached ADD phase within ${add_phase_wait_timeout}s."
+            log "ERROR" "no migration of batch [${slots}] reached ADD phase within ${add_phase_wait_timeout}s"
             return 1
         fi
         sleep 2
@@ -740,8 +732,8 @@ run_migrate_then_cancel() {
         mig_cmd_pid[$i]=$!
     done
 
-    # 2) 等待本批迁移进入传输中
-    if ! wait_all_migrations_in_transfer ${slots}; then
+    # 2) 等待本批迁移进入 ADD 阶段
+    if ! wait_all_migrations_in_add_phase ${slots}; then
         for i in ${slots}; do [ -n "${mig_cmd_pid[$i]}" ] && wait "${mig_cmd_pid[$i]}" 2>/dev/null || true; done
         return 1
     fi
@@ -1265,8 +1257,8 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
@@ -1556,7 +1548,7 @@ main() {
     select_large_region_and_target 0 || { finalize_test "${test_begin_time}"; return 1; }
     ( cli_tree "${query_ip}" "migrate region ${mig_region_id[0]} from ${mig_src_dn_id[0]} to ${mig_tgt_dn_id[0]};" > "${run_artifact_dir}/follower_migrate_cmd.out" 2>&1 ) &
     local mig_pid=$!
-    wait_all_migrations_in_transfer 0 || { wait "${mig_pid}" || true; finalize_test "${test_begin_time}"; return 1; }
+    wait_all_migrations_in_add_phase 0 || { wait "${mig_pid}" || true; finalize_test "${test_begin_time}"; return 1; }
     # The actual 3C5D environment deploys ConfigNodes (172.16.2.8-10) and
     # DataNodes (172.16.2.11-15) on separate hosts. The CLI endpoint must be a
     # Running DataNode; verify that a follower ConfigNode exists, then send the

@@ -1080,6 +1080,8 @@ write_result() {
   fi
   if [[ ${fail_flag} -gt 0 ]]; then
       echo "${test_time},${testdb},${v_consensus},${SCRIPT_NAME},FAIL,${v_elp_time},${v_warnNum},${v_warnMessage},${v_bm_max_value},${v_bm_sum_value}" >> "${CSV_FILE}"
+      v_backup_time=$(date +%s)
+      sh -x "${clean_env_dir}/backup_cluster_logs.sh" "${SCRIPT_NAME}_${v_backup_time}" 2>&1
       echo "testcase1 fail"
   else
       echo "testcase1 pass"

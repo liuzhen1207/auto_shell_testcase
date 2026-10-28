@@ -399,7 +399,10 @@ function remove_datanode()
                 echo "Failed to get DataNode ID for ${rm_dn_ip}, retry after 1 second."
                 sleep 1
         done
+	        # �����޳�����ʧ��ʱ��¼ DN ID/IP ��ʣ�� Region ID�����ɹ�������
+        remove_cmd_host=${query_ip}
         if [[ ${rm_dn_ip} = ${query_ip} ]];then
+           remove_cmd_host=${query_ip2}
            ${cli_dir}/sbin/start-cli.sh -h ${query_ip2} -sql_dialect table -e "set configuration region_migration_concurrency_limit='10';">${cur_dir}/tmp.out
 	   v_exp_suc=$(grep successfully ${cur_dir}/tmp.out|wc -l)
 	   if [[ ${v_exp_suc} -gt 0 ]];then
@@ -409,18 +412,54 @@ function remove_datanode()
               v_warnMessage="${v_warnMessage}.set configuration region_migration_concurrency_limit='10' failed"
 	      cat ${cur_dir}/tmp.out
 	   fi
-           ${cli_dir}/sbin/start-cli.sh -h ${query_ip2} -e "remove datanode ${v_rm_datanode_id};"
+	           remove_cmd_host=${query_ip2}
         else
-           ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "remove datanode ${v_rm_datanode_id};"
+           remove_cmd_host=${query_ip}
         fi
+        while true
+        do
+                remove_out=${cur_dir}/remove_dn_${v_rm_datanode_id}.out
+                ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -e "remove datanode ${v_rm_datanode_id};" >"${remove_out}" 2>&1
+                remove_rc=$?
+                if [[ ${remove_rc} -eq 0 ]] && ! grep -Eiq 'error|fail|exception|拒绝|失败' "${remove_out}"; then
+                        break
+                fi
+                region_ids=$( ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -e "show regions;" 2>/dev/null | grep "${rm_dn_ip}" | tr '\n' ' ' )
+                let fail_flag++
+                v_warnMessage="${v_warnMessage}.remove datanode failed: DN ID=${v_rm_datanode_id}, IP=${rm_dn_ip}, Region ID=${region_ids:-N/A}"
+                log "WARN" "remove datanode failed: DN ID=${v_rm_datanode_id}, IP=${rm_dn_ip}, Region ID=${region_ids:-N/A}; retrying"
+                sleep 10
+        done
         rm_t1=`date +%s`
         while true
         do
-                v_rm_suc=`${cli_dir}/sbin/start-cli.sh -h ${query_ip} -e "show datanodes;"|grep ${rm_dn_ip}|wc -l`
-                if [[ ${v_rm_suc} -gt 0 ]];then
-                        sleep 300 
+                cluster_out=${cur_dir}/remove_dn_${v_rm_datanode_id}_cluster.out
+                ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -e "show cluster;" >"${cluster_out}" 2>&1
+                cluster_rc=$?
+                if [[ ${cluster_rc} -ne 0 ]] || grep -Eiq 'error|fail|exception|拒绝|失败' "${cluster_out}"; then
+                        log "WARN" "show cluster failed while checking DN ID=${v_rm_datanode_id}, IP=${rm_dn_ip}; retrying check"
+                        sleep 60
+                        continue
+                fi
+                if ! grep -Fq "${rm_dn_ip}" "${cluster_out}"; then
+                        log "INFO" "remove datanode completed: DN ID=${v_rm_datanode_id}, IP=${rm_dn_ip} is absent from show cluster"
+                        break
+                fi
+                table_migrations_out=${cur_dir}/remove_dn_${v_rm_datanode_id}_migrations_table.out
+                tree_migrations_out=${cur_dir}/remove_dn_${v_rm_datanode_id}_migrations_tree.out
+                ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -sql_dialect table -timeout 3600 -e "show migrations;" >"${table_migrations_out}" 2>&1
+                table_migrations_rc=$?
+                ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -sql_dialect tree -timeout 3600 -e "show migrations;" >"${tree_migrations_out}" 2>&1
+                tree_migrations_rc=$?
+                if [[ ${table_migrations_rc} -eq 0 ]] && [[ ${tree_migrations_rc} -eq 0 ]] && grep -Fq "Empty set" "${table_migrations_out}" && grep -Fq "Empty set" "${tree_migrations_out}"; then
+                        region_ids=$( ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -e "show regions;" 2>/dev/null | grep -F "${rm_dn_ip}" | awk -F '|' '{gsub(" ","",$2); if ($2 != "") print $2}' | sort -u | tr '\n' ',' | sed 's/,$//' )
+                        let fail_flag++
+                        v_warnMessage="${v_warnMessage}.remove datanode failed: migrations empty but DN remains, DN ID=${v_rm_datanode_id}, IP=${rm_dn_ip}, Region ID=${region_ids:-N/A}"
+                        log "WARN" "remove datanode failed: migrations empty but DN remains; DN ID=${v_rm_datanode_id}, IP=${rm_dn_ip}, Region ID=${region_ids:-N/A}; retrying"
+                        ${cli_dir}/sbin/start-cli.sh -h ${remove_cmd_host} -e "remove datanode ${v_rm_datanode_id};" >"${remove_out}" 2>&1
+                        sleep 10
                 else
-                        break 
+                        sleep 300
                 fi
         done
         while true
@@ -711,7 +750,9 @@ if [[ ${backup_flag} -gt 0 ]];then
 	sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
     sh -x ${clean_env_dir}/backup_cluster_logs_data.sh ${v_backup_time} 2>&1
 fi
-if [[ ${backup_log_flag} -gt 0 ]];then
+# Always preserve ConfigNode/DataNode logs when the testcase is going to FAIL,
+# including failures detected by remove_datanode that do not set backup_log_flag.
+if [[ ${backup_log_flag} -gt 0 || ${fail_flag} -gt 0 ]];then
 	v_backup_time=`date +%s`
 	sh -x ${clean_env_dir}/stop_cluster.sh 2>&1
     sh -x ${clean_env_dir}/backup_cluster_logs.sh ${v_backup_time} 2>&1

@@ -64,6 +64,7 @@ migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
 dn_metric_port=9092
+sync_lag_check_interval=15
 
 # Thrift 最大帧大小: 调到 256MB。默认 0(不限)在大 region 迁移/大 object 写入时可能触发帧过大错误;
 # 显式设 256MB 与 tc0003 参考一致(CN/DN 均设 dn_thrift_max_frame_size)。
@@ -83,7 +84,7 @@ bm_table_conf="${bm_dir}/conf_table"            # 2) 可写视图表(usr_sod0.wr
 bm_table_plain_conf="${bm_dir}/conf_table_plain"  # 3) 普通表(usr_nrm0.normal_table_0, 无 object)
 bm_guard_seconds=$((2 * 3600))          # benchmark 进程硬看门狗
 bm_write_seconds=1200                    # benchmark 写入约 20 分钟(养大 Region)
-bm_test_max_time_ms=$((bm_write_seconds * 1000))
+bm_test_max_time_ms=$((bm_guard_seconds * 1000)) # Keep workload alive through migration and post-checks
 bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
@@ -1117,6 +1118,7 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_conf}" PORT "${benchmark_ports}"
     set_bm "${table_conf}" USERNAME "rainer"
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
     set_bm "${table_conf}" LOOP "${bm_loop}"
@@ -1131,6 +1133,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_plain_conf}" PORT "${benchmark_ports}"
     set_bm "${table_plain_conf}" USERNAME "rainer"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
@@ -1265,19 +1268,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # Avoid expanding the full Prometheus response into shell xtrace output.
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1301,7 +1309,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep "${sync_lag_check_interval}"
     done
 }
 
@@ -1557,13 +1565,22 @@ verify_mixed_results() {
     local tree_file table_file
     collect_regions tree mixed_final_tree
     collect_regions table mixed_final_table
-    tree_file="${run_artifact_dir}/mixed_final_tree_regions.out"
-    table_file="${run_artifact_dir}/mixed_final_table_regions.out"
+    # collect_regions 的文件名格式为 ${stage}_${dialect}_regions.out。
+    # stage 已包含 tree/table，因此最终文件名会带两次方言后缀。
+    tree_file="${run_artifact_dir}/mixed_final_tree_tree_regions.out"
+    table_file="${run_artifact_dir}/mixed_final_table_table_regions.out"
+    if [ ! -s "${tree_file}" ] || [ ! -s "${table_file}" ]; then
+        let fail_flag++
+        v_warnMessage="${v_warnMessage}failed to collect final region topology."
+        log "ERROR" "Final region topology artifact missing or empty: tree=${tree_file}, table=${table_file}"
+        return 1
+    fi
     local tree_now table_now
     tree_now=$(awk -F'|' -v rid="${mig_region_id[0]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}/^\|/{if(t($2)==rid)print t($8)}' "${tree_file}" | sort -n | tr '
 ' ' ' | sed 's/ *$//')
     table_now=$(awk -F'|' -v rid="${mig_region_id[1]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}/^\|/{if(t($2)==rid)print t($8)}' "${table_file}" | sort -n | tr '
 ' ' ' | sed 's/ *$//')
+    log "INFO" "Final topology: tree region ${mig_region_id[0]} now=[${tree_now}] baseline=[${mig_baseline_dn_ids[0]}]; table region ${mig_region_id[1]} now=[${table_now}] baseline=[${mig_baseline_dn_ids[1]}]"
     if [ "${tree_now}" != "${mig_baseline_dn_ids[0]}" ]; then
         let fail_flag++; v_warnMessage="${v_warnMessage}add-phase tree migration did not roll back to baseline."
     fi
@@ -1591,24 +1608,41 @@ main() {
     ( cli_tree "${query_ip}" "migrate region ${mig_region_id[0]} from ${mig_src_dn_id[0]} to ${mig_tgt_dn_id[0]};" > "${run_artifact_dir}/mixed_tree_cmd.out" 2>&1 ) &
     local tree_pid=$!
     ( cli_table "${query_ip}" "migrate region ${mig_region_id[1]} from ${mig_src_dn_id[1]} to ${mig_tgt_dn_id[1]};" > "${run_artifact_dir}/mixed_table_cmd.out" 2>&1 ) &
-    local table_pid=$! begin hit=0 tree_reg table_reg
+    # The two procedures are scheduled independently. Remember each observed
+    # Adding state instead of requiring both rows in the same poll; otherwise
+    # a healthy run can miss the short overlap window.
+    local table_pid=$! begin hit=0 tree_seen=0 table_seen=0 tree_reg table_reg
     begin=$(date +%s)
     while [ $(( $(date +%s) - begin )) -le 1200 ]; do
         collect_regions tree mixed_probe_tree
         collect_regions table mixed_probe_table
         tree_reg="${run_artifact_dir}/mixed_probe_tree_tree_regions.out"
         table_reg="${run_artifact_dir}/mixed_probe_table_table_regions.out"
-        if operation_visible 0 && operation_visible 1 && \
-           awk -F'|' -v rid="${mig_region_id[0]}" -v tgt="${mig_tgt_dn_id[0]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}/^\|/{if(t($2)==rid&&t($8)==tgt&&t($4)=="Adding")a=1}END{exit(a?0:1)}' "${tree_reg}" && \
-           awk -F'|' -v rid="${mig_region_id[1]}" -v tgt="${mig_tgt_dn_id[1]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/,"",s);return s}/^\|/{if(t($2)==rid&&t($8)==tgt&&t($4)=="Adding")a=1}END{exit(a?0:1)}' "${table_reg}"; then
+        if operation_visible 0 && awk -F'|' -v rid="${mig_region_id[0]}" -v tgt="${mig_tgt_dn_id[0]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/, "", s);return s}/^\|/{if(t($2)==rid&&t($8)==tgt&&t($4)=="Adding")a=1}END{exit(a?0:1)}' "${tree_reg}"; then
+            tree_seen=1
+        fi
+        if operation_visible 1 && awk -F'|' -v rid="${mig_region_id[1]}" -v tgt="${mig_tgt_dn_id[1]}" 'function t(s){gsub(/^[ 	]+|[ 	]+$/, "", s);return s}/^\|/{if(t($2)==rid&&t($8)==tgt&&t($4)=="Adding")a=1}END{exit(a?0:1)}' "${table_reg}"; then
+            table_seen=1
+        fi
+        if [ "${tree_seen}" -eq 1 ] && [ "${table_seen}" -eq 1 ]; then
             hit=1; break
         fi
         sleep 0.2
     done
     if [ "${hit}" -ne 1 ]; then
-        let fail_flag++; v_warnMessage="${v_warnMessage}two concurrent Adding migrations were not simultaneously observed."
+        let fail_flag++; v_warnMessage="${v_warnMessage}both mixed migrations did not reach Adding (tree_seen=${tree_seen}, table_seen=${table_seen})."
+        log "ERROR" "Mixed-cancel precondition unmet: tree_seen=${tree_seen}, table_seen=${table_seen}"
+        # CANCEL was not issued, so do not run rollback/snapshot assertions on
+        # still-running migrations. Clean up and report only the precondition.
+        send_cancel mixed_precondition_cleanup || true
+        wait_global_migrations_clear mixed_precondition_cleanup || true
+        wait "${tree_pid}" || true; wait "${table_pid}" || true
+        stop_benchmark_now
+        check_cancel_logs || true
+        finalize_test "${test_begin_time}"
+        return 1
     else
-        log "INFO" "Concurrent Adding state caught: tree and table targets are Adding"
+        log "INFO" "Mixed-cancel window caught: both tree and table migrations reached Adding"
         send_cancel concurrent_adding
     fi
     wait_global_migrations_clear mixed || true

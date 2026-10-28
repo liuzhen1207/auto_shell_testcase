@@ -50,6 +50,7 @@ fail_flag=0
 warn_num=0
 warn_message="No Warn."
 backup_done=0
+table_name=""
 test_start_epoch="$(date +%s)"
 
 log() {
@@ -210,7 +211,16 @@ QUERY_DEVICE_NUM=1"
   printf '\n%s\nDB_SWITCH=IoTDB-200-SESSION_BY_TABLET\nIoTDB_DIALECT_MODE=table\nDB_NAME=v2_295_table\nIoTDB_TABLE_NAME_PREFIX=table_\nIoTDB_TABLE_NUMBER=10\nTAG_NUMBER=2\nTAG_KEY_PREFIX=tag_\nTAG_VALUE_PREFIX=value_\nTAG_VALUE_CARDINALITY=50,50\nDEVICE_NAME_PREFIX=d_\nSENSOR_NAME_PREFIX=s_\n' "${common}" >>"${bm_work_dir}/table/config.properties"
 }
 
+create_test_databases() {
+  local tree_out="${result_dir}/create_tree_database.out"
+  local table_out="${result_dir}/create_table_database.out"
+  run_cli "${query_ip}" "CREATE DATABASE root.v2_295_tree;" "${tree_out}" || true
+  grep -q "successfully" "${tree_out}" || mark_fail "Tree benchmark database creation failed."
+  run_cli_table "${query_ip}" "CREATE DATABASE v2_295_table;" "${table_out}" || true
+  grep -q "successfully" "${table_out}" || mark_fail "Table benchmark database creation failed."
+}
 start_benchmark() {
+  create_test_databases
   prepare_benchmark
   log INFO "Start JDK17 Tree and Table benchmark workloads"
   nohup "${bm_dir}/benchmark.sh" -cf "${bm_work_dir}/tree" >"${bm_log_dir}/tree.out" 2>&1 &
@@ -240,7 +250,14 @@ collect_thread_dump() {
   local node="$1"
   local pid="$2"
   local tag="$3"
-  ssh "${os_user_name}@${node}" "sudo jstack -l '${pid}' > '${db_dir}/${tag}_jstack.log' 2>&1 || sudo jcmd '${pid}' Thread.print > '${db_dir}/${tag}_jstack.log' 2>&1 || true"
+  local remote_dump="${db_dir}/${tag}_jstack.log"
+  local suffix="$(echo "${node}" | awk -F. '{print $4}')"
+  ssh "${os_user_name}@${node}" "sudo jstack -l '${pid}' > '${remote_dump}' 2>&1 || sudo jcmd '${pid}' Thread.print > '${remote_dump}' 2>&1 || true"
+  if scp -q "${os_user_name}@${node}:${remote_dump}" "${result_dir}/${tag}_${suffix}_jstack.log"; then
+    log INFO "Thread dump copied to ${result_dir}/${tag}_${suffix}_jstack.log"
+  else
+    log WARN "Could not copy timeout thread dump from ${node}:${remote_dump}"
+  fi
 }
 
 stop_datanode_with_timeout() {
@@ -307,22 +324,47 @@ choose_healthy_query_ip() {
   return 1
 }
 
+discover_table() {
+  local query_host="$1"
+  local tables_out="${result_dir}/show_tables_${query_host##*.}.out"
+  local discovered=""
+  [[ -n "${table_name}" ]] && return 0
+  if ! run_cli_table "${query_host}" "use v2_295_table; show tables;" "${tables_out}"; then
+    mark_fail "Could not list tables in v2_295_table via ${query_host}."
+    return 1
+  fi
+  discovered="$(grep -oE 'table_[0-9]+' "${tables_out}" | head -1)"
+  if [[ -z "${discovered}" ]]; then
+    mark_fail "Table benchmark precondition failed: no generated table found after warmup; see ${tables_out}."
+    cat "${tables_out}" >>"${log_file}"
+    return 1
+  fi
+  table_name="${discovered}"
+  log INFO "Using generated table ${table_name} for availability and replica checks"
+}
+
 check_query_result() {
   local tag="$1"
   local query_host="${2:-${query_ip}}"
   local tree_output="${result_dir}/query_tree_${tag}.out"
   local table_output="${result_dir}/query_table_${tag}.out"
-  run_cli "${query_host}" "show devices root.v2_295_tree.** limit 10" "${tree_output}" || mark_fail "Tree query failed at ${tag} via ${query_host}."
-  run_cli_table "${query_host}" "use v2_295_table; show devices from table_0 limit 10" "${table_output}" || mark_fail "Table query failed at ${tag} via ${query_host}."
-  if grep -Eqi 'Exception|Error:' "${tree_output}" || ! grep -q 'root.v2_295_tree' "${tree_output}"; then mark_fail "Tree query returned no valid data at ${tag}."; fi
-  if grep -Eqi 'Exception|Error:' "${table_output}" || ! grep -q 'd_' "${table_output}"; then mark_fail "Table query returned no valid data at ${tag}."; fi
+  local invalid=0
+  if ! discover_table "${query_host}"; then return 1; fi
+  run_cli "${query_host}" "show devices root.v2_295_tree.** limit 10" "${tree_output}" || { mark_fail "Tree query failed at ${tag} via ${query_host}."; invalid=1; }
+  run_cli_table "${query_host}" "use v2_295_table; show devices from ${table_name} limit 10" "${table_output}" || { mark_fail "Table query failed at ${tag} via ${query_host} for ${table_name}."; invalid=1; }
+  if grep -Eqi 'Exception|Error:' "${tree_output}" || ! grep -q 'root.v2_295_tree' "${tree_output}"; then mark_fail "Tree query returned no valid data at ${tag}."; invalid=1; fi
+  if grep -Eqi 'Exception|Error:' "${table_output}" || ! grep -q 'd_' "${table_output}"; then mark_fail "Table query returned no valid data at ${tag} for ${table_name}."; invalid=1; fi
+  return "${invalid}"
 }
 
 run_stop_restart_cycles() {
   local round node suffix active_query_ip
   log INFO "Warm up workload for ${WARMUP_SECONDS}s"
   sleep "${WARMUP_SECONDS}"
-  check_query_result warmup
+  # A healthy baseline is required before any DataNode is stopped. In the failed
+  # run, table_0 did not exist even at warmup, so all later Table query failures
+  # were setup fallout and did not measure replica availability.
+  check_query_result warmup || { log ERROR "Skip stop/restart cycles because the benchmark did not produce queryable baseline data."; return 1; }
   round=1
   while [[ "${round}" -le "${TEST_ROUNDS}" ]]; do
     for node in ${dn_nodes}; do
@@ -364,7 +406,7 @@ wait_sync_and_check_replica_consistency() {
       tree_file="${result_dir}/consistent_tree_${suffix}.out"
       table_file="${result_dir}/consistent_table_${suffix}.out"
       run_cli "${node}" "select count(*) from root.v2_295_tree.**" "${tree_file}" || stable=0
-      run_cli_table "${node}" "use v2_295_table; select count(*) from table_0" "${table_file}" || stable=0
+      run_cli_table "${node}" "use v2_295_table; select count(*) from ${table_name}" "${table_file}" || stable=0
       grep -Eqi 'Exception|Error:' "${tree_file}" "${table_file}" && stable=0
       if [[ -z "${base_tree}" ]]; then
         base_tree="${tree_file}"; base_table="${table_file}"

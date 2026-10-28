@@ -89,15 +89,15 @@ bm_table_conf="${bm_dir}/conf_table"            # 2) 可写视图表(usr_sod0.wr
 bm_table_plain_conf="${bm_dir}/conf_table_plain"  # 3) 普通表(usr_nrm0.normal_table_0, 无 object)
 bm_guard_seconds=$((2 * 3600))          # benchmark 进程硬看门狗
 bm_write_seconds=1200                    # benchmark 写入约 20 分钟(养大 Region)
-bm_test_max_time_ms=$((bm_write_seconds * 1000))
+bm_test_max_time_ms=$((bm_guard_seconds * 1000)) # Keep workload alive through migration and post-checks
 bm_loop=100000000
 # tree 每设备传感器列数: 默认 12 时压缩后单 tree region 仅 ~23MB。
 # 120 列时单 region ~100MB, 但迁移走了 IoTConsensus 日志复制快路径(0 次 transmitSnapshot)、~1s 完成,
 # region_migration_speed_limit 只对 snapshot 传输生效 -> 限速没起作用。
-# 再 x10 到 1200 列: 单 region 涨到 ~1GB 量级, 数据量远超 consensus 日志可追赶范围,
+# 再 x20 到 2400 列: 单 region 涨到 ~2GB 量级, 数据量远超 consensus 日志可追赶范围,
 # 迫使新副本走 snapshot 传输(受 1MB/s 限速)-> add-peer 阶段持续数分钟, 取消窗口稳定。
 # (INSERT_DATATYPE_PROPORTION 是比例, 自动按列数缩放, 无需改; 末位=0 仍无 object。)
-tree_sensor_number=1200
+tree_sensor_number=2400
 bm_pids=()
 bm_start_epoch=0
 bm_elapsed_seconds=0
@@ -513,11 +513,20 @@ collect_migrations() {
         cli_table "${query_ip}" "show migrations;" > "${out_file}"
     fi
     trim_file_crlf "${out_file}"
-    {
-        echo "===== $(date +'%Y-%m-%d %H:%M:%S') stage=${stage} dialect=${dialect} show migrations ====="
-        cat "${out_file}"
-        echo
-    } >> "${run_artifact_dir}/show_migrations_trace.out"
+    # 高频轮询只在内容变化时记录完整结果，保留状态转换证据，避免重复刷屏。
+    local trace_file="${run_artifact_dir}/show_migrations_trace.out"
+    local signature_file="${run_artifact_dir}/.${stage}_${dialect}_migrations.cksum"
+    local signature previous_signature=""
+    signature=$(cksum "${out_file}" | awk '{print $1 ":" $2}')
+    [ -f "${signature_file}" ] && previous_signature=$(cat "${signature_file}")
+    if [ "${signature}" != "${previous_signature}" ]; then
+        {
+            echo "===== $(date +'%Y-%m-%d %H:%M:%S') stage=${stage} dialect=${dialect} show migrations changed ====="
+            cat "${out_file}"
+            echo
+        } >> "${trace_file}"
+        printf '%s\n' "${signature}" > "${signature_file}"
+    fi
     echo "${out_file}"
 }
 
@@ -1151,6 +1160,9 @@ prepare_benchmark_configs() {
     set_bm "${tree_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${tree_conf}" DB_NAME "test"
     set_bm "${tree_conf}" SENSOR_NUMBER "${tree_sensor_number}"
+    # Keep each tree tablet below the default 32 MiB WAL entry limit; the
+    # previous 1,200 sensors x 100 rows produced 83 MiB batches and failed.
+    set_bm "${tree_conf}" BATCH_SIZE_PER_WRITE "20"
     set_bm "${tree_conf}" SCHEMA_CLIENT_NUMBER "10"
     set_bm "${tree_conf}" LOOP "${bm_loop}"
     set_bm "${tree_conf}" TEST_MAX_TIME "${bm_test_max_time_ms}"
@@ -1163,6 +1175,7 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_conf}" PORT "${benchmark_ports}"
     set_bm "${table_conf}" USERNAME "rainer"
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
     set_bm "${table_conf}" LOOP "${bm_loop}"
@@ -1177,6 +1190,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" HOST "${benchmark_hosts}"
     set_bm "${table_plain_conf}" PORT "${benchmark_ports}"
     set_bm "${table_plain_conf}" USERNAME "rainer"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
@@ -1311,19 +1325,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # /metrics 内容很大，禁止 shell xtrace 展开 body 及后续 printf。
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 

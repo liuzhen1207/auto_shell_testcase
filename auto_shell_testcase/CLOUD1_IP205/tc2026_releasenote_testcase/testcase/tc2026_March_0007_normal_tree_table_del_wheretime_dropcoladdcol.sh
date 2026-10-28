@@ -617,6 +617,8 @@ wait_for_sync_completion
       v_diff_total=$((v_diff_tree+v_diff_table))
       if [[ ${v_diff_total} -gt 0 ]];then
          let fail_flag++
+         diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
+         diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "d_"
          v_warnMessage="Failed to check replica data consistency."
          echo "diff : ${v_diff_total}"
       fi

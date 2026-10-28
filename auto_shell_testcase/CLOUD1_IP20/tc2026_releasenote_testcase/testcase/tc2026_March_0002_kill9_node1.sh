@@ -28,7 +28,7 @@ ssl_str=""
 backup_flag=0
 backup_log_flag=0
 v_warnNum=0
-v_warnMessage="No Warn."
+v_warnMessage="."
 v_consensus="IoTConsensus"
 # 清理旧节点文件，复制新配置
 rm -rf "${nodeinfo_dir}/confignode.txt"
@@ -533,7 +533,7 @@ ${cli_dir}/sbin/start-cli.sh -h ${query_ip} -sql_dialect table -e "use db_g_0 ;c
       v_diff_total=$((v_diff_tree+v_diff_table))
       if [[ ${v_diff_total} -gt 0 ]];then
          let v_warnNum++
-         v_warnMessage="Failed to check replica data consistency"
+         v_warnMessage="${v_warnMessage}Failed to check replica data consistency."
          diff ${cur_dir}/q_all_online_tree.out ${cur_dir}/q_stop_ip${v_ip}_tree.out|grep "root"
          diff ${cur_dir}/q_all_online_table.out ${cur_dir}/q_stop_ip${v_ip}_table.out|grep "root"
          echo "diff : ${v_diff_total}"
@@ -573,12 +573,14 @@ do
 	   let fail_flag++
 	   let backup_log_flag++
 	   echo "CN ${line} NullPointer : ${v_npe}"
+         v_warnMessage="${v_warnMessage}CN : NullPointerException."
    fi
    v_cn_err_total=$((v_cn_err1+v_cn_err2))
    if [[ ${v_cn_err_total} -gt 0 ]];then
            let fail_flag++
            let backup_log_flag++
            echo "CN ${line} has error: ${v_npe}"
+         v_warnMessage="${v_warnMessage}CN : but return HAS_MORE_STATE OR BufferUnderflowException."
    fi
 done
 exec 3<${nodeinfo_dir}/datanode.txt
@@ -601,11 +603,13 @@ do
            let fail_flag++
 	   let backup_log_flag++
            echo "DN ${line} NullPointer : ${v_npe}"
+         v_warnMessage="${v_warnMessage}DN : NullPointerException."
    fi
    if [[ ${v_dn_total_err} -gt 0 ]];then
 	   let fail_flag++
 	    let backup_flag++
 	   echo "DN ${line} has error: ${v_dn_total_err}"
+         v_warnMessage="${v_warnMessage}DN unexpected log."
    fi
 
 done
@@ -716,7 +720,8 @@ alter_timeseries_type() {
 
 function restart_node1()
 {
-sleep 600 
+sleep 600
+local v_check_bm_elp_t1=`date +%s` 
 readonly_ip=`head -1 ${nodeinfo_dir}/datanode.txt`
 while true
 do
@@ -762,6 +767,15 @@ v_bm=`jps|grep App|wc -l`
 if [[ ${v_bm} = 0 ]];then
    break
    return 0 # This command won’t be executed.
+else
+   v_check_bm_elp_t2=`date +%s`
+   v_check_bm_elp=$((v_check_bm_elp_t2-v_check_bm_elp_t1))
+   if [[ ${v_check_bm_elp} -gt 18000 ]];then
+      # kill bm
+      jps|grep App|awk '{print "kill -9 "$1}'|sh
+      v_warnMessage="${v_warnMessage}The benchmark has been running for more than 18000 seconds and has not yet completed."
+      let v_warnNum++ 
+   fi
 fi
 done
 

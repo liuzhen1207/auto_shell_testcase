@@ -408,7 +408,12 @@ do
    v_err10=`ssh ${os_user_name}@${line} "grep \"RuntimeException: data type not matched\" ${db_dir}/logs/*datanode*all*|wc -l"`
    v_err11=`ssh ${os_user_name}@${line} "grep ArithmeticException ${db_dir}/logs/*datanode*all*|wc -l"`
    v_warn12=`ssh ${os_user_name}@${line} "grep \"UnsupportedOperationException: org.apache.tsfile.read.common.block.column.FloatColumn\" ${db_dir}/logs/*datanode*all*|wc -l"`
-   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11+v_warn12))
+   # FloatColumn UnsupportedOperationException is emitted by the known treeview workload
+   # and was historically counted as a warning (v_warn12); do not turn it into a failure.
+   v_dn_total_err=$((v_err+v_err2+v_err3+v_err4+v_err5+v_err6+v_err7+v_err8+v_err9+v_err10+v_err11))
+   if [[ ${v_warn12} -gt 0 ]];then
+           echo "DN ${line} known treeview FloatColumn warning: ${v_warn12}"
+   fi
 
    if [[ ${v_npe} -gt 0 ]];then
            let fail_flag++

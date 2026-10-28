@@ -64,6 +64,7 @@ migrate_thread_count=10
 # DataNode Prometheus 指标端口(用于直连各 DN 抓取 syncLag 判断副本同步归零)。
 # 中心 Prometheus(172.16.2.25) 不采集本集群 ClusterID2，故直连各 DN :dn_metric_port/metrics。
 dn_metric_port=9092
+sync_lag_check_interval=15
 
 # Thrift 最大帧大小: 调到 256MB。默认 0(不限)在大 region 迁移/大 object 写入时可能触发帧过大错误;
 # 显式设 256MB 与 tc0003 参考一致(CN/DN 均设 dn_thrift_max_frame_size)。
@@ -1105,6 +1106,10 @@ prepare_benchmark_configs() {
     set_bm "${tree_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${tree_conf}" DB_NAME "test"
     set_bm "${tree_conf}" SENSOR_NUMBER "${tree_sensor_number}"
+    # Give LOAD BALANCE enough independently placed user regions to evaluate.
+    set_bm "${tree_conf}" GROUP_NUMBER "4"
+    # Create enough independent groups/regions for LOAD BALANCE to have a
+    # meaningful placement problem across five DataNodes.
     set_bm "${tree_conf}" SCHEMA_CLIENT_NUMBER "10"
     set_bm "${tree_conf}" LOOP "${bm_loop}"
     set_bm "${tree_conf}" TEST_MAX_TIME "${bm_test_max_time_ms}"
@@ -1119,6 +1124,11 @@ prepare_benchmark_configs() {
     set_bm "${table_conf}" USERNAME "rainer"
     set_bm "${table_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_conf}" DB_NAME "usr"
+    # TableMode 约束：每个 client 只能写一个 database，且
+    #   IoTDB_TABLE_NUMBER % GROUP_NUMBER == 0、DATA_CLIENT_NUMBER % GROUP_NUMBER == 0。
+    # 这里 GROUP_NUMBER=1（与 CAM_P1_04 的可用配置一致）；改成 >1 会触发
+    # “Device distribution violated single-database-per-client” 或配置校验退出。
+    set_bm "${table_conf}" GROUP_NUMBER "1"
     set_bm "${table_conf}" LOOP "${bm_loop}"
     set_bm "${table_conf}" TEST_MAX_TIME "${bm_test_max_time_ms}"
     set_bm "${table_conf}" IS_DELETE_DATA "false"
@@ -1133,6 +1143,7 @@ prepare_benchmark_configs() {
     set_bm "${table_plain_conf}" USERNAME "rainer"
     set_bm "${table_plain_conf}" PASSWORD "TimechoDB@2021"
     set_bm "${table_plain_conf}" DB_NAME "usr"
+    set_bm "${table_plain_conf}" GROUP_NUMBER "1"
     set_bm "${table_plain_conf}" LOOP "${bm_loop}"
     set_bm "${table_plain_conf}" TEST_MAX_TIME "${bm_test_max_time_ms}"
     set_bm "${table_plain_conf}" IS_DELETE_DATA "false"
@@ -1156,6 +1167,48 @@ prepare_benchmark_configs() {
     } >> "${log_file}"
 }
 
+bm_retry_max_heap="6G"
+# 3 个 benchmark 错峰启动间隔（秒）：避免 3 个 JVM 同时按默认大堆启动互相抢内存
+bm_launch_interval_seconds=10
+
+benchmark_alive_count() {
+    local pid alive=0
+    for pid in "${bm_pids[@]}"; do
+        if kill -0 "${pid}" 2>/dev/null; then
+            alive=$((alive + 1))
+        fi
+    done
+    echo "${alive}"
+}
+
+launch_benchmark() {
+    local conf=$1 out=$2 heap=${3:-}
+    if [ -n "${heap}" ]; then
+        timeout --preserve-status "${bm_guard_seconds}s" "${bm_runner}" -cf "${conf}" -maxheapsize "${heap}" > "${out}" 2>&1 &
+    else
+        timeout --preserve-status "${bm_guard_seconds}s" "${bm_runner}" -cf "${conf}" > "${out}" 2>&1 &
+    fi
+    bm_pids+=($!)
+}
+
+dump_benchmark_diag() {
+    local log_dir=$1 now=$2 tag=$3
+    local f="${run_artifact_dir}/bm_start_diag_${now}_${tag}.txt"
+    {
+        echo "=== date"; date
+        echo "=== free -g"; free -g
+        echo "=== jps"; jps
+        echo "=== dmesg tail"; dmesg 2>/dev/null | tail -30
+        echo "=== benchmark output tails"
+        local o
+        for o in "${log_dir}/${now}_conf_tree.out" "${log_dir}/${now}_conf_table.out" "${log_dir}/${now}_conf_table_plain.out"; do
+            echo "--- ${o}"
+            tail -5 "${o}" 2>/dev/null
+        done
+    } > "${f}" 2>&1
+    log "INFO" "benchmark startup diagnostics saved: ${f}"
+}
+
 start_benchmark() {
     check_benchmark_assets || return 1
     prepare_benchmark_configs
@@ -1163,31 +1216,53 @@ start_benchmark() {
     mkdir -p "${bm_log_dir}"
     local now
     now=$(date +%Y%m%d_%H%M%S)
-    timeout --preserve-status "${bm_guard_seconds}s" "${bm_runner}" -cf "${bm_tree_conf}" > "${bm_log_dir}/${now}_conf_tree.out" 2>&1 &
-    bm_pids+=($!)
-    timeout --preserve-status "${bm_guard_seconds}s" "${bm_runner}" -cf "${bm_table_conf}" > "${bm_log_dir}/${now}_conf_table.out" 2>&1 &
-    bm_pids+=($!)
-    timeout --preserve-status "${bm_guard_seconds}s" "${bm_runner}" -cf "${bm_table_plain_conf}" > "${bm_log_dir}/${now}_conf_table_plain.out" 2>&1 &
-    bm_pids+=($!)
-    bm_start_epoch=$(date +%s)
-    log "INFO" "Started 3 benchmark processes (tree no-object + writable-view+object + plain-table no-object), target write ~${bm_write_seconds}s"
+    local attempt heap alive waited
+    bm_pids=()
+    for attempt in 1 2; do
+        heap=""
+        if [ "${attempt}" -eq 2 ]; then
+            heap="${bm_retry_max_heap}"
+            log "WARN" "benchmark startup retry with -maxheapsize ${heap}"
+        fi
+        launch_benchmark "${bm_tree_conf}" "${bm_log_dir}/${now}_conf_tree.out" "${heap}"
+        sleep "${bm_launch_interval_seconds}"
+        launch_benchmark "${bm_table_conf}" "${bm_log_dir}/${now}_conf_table.out" "${heap}"
+        sleep "${bm_launch_interval_seconds}"
+        launch_benchmark "${bm_table_plain_conf}" "${bm_log_dir}/${now}_conf_table_plain.out" "${heap}"
+        bm_start_epoch=$(date +%s)
+        log "INFO" "Started 3 benchmark processes (attempt ${attempt}, heap=${heap:-default}), target write ~${bm_write_seconds}s"
 
-    # 早期健康检查: 20s 内进程不应全部退出，并记录存活个数(期望 3)
-    sleep 20
-    local alive
-    alive=$(jps | awk '/ App$/ {print $1}' | wc -l)
-    log "INFO" "benchmark App alive after 20s = ${alive} (expected 3)"
-    if [ "${alive}" -le 0 ]; then
-        let fail_flag++
-        v_warnMessage="${v_warnMessage}benchmark processes exited early."
-        log "ERROR" "benchmark processes exited early"
-        return 1
-    fi
-    if [ "${alive}" -lt 3 ]; then
-        v_warnMessage="${v_warnMessage}only ${alive}/3 benchmark processes alive after 20s."
-        log "WARN" "only ${alive}/3 benchmark processes alive after 20s"
-    fi
-    return 0
+        # 早期健康检查：最多等 60s，3 个都活着才算启动成功；
+        # 进程在启动阶段退出时，输出往往没有异常栈（被 SIGKILL/资源不足），
+        # 因此额外落一份 free/jps/dmesg/各进程输出尾部的诊断快照。
+        waited=0
+        alive=0
+        while [ "${waited}" -lt 60 ]; do
+            sleep 5
+            waited=$((waited + 5))
+            alive=$(benchmark_alive_count)
+            log "INFO" "benchmark alive=${alive}/3 after ${waited}s (attempt ${attempt})"
+            [ "${alive}" -eq 3 ] && break
+        done
+        if [ "${alive}" -eq 3 ]; then
+            log "INFO" "benchmark startup OK (attempt ${attempt})"
+            return 0
+        fi
+
+        dump_benchmark_diag "${bm_log_dir}" "${now}" "attempt${attempt}"
+        local pid
+        for pid in "${bm_pids[@]}"; do
+            kill -9 "${pid}" 2>/dev/null || true
+        done
+        wait 2>/dev/null || true
+        bm_pids=()
+        sleep 5
+    done
+
+    let fail_flag++
+    v_warnMessage="${v_warnMessage}benchmark startup failed after retry (alive=${alive}/3); LOAD BALANCE/CANCEL not executed."
+    log "ERROR" "benchmark startup failed after retry; abort before LOAD BALANCE"
+    return 1
 }
 
 wait_for_benchmark_finish() {
@@ -1265,19 +1340,24 @@ wait_for_sync_lag_zero() {
     local begin_time
     begin_time=$(date +%s)
     log "INFO" "Waiting IoTConsensus syncLag to reach zero on all DataNodes (port ${dn_metric_port})"
+    refresh_running_datanodes
     while true; do
-        refresh_running_datanodes
         local total_nonzero=0 unreachable=0 checked=0 dn_id dn_ip body nz
         while read -r dn_id dn_ip; do
             [ -z "${dn_ip}" ] && continue
             checked=$((checked + 1))
+            # Avoid expanding the full Prometheus response into shell xtrace output.
+            local xtrace_was_enabled=0
+            case "$-" in *x*) xtrace_was_enabled=1; set +x ;; esac
             body=$(curl -s -m 10 "http://${dn_ip}:${dn_metric_port}/metrics" 2>/dev/null)
             if [ -z "${body}" ]; then
+                [ "${xtrace_was_enabled}" -eq 1 ] && set -x
                 unreachable=$((unreachable + 1))
                 continue
             fi
             # 统计该 DN 上 syncLag 非零(>1e-6)的序列数
             nz=$(printf '%s\n' "${body}" | awk '/type="syncLag"/ { v=$NF+0; if (v>0.000001) c++ } END { print c+0 }')
+            [ "${xtrace_was_enabled}" -eq 1 ] && set -x
             total_nonzero=$((total_nonzero + nz))
         done < "${run_artifact_dir}/running_datanodes.txt"
 
@@ -1301,7 +1381,7 @@ wait_for_sync_lag_zero() {
             log "ERROR" "syncLag did not converge within ${timeout_seconds}s; consistency result may be unreliable"
             return 1
         fi
-        sleep 5
+        sleep "${sync_lag_check_interval}"
     done
 }
 
@@ -1582,19 +1662,29 @@ main() {
 
     local lb_out="${run_artifact_dir}/load_balance_cmd.out"
     ( cli_tree "${query_ip}" "LOAD BALANCE;" > "${lb_out}" 2>&1 ) &
-    local lb_pid=$! begin mf count=0
+    local lb_pid=$! begin mf count=0 max_count=0 lb_rc=0
     begin=$(date +%s)
     while [ $(( $(date +%s) - begin )) -le 600 ]; do
         mf=$(collect_migrations tree load_balance_active)
         count=$(count_migrate_rows "${mf}")
+        if [ "${count}" -gt "${max_count}" ]; then
+            max_count=${count}
+            cp -f "${mf}" "${run_artifact_dir}/load_balance_peak_migrate_count.out"
+            log "INFO" "LOAD BALANCE peak visible MIGRATE rows=${max_count}; snapshot saved"
+        fi
         if [ "${count}" -ge 2 ]; then break; fi
         sleep 1
     done
     if [ "${count}" -lt 2 ]; then
         let fail_flag++
-        v_warnMessage="${v_warnMessage}LOAD BALANCE did not expose at least two MIGRATE rows."
-        log "ERROR" "LOAD BALANCE batch not constructed, visible MIGRATE count=${count}"
-        wait "${lb_pid}" || true
+        cp -f "${mf}" "${run_artifact_dir}/load_balance_last_visible.out"
+        wait "${lb_pid}" || lb_rc=$?
+        collect_regions tree load_balance_timeout_tree || true
+        collect_regions table load_balance_timeout_table || true
+        v_warnMessage="${v_warnMessage}LOAD BALANCE did not expose at least two concurrent MIGRATE rows (peak=${max_count}, final=${count}, command_exit=${lb_rc}); diagnostic snapshots saved."
+        log "ERROR" "LOAD BALANCE did not expose two concurrent MIGRATE rows within 600s (peak=${max_count}, final=${count}, command_exit=${lb_rc})"
+        log "INFO" "LOAD BALANCE command output follows; artifacts: load_balance_cmd.out, show_migrations_trace.out, load_balance_peak_migrate_count.out, load_balance_last_visible.out, and timeout region snapshots"
+        cat "${lb_out}" >> "${log_file}" 2>&1 || true
     else
         cp -f "${mf}" "${run_artifact_dir}/load_balance_before_cancel.out"
         log "INFO" "LOAD BALANCE exposed ${count} MIGRATE rows; sending one global cancel"
