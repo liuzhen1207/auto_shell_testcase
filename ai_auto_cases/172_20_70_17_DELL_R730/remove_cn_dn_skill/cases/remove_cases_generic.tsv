@@ -1,0 +1,75 @@
+# iotdb-remove-cn-dn case matrix
+#
+# Tab separated.  Lines starting with '#' and blank lines are ignored.
+#
+# Columns
+#   1 case_id    stable identifier, also the result key
+#   2 target     cn | dn
+#   3 selector   which node to remove
+#                  dn: running | unknown | readonly | diskfull | nonexistent
+#                      | multi | concurrent | adding | rf_limit
+#                  cn: leader | follower | stopped | nonexistent | shrink | shrink_leader_first
+#   4 abnormal   comma separated abnormal operations injected while the remove
+#                procedure is running (see references/cases.md)
+#                  none | kill9_target | kill9_other_dn | restart_dn
+#                  | restart_cn | kill9_cn | stop_cn | concurrent_remove
+#                  | remove_twice | invalid_sql | load_balance
+#                  | other_dn_readonly | other_dn_stop | other_dn_diskfull
+#   5 data_rf    data replication factor: default | 1 | 2 | 3
+#   6 schema_rf  schema replication factor: default | 1 | 2 | 3
+#   7 workloads  benchmark workloads: default | tree,table,table_view
+#   8 notes      free text, copied into the report
+#   9 extras     optional, comma separated extra verification stages (blank = none)
+#                  object_size           TDB-835 guard: per-replica ObjectSize must be
+#                                        non-negative and equal the physical .bin bytes
+#                  cold_restart          stop the cluster, drop TableObjectSizeFile_*
+#                                        (cache-less start), re-run the size audit
+#                  object_delete_residue TDB-861 probe: a freshly migrated replica must not
+#                                        keep OBJECT files the leader already deleted
+#
+# The list mirrors the intent of
+#   MigrateRegionTest/testcase/remove_iotv1_testcase_list.txt
+# (tc101..tc121, tc201..tc202) generalised so that no IP or node id is baked in.
+#
+# After the remove procedure finishes, the runner HEALS any node that an
+# abnormal operation left down or disk-full, and only then applies the
+# sync-lag and replica-consistency gates.
+
+# --- DataNode removal -------------------------------------------------------
+dn_running_remove	dn	running	none	default	default	default	Remove a healthy Running DataNode under read/write load (tc110).
+dn_unknown_remove	dn	unknown	none	default	default	default	Stop the DataNode process first, then remove it while Unknown (tc109).
+dn_readonly_remove	dn	readonly	none	default	default	default	Switch the DataNode to ReadOnly live, then remove it (tc111).
+dn_running_remove_1rep	dn	running	none	1	default	default	Remove the DataNode with data_replication_factor=1 (tc105).
+dn_nonexistent_remove	dn	nonexistent	invalid_sql	default	default	default	Remove a DataNode id that does not exist plus malformed remove SQL (tc104).
+dn_multi_remove	dn	multi	none	3	default	default	Remove three DataNodes one after another (tc112).
+dn_concurrent_remove	dn	concurrent	concurrent_remove	3	default	default	Two REMOVE DATANODE procedures submitted at the same time (tc116).
+dn_remove_kill9_target	dn	running	kill9_target	default	default	default	kill -9 the DataNode that is being removed (tc118).
+dn_remove_kill9_other	dn	running	kill9_other_dn	default	default	default	kill -9 a second DataNode while the first one is being removed.
+dn_remove_restart	dn	running	restart_dn	default	default	default	Restart a DataNode in the middle of the remove procedure (tc13).
+dn_remove_twice	dn	running	remove_twice	default	default	default	Re-submit REMOVE DATANODE for the same node while it runs.
+dn_added_dn_remove	dn	adding	none	default	default	default	Join the held-back DataNode, then remove that just-added node (grow-then-shrink; no spare host needed).
+dn_remove_rf_limit	dn	rf_limit	none	3	default	default	Remove DataNodes until only data_replication_factor remain; the next remove must be refused (tc117).
+dn_remove_load_balance	dn	running	load_balance	default	default	default	Issue LOAD BALANCE while the remove procedure is running (tc38).
+dn_remove_other_readonly	dn	running	other_dn_readonly	default	default	default	Remove a Running DataNode while a second DataNode turns ReadOnly (tc113).
+dn_remove_other_unknown	dn	running	other_dn_stop	default	default	default	Remove a Running DataNode while a second replica goes Unknown (tc114/tc115).
+dn_remove_other_diskfull	dn	running	other_dn_diskfull	default	default	default	Remove a Running DataNode while a second DataNode is disk-full (tc120).
+
+# --- ConfigNode removal -----------------------------------------------------
+cn_follower_remove	cn	follower	none	default	default	default	Remove a Running Follower ConfigNode (tc202/tc2).
+cn_leader_remove	cn	leader	none	default	default	default	Remove the ConfigNode that currently is the Leader (tc202/tc3).
+cn_stopped_remove	cn	stopped	none	default	default	default	Stop a ConfigNode process, then remove it (tc201).
+cn_nonexistent_remove	cn	nonexistent	invalid_sql	default	default	default	Remove a ConfigNode id that does not exist plus malformed remove SQL (tc202).
+cn_leader_remove_kill9_follower	cn	leader	kill9_cn	default	default	default	kill -9 another ConfigNode while the Leader is being removed. NOTE: the errors observed on this case end BEFORE the kill -9 is injected, so they come from the removal itself, not from the kill; they are part of the ConfigNode-removal transient tracked as finding 1, with every ConfigNode alive.
+cn_follower_remove_restart	cn	follower	restart_cn	default	default	default	Restart a ConfigNode during the Follower remove procedure. NOTE: on 3 ConfigNodes this removes one (3C->2C) and then stops another, leaving 1 vote where 2 are needed, so an outage is EXPECTED here and is not an availability defect (R&D confirmed: at 2 ConfigNodes a restart cannot be made highly available). Use >=5 ConfigNodes to exercise the real high-availability path. See CN_BELOW_QUORUM_EXPECTED_OUTAGE.
+cn_remove_below_quorum	cn	shrink	none	default	default	default	Shrink the ConfigNodes one at a time down to a single node, probing after EVERY removal that the cluster can still perform a schema mutation. A one-member ConfigRegion is a valid group, so the cluster is expected to keep serving; this is NOT expected to be refused. On rc2 0b4dc9a it breaks after the second removal with 'The consensus group ConfigRegion[0] doesn't exist'.
+cn_shrink_leader_first	cn	shrink_leader_first	none	default	default	default	Same shrink to a single ConfigNode, but the Leader is removed FIRST (while three still exist) and a Follower last. Companion to cn_remove_below_quorum, which removes the Leader last; together they isolate whether the outage comes from removing the Leader at size 2 or merely from reaching a single-member ConfigRegion.
+dn_remove_restart_storm	dn	running	restart_dn,restart_dn,restart_dn	default	default	default	Restart the same DataNode repeatedly across the remove procedure (widens the member-replacement window; the silent row loss needs a restart while the new replica is still catching up)
+dn_remove_restart_sweep	dn	running	restart_dn,restart_dn,restart_dn,restart_dn	default	default	default	Restart EVERY other DataNode once during the remove procedure (ABNORMAL_DN_ROTATE=true): the node holding the freshly migrated replica is restarted by construction, instead of one node three times
+dn_concurrent_remove_writes_tdb116	dn	multi	none	3	default	default	TDB-116: cross-partition writes must survive a concurrent node/region removal (moved from iotdb-crud)
+
+# --- OBJECT / region-migration defects --------------------------------------
+dn_object_size_after_migration	dn	running	none	default	default	table	OBJECT size recovery after migration: every replica must report non-negative ObjectSize equal to its physical .bin bytes, including after a cache-less restart (TDB-835 regression guard)	object_size,cold_restart
+dn_object_delete_residue	dn	running	none	default	default	table	Snapshot/GC race: a newly added replica must not keep OBJECT files the leader already physically deleted (TDB-861). The window is armed deterministically (OBJECT overwrite churn + MIGRATE REGION), see references/known-defects.md	object_delete_residue
+dn_object_big_migrate	dn	running	none	default	default	table	Big OBJECT: write ~4 GiB of OBJECT payloads in segments, then migrate every data region and verify byte-identical content (sha256 per row) plus replica sizes (OBJECT 单点上限 4 GiB 的应用场景)	object_big,object_size
+dn_object_manyfiles_residue	dn	running	none	default	default	table	TDB-861 with ~1e5 small OBJECT files: DELETE the table, then migrate every region while the old SnapshotTaker copies the whole object directory	object_many,object_size
+dn_object_single_4g	dn	running	none	default	default	table	One 4 GiB OBJECT point: write it in 8 MiB to_object(isEOF, offset, X'..') chunks (512 statements), read it back as 16 x 256 MiB ranged read_object(o, offset, length) slices with length()+sha256() compared per chunk, migrate the region and re-verify the same 16 chunks plus the .bin size on every replica	object_single,object_size
