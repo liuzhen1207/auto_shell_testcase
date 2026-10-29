@@ -45,7 +45,7 @@
 | 现象 | 用例 | 归属 |
 |---|---|---|
 | 发送端 `ViewColumnAutoSyncTrigger:141/149` ERROR（305/552） | TV-PIPE-03、TV-PIPE-08 | **TV-D1（已录 PLM `TDB-890`，陈耀斌）**（`DEFECT_TV_D1_final.md`） |
-| 接收端 `ClusterConfigTaskExecutor:523` WARN（501 already exists） | TV-PIPE-04 | **TV-D6**（`DEFECT_TV_D6_pipe_receiver_create_db_warn.md`，本次新发现） |
+| 接收端 `ClusterConfigTaskExecutor:523` WARN（501 already exists） | TV-PIPE-04 | **TV-D6** —— 已由上游 [PR #19054](https://github.com/apache/iotdb/pull/19054) 修复（open），`TV-PIPE-04` 作为回归验证点 |
 | 接收端停机期间的 `PipeConnectionException` / handshake retry / subtask retry WARN | TV-PIPE-08 | **非缺陷**：fault injection 必然产物，已加入 harness 归因窗口 |
 
 ## 4. 双集群日志检查的价值

@@ -4,6 +4,8 @@
 - 环境：**双集群** —— 发送端 172.20.70.100–109、接收端 172.20.70.110–119，
   每套 **5 CN + 10 DN / SchemaRegion 5 副本 / DataRegion 3 副本**，`IoTConsensus`
 - 发现用例：`TV-PIPE-04`（`inclusion='all'` 的树模型 pipe 不同步视图）
+- **修复状态**：上游 PR <https://github.com/apache/iotdb/pull/19054> 已按本报告 §5.1 的定位补齐
+  `setEnablePrintExceptionLog(false)`（open，未合并）；**不再单独提 PLM**，以 `TV-PIPE-04` 作为回归验证点
 - 发现方式：pipe 组启用**双集群日志扫描**后，接收端 DN 日志命中
 - 定级建议：**P3（日志级别/幂等表达）**
 

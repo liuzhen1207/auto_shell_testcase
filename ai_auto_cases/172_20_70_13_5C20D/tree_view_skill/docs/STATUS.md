@@ -22,7 +22,7 @@
 | TV-D1 | 扩列请求副本间重复 → CN 305/552，DN 记 ERROR | P2 | **稳定** | **已录 PLM `TDB-890`**（陈耀斌，itemId=1485） |
 | ~~TV-D2~~ | ~~false→true 类型冲突静默成功~~ | — | — | **已撤回：非缺陷** |
 | TV-D3 | 建视图预期失败被 CN 记 ERROR | P3 | **稳定**（必现） | 待提交 |
-| TV-D4 | 密码过期检查降级放行却记带栈 ERROR | P3 | 偶发（专项 3 次未命中） | 观察项 |
+| TV-D4 | DataNode 启动窗口首次登录误报 ERROR + TimeoutException 堆栈 | P2 | 偶发（专项 3 次未命中；TDB-896 有稳定复现 AUTH-014） | **已录 PLM `TDB-896`**（江天） |
 | TV-D5 | 重启后表库丢失 | — | 1 次"命中" | **已撤回：并发 prepare 误报** |
 
 PLM 状态：**TV-D1 已录入 `TDB-890`**（负责人 陈耀斌，itemId=1485）；TV-D2 经确认非缺陷、已撤回。
@@ -95,6 +95,8 @@ FAIL 时的日志备份也覆盖两端（`run_pipe_case.sh`）。
 `TV-PIPE-04` 功能 ok（`all` 不同步视图），FAIL 因**新缺陷 TV-D6**（接收端 WARN）；
 其余在 `queue_pipe2.sh` 复跑（修了 `show pipes` 方言、PIPE-08 行数断言、`load_config` 导入）。
 
-**新缺陷 TV-D6（P3）**：pipe 接收端 `createSchemaSnapshotDatabaseIfNecessary`
-建库语句漏了 `setEnablePrintExceptionLog(false)`，使"库已存在"的**幂等**情形仍打 WARN（501），
-而同文件另一条建库路径已静默。报告：`docs/DEFECT_TV_D6_pipe_receiver_create_db_warn.md`。
+**TV-D6（P3）→ 已由上游修复**：pipe 接收端 `createSchemaSnapshotDatabaseIfNecessary`
+建库语句漏了 `setEnablePrintExceptionLog(false)`，使"库已存在"的**幂等**情形仍打 WARN（501）。
+上游 [PR #19054](https://github.com/apache/iotdb/pull/19054) 已按同一位置补齐（open，未合并）；
+**不单独提 PLM**，以用例 `TV-PIPE-04` 作为回归验证点（含该修复的构建上应转 PASS）。
+报告：`docs/DEFECT_TV_D6_detail.md`。

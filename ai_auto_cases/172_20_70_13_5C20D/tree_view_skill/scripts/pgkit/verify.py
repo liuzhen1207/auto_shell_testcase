@@ -241,7 +241,7 @@ KNOWN_PRODUCT_ERROR_NOISE: tuple[tuple[str, str], ...] = (
     (r"DataNodeAuthUtils:\d+ - Fail to check password expiration",
      "登录时查询密码过期信息的 fallback 失败（DataNodeAuthUtils.java:519-527，"
      "mayBypassPasswordCheckInException=true 时降级放行）；本环境未配置密码过期策略，"
-     "首次连接必然触发，与树转表特性无关。已单独记录为日志级别缺陷（TV-D4）。"),
+     "DataNode 启动窗口内首次登录必然触发，与树转表特性无关。已录入 PLM：TDB-896（江天，P2）。"),
 )
 
 

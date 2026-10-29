@@ -1,6 +1,13 @@
 # 【缺陷报告】TV-D6：Pipe 接收端应用 schema 快照时，`create database` 的**幂等重复**被记为 WARN（501）
 
-> 状态：**已定位根因、稳定复现**（尚未提交 PLM）
+> 状态：**已由上游修复** —— PR <https://github.com/apache/iotdb/pull/19054>
+> “Suppress duplicate database warning for pipe snapshots”（open，作者 Caideyipi，base master）。
+> 该 PR 的改动**正是本报告 §5.1 定位的那一行**：
+> `createSchemaSnapshotDatabaseIfNecessary()` 中补 `statement.setEnablePrintExceptionLog(false);`
+> （+1/-0，单文件单行）。
+>
+> **因此不单独提交 PLM 单**；本报告保留为根因分析与**回归验证依据**：
+> 待包含该修复的构建发布后，用例 `TV-PIPE-04` 应从 FAIL 转 PASS（它的失败项就是这条 WARN）。
 > 版本：`master_1026_dc11a35`（2.0.11-SNAPSHOT，BuildInfo **`dc11a35`**，TimechoDB）
 > 建议定级：**P3（日志级别 / 幂等表达）**
 

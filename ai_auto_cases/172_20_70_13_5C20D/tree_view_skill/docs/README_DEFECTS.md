@@ -11,14 +11,15 @@
 | **TV-D1** | 扩列请求在副本间重复触发 → CN `INTERNAL_SERVER_ERROR(305)` / `COLUMN_ALREADY_EXISTS(552)`，DN 记 ERROR。**已录入 PLM：`TDB-890`**（负责人 陈耀斌，itemId=1485） | P2 | **稳定复现**（批量激活模板 + 连续扩模板，2 副本各 2 条 ERROR） | `DEFECT_TV_D1_final.md` |
 | ~~TV-Q1~~（原 TV-D2） | ~~`SET PROPERTIES auto_sync_schema=true` 遇列类型冲突的处理口径~~ | — | **已关闭：研发确认"仅创建时校验类型冲突，其余路径默认忽略"，符合预期** | `OPEN_QUESTION_d2_type_conflict.md`（结论 + A–E 对照表） |
 | **TV-D3** | `CREATE VIEW` 的预期失败（同名类型冲突）被 CN 记为 **ERROR**。**已录入 PLM：`TDB-894`**（迭代 V2.0.13.1，负责人 陈耀斌，组长 田原，验证 刘珍，发现版本 V2.0.12.1） | P3 | **稳定复现**（每次必现） | `DEFECT_TV_D3_final.md` |
-| **TV-D4** | 登录/查询时密码过期检查失败记为 **ERROR（带栈）** | P3（观察项） | 回归中命中 2 次；专项 3 次尝试未稳定命中 | `DEFECT_TV_D4_final.md` |
+| **TV-D4** | DataNode 启动窗口内首次登录误报 ERROR「Fail to check password expiration」+ 完整 TimeoutException 堆栈。**已录入 PLM：`TDB-896`**（迭代 V2.0.13.1，负责人 江天，验证 刘珍，发现版本 V2.0.12.1，**P2**） | P2 | 回归中命中 2 次；稳定复现见 TDB-896 的 `AUTH-014` | `DEFECT_TV_D4_final.md` |
+| **TV-D6** | Pipe 接收端应用 schema 快照时，`create database` 的**幂等重复**被记 WARN（501） | P3 | **已由上游修复**：[PR #19054](https://github.com/apache/iotdb/pull/19054)（open）按本报告定位补齐 `setEnablePrintExceptionLog(false)`；**不提 PLM**，以 `TV-PIPE-04` 作回归验证点 | `DEFECT_TV_D6_detail.md` / `DEFECT_TV_D6_pipe_receiver_create_db_warn.md` |
 | ~~TV-D5~~ | ~~整集群重启后表库/视图丢失~~ | — | **已撤回：误报**（测试并发 prepare 清库所致） | `DEFECT_TV_D5_WITHDRAWN.md` |
 
 > 结论：**没有 P1 级功能缺陷**，树转表特性的功能面全部符合需求。
 >
 > **当前需要研发处理的只有日志/幂等类问题**：
 > - **TV-D1（已录 PLM `TDB-890`，陈耀斌）**：扩列重复请求打 ERROR（305/552）；
-> - **TV-D3 / TV-D4 / TV-D6**：可预期失败或幂等情形被记为 ERROR/WARN。
+> - **TV-D3（`TDB-894`）/ TV-D4（`TDB-896`）/ TV-D6（上游 PR #19054 修复中）**：可预期失败或幂等情形被记为 ERROR/WARN。
 >
 > TV-D2（类型冲突静默成功）经确认**不是缺陷**，已撤回；相关用例改为"行为固化"。
 

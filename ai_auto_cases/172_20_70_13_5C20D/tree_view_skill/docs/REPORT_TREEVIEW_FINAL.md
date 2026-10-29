@@ -34,7 +34,7 @@
 | **TV-D1** | 模板激活扩列时同一操作在两副本各触发一次，去重与幂等过滤未生效 → CN 返回 `INTERNAL_SERVER_ERROR(305)` + `COLUMN_ALREADY_EXISTS(552)`，DN 记 2 条 ERROR。**已录入 PLM：`TDB-890`（陈耀斌，itemId=1485）** | P2 | TV-SYNC-06、TV-SYNC-10、TV-SYNC-11、TV-LEAK-01 |
 | ~~TV-D2~~ | ~~`SET PROPERTIES auto_sync_schema=true` 遇列类型冲突静默成功~~ | — | **已关闭：研发确认符合预期**——「**仅创建视图时校验类型冲突，其余路径默认忽略**」；TV-SYNC-13 改为行为基线，功能断言全过，仅因 **TDB-890** 日志判 FAIL |
 | **TV-D3** | `CREATE VIEW` 因同名测点类型冲突失败（**符合需求**）时，CN 记为 ERROR（302/614）+ procedure 回滚堆栈 | P3 | TV-BASE-07 |
-| **TV-D4** | 登录/查询时密码过期检查失败记为带栈 ERROR（`DataNodeAuthUtils:522`，与特性无关） | P3 | 已加白名单，不再影响判定 |
+| **TV-D4** | DataNode 启动窗口内首次登录误报 ERROR + TimeoutException 堆栈（`DataNodeAuthUtils:522`，与特性无关）。**已录入 PLM：`TDB-896`（江天，P2）** | P2 | 已加白名单，不再影响判定 |
 | ~~TV-D5~~ | ~~整集群重启后表库/视图丢失~~ | — | **已撤回：误报**（并发 `prepare` 清库所致，见 `DEFECT_TV_D5_WITHDRAWN.md`） |
 
 > 说明：**没有 P1 级功能缺陷**。TV-D1/D3/D4 属日志与可观测性；TV-D2 是"需求 vs 实现"的语义偏差。

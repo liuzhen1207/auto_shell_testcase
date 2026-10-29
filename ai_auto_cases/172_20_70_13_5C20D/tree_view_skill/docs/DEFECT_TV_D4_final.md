@@ -1,5 +1,10 @@
-# 缺陷报告 TV-D4：登录/查询时密码过期检查失败被记为 **ERROR（带堆栈）**
+# 缺陷报告 TV-D4：DataNode 启动窗口内首次登录误报 ERROR「Fail to check password expiration」并打完整 TimeoutException 堆栈
 
+> **已录入 PLM：`TDB-896`** —— 【V2.0.12.1】【安全模块-身份鉴别】DataNode 启动窗口内首次登录误报 ERROR
+> 「Fail to check password expiration」并打完整 TimeoutException 堆栈；
+> 迭代 **V2.0.13.1**，负责人/组长 **江天**，验证 **刘珍**，发现版本 **V2.0.12.1**，优先级 **P2**；
+> 条目 <https://plm.infra.timecho.com/iterations?productId=1&itemId=1493>。
+>
 > 面向研发：与树转表特性无关的既有噪声，但它会**淹没真实 ERROR**，且在本次回归里导致多条用例被误判。
 > 重点是**日志级别与降级路径的表达**，功能本身正常（已降级放行）。
 
@@ -13,11 +18,18 @@
 | 配置 | 未配置密码过期策略（`password_expiration_days` 默认关闭），鉴权用默认 root |
 | 每轮准备 | 停 25 节点 → 清 data/logs → 恢复 conf → 启动 → 等 Running |
 
-## 2. 触发条件
+## 2. 触发条件（按 TDB-896 的口径修正）
 
-DataNode **真正处理一次用户查询**时（`start-cli` 建序列/写入/select），
-DN 会调用 `DataNodeAuthUtils.checkPasswordExpiration` 校验密码是否过期；
-由于环境未配置密码过期策略，内部查询 `__audit.`_<userId>`.password` 失败 → 走 catch 分支。
+**DataNode 启动窗口内**的首次登录：DN 还没完全就绪时处理登录，
+`DataNodeAuthUtils.checkPasswordExpiration` 内部去查
+`__audit.`_<userId>`.password`（密码历史）时**超时**（`java.util.concurrent.TimeoutException`），
+走到 catch 分支 → `LOGGER.error(msg, e)` 打 ERROR + 完整堆栈；因
+`mayBypassPasswordCheckInException=true` 最终**降级放行**，登录仍成功。
+
+> 修正说明：本报告最初写的是"每次首连必然触发"，实测更准确的是「**启动窗口内首次登录**」
+> ——窗口外（节点已稳定）复现概率明显降低，这与 TDB-896 的定位一致。
+> TDB-896 给出了稳定复现方式：**停全部 DN 后同时启动，并在启动期间持续登录（2~3 次/秒，约 60s）**，
+> 已固化为 `tools/suite_auth.sh AUTH-014`。
 
 实测命中记录（同一形态多次出现）：
 
@@ -29,11 +41,14 @@ DN 会调用 `DataNodeAuthUtils.checkPasswordExpiration` 校验密码是否过�
 ## 3. 测试结果（日志）
 
 ```
-13:20:57,004 [pool-43-IoTDB-ClientRPC-Processor-1] ERROR
+2026-10-27 13:20:57,004 [pool-43-IoTDB-ClientRPC-Processor-1] ERROR
   o.a.i.d.u.DataNodeAuthUtils:522 - Fail to check password expiration
+java.util.concurrent.TimeoutException            ← TDB-896 观测到的堆栈类型
+  at java.base/java.util.concurrent.FutureTask.get(...)
+  ...（完整堆栈略，见 evidence）
 ```
 
-- 级别：**ERROR**，且带完整异常堆栈（`queryPasswordExpiration` → `executeLoginHistory` 链路）；
+- 级别：**ERROR**，且带完整异常堆栈（`queryPasswordExpiration` → `executeLoginHistory` → `TimeoutException`）；
 - 功能：**登录成功**（降级放行），业务查询正常返回。
 
 用例判定：`TV-SYNC-01`、`TV-BASE-12` 的功能断言全过，**仅因该 ERROR 被判 FAIL**。
