@@ -199,3 +199,72 @@ qs_metrics_list(){
   local h=${1:-${DN[0]}}
   sshx "$h" "curl -s -m 6 http://$h:$DN_METRIC_PORT/metrics 2>/dev/null | grep -oE '^[a-z_]*(driver|scheduler|query)[a-z_]*' | sort -u | head -20"
 }
+
+# ---------------------------------------------------------------------------
+# 统一集群准备：停 → (可选清理) → 写配置 → 应用调度参数 → 起 → 等就绪 → 校验
+#   反复踩过的坑都在这里处理：
+#     ① 残留进程会让 cluster_clean 保守跳过 → 先 pkill 再 clean，并校验 data 目录真的没了
+#        （否则 CN 保留旧节点注册，新 DN 报 `Reject DataNode registration`）
+#     ② CN 端口就绪 ≠ 可接受 DN 注册 → cluster_start 内部已加初始化等待与 DN 重试
+#   QS_SKIP_CLEAN=1 时复用现有集群，只重启应用参数（调试用，快很多）
+# ---------------------------------------------------------------------------
+QS_EXTRA_CONF=""
+qs_add_conf(){ QS_EXTRA_CONF="${QS_EXTRA_CONF}${1}"$'\n'; }
+
+qs_prepare_cluster(){
+  export USE_FRAMEWORK=0
+  cluster_stop >/dev/null 2>&1
+  if [ "${QS_SKIP_CLEAN:-0}" != "1" ]; then
+    local _h
+    for _h in $(printf '%s\n' "${CN[@]}" "${DN[@]}" | sort -u); do
+      sshx "$_h" "sudo pkill -9 -f 'com\.timecho\.iotdb' >/dev/null 2>&1 || true" >/dev/null 2>&1
+    done
+    sleep 8
+    cluster_clean >/dev/null 2>&1 || warn "cluster_clean 未完全成功"
+    for _h in $(printf '%s\n' "${CN[@]}" "${DN[@]}" | sort -u); do
+      if sshx "$_h" "test -d $CN_DB_DIR/data" 2>/dev/null; then
+        warn "$_h data 目录仍在，强制再删"
+        sshx "$_h" "sudo rm -rf $CN_DB_DIR/data $CN_DB_DIR/logs" >/dev/null 2>&1
+      fi
+    done
+  else
+    log "  跳过清理，仅重启以应用调度参数"
+  fi
+  cluster_write_conf >/dev/null 2>&1
+  qs_apply_scheduler_conf
+  if [ -n "${QS_EXTRA_CONF:-}" ]; then
+    local _h _kv
+    for _h in "${DN[@]}"; do
+      while IFS= read -r _kv; do
+        [ -z "$_kv" ] && continue
+        local _k="${_kv%%=*}"
+        sshx "$_h" "sudo sed -i '/^${_k}=/d' $DB_DIR/conf/iotdb-system.properties" >/dev/null 2>&1
+        sshx "$_h" "printf '%s\n' '$_kv' | sudo tee -a $DB_DIR/conf/iotdb-system.properties >/dev/null" >/dev/null 2>&1
+      done <<< "$QS_EXTRA_CONF"
+    done
+    log "  额外配置已写入: $(printf '%s ' "$QS_EXTRA_CONF")"
+  fi
+  cluster_start >/dev/null 2>&1
+  if ! wait_cluster_ready; then
+    fail "集群未就绪"
+    return 1
+  fi
+  qs_verify_conf_effective
+  return 0
+}
+
+# 简单查询探针：返回查询结果里是否包含指定文本
+qs_sql(){
+  sq "$1"
+}
+
+# 当前 show queries 条数（去掉表头/分隔行）
+qs_query_count(){
+  sq "show queries;" 2>/dev/null | grep -cE '^\|' 2>/dev/null
+}
+
+# DN 进程 RSS（KB）
+qs_dn_rss_kb(){
+  local h=${1:-${DN[0]}}
+  sshx "$h" "ps -eo rss,args | grep '[c]om.timecho.iotdb.DataNode' | awk '{print \$1}' | head -1"
+}

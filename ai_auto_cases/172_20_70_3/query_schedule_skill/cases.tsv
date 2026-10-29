@@ -2,7 +2,21 @@
 #
 # 列：case_id	类别	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
 #
-# 统一口径：query_thread_count=1；短查询用 iot-benchmark LATEST_POINT 30000 次取 P99
+# 统一口径：默认 query_thread_count=1；短查询用 iot-benchmark LATEST_POINT 取 P99；数据 root.test.qs_0
 # 需求来源：飞书《V1.0.0.1-计算模块-查询调度》（原文见 requirements/）
 #
-QS-02	功能	cases/qs_02_short_not_blocked.sh	tree	cluster	yes	QS_QUERY_THREADS/QS_LAT_P99_TARGET	REQ-01+REQ-02+REQ-04：单查询线程下并发全量查询，短查询 P99 < 50ms 且长查询正常结束
+QS-01	功能	cases/qs_01_thread_config.sh	tree	cluster	yes	-	QS-01 Worker 线程数可配 + 非法值回退
+QS-02	功能	cases/qs_02_short_not_blocked.sh	tree	cluster	yes	-	QS-02 核心验收：单查询线程下，长查询进行中短查询仍能快速返回
+QS-03	功能	cases/qs_03_long_query_completes.sh	tree	cluster	yes	-	QS-03 长查询在持续短查询压力下仍能完成（防饿死）
+QS-04	功能	cases/qs_04_no_manual_priority.sh	tree	cluster	yes	-	QS-04 无需用户手动指定优先级
+QS-05	功能	cases/qs_05_state_machine.sh	tree	cluster	yes	-	QS-05 DriverTask 状态管理：查询可被 SHOW QUERIES 观测并可结束时清理
+QS-06	功能	cases/qs_06_timeout_abort.sh	tree	cluster	yes	-	QS-06 查询超时中断（Sentinel 线程按 deadline 中止）
+QS-07	功能	cases/qs_07_kill_cascade.sh	tree	cluster	yes	-	QS-07 主动取消：KILL QUERY 中止指定查询并级联释放
+QS-08	功能	cases/qs_08_blocked_ready.sh	tree	cluster	yes	-	QS-08 Blocked→Ready 依赖：大结果集查询在背压下仍返回完整结果
+QS-09	功能	cases/qs_09_taskgroup_mlfq.sh	tree	cluster	yes	-	QS-09 查询任务组 + 多级反馈队列累计执行时间（防队列饿死）
+QS-10	功能	cases/qs_10_time_slice.sh	tree	cluster	yes	-	QS-10 时间片机制：driver_task_execution_time_slice_in_ms 生效且任务可让出
+QS-11	功能	cases/qs_11_concurrency_cap.sh	tree	cluster	yes	-	QS-11 队列容量：并发超过 max_allowed_concurrent_queries 时不崩溃
+QS-12	功能	cases/qs_12_resource_release.sh	tree	cluster	yes	-	QS-12 取消/超时后资源与对象释放（无残留任务、内存不持续增长）
+QS-13	功能	cases/qs_13_no_deadlock.sh	tree	cluster	yes	-	QS-13 无死锁：混合负载持续压测不卡死
+QS-14	功能	cases/qs_14_metrics.sh	tree	cluster	yes	-	QS-14 队列监控：调度相关指标可观测
+QS-15	功能	cases/qs_15_restart_recovery.sh	tree	cluster	yes	-	QS-15 重启恢复：DN 重启后调度与查询恢复正常
