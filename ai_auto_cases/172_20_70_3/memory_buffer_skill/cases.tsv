@@ -1,0 +1,31 @@
+# 内存缓冲区（membuf）专项 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	类别	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
+#
+# 统一收尾（每条用例都做）：副本一致性校验（sync lag 归零 → 全节点在线查询为基准 → 逐个停 1 个 DN 再查比对）→ CN/DN 日志扫 ERROR
+# 协议：默认 IoTConsensus，可用 DATA_CONSENSUS=IoTConsensusV2 指定
+#
+MB-01	功能	cases/common/mb_01_alloc_report.sh	tree	region/cluster	yes	-	MB-01 内存分配事实：datanode_memory_proportion 变更后，各内存块初始分配值与比例一致
+MB-02	功能	cases/common/mb_02_conf_guards.sh	tree	region/cluster	yes	-	MB-02 参数守卫：非法/越界取值必须"回退默认值 + 打 WARN"，且**不得把 DN 起挂**
+MB-03	功能	cases/common/mb_03_flush_by_proportion.sh	tree	region/cluster	yes	-	MB-03 按比例触发刷盘（flush_proportion）：memtable 用量越过 flush 阈值必须自动落盘
+MB-04	功能	cases/common/mb_04_timed_flush_seq.sh	tree	region/cluster	yes	-	MB-04 定时刷盘（顺序空间）：enable_timed_flush_seq_memtable + interval + check_interval
+MB-05	功能	cases/common/mb_05_timed_flush_unseq.sh	tree	region/cluster	yes	-	MB-05 定时刷盘（乱序空间）：enable_timed_flush_unseq_memtable + interval + check_interval
+MB-06	功能	cases/common/mb_06_reject_and_recover.sh	tree	region/cluster	yes	-	MB-06 内存压力进入 reject 状态并恢复（reject_proportion / check_period_when_insert_blocked /
+MB-07	功能	cases/common/mb_07_concurrent_flush.sh	tree	region/cluster	yes	-	MB-07 刷盘限流下并发读写（io_task_queue_size_for_flushing / check_period_when_insert_blocked）
+MB-08	功能	cases/common/mb_08_wal_snapshot.sh	tree	region/cluster	yes	-	MB-08 WAL memtable 快照参数（wal_memtable_snapshot_threshold_in_byte / max_wal_memtable_snapshot_num）
+MB-09	功能	cases/common/mb_09_proportion_pools.sh	tree	region/cluster	yes	-	MB-09 各内存池比例生效（wal_buffer_queue_proportion / device_path_cache_proportion /
+MB-10	功能	cases/common/mb_10_restart_wal_replay.sh	tree	region/cluster	yes	-	MB-10 优雅重启后内存缓冲区数据不丢（WAL 回放）：数据只在 memtable/WAL 里时重启 DataNode
+MB-11	功能	cases/common/mb_11_separate_data.sh	tree	region/cluster	yes	-	MB-11 顺乱序分离存储（enable_separate_data）
+MB-12	功能	cases/common/mb_12_chunk_split.sh	tree	region/cluster	yes	-	MB-12 flush 时按序列点数和大小切分 Chunk（target_chunk_point_num / target_chunk_size）
+MB-13	功能	cases/common/mb_13_ha_stop_dn.sh	tree	region/cluster	yes	-	MB-13 高可用：写入压力下停 1 个 DataNode（DataRegion 2 副本），写入不中断、数据不丢
+MB-14	功能	cases/common/mb_14_consensus_v2.sh	tree	region/cluster	yes	-	MB-14 IoTConsensusV2 协议下的内存缓冲区回归（V2 复跑门禁）
+MB-15	功能	cases/common/mb_15_tvlist_sort.sh	tree	region/cluster	yes	-	MB-15 TVList 排序算法（tvlist_sort_algorithm = TIM | QUICK | BACKWARD）
+MB-16	功能	cases/common/mb_16_flush_threads.sh	tree	region/cluster	yes	-	MB-16 flush_thread_count + primitive_array_size（重启生效）
+MB-17	功能	cases/common/mb_17_time_partition_mem.sh	tree	region/cluster	yes	-	MB-17 无限时间分区下的内存可控（TimePartitionInfo / lastFlushTime 内存剔除）
+MB-18	功能	cases/common/mb_18_type_infer.sh	tree	region/cluster	yes	-	MB-18 写入字符串类型推断（boolean/integer/floating/nan_string_infer_type）
+MB-19	功能	cases/common/mb_19_illegal_proportion.sh	tree	region/cluster	yes	-	MB-19 非法内存比例取值必须"回退默认值 + 打 WARN"，**不得让 DataNode 起不来**
+P-01	性能	cases/perf/p_01_flush_proportion.sh	tree	region/cluster	yes	-	P-01 写入吞吐基线 vs flush_proportion（0.4 默认 / 0.5）
+P-02	性能	cases/perf/p_02_chunk_params.sh	tree	region/cluster	yes	-	P-02 Chunk 切分参数对写入吞吐的影响（target_chunk_point_num 10k / 100k 默认，另加 target_chunk_size）
+P-03	性能	cases/perf/p_03_separate_data.sh	tree	region/cluster	yes	-	P-03 顺乱序分离存储对读写性能的影响（enable_separate_data true / false）
+P-04	性能	cases/perf/p_04_latest_point_query.sh	tree	region/cluster	yes	-	P-04 最新点查询性能（对应《软件测试文档》的「1 万点最新值查询 (Table mode)」）
+P-05	性能	cases/perf/p_05_consensus_v2.sh	tree	region/cluster	yes	-	P-05 IoTConsensusV2 下的写入吞吐（与 V1 基线对照）
