@@ -1,0 +1,252 @@
+label	dialect	sql	status	code	msg
+db_create_simple	tree	CREATE DATABASE root.mdprobe	OK		Msg: The statement is executed successfully.
+db_create_attrs	tree	CREATE DATABASE root.mdprobe2 WITH TTL=3600000, TIME_PARTITION_INTERVAL=604800000	OK		Msg: The statement is executed successfully.
+db_create_needlastcache	tree	CREATE DATABASE root.mdprobe3 WITH NEED_LAST_CACHE=false	OK		Msg: The statement is executed successfully.
+db_create_maxgroup	tree	CREATE DATABASE root.mdprobe4 WITH MAX_SCHEMA_REGION_GROUP_NUM=2, MAX_DATA_REGION_GROUP_NUM=2	ERR	525	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 525: Failed to create database. The max_schema_region_group_num can only be set when schema_region_group_extension_policy is CUSTOM.
+db_create_tpl	tree	CREATE DATABASE root.tpldb	OK		Msg: The statement is executed successfully.
+db_create_nodb_tpl	tree	CREATE DATABASE root.tpldb2	OK		Msg: The statement is executed successfully.
+db_create_dup	tree	CREATE DATABASE root.mdprobe	ERR	501	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 501: root.mdprobe has already been created as database
+db_create_badparam	tree	CREATE DATABASE root.mdprobe6 WITH NO_SUCH_KEY=1	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:35 mismatched input 'NO_SUCH_KEY' expecting {TTL, TIME_PARTITION_INTERVAL, MAX_SCHEMA_REGION_GROUP_NUM, MAX_DATA_REGION_GROUP_NUM, NEED_LAST_CACHE}
+db_create_rf	tree	CREATE DATABASE root.mdprobe7 WITH SCHEMA_REPLICATION_FACTOR=3	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:35 mismatched input 'SCHEMA_REPLICATION_FACTOR' expecting {TTL, TIME_PARTITION_INTERVAL, MAX_SCHEMA_REGION_GROUP_NUM, MAX_DATA_REGION_GROUP_NUM, NEED_LAST_CACHE}
+db_create_ifnotexists	tree	CREATE DATABASE IF NOT EXISTS root.mdprobe	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:16 mismatched input 'IF' expecting ROOT
+db_show_all	tree	SHOW DATABASES	OK		| root.__audit| 3| 3| 0| 604800000|
+db_show_details	tree	SHOW DATABASES DETAILS	OK		| root.__audit| 3| 3| 0| 604800000| 1| 1| 1| 1| true|
+db_show_one	tree	SHOW DATABASES root.mdprobe	OK		|root.mdprobe| 3| 3| 0| 604800000|
+db_count	tree	COUNT DATABASES	OK		| 8|
+db_count_one	tree	COUNT DATABASES root.mdprobe	OK		| 1|
+db_alter_ttl	tree	ALTER DATABASE root.mdprobe WITH TTL=7200000	ERR	525	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 525: Failed to alter database. Doesn't support ALTER TTL yet.
+db_alter_tpi	tree	ALTER DATABASE root.mdprobe WITH TIME_PARTITION_INTERVAL=86400000	ERR	525	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 525: Failed to alter database. Doesn't support ALTER TimePartitionInterval yet.
+db_alter_needlastcache	tree	ALTER DATABASE root.mdprobe WITH NEED_LAST_CACHE=true	OK		Msg: The statement is executed successfully.
+db_alter_maxgroup	tree	ALTER DATABASE root.mdprobe WITH MAX_DATA_REGION_GROUP_NUM=5	ERR	525	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 525: Failed to alter database. The max_data_region_group_num can only be set when data_region_group_extension_policy is CUSTOM.
+db_alter_badkey	tree	ALTER DATABASE root.mdprobe WITH NO_SUCH_KEY=1	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:33 mismatched input 'NO_SUCH_KEY' expecting {TTL, TIME_PARTITION_INTERVAL, MAX_SCHEMA_REGION_GROUP_NUM, MAX_DATA_REGION_GROUP_NUM, NEED_LAST_CACHE}
+db_alter_missing	tree	ALTER DATABASE root.nosuchdb WITH TTL=1000	ERR	525	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 525: Failed to alter database. Doesn't support ALTER TTL yet.
+db_drop_missing	tree	DROP DATABASE root.nosuchdb	OK		Msg: The statement is executed successfully.
+db_drop_ifexists	tree	DROP DATABASE IF EXISTS root.nosuchdb	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:14 mismatched input 'IF' expecting ROOT
+db_drop_multi	tree	DROP DATABASE root.mdprobe4, root.mdprobe3	OK		Msg: The statement is executed successfully.
+db_drop_one	tree	DROP DATABASE root.mdprobe2	OK		Msg: The statement is executed successfully.
+ts_create_full	tree	CREATE TIMESERIES root.mdprobe.d1.s1 WITH DATATYPE=INT32, ENCODING=RLE	OK		Msg: The statement is executed successfully.
+ts_create_short	tree	CREATE TIMESERIES root.mdprobe.d1.s2 INT64	OK		Msg: The statement is executed successfully.
+ts_create_dup	tree	CREATE TIMESERIES root.mdprobe.d1.s1 WITH DATATYPE=INT32, ENCODING=RLE	ERR	503	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 503: Path [root.mdprobe.d1.s1] already exist
+ts_create_badtype	tree	CREATE TIMESERIES root.mdprobe.d1.s9 WITH DATATYPE=NOTATYPE	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Unsupported datatype: NOTATYPE
+ts_create_badencoding	tree	CREATE TIMESERIES root.mdprobe.d1.s9 WITH DATATYPE=TEXT, ENCODING=RLE	ERR	507	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 507: encoding RLE does not support TEXT
+ts_create_props	tree	CREATE TIMESERIES root.mdprobe.d1.s3 WITH DATATYPE=TEXT, ENCODING=PLAIN, COMPRESSOR=SNAPPY, MAX_POINT_NUMBER=100	OK		Msg: The statement is executed successfully.
+ts_create_tags	tree	CREATE TIMESERIES root.mdprobe.d1.s4 INT32 TAGS(k1=v1) ATTRIBUTES(a1=b1)	OK		Msg: The statement is executed successfully.
+ts_create_alias	tree	CREATE TIMESERIES root.mdprobe.d1.s5 INT32 ALIAS=alias5	ERR	507	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 507: alias is not a legal prop.
+ts_create_aligned	tree	CREATE ALIGNED TIMESERIES root.mdprobe.d2(s1 INT32, s2 FLOAT)	OK		Msg: The statement is executed successfully.
+ts_create_aligned_props	tree	CREATE ALIGNED TIMESERIES root.mdprobe.d2b(s1 INT32 ENCODING=RLE, s2 FLOAT COMPRESSOR=SNAPPY)	OK		Msg: The statement is executed successfully.
+ts_create_nodb	tree	CREATE TIMESERIES root.autodb.d1.s1 INT32	OK		Msg: The statement is executed successfully.
+ts_alter_set_datatype	tree	ALTER TIMESERIES root.mdprobe.d1.s2 SET DATA TYPE DOUBLE	OK		Msg: The statement is executed successfully.
+ts_alter_rename_path	tree	ALTER TIMESERIES root.mdprobe.d1.s2 RENAME TO root.mdprobe.d1.s2r	OK		Msg: The statement is executed successfully.
+ts_alter_add_tags	tree	ALTER TIMESERIES root.mdprobe.d1.s1 ADD TAGS t1=v1	OK		Msg: The statement is executed successfully.
+ts_alter_add_attributes	tree	ALTER TIMESERIES root.mdprobe.d1.s1 ADD ATTRIBUTES a1=b1	OK		Msg: The statement is executed successfully.
+ts_alter_rename_tag	tree	ALTER TIMESERIES root.mdprobe.d1.s1 RENAME t1 TO t2	OK		Msg: The statement is executed successfully.
+ts_alter_drop_tag	tree	ALTER TIMESERIES root.mdprobe.d1.s1 DROP t2	OK		Msg: The statement is executed successfully.
+ts_alter_upsert_alias	tree	ALTER TIMESERIES root.mdprobe.d1.s1 UPSERT ALIAS=al1	OK		Msg: The statement is executed successfully.
+ts_alter_upsert_tags	tree	ALTER TIMESERIES root.mdprobe.d1.s1 UPSERT TAGS(k3=v3) ATTRIBUTES(a3=b3)	OK		Msg: The statement is executed successfully.
+ts_alter_storage_props	tree	ALTER TIMESERIES root.mdprobe.d1.s1 SET STORAGE_PROPERTIES ENCODING=TS_2DIFF	OK		Msg: The statement is executed successfully.
+ts_alter_storage_props_ifexists	tree	ALTER TIMESERIES IF EXISTS root.mdprobe.d1.s9 SET STORAGE_PROPERTIES ENCODING=RLE	OK		Msg: The statement is executed successfully.
+ts_show_all	tree	SHOW TIMESERIES	OK		| root.mdprobe.d2b.s1| null|root.mdprobe| INT32| RLE| LZ4| null| null| null| null| BASE|
+ts_show_path	tree	SHOW TIMESERIES root.mdprobe.**	OK		|root.mdprobe.d2b.s1| null|root.mdprobe| INT32| RLE| LZ4| null| null| null| null| BASE|
+ts_show_exact	tree	SHOW TIMESERIES root.mdprobe.d1.s1	OK		|root.mdprobe.d1.s1| al1|root.mdprobe| INT32|TS_2DIFF| LZ4|{"k3":"v3"}|{"a1":"b1","a3":"b3"}| null| null| BASE|
+ts_show_latest	tree	SHOW LATEST TIMESERIES	OK		| root.__audit.password_history._0.password| null|root.__audit| STRING| PLAIN| LZ4| null| null| null| null| BASE|
+ts_show_invalid	tree	SHOW INVALID TIMESERIES	OK		|root.mdprobe.d1.s2| null|root.mdprobe| DOUBLE|TS_2DIFF| LZ4|null| null| null| null| BASE|root.mdprobe.d1.s2r|
+ts_show_where	tree	SHOW TIMESERIES root.mdprobe.** WHERE DATATYPE='INT32'	OK		|root.mdprobe.d2b.s1| null|root.mdprobe| INT32| RLE| LZ4| null| null| null| null| BASE|
+ts_show_where_tags	tree	SHOW TIMESERIES root.mdprobe.** WHERE TAGS(k1)='v1'	OK		|root.mdprobe.d1.s4| null|root.mdprobe| INT32|TS_2DIFF| LZ4|{"k1":"v1"}|{"a1":"b1"}| null| null| BASE|
+ts_show_limit	tree	SHOW TIMESERIES LIMIT 3	OK		|root.mdprobe.d2b.s1| null|root.mdprobe| INT32| RLE| LZ4|null| null| null| null| BASE|
+ts_show_order	tree	SHOW TIMESERIES ORDER BY TIMESERIES DESC	OK		| root.mdprobe.d2b.s2| null|root.mdprobe| FLOAT| GORILLA| SNAPPY| null| null| null| null| BASE|
+ts_count_all	tree	COUNT TIMESERIES root.mdprobe.**	OK		| 8|
+ts_count_level	tree	COUNT TIMESERIES root.mdprobe.*.*	OK		| 8|
+ts_count_group	tree	COUNT TIMESERIES root.mdprobe.** GROUP BY LEVEL=2	OK		| root.mdprobe.d1| 4|
+ts_count_nodes	tree	COUNT NODES root.mdprobe.** LEVEL=3	OK		| 8|
+ts_count_nodes2	tree	COUNT NODES root.mdprobe.** LEVEL=2	OK		| 3|
+dev_show	tree	SHOW DEVICES	OK		| root.mdprobe.d2b| true| null| INF|
+dev_show_path	tree	SHOW DEVICES root.mdprobe.**	OK		|root.mdprobe.d2b| true| null| INF|
+dev_show_contains	tree	SHOW DEVICES WHERE DEVICE CONTAINS 'd1'	OK		|root.mdprobe.d1| false| null| INF|
+dev_show_with_db	tree	SHOW DEVICES root.mdprobe.** WITH DATABASE	OK		|root.mdprobe.d2b|root.mdprobe| true| null| INF|
+dev_count	tree	COUNT DEVICES	OK		| 5|
+dev_count_path	tree	COUNT DEVICES root.mdprobe.**	OK		| 3|
+path_show_child	tree	SHOW CHILD PATHS root.mdprobe.**	OK		| root.mdprobe.d1.s1|TIMESERIES|
+path_show_nodes	tree	SHOW CHILD NODES root.mdprobe.**	OK		| s1|
+ttl_set	tree	SET TTL TO root.mdprobe.d1 1000	OK		Msg: The statement is executed successfully.
+ttl_show_on	tree	SHOW TTL ON root.mdprobe.d1	OK		|root.mdprobe.d1| 1000|
+ttl_unset	tree	UNSET TTL TO root.mdprobe.d1	OK		Msg: The statement is executed successfully.
+tpl_create	tree	CREATE SCHEMA TEMPLATE tpl_probe (s1 INT32, s2 FLOAT)	OK		Msg: The statement is executed successfully.
+tpl_create_aligned	tree	CREATE SCHEMA TEMPLATE tpl_probe2 ALIGNED (a1 INT32, a2 INT64)	OK		Msg: The statement is executed successfully.
+tpl_create_device	tree	CREATE DEVICE TEMPLATE tpl_probe3 (x INT32)	OK		Msg: The statement is executed successfully.
+tpl_create_dup	tree	CREATE SCHEMA TEMPLATE tpl_probe (s1 INT32)	ERR	507	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 507: Duplicated template name: tpl_probe
+tpl_show	tree	SHOW SCHEMA TEMPLATES	OK		| tpl_probe|
+tpl_show_nodes	tree	SHOW NODES IN SCHEMA TEMPLATE tpl_probe	OK		| s1| INT32|TS_2DIFF| LZ4|
+tpl_set	tree	SET SCHEMA TEMPLATE tpl_probe TO root.tpldb	OK		Msg: The statement is executed successfully.
+tpl_set_dup	tree	SET SCHEMA TEMPLATE tpl_probe TO root.tpldb	ERR	507	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 507: Template already exists on root.tpldb
+tpl_show_paths_set	tree	SHOW PATHS SET SCHEMA TEMPLATE tpl_probe	OK		|root.tpldb|
+tpl_create_ts_using	tree	CREATE TIMESERIES USING SCHEMA TEMPLATE ON root.tpldb.d1	OK		Msg: The statement is executed successfully.
+tpl_show_paths2	tree	SHOW PATHS USING SCHEMA TEMPLATE tpl_probe	OK		|root.tpldb.d1|
+tpl_alter_add	tree	ALTER SCHEMA TEMPLATE tpl_probe ADD (s3 INT64, s4 FLOAT)	OK		Msg: The statement is executed successfully.
+tpl_unset	tree	UNSET SCHEMA TEMPLATE tpl_probe FROM root.tpldb	ERR	515	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 515: Template is in use on root.tpldb
+tpl_drop_ts	tree	DROP TIMESERIES OF SCHEMA TEMPLATE FROM root.tpldb.d1	OK		Msg: The statement is executed successfully.
+tpl_deactivate	tree	DEACTIVATE SCHEMA TEMPLATE FROM root.tpldb.d1	ERR	524	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 524: Target Device Template is not activated on any path matched by given path pattern
+tpl_drop	tree	DROP SCHEMA TEMPLATE tpl_probe2	OK		Msg: The statement is executed successfully.
+tpl_drop_missing	tree	DROP SCHEMA TEMPLATE nosuchtpl	ERR	507	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 507: Template nosuchtpl does not exist
+trg_create_stateless	tree	CREATE STATELESS TRIGGER trg1 BEFORE INSERT ON root.mdprobe.d1.s1 AS 'com.example.X'	ERR	1303	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1303: Failed to load class 'com.example.X', because it's not found in jar file or is invalid: 
+trg_create_stateful	tree	CREATE STATEFUL TRIGGER trg2 AFTER INSERT ON root.mdprobe.d1.s1 AS 'com.example.X' USING URI 'file:///tmp/x.jar'	ERR	1304	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1304: Failed to get executable for Trigger 'file:///tmp/x.jar', please check the URI.
+trg_show	tree	SHOW TRIGGERS	OK		It costs 0.013s
+trg_start	tree	START TRIGGER trg1	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+trg_stop	tree	STOP TRIGGER trg1	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+trg_drop	tree	DROP TRIGGER trg1	ERR	1301	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1301: Failed to drop trigger [trg1], this trigger has not been created
+trg_drop_missing	tree	DROP TRIGGER nosuchtrg	ERR	1301	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1301: Failed to drop trigger [nosuchtrg], this trigger has not been created
+cq_create	tree	CREATE CQ cq1 BEGIN SELECT count(s1) FROM root.mdprobe.d1 END	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: CQ: At least one of the parameters `every_interval` and `group_by_interval` needs to be specified.
+cq_create_full	tree	CREATE CONTINUOUS QUERY cq2 RESAMPLE EVERY 10s TIMEOUT POLICY DISCARD BEGIN SELECT count(s1) FROM root.mdprobe.d1 END	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: CQ: The query body misses an INTO clause.
+cq_show	tree	SHOW CQS	OK		It costs 0.020s
+cq_show_long	tree	SHOW CONTINUOUS QUERIES	OK		It costs 0.012s
+cq_drop	tree	DROP CQ cq1	ERR	1400	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1400: CQ cq1 doesn't exist.
+cq_drop_missing	tree	DROP CQ nosuchcq	ERR	1400	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1400: CQ nosuchcq doesn't exist.
+view_create	tree	CREATE VIEW root.mdprobe.v1 AS SELECT s1 FROM root.mdprobe.d1	OK		Msg: The statement is executed successfully.
+view_show	tree	SHOW VIEW	OK		|root.mdprobe.v1|root.mdprobe| INT32|null| null| VIEW|root.mdprobe.d1.s1|
+view_show_path	tree	SHOW VIEW root.mdprobe.**	OK		|root.mdprobe.v1|root.mdprobe| INT32|null| null| VIEW|root.mdprobe.d1.s1|
+view_alter_as	tree	ALTER VIEW root.mdprobe.v1 AS SELECT s2 FROM root.mdprobe.d1	ERR	300	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 300: Columns in the query statement is empty. Please check your SQL.
+view_rename	tree	ALTER VIEW root.mdprobe.v1 RENAME TO root.mdprobe.v2	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Renaming view is not supported.
+view_drop	tree	DROP VIEW root.mdprobe.v2	ERR	508	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 508: View [root.mdprobe.v2] does not exist
+view_drop_missing	tree	DROP VIEW root.mdprobe.v2	ERR	508	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 508: View [root.mdprobe.v2] does not exist
+calcpoint_create	tree	CREATE CALCULATION POINT root.mdprobe.cp1 AS s1 + 1 'm1'	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+calcpoint_show	tree	SHOW CALCULATION POINTS root.mdprobe.**	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+calcpoint_alter	tree	ALTER CALCULATION POINT root.mdprobe.cp1 AS s1 + 2	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+calcpoint_drop	tree	DROP CALCULATION POINTS root.mdprobe.cp1	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+fn_show	tree	SHOW FUNCTIONS	OK		| CONST| built-in UDTF| org.apache.iotdb.commons.udf.builtin.UDTFConst|AVAILABLE|
+fn_drop_missing	tree	DROP FUNCTION nosuchfunc	ERR	301	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 301: Failed to drop UDF [NOSUCHFUNC], this UDF has not been created
+service_create	tree	CREATE SERVICE svc1 AS 'com.example.X'	ERR	305	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 305: [INTERNAL_SERVER_ERROR(305)] Exception occurred: "CREATE SERVICE svc1 AS 'com.example.X'". executeStatement failed. Service management SQLs are not supported now!
+service_show	tree	SHOW SERVICES	OK		| MQTT| 3|STOPPED|
+service_start	tree	START SERVICE svc1	ERR	305	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 305: [INTERNAL_SERVER_ERROR(305)] Exception occurred: "START SERVICE svc1". executeStatement failed. Service management SQLs are not supported now!
+service_stop	tree	STOP SERVICE svc1	ERR	305	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 305: [INTERNAL_SERVER_ERROR(305)] Exception occurred: "STOP SERVICE svc1". executeStatement failed. Service management SQLs are not supported now!
+service_drop	tree	DROP SERVICE svc1	ERR	305	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 305: [INTERNAL_SERVER_ERROR(305)] Exception occurred: "DROP SERVICE svc1". executeStatement failed. Service management SQLs are not supported now!
+pipe_show	tree	SHOW PIPES	ERR		+--+------------+-----+----------+-------------+--------+----------------+-------------------+-------------------------+----------+--------------+ |ID|CreationTime|State|PipeSource|PipeProcessor|PipeS
+pipe_plugins	tree	SHOW PIPE PLUGINS	ERR		+--+------------+-----+----------+-------------+--------+----------------+-------------------+-------------------------+----------+--------------+ |ID|CreationTime|State|PipeSource|PipeProcessor|PipeS
+topic_show	tree	SHOW TOPICS	ERR	1912	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1912: Subscription is not enabled.
+topic_subs	tree	SHOW SUBSCRIPTIONS	ERR	1912	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1912: Subscription is not enabled.
+show_regions	tree	SHOW REGIONS	OK		| 0|SchemaRegion|Running|root.__audit| 2| 0| 3|192.168.99.77| 6667| 192.168.99.77|Follower|2026-10-09T18:15:28.168| | NaN| |
+show_schema_regions	tree	SHOW SCHEMA REGIONS	OK		| 0|SchemaRegion|Running|root.__audit| 2| 0| 3|192.168.99.77| 6667| 192.168.99.77|Follower|2026-10-09T18:15:28.168| | NaN| |
+show_data_regions	tree	SHOW DATA REGIONS OF DATABASE root.mdprobe	OK		It costs 0.014s
+show_regions_node	tree	SHOW REGIONS ON NODEID 3	OK		| 0|SchemaRegion|Running|root.__audit| 2| 0| 3|192.168.99.77| 6667| 192.168.99.77|Follower|2026-10-09T18:15:28.168| | NaN| |
+show_regionid	tree	SHOW SCHEMA REGIONID WHERE DATABASE=root.mdprobe	OK		| 4|
+show_timeslot	tree	SHOW TIMESLOTID WHERE DEVICE=root.mdprobe.d1	OK		It costs 0.023s
+show_cluster	tree	SHOW CLUSTER	OK		| 0|ConfigNode|Running| 192.168.99.77| 10710|2.0.12.1| aaf460d| ACTIVATED|
+show_cluster_details	tree	SHOW CLUSTER DETAILS	OK		| 0|ConfigNode|Running| 192.168.99.77| 10710| 10720| | | | | |2.0.12.1| aaf460d| ACTIVATED|
+show_clusterid	tree	SHOW CLUSTERID	OK		|c38e994a-8cbc-4121-912a-a3c504c5b4cd|
+show_datanodes	tree	SHOW DATANODES	OK		| 3|Running|192.168.99.77| 6667| 1| 4|
+show_confignodes	tree	SHOW CONFIGNODES	OK		| 0|Running| 192.168.99.77| 10710| Leader|
+show_available_urls	tree	SHOW AVAILABLE URLS	OK		|192.168.99.77| 6667|
+show_variables	tree	SHOW VARIABLES	OK		| ClusterName| timecho|
+show_version	tree	SHOW VERSION	OK		|2.0.12.1| aaf460d|
+show_activation	tree	SHOW ACTIVATION	OK		| Status|ACTIVATED| -|
+show_system_info	tree	SHOW SYSTEM INFO	OK		|02-5WODNU4J-R4B5TZIS-DXJVDCIN,02-4CBJF7DQ-PWTMFSW4-TRODU2DS,02-4VJRNNQK-4EMB3ILY-MYVSAS5A|
+show_all_ttl	tree	SHOW ALL TTL	OK		| root.**| INF|
+show_queries	tree	SHOW QUERIES	OK		|2026-10-10T08:46:14.648+08:00|20261010_004614_00298_3| 3| 0.003|SHOW QUERIES| 0.003057667|192.168.99.80|3600000|
+show_current_user	tree	SHOW CURRENT_USER	OK		| root|
+show_current_sql_dialect	tree	SHOW CURRENT_SQL_DIALECT	OK		| TREE|
+show_current_timestamp	tree	SHOW CURRENT_TIMESTAMP	OK		|2026-10-10T08:46:16.562+08:00|
+show_flush_info	tree	SHOW FLUSH INFO	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+show_lock_info	tree	SHOW LOCK INFO	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:14 missing ROOT at '<EOF>'
+show_disk_usage	tree	SHOW DISK USAGE	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:5 no viable alternative at input 'SHOW DISK'
+show_query_resource	tree	SHOW QUERY RESOURCE	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+show_space_quota	tree	SHOW SPACE QUOTA	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Limit configuration is not enabled, please enable it first.
+show_throttle_quota	tree	SHOW THROTTLE QUOTA	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Limit configuration is not enabled, please enable it first.
+show_user_quota	tree	SHOW USER QUOTA	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Limit configuration is not enabled, please set quota_enable=true first.
+show_ainodes	tree	SHOW AINODES	OK		It costs 0.012s
+show_models	tree	SHOW MODELS	ERR	1011	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1011: Failed to connect to AINode because [org.apache.iotdb.commons.client.exception.ClientManagerException: java.util.NoSuchElementException: Unable to validate object], please check the status of your AINode.
+show_ai_devices	tree	SHOW AI_DEVICES	ERR	1011	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1011: Failed to connect to AINode because [org.apache.iotdb.commons.client.exception.ClientManagerException: java.util.NoSuchElementException: Unable to validate object], please check the status of your AINode.
+user_create	tree	CREATE USER mdprobeu 'MdProbe@123456'	OK		Msg: The statement is executed successfully.
+user_create_shortpw	tree	CREATE USER mdprobeu3 'short'	ERR	820	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 820: The length of password must be greater than or equal to 12
+user_list	tree	LIST USER	OK		| 0| root| -1| 1|
+role_create	tree	CREATE ROLE mdproberole	OK		Msg: The statement is executed successfully.
+role_list	tree	LIST ROLE	OK		|mdproberole|
+grant_user	tree	GRANT READ ON root.mdprobe.** TO USER mdprobeu	OK		Msg: The statement is executed successfully.
+grant_role_priv	tree	GRANT READ ON root.mdprobe.** TO ROLE mdproberole	OK		Msg: The statement is executed successfully.
+grant_role_to_user	tree	GRANT ROLE mdproberole TO mdprobeu	OK		Msg: The statement is executed successfully.
+grant_role_to_user_kw	tree	GRANT ROLE mdproberole TO USER mdprobeu	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:31 extraneous input 'mdprobeu' expecting {<EOF>, ';'}
+list_priv_user	tree	LIST PRIVILEGES OF USER mdprobeu	OK		| |root.mdprobe.**| READ_DATA| false|
+list_priv_role	tree	LIST PRIVILEGES OF ROLE mdproberole	OK		|mdproberole|root.mdprobe.**| READ_DATA| false|
+list_user_of_role	tree	LIST USER OF ROLE mdproberole	OK		| 10001|mdprobeu| -1| -1|
+list_role_of_user	tree	LIST ROLE OF USER mdprobeu	OK		|mdproberole|
+alter_user_pw	tree	ALTER USER mdprobeu SET PASSWORD 'MdProbe@654321'	OK		Msg: The statement is executed successfully.
+alter_user_maxsession	tree	ALTER USER mdprobeu SET MAX_SESSION_PER_USER 5	OK		Msg: The statement is executed successfully.
+rename_user	tree	ALTER USER mdprobeu RENAME TO mdprobeu2	OK		Msg: The statement is executed successfully.
+revoke_user	tree	REVOKE READ ON root.mdprobe.** FROM USER mdprobeu2	OK		Msg: The statement is executed successfully.
+revoke_role_from_user	tree	REVOKE ROLE mdproberole FROM mdprobeu2	OK		Msg: The statement is executed successfully.
+user_drop	tree	DROP USER mdprobeu2	OK		Msg: The statement is executed successfully.
+role_drop	tree	DROP ROLE mdproberole	OK		Msg: The statement is executed successfully.
+t_db_create	table	CREATE DATABASE mdprobe_t	OK		Msg: The statement is executed successfully.
+t_db_create_ifnotexists	table	CREATE DATABASE IF NOT EXISTS mdprobe_t	OK		Msg: The statement is executed successfully.
+t_db_create_dup	table	CREATE DATABASE mdprobe_t	ERR	501	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 501: Database mdprobe_t already exists
+t_db_show	table	SHOW DATABASES	OK		|information_schema| INF| null| null| null|
+t_db_show_details	table	SHOW DATABASES DETAILS	OK		|information_schema| INF| null| null| null| null| null| null| null| false|
+t_db_show_create	table	SHOW CREATE DATABASE mdprobe_t	OK		|mdprobe_t|CREATE DATABASE "mdprobe_t" WITH (ttl='INF',time_partition_interval=604800000,max_schema_region_group_num=1,max_data_region_group_num=2)|
+t_db_count	table	COUNT DATABASES	OK		| 2|
+t_db_alter_setprops	table	ALTER DATABASE mdprobe_t SET PROPERTIES ttl=3600000	OK		Msg: The statement is executed successfully.
+t_db_alter_missing	table	ALTER DATABASE IF EXISTS nosuchdb_t SET PROPERTIES ttl=1000	OK		Msg: The statement is executed successfully.
+t_tbl_create	table	CREATE TABLE mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)	OK		Msg: The statement is executed successfully.
+t_tbl_create_ifnotexists	table	CREATE TABLE IF NOT EXISTS mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)	OK		Msg: The statement is executed successfully.
+t_tbl_create_props	table	CREATE TABLE mdprobe_t.t2 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD) WITH (ttl=3600000, need_last_cache=false)	OK		Msg: The statement is executed successfully.
+t_tbl_create_attr	table	CREATE TABLE mdprobe_t.t3 (time TIMESTAMP TIME, dev STRING TAG ATTRIBUTES(k='v'), m1 INT32 FIELD)	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: line 1:64: mismatched input 'ATTRIBUTES'. Expecting: ')', ','
+t_tbl_create_dup	table	CREATE TABLE mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)	ERR	551	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 551: Table 'mdprobe_t.t1' already exists.
+t_tbl_show_from	table	SHOW TABLES FROM mdprobe_t	OK		| t1|3600000|
+t_tbl_show_details	table	SHOW TABLES DETAILS FROM mdprobe_t	OK		| t1|3600000| USING| null|BASE TABLE| null| true|
+t_tbl_show_all	table	SHOW TABLES	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: database is not specified
+t_tbl_desc	table	DESC mdprobe_t.t1	OK		| time|TIMESTAMP| TIME|
+t_tbl_desc_details	table	DESC mdprobe_t.t1 DETAILS	OK		| time|TIMESTAMP| TIME| USING| null|
+t_tbl_describe	table	DESCRIBE mdprobe_t.t1	OK		| time|TIMESTAMP| TIME|
+t_tbl_show_create	table	SHOW CREATE TABLE mdprobe_t.t1	OK		| t1|CREATE TABLE "t1" ("time" TIMESTAMP TIME,"dev" STRING TAG,"m1" INT32 FIELD) WITH (ttl=3600000, need_last_cache=true)|
+t_tbl_alter_add	table	ALTER TABLE mdprobe_t.t1 ADD COLUMN m2 FLOAT FIELD	OK		Msg: The statement is executed successfully.
+t_tbl_alter_add_ifnotexists	table	ALTER TABLE mdprobe_t.t1 ADD COLUMN IF NOT EXISTS m3 DOUBLE FIELD	OK		Msg: The statement is executed successfully.
+t_tbl_alter_drop	table	ALTER TABLE mdprobe_t.t1 DROP COLUMN m2	OK		Msg: The statement is executed successfully.
+t_tbl_alter_drop_ifexists	table	ALTER TABLE mdprobe_t.t1 DROP COLUMN IF EXISTS m9	OK		Msg: The statement is executed successfully.
+t_tbl_alter_rename_col	table	ALTER TABLE mdprobe_t.t1 RENAME COLUMN m1 TO mm1	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: The renaming for base table column is currently unsupported
+t_tbl_alter_type	table	ALTER TABLE mdprobe_t.t1 ALTER COLUMN m3 SET DATA TYPE FLOAT	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: New type FLOAT is not compatible with the existing one DOUBLE
+t_tbl_alter_setprops_ttl	table	ALTER TABLE mdprobe_t.t1 SET PROPERTIES ttl=3600000	OK		Msg: The statement is executed successfully.
+t_tbl_alter_setprops_inf	table	ALTER TABLE mdprobe_t.t1 SET PROPERTIES ttl='INF'	OK		Msg: The statement is executed successfully.
+t_tbl_alter_rename_table	table	ALTER TABLE mdprobe_t.t1 RENAME TO t1r	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: The renaming for base table is currently unsupported
+t_comment_table	table	COMMENT ON TABLE mdprobe_t.t1r IS 'tbl comment'	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.t1r' does not exist
+t_comment_column	table	COMMENT ON COLUMN mdprobe_t.t1r.mm1 IS 'col comment'	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.t1r' does not exist
+t_view_create	table	CREATE VIEW mdprobe_t.v1 (m1 INT32 FIELD) AS root.mdprobe_t.t1r	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: The last node must be '**'
+t_view_show	table	SHOW VIEWS FROM mdprobe_t	OK		It costs 0.013s
+t_view_show_tree	table	SHOW TREE VIEWS FROM mdprobe_t	OK		It costs 0.013s
+t_view_show_create	table	SHOW CREATE VIEW mdprobe_t.v1	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.v1' does not exist.
+t_view_alter_rename	table	ALTER VIEW mdprobe_t.v1 RENAME TO v1r	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.v1' does not exist
+t_view_drop	table	DROP VIEW mdprobe_t.v1r	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.v1r' does not exist
+t_logical_view_create	table	CREATE VIEW mdprobe_t.lv1 AS SELECT mm1 FROM mdprobe_t.t1r	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.t1r' does not exist.
+t_logical_view_show	table	SHOW VIEWS FROM mdprobe_t	OK		It costs 0.012s
+t_logical_view_drop	table	DROP VIEW mdprobe_t.lv1	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.lv1' does not exist
+t_index_create	table	CREATE INDEX idx_probe ON mdprobe_t.t1r mm1	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Create Index statement is not supported yet.
+t_index_show	table	SHOW INDEXES FROM mdprobe_t.t1r	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Show Index statement is not supported yet.
+t_index_drop	table	DROP INDEX idx_probe ON mdprobe_t.t1r	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Drop Index statement is not supported yet.
+t_dev_show_from	table	SHOW DEVICES FROM mdprobe_t	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: Database must be specified when session database is not set
+t_info_tables	table	SELECT * FROM information_schema.tables	OK		|information_schema| databases| INF| USING| null|SYSTEM VIEW| null| false|
+t_info_columns	table	SELECT * FROM information_schema.columns	OK		|information_schema| databases| database| STRING| TAG| USING| null| null|
+t_info_databases	table	SELECT * FROM information_schema.databases	OK		|information_schema| INF| null| null| null| null| null| null| null| false|
+t_info_views	table	SELECT * FROM information_schema.views	OK		It costs 0.017s
+t_info_indexes	table	SELECT * FROM information_schema.indexes	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'information_schema.indexes' does not exist.
+t_info_services	table	SELECT * FROM information_schema.services	OK		| MQTT| 3|STOPPED|
+t_info_functions	table	SELECT * FROM information_schema.functions	OK		| HMAC_MD5| built-in scalar function| null|AVAILABLE|
+t_fn_show	table	SHOW FUNCTIONS	OK		| HMAC_MD5| built-in scalar function| |AVAILABLE|
+t_services_show	table	SHOW SERVICES	OK		| MQTT| 3|STOPPED|
+t_show_configuration	table	SHOW CONFIGURATION	OK		| cluster_name| timecho| defaultCluster|
+t_show_current_database	table	SHOW CURRENT_DATABASE	OK		| null|
+t_show_current_user	table	SHOW CURRENT_USER	OK		| root|
+t_show_current_sql_dialect	table	SHOW CURRENT_SQL_DIALECT	OK		| TABLE|
+t_show_cluster	table	SHOW CLUSTER	OK		| 0|ConfigNode|Running| 192.168.99.77| 10710|2.0.12.1| aaf460d| ACTIVATED|
+t_show_regions	table	SHOW REGIONS	OK		It costs 0.012s
+t_show_datanodes	table	SHOW DATANODES	OK		| 3|Running|192.168.99.77| 6667| 1| 4|
+t_show_confignodes	table	SHOW CONFIGNODES	OK		| 0|Running| 192.168.99.77| 10710| Leader|
+t_show_regionid	table	SHOW SCHEMA REGIONID WHERE DATABASE=mdprobe_t	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: SHOW REGION ID is not supported yet.
+t_show_timeslot	table	SHOW TIMESLOTID WHERE DEVICE=mdprobe_t.t1r	ERR	701	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 701: SHOW TIME SLOT is not supported yet.
+t_show_models	table	SHOW MODELS	ERR	1011	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1011: Failed to connect to AINode because [org.apache.iotdb.commons.client.exception.ClientManagerException: java.util.NoSuchElementException: Unable to validate object], please check the status of your AINode.
+t_show_ainodes	table	SHOW AINODES	OK		It costs 0.014s
+t_show_activation	table	SHOW ACTIVATION	OK		| Status|ACTIVATED| -|
+t_show_queries	table	SHOW QUERIES	OK		|20261010_004717_00495_3|2026-10-10T08:47:17.842+08:00| 3| 0.009|SHOW QUERIES|root| 0.009222448|192.168.99.80|3600000|
+t_show_version	table	SHOW VERSION	OK		|2.0.12.1| aaf460d|
+t_show_variables	table	SHOW VARIABLES	OK		| ClusterName| timecho|
+t_show_space_quota	table	SHOW SPACE QUOTA	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: line 1:6: mismatched input 'SPACE'. Expecting: 'ACTIVATION', 'AINODES', 'AI_DEVICES', 'ALL', 'AVAILABLE', 'CLUSTER', 'CLUSTERID', 'CLUSTER_ID', 'CONFIGNODES', 'CONFIGURATION', 'CREATE', 'CURRENT_DATABASE', 'CURRENT_SQL_DIALECT', 'CURRENT_TIMESTAMP',
+t_tbl_drop	table	DROP TABLE mdprobe_t.t1r	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.t1r' does not exist
+t_tbl_drop_dup	table	DROP TABLE mdprobe_t.t1r	ERR	550	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 550: Table 'mdprobe_t.t1r' does not exist
+t_tbl_drop_ifexists	table	DROP TABLE IF EXISTS mdprobe_t.t1r	OK		Msg: The statement is executed successfully.
+t_db_drop_missing	table	DROP DATABASE nosuchdb_t	ERR	500	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 500: Database nosuchdb_t doesn't exist
+t_db_drop_ifexists	table	DROP DATABASE IF EXISTS nosuchdb_t	OK		Msg: The statement is executed successfully.
+t_db_drop	table	DROP DATABASE mdprobe_t	OK		Msg: The statement is executed successfully.

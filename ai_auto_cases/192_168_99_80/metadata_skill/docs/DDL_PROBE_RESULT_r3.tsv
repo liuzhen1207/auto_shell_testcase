@@ -1,0 +1,49 @@
+label	dialect	sql	status	code	msg
+db_mk_main	tree	CREATE DATABASE root.mdprobe	ERR	501	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 501: root.mdprobe has already been created as database
+db_mk_tpl	tree	CREATE DATABASE root.tpldb	ERR	501	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 501: root.tpldb has already been created as database
+ts_mk	tree	CREATE TIMESERIES root.mdprobe.d1.s1 INT32	ERR	503	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 503: Path [root.mdprobe.d1.s1] already exist
+ts_mk2	tree	CREATE TIMESERIES root.mdprobe.d1.s2 INT64	ERR	503	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 503: Path [root.mdprobe.d1.s2] already exist
+ts_mk3	tree	CREATE TIMESERIES root.mdprobe.d2.s1 FLOAT	ERR	503	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 503: Path [root.mdprobe.d2.s1] already exist
+ts_mk_multi	tree	CREATE TIMESERIES root.mdprobe.d3.s1 INT32, root.mdprobe.d3.s2 INT64	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:42 mismatched input ',' expecting {<EOF>, ';'}
+ts_drop_multi	tree	DROP TIMESERIES root.mdprobe.d3.s1, root.mdprobe.d3.s2	ERR	508	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 508: Timeseries [root.mdprobe.d3.s1 ... root.mdprobe.d3.s2] does not exist or is represented by device template
+ts_show_child_nopath	tree	SHOW CHILD PATHS	OK		| root.mdprobe.d1| DEVICE|
+ttl_set_inf	tree	SET TTL TO root.mdprobe.d2 INF	OK		Msg: The statement is executed successfully.
+ttl_show_all2	tree	SHOW ALL TTL	OK		| root.**| INF|
+ttl_unset_from	tree	UNSET TTL FROM root.mdprobe.d2	OK		Msg: The statement is executed successfully.
+ttl_show_all3	tree	SHOW ALL TTL	OK		| root.**| INF|
+show_lock_info_path	tree	SHOW LOCK INFO root.mdprobe	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: This operation type is not supported
+show_flush_info_path	tree	SHOW FLUSH INFO root.mdprobe	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:16 mismatched input 'root' expecting {<EOF>, ';'}
+cq_create_ok	tree	CREATE CQ cq1 RESAMPLE EVERY 10s BEGIN SELECT count(s1) INTO root.mdprobe.cq_res FROM root.mdprobe.d1 END	ERR	700	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 700: Error occurred while parsing SQL to physical plan: line 1:81 no viable alternative at input 'SELECT count(s1) INTO root.mdprobe.cq_res FROM'
+cq_show2	tree	SHOW CQS	OK		It costs 0.014s
+cq_drop2	tree	DROP CQ cq1	ERR	1400	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 1400: CQ cq1 doesn't exist.
+tpl_mk	tree	CREATE SCHEMA TEMPLATE tpl_r3 (m1 INT32)	OK		Msg: The statement is executed successfully.
+tpl_set2	tree	SET SCHEMA TEMPLATE tpl_r3 TO root.tpldb	ERR	507	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 507: Template already exists on root.tpldb
+tpl_create_ts_of	tree	CREATE TIMESERIES OF SCHEMA TEMPLATE ON root.tpldb.dev1	OK		Msg: The statement is executed successfully.
+tpl_show_paths3	tree	SHOW PATHS root.tpldb USING SCHEMA TEMPLATE tpl_r3	OK		It costs 0.012s
+tpl_delete_ts	tree	DELETE TIMESERIES OF SCHEMA TEMPLATE FROM root.tpldb.dev1	OK		Msg: The statement is executed successfully.
+tpl_show_paths4	tree	SHOW PATHS USING SCHEMA TEMPLATE tpl_r3	OK		It costs 0.012s
+tpl_unset2	tree	UNSET SCHEMA TEMPLATE tpl_r3 FROM root.tpldb	ERR	513	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 513: No template on root.tpldb
+tpl_drop2	tree	DROP SCHEMA TEMPLATE tpl_r3	OK		Msg: The statement is executed successfully.
+t_db_mk	table	CREATE DATABASE mdprobe_t	OK		Msg: The statement is executed successfully.
+t_tbl_mk	table	CREATE TABLE mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)	OK		Msg: The statement is executed successfully.
+t_sess_show_tables	tblsess	USE mdprobe_t;;SHOW TABLES;	OK		| t1| INF|
+t_sess_show_devices	tblsess	USE mdprobe_t;;SHOW DEVICES;	ERR	700	Msg: The statement is executed successfully.
+t_sess_count_devices	tblsess	USE mdprobe_t;;COUNT DEVICES;	ERR	700	Msg: The statement is executed successfully.
+t_sess_desc	tblsess	USE mdprobe_t;;DESC t1;	OK		| time|TIMESTAMP| TIME|
+t_sess_show_create	tblsess	USE mdprobe_t;;SHOW CREATE TABLE t1;	OK		| t1|CREATE TABLE "t1" ("time" TIMESTAMP TIME,"dev" STRING TAG,"m1" INT32 FIELD) WITH (ttl='INF', need_last_cache=true)|
+t_sess_current_db	tblsess	USE mdprobe_t;;SHOW CURRENT_DATABASE;	OK		| mdprobe_t|
+t_sess_insert	tblsess	USE mdprobe_t;;INSERT INTO t1 (time, dev, m1) VALUES (1700000000000, 'd1', 1);;SELECT count(*) FROM t1;	OK		| 1|
+t_sess_show_devices2	tblsess	USE mdprobe_t;;SHOW DEVICES;	ERR	700	Msg: The statement is executed successfully.
+t_sess_show_tables_details	tblsess	USE mdprobe_t;;SHOW TABLES DETAILS;	OK		| t1| INF| USING| null|BASE TABLE| null| true|
+t_alter_type_ok	table	ALTER TABLE mdprobe_t.t1 ALTER COLUMN m1 SET DATA TYPE INT64	OK		Msg: The statement is executed successfully.
+t_alter_type_bad	table	ALTER TABLE mdprobe_t.t1 ALTER COLUMN m1 SET DATA TYPE TEXT	OK		Msg: The statement is executed successfully.
+t_view_as_star	table	CREATE VIEW mdprobe_t.v1 (m1 INT32 FIELD) AS root.mdprobe_t.**	OK		Msg: The statement is executed successfully.
+t_view_as_tbl	table	CREATE VIEW mdprobe_t.v2 (m1 INT32 FIELD) AS root.mdprobe_t.t1.**	OK		Msg: The statement is executed successfully.
+t_show_views2	table	SHOW VIEWS FROM mdprobe_t	OK		| v1| INF|
+t_show_create_view2	table	SHOW CREATE VIEW mdprobe_t.v1	OK		| v1|CREATE VIEW "v1" ("time" TIMESTAMP TIME,"m1" INT32 FIELD) WITH (ttl='INF') AS root."mdprobe_t".**|
+t_view_drop2	table	DROP VIEW mdprobe_t.v1	OK		Msg: The statement is executed successfully.
+t_view_drop3	table	DROP VIEW mdprobe_t.v2	OK		Msg: The statement is executed successfully.
+t_info_columns_where	table	SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name='t1'	ERR	616	Msg: org.apache.iotdb.jdbc.IoTDBSQLException: 616: Column 'data_type' cannot be resolved
+t_db_drop2	table	DROP DATABASE mdprobe_t	OK		Msg: The statement is executed successfully.
+db_drop_main	tree	DROP DATABASE root.mdprobe	OK		Msg: The statement is executed successfully.
+db_drop_tpl	tree	DROP DATABASE root.tpldb	OK		Msg: The statement is executed successfully.

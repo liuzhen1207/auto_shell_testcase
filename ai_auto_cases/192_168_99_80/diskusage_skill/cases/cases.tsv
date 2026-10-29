@@ -1,0 +1,12 @@
+# 磁盘占用统计 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
+#
+# 说明：每条用例都自己 清集群/写配置/启动（串行执行）；门禁用例 DU-01/DU-02 需要在
+#       "修复前版本"与"修复后版本（RC6）"各跑一次，见 tools/run_gate_versions.sh。
+#
+DU-01	cases/tree/du_tree_merge_after_stats.sh	tree	path/region/file	yes	DU_DEVS/DU_FILES/DU_WIN_SEC	**TDB-629 门禁（树模型接口）**：`show disk_usage from <db>.**` 统计后，被扫过的 TsFile 必须仍能被合并。阶段 A 正向对照（合并开启连写→必须出现合并完成）+ 阶段 B（关合并造 2 个未合并 TsFile→执行统计查询→开合并→窗口内必须出现"合并完成行数增加 + 该库 TsFile 数下降"）。修复前：统计泄漏读锁 ⇒ 合并拿不到写锁 ⇒ 毫无推进（FAIL）；修复后：正常推进（PASS）。佐证：jstack 里卡在 TsFileResource.writeLock 的线程数
+DU-02	cases/table/du_table_merge_after_stats.sh	table	table/region/file	yes	DU_DEVS/DU_FILES/DU_WIN_SEC	**TDB-629 门禁（表模型接口）**：`select * from information_schema.table_disk_usage` 统计后合并必须仍能推进。库内**两张表**（否则走"库内只有一张表"的免打开快路径不泄漏），且统计必须发生在这些 TsFile 还没进大小索引时（集群刚起/库刚建）。判据同 DU-01
+DU-03	cases/tree/du_tree_stats.sh	tree	pattern/database/device	yes	DU_DEVS/DU_ROWS	树模型统计正确性（有数据）：`SHOW DISK_USAGE FROM root.db.**` 的列序与含义、SizeInBytes 与磁盘上该库 TsFile 实际字节数一致、`*`/`**`/精确路径三种 pattern 的作用域、多库隔离、`ORDER BY`/`LIMIT` 分页、不匹配路径返回空集
+DU-04	cases/table/du_table_stats.sh	table	database/table	yes	DU_DEVS/DU_ROWS	表模型统计正确性（有数据）：information_schema.table_disk_usage 列序与含义、按 table/database 求和与实际 TsFile 大小一致、where 过滤（database/table_name/region_id）、`GROUP BY database, table_name` 聚合、不存在的表/视图返回空、视图不出现在统计里
+DU-05	cases/common/du_privilege.sh	both	auth/pattern	yes	-	权限与错误路径：仅 SYSTEM 权限用户可执行（普通用户应报错/无权），树模型非法 pattern（不以 root 开头等）报错，表模型对不存在表的过滤返回空结果集，恢复权限后查询正常

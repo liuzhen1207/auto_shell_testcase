@@ -11,6 +11,8 @@
 | `crud_skill/` | 15 | CRUD 写路径：INSERT/UPDATE/DELETE、文本与 BLOB、`load`（同步/异步、table/tree、无值列文件）、UPDATE_NO_BLOB 等 |
 | `wal_skill/` | 27 | WAL：模式与重启、`wal_dirs`/内存上限、压缩开关、单盘只读、对象文件、WAL 参数合法性、队列内存压力等 |
 | `ttl_skill/` | 15 | TTL（数据过期清理）：树/表两模型的基础与过期清理、`SHOW TTL` 作用域、参数值/热加载、**expired_data_ratio 门控与写放大**（TDB-452 门禁）、**DataNode 重启重复注册**（TDB-610 门禁）、**tier 告警文案**（TDB-611 门禁）；含 4 个专项探针 |
+| `metadata_skill/` | 13 | 元数据 DDL：DATABASE / TIMESERIES / SCHEMA TEMPLATE、表模型库表列、VIEW+TTL、权限元数据（树/表两套语义）、副本一致性+重启持久化、UDF/Trigger 全链路、权限矩阵、元数据规模（2000 时序 / 200 表）；含 `tools/probe_ddl.sh` 能力探测 |
+| `diskusage_skill/` | 5 | `SHOW DISK_USAGE` / `information_schema.table_disk_usage`：**TDB-629 门禁**（统计查询泄漏读锁导致合并卡死，DU-01）、统计正确性、pattern 语义、权限 |
 
 每个 skill 都是同构结构：
 
@@ -38,7 +40,14 @@ cd crud_skill      && bash tools/run_all.sh --set all --consensus IoTConsensus
 cd wal_skill       && bash tools/run_all.sh --set all --consensus IoTConsensus
 # TTL
 cd ttl_skill       && bash tools/run_all.sh --set all --consensus IoTConsensus
+# 元数据 DDL
+cd metadata_skill  && bash tools/run_all.sh --set all
+# 磁盘占用统计（TDB-629 门禁）
+cd diskusage_skill && bash tools/run_all.sh --set all
 ```
+
+> `metadata_skill` 的 `docs/refs/` 下是产品需求文档 PDF（约 4.4MB），未纳入本仓库；
+> 需要时请从测试机 `/data/iotdb/autotest/metadata_skill/docs/refs/` 自取。
 
 - 版本切换只改 `/data/iotdb/autotest/conf/test.conf` 的 `v_testdb` / `v_commit`；
   也可用 `V_TESTDB=<版本目录> BUILD_TAG=<commit> bash cases/...` 覆盖。

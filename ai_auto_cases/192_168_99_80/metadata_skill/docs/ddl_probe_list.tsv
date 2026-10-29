@@ -1,0 +1,256 @@
+# 元数据 DDL 探测清单 v2（语法依据：源码 v20121
+#   iotdb-core/antlr/.../IoTDBSqlParser.g4      —— 树模型
+#   iotdb-core/relational-grammar/.../RelationalSql.g4 —— 表模型）
+# 格式：label <TAB> dialect(tree|table) <TAB> SQL
+# 顺序执行，故"建 -> 改 -> 查 -> 删"按序排列；结尾由 probe_ddl.sh 统一清理。
+db_create_simple	tree	CREATE DATABASE root.mdprobe
+db_create_attrs	tree	CREATE DATABASE root.mdprobe2 WITH TTL=3600000, TIME_PARTITION_INTERVAL=604800000
+db_create_needlastcache	tree	CREATE DATABASE root.mdprobe3 WITH NEED_LAST_CACHE=false
+db_create_maxgroup	tree	CREATE DATABASE root.mdprobe4 WITH MAX_SCHEMA_REGION_GROUP_NUM=2, MAX_DATA_REGION_GROUP_NUM=2
+db_create_tpl	tree	CREATE DATABASE root.tpldb
+db_create_nodb_tpl	tree	CREATE DATABASE root.tpldb2
+db_create_dup	tree	CREATE DATABASE root.mdprobe
+db_create_badparam	tree	CREATE DATABASE root.mdprobe6 WITH NO_SUCH_KEY=1
+db_create_rf	tree	CREATE DATABASE root.mdprobe7 WITH SCHEMA_REPLICATION_FACTOR=3
+db_create_ifnotexists	tree	CREATE DATABASE IF NOT EXISTS root.mdprobe
+db_show_all	tree	SHOW DATABASES
+db_show_details	tree	SHOW DATABASES DETAILS
+db_show_one	tree	SHOW DATABASES root.mdprobe
+db_count	tree	COUNT DATABASES
+db_count_one	tree	COUNT DATABASES root.mdprobe
+db_alter_ttl	tree	ALTER DATABASE root.mdprobe WITH TTL=7200000
+db_alter_tpi	tree	ALTER DATABASE root.mdprobe WITH TIME_PARTITION_INTERVAL=86400000
+db_alter_needlastcache	tree	ALTER DATABASE root.mdprobe WITH NEED_LAST_CACHE=true
+db_alter_maxgroup	tree	ALTER DATABASE root.mdprobe WITH MAX_DATA_REGION_GROUP_NUM=5
+db_alter_badkey	tree	ALTER DATABASE root.mdprobe WITH NO_SUCH_KEY=1
+db_alter_missing	tree	ALTER DATABASE root.nosuchdb WITH TTL=1000
+db_drop_missing	tree	DROP DATABASE root.nosuchdb
+db_drop_ifexists	tree	DROP DATABASE IF EXISTS root.nosuchdb
+db_drop_multi	tree	DROP DATABASE root.mdprobe4, root.mdprobe3
+db_drop_one	tree	DROP DATABASE root.mdprobe2
+ts_create_full	tree	CREATE TIMESERIES root.mdprobe.d1.s1 WITH DATATYPE=INT32, ENCODING=RLE
+ts_create_short	tree	CREATE TIMESERIES root.mdprobe.d1.s2 INT64
+ts_create_dup	tree	CREATE TIMESERIES root.mdprobe.d1.s1 WITH DATATYPE=INT32, ENCODING=RLE
+ts_create_badtype	tree	CREATE TIMESERIES root.mdprobe.d1.s9 WITH DATATYPE=NOTATYPE
+ts_create_badencoding	tree	CREATE TIMESERIES root.mdprobe.d1.s9 WITH DATATYPE=TEXT, ENCODING=RLE
+ts_create_props	tree	CREATE TIMESERIES root.mdprobe.d1.s3 WITH DATATYPE=TEXT, ENCODING=PLAIN, COMPRESSOR=SNAPPY, MAX_POINT_NUMBER=100
+ts_create_tags	tree	CREATE TIMESERIES root.mdprobe.d1.s4 INT32 TAGS(k1=v1) ATTRIBUTES(a1=b1)
+ts_create_alias	tree	CREATE TIMESERIES root.mdprobe.d1.s5 INT32 ALIAS=alias5
+ts_create_aligned	tree	CREATE ALIGNED TIMESERIES root.mdprobe.d2(s1 INT32, s2 FLOAT)
+ts_create_aligned_props	tree	CREATE ALIGNED TIMESERIES root.mdprobe.d2b(s1 INT32 ENCODING=RLE, s2 FLOAT COMPRESSOR=SNAPPY)
+ts_create_nodb	tree	CREATE TIMESERIES root.autodb.d1.s1 INT32
+ts_alter_set_datatype	tree	ALTER TIMESERIES root.mdprobe.d1.s2 SET DATA TYPE DOUBLE
+ts_alter_rename_path	tree	ALTER TIMESERIES root.mdprobe.d1.s2 RENAME TO root.mdprobe.d1.s2r
+ts_alter_add_tags	tree	ALTER TIMESERIES root.mdprobe.d1.s1 ADD TAGS t1=v1
+ts_alter_add_attributes	tree	ALTER TIMESERIES root.mdprobe.d1.s1 ADD ATTRIBUTES a1=b1
+ts_alter_rename_tag	tree	ALTER TIMESERIES root.mdprobe.d1.s1 RENAME t1 TO t2
+ts_alter_drop_tag	tree	ALTER TIMESERIES root.mdprobe.d1.s1 DROP t2
+ts_alter_upsert_alias	tree	ALTER TIMESERIES root.mdprobe.d1.s1 UPSERT ALIAS=al1
+ts_alter_upsert_tags	tree	ALTER TIMESERIES root.mdprobe.d1.s1 UPSERT TAGS(k3=v3) ATTRIBUTES(a3=b3)
+ts_alter_storage_props	tree	ALTER TIMESERIES root.mdprobe.d1.s1 SET STORAGE_PROPERTIES ENCODING=TS_2DIFF
+ts_alter_storage_props_ifexists	tree	ALTER TIMESERIES IF EXISTS root.mdprobe.d1.s9 SET STORAGE_PROPERTIES ENCODING=RLE
+ts_show_all	tree	SHOW TIMESERIES
+ts_show_path	tree	SHOW TIMESERIES root.mdprobe.**
+ts_show_exact	tree	SHOW TIMESERIES root.mdprobe.d1.s1
+ts_show_latest	tree	SHOW LATEST TIMESERIES
+ts_show_invalid	tree	SHOW INVALID TIMESERIES
+ts_show_where	tree	SHOW TIMESERIES root.mdprobe.** WHERE DATATYPE='INT32'
+ts_show_where_tags	tree	SHOW TIMESERIES root.mdprobe.** WHERE TAGS(k1)='v1'
+ts_show_limit	tree	SHOW TIMESERIES LIMIT 3
+ts_show_order	tree	SHOW TIMESERIES ORDER BY TIMESERIES DESC
+ts_count_all	tree	COUNT TIMESERIES root.mdprobe.**
+ts_count_level	tree	COUNT TIMESERIES root.mdprobe.*.*
+ts_count_group	tree	COUNT TIMESERIES root.mdprobe.** GROUP BY LEVEL=2
+ts_count_nodes	tree	COUNT NODES root.mdprobe.** LEVEL=3
+ts_count_nodes2	tree	COUNT NODES root.mdprobe.** LEVEL=2
+dev_show	tree	SHOW DEVICES
+dev_show_path	tree	SHOW DEVICES root.mdprobe.**
+dev_show_contains	tree	SHOW DEVICES WHERE DEVICE CONTAINS 'd1'
+dev_show_with_db	tree	SHOW DEVICES root.mdprobe.** WITH DATABASE
+dev_count	tree	COUNT DEVICES
+dev_count_path	tree	COUNT DEVICES root.mdprobe.**
+path_show_child	tree	SHOW CHILD PATHS root.mdprobe.**
+path_show_nodes	tree	SHOW CHILD NODES root.mdprobe.**
+ttl_set	tree	SET TTL TO root.mdprobe.d1 1000
+ttl_show_on	tree	SHOW TTL ON root.mdprobe.d1
+ttl_unset	tree	UNSET TTL TO root.mdprobe.d1
+tpl_create	tree	CREATE SCHEMA TEMPLATE tpl_probe (s1 INT32, s2 FLOAT)
+tpl_create_aligned	tree	CREATE SCHEMA TEMPLATE tpl_probe2 ALIGNED (a1 INT32, a2 INT64)
+tpl_create_device	tree	CREATE DEVICE TEMPLATE tpl_probe3 (x INT32)
+tpl_create_dup	tree	CREATE SCHEMA TEMPLATE tpl_probe (s1 INT32)
+tpl_show	tree	SHOW SCHEMA TEMPLATES
+tpl_show_nodes	tree	SHOW NODES IN SCHEMA TEMPLATE tpl_probe
+tpl_set	tree	SET SCHEMA TEMPLATE tpl_probe TO root.tpldb
+tpl_set_dup	tree	SET SCHEMA TEMPLATE tpl_probe TO root.tpldb
+tpl_show_paths_set	tree	SHOW PATHS SET SCHEMA TEMPLATE tpl_probe
+tpl_create_ts_using	tree	CREATE TIMESERIES USING SCHEMA TEMPLATE ON root.tpldb.d1
+tpl_show_paths2	tree	SHOW PATHS USING SCHEMA TEMPLATE tpl_probe
+tpl_alter_add	tree	ALTER SCHEMA TEMPLATE tpl_probe ADD (s3 INT64, s4 FLOAT)
+tpl_unset	tree	UNSET SCHEMA TEMPLATE tpl_probe FROM root.tpldb
+tpl_drop_ts	tree	DROP TIMESERIES OF SCHEMA TEMPLATE FROM root.tpldb.d1
+tpl_deactivate	tree	DEACTIVATE SCHEMA TEMPLATE FROM root.tpldb.d1
+tpl_drop	tree	DROP SCHEMA TEMPLATE tpl_probe2
+tpl_drop_missing	tree	DROP SCHEMA TEMPLATE nosuchtpl
+trg_create_stateless	tree	CREATE STATELESS TRIGGER trg1 BEFORE INSERT ON root.mdprobe.d1.s1 AS 'com.example.X'
+trg_create_stateful	tree	CREATE STATEFUL TRIGGER trg2 AFTER INSERT ON root.mdprobe.d1.s1 AS 'com.example.X' USING URI 'file:///tmp/x.jar'
+trg_show	tree	SHOW TRIGGERS
+trg_start	tree	START TRIGGER trg1
+trg_stop	tree	STOP TRIGGER trg1
+trg_drop	tree	DROP TRIGGER trg1
+trg_drop_missing	tree	DROP TRIGGER nosuchtrg
+cq_create	tree	CREATE CQ cq1 BEGIN SELECT count(s1) FROM root.mdprobe.d1 END
+cq_create_full	tree	CREATE CONTINUOUS QUERY cq2 RESAMPLE EVERY 10s TIMEOUT POLICY DISCARD BEGIN SELECT count(s1) FROM root.mdprobe.d1 END
+cq_show	tree	SHOW CQS
+cq_show_long	tree	SHOW CONTINUOUS QUERIES
+cq_drop	tree	DROP CQ cq1
+cq_drop_missing	tree	DROP CQ nosuchcq
+view_create	tree	CREATE VIEW root.mdprobe.v1 AS SELECT s1 FROM root.mdprobe.d1
+view_show	tree	SHOW VIEW
+view_show_path	tree	SHOW VIEW root.mdprobe.**
+view_alter_as	tree	ALTER VIEW root.mdprobe.v1 AS SELECT s2 FROM root.mdprobe.d1
+view_rename	tree	ALTER VIEW root.mdprobe.v1 RENAME TO root.mdprobe.v2
+view_drop	tree	DROP VIEW root.mdprobe.v2
+view_drop_missing	tree	DROP VIEW root.mdprobe.v2
+calcpoint_create	tree	CREATE CALCULATION POINT root.mdprobe.cp1 AS s1 + 1 'm1'
+calcpoint_show	tree	SHOW CALCULATION POINTS root.mdprobe.**
+calcpoint_alter	tree	ALTER CALCULATION POINT root.mdprobe.cp1 AS s1 + 2
+calcpoint_drop	tree	DROP CALCULATION POINTS root.mdprobe.cp1
+fn_show	tree	SHOW FUNCTIONS
+fn_drop_missing	tree	DROP FUNCTION nosuchfunc
+service_create	tree	CREATE SERVICE svc1 AS 'com.example.X'
+service_show	tree	SHOW SERVICES
+service_start	tree	START SERVICE svc1
+service_stop	tree	STOP SERVICE svc1
+service_drop	tree	DROP SERVICE svc1
+pipe_show	tree	SHOW PIPES
+pipe_plugins	tree	SHOW PIPE PLUGINS
+topic_show	tree	SHOW TOPICS
+topic_subs	tree	SHOW SUBSCRIPTIONS
+show_regions	tree	SHOW REGIONS
+show_schema_regions	tree	SHOW SCHEMA REGIONS
+show_data_regions	tree	SHOW DATA REGIONS OF DATABASE root.mdprobe
+show_regions_node	tree	SHOW REGIONS ON NODEID 3
+show_regionid	tree	SHOW SCHEMA REGIONID WHERE DATABASE=root.mdprobe
+show_timeslot	tree	SHOW TIMESLOTID WHERE DEVICE=root.mdprobe.d1
+show_cluster	tree	SHOW CLUSTER
+show_cluster_details	tree	SHOW CLUSTER DETAILS
+show_clusterid	tree	SHOW CLUSTERID
+show_datanodes	tree	SHOW DATANODES
+show_confignodes	tree	SHOW CONFIGNODES
+show_available_urls	tree	SHOW AVAILABLE URLS
+show_variables	tree	SHOW VARIABLES
+show_version	tree	SHOW VERSION
+show_activation	tree	SHOW ACTIVATION
+show_system_info	tree	SHOW SYSTEM INFO
+show_all_ttl	tree	SHOW ALL TTL
+show_queries	tree	SHOW QUERIES
+show_current_user	tree	SHOW CURRENT_USER
+show_current_sql_dialect	tree	SHOW CURRENT_SQL_DIALECT
+show_current_timestamp	tree	SHOW CURRENT_TIMESTAMP
+show_flush_info	tree	SHOW FLUSH INFO
+show_lock_info	tree	SHOW LOCK INFO
+show_disk_usage	tree	SHOW DISK USAGE
+show_query_resource	tree	SHOW QUERY RESOURCE
+show_space_quota	tree	SHOW SPACE QUOTA
+show_throttle_quota	tree	SHOW THROTTLE QUOTA
+show_user_quota	tree	SHOW USER QUOTA
+show_ainodes	tree	SHOW AINODES
+show_models	tree	SHOW MODELS
+show_ai_devices	tree	SHOW AI_DEVICES
+user_create	tree	CREATE USER mdprobeu 'MdProbe@123456'
+user_create_shortpw	tree	CREATE USER mdprobeu3 'short'
+user_list	tree	LIST USER
+role_create	tree	CREATE ROLE mdproberole
+role_list	tree	LIST ROLE
+grant_user	tree	GRANT READ ON root.mdprobe.** TO USER mdprobeu
+grant_role_priv	tree	GRANT READ ON root.mdprobe.** TO ROLE mdproberole
+grant_role_to_user	tree	GRANT ROLE mdproberole TO mdprobeu
+grant_role_to_user_kw	tree	GRANT ROLE mdproberole TO USER mdprobeu
+list_priv_user	tree	LIST PRIVILEGES OF USER mdprobeu
+list_priv_role	tree	LIST PRIVILEGES OF ROLE mdproberole
+list_user_of_role	tree	LIST USER OF ROLE mdproberole
+list_role_of_user	tree	LIST ROLE OF USER mdprobeu
+alter_user_pw	tree	ALTER USER mdprobeu SET PASSWORD 'MdProbe@654321'
+alter_user_maxsession	tree	ALTER USER mdprobeu SET MAX_SESSION_PER_USER 5
+rename_user	tree	ALTER USER mdprobeu RENAME TO mdprobeu2
+revoke_user	tree	REVOKE READ ON root.mdprobe.** FROM USER mdprobeu2
+revoke_role_from_user	tree	REVOKE ROLE mdproberole FROM mdprobeu2
+user_drop	tree	DROP USER mdprobeu2
+role_drop	tree	DROP ROLE mdproberole
+t_db_create	table	CREATE DATABASE mdprobe_t
+t_db_create_ifnotexists	table	CREATE DATABASE IF NOT EXISTS mdprobe_t
+t_db_create_dup	table	CREATE DATABASE mdprobe_t
+t_db_show	table	SHOW DATABASES
+t_db_show_details	table	SHOW DATABASES DETAILS
+t_db_show_create	table	SHOW CREATE DATABASE mdprobe_t
+t_db_count	table	COUNT DATABASES
+t_db_alter_setprops	table	ALTER DATABASE mdprobe_t SET PROPERTIES ttl=3600000
+t_db_alter_missing	table	ALTER DATABASE IF EXISTS nosuchdb_t SET PROPERTIES ttl=1000
+t_tbl_create	table	CREATE TABLE mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)
+t_tbl_create_ifnotexists	table	CREATE TABLE IF NOT EXISTS mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)
+t_tbl_create_props	table	CREATE TABLE mdprobe_t.t2 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD) WITH (ttl=3600000, need_last_cache=false)
+t_tbl_create_attr	table	CREATE TABLE mdprobe_t.t3 (time TIMESTAMP TIME, dev STRING TAG ATTRIBUTES(k='v'), m1 INT32 FIELD)
+t_tbl_create_dup	table	CREATE TABLE mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)
+t_tbl_show_from	table	SHOW TABLES FROM mdprobe_t
+t_tbl_show_details	table	SHOW TABLES DETAILS FROM mdprobe_t
+t_tbl_show_all	table	SHOW TABLES
+t_tbl_desc	table	DESC mdprobe_t.t1
+t_tbl_desc_details	table	DESC mdprobe_t.t1 DETAILS
+t_tbl_describe	table	DESCRIBE mdprobe_t.t1
+t_tbl_show_create	table	SHOW CREATE TABLE mdprobe_t.t1
+t_tbl_alter_add	table	ALTER TABLE mdprobe_t.t1 ADD COLUMN m2 FLOAT FIELD
+t_tbl_alter_add_ifnotexists	table	ALTER TABLE mdprobe_t.t1 ADD COLUMN IF NOT EXISTS m3 DOUBLE FIELD
+t_tbl_alter_drop	table	ALTER TABLE mdprobe_t.t1 DROP COLUMN m2
+t_tbl_alter_drop_ifexists	table	ALTER TABLE mdprobe_t.t1 DROP COLUMN IF EXISTS m9
+t_tbl_alter_rename_col	table	ALTER TABLE mdprobe_t.t1 RENAME COLUMN m1 TO mm1
+t_tbl_alter_type	table	ALTER TABLE mdprobe_t.t1 ALTER COLUMN m3 SET DATA TYPE FLOAT
+t_tbl_alter_setprops_ttl	table	ALTER TABLE mdprobe_t.t1 SET PROPERTIES ttl=3600000
+t_tbl_alter_setprops_inf	table	ALTER TABLE mdprobe_t.t1 SET PROPERTIES ttl='INF'
+t_tbl_alter_rename_table	table	ALTER TABLE mdprobe_t.t1 RENAME TO t1r
+t_comment_table	table	COMMENT ON TABLE mdprobe_t.t1r IS 'tbl comment'
+t_comment_column	table	COMMENT ON COLUMN mdprobe_t.t1r.mm1 IS 'col comment'
+t_view_create	table	CREATE VIEW mdprobe_t.v1 (m1 INT32 FIELD) AS root.mdprobe_t.t1r
+t_view_show	table	SHOW VIEWS FROM mdprobe_t
+t_view_show_tree	table	SHOW TREE VIEWS FROM mdprobe_t
+t_view_show_create	table	SHOW CREATE VIEW mdprobe_t.v1
+t_view_alter_rename	table	ALTER VIEW mdprobe_t.v1 RENAME TO v1r
+t_view_drop	table	DROP VIEW mdprobe_t.v1r
+t_logical_view_create	table	CREATE VIEW mdprobe_t.lv1 AS SELECT mm1 FROM mdprobe_t.t1r
+t_logical_view_show	table	SHOW VIEWS FROM mdprobe_t
+t_logical_view_drop	table	DROP VIEW mdprobe_t.lv1
+t_index_create	table	CREATE INDEX idx_probe ON mdprobe_t.t1r mm1
+t_index_show	table	SHOW INDEXES FROM mdprobe_t.t1r
+t_index_drop	table	DROP INDEX idx_probe ON mdprobe_t.t1r
+t_dev_show_from	table	SHOW DEVICES FROM mdprobe_t
+t_info_tables	table	SELECT * FROM information_schema.tables
+t_info_columns	table	SELECT * FROM information_schema.columns
+t_info_databases	table	SELECT * FROM information_schema.databases
+t_info_views	table	SELECT * FROM information_schema.views
+t_info_indexes	table	SELECT * FROM information_schema.indexes
+t_info_services	table	SELECT * FROM information_schema.services
+t_info_functions	table	SELECT * FROM information_schema.functions
+t_fn_show	table	SHOW FUNCTIONS
+t_services_show	table	SHOW SERVICES
+t_show_configuration	table	SHOW CONFIGURATION
+t_show_current_database	table	SHOW CURRENT_DATABASE
+t_show_current_user	table	SHOW CURRENT_USER
+t_show_current_sql_dialect	table	SHOW CURRENT_SQL_DIALECT
+t_show_cluster	table	SHOW CLUSTER
+t_show_regions	table	SHOW REGIONS
+t_show_datanodes	table	SHOW DATANODES
+t_show_confignodes	table	SHOW CONFIGNODES
+t_show_regionid	table	SHOW SCHEMA REGIONID WHERE DATABASE=mdprobe_t
+t_show_timeslot	table	SHOW TIMESLOTID WHERE DEVICE=mdprobe_t.t1r
+t_show_models	table	SHOW MODELS
+t_show_ainodes	table	SHOW AINODES
+t_show_activation	table	SHOW ACTIVATION
+t_show_queries	table	SHOW QUERIES
+t_show_version	table	SHOW VERSION
+t_show_variables	table	SHOW VARIABLES
+t_show_space_quota	table	SHOW SPACE QUOTA
+t_tbl_drop	table	DROP TABLE mdprobe_t.t1r
+t_tbl_drop_dup	table	DROP TABLE mdprobe_t.t1r
+t_tbl_drop_ifexists	table	DROP TABLE IF EXISTS mdprobe_t.t1r
+t_db_drop_missing	table	DROP DATABASE nosuchdb_t
+t_db_drop_ifexists	table	DROP DATABASE IF EXISTS nosuchdb_t
+t_db_drop	table	DROP DATABASE mdprobe_t

@@ -1,0 +1,17 @@
+# 元数据 DDL 用例清单
+# 列：用例号 <TAB> 集合(quick|tree|table|common) <TAB> 方言 <TAB> 脚本(相对 cases/) <TAB> lifecycle(reuse|fresh) <TAB> 标题
+#   reuse = 复用运行器准备好的集群（默认）
+#   fresh = 需要独占集群（自己会停/清/写配置/启动）
+MD-T01	tree	tree	tree/md_tree_database.sh	reuse	树模型 DATABASE 元数据闭环（建/查/计数/详情/改/删 + 失败路径）
+MD-T02	tree	tree	tree/md_tree_timeseries.sh	reuse	树模型 TIMESERIES 元数据闭环（建/SHOW 过滤/COUNT 各级/ALTER 系列/RENAME/死路径）
+MD-T03	tree	tree	tree/md_tree_template.sh	reuse	树模型 SCHEMA TEMPLATE 元数据闭环（建/ALIGNED/SHOW NODES/SET/UNSET/SHOW PATHS/USING）
+MD-T04	tree	tree	tree/md_tree_observe.sh	reuse	树模型元数据观测面（集群/区域/时隙/会话/版本 + DataRegion 懒创建）
+MD-T05	tree	tree	tree/md_tree_ddl_negative.sh	reuse	树模型 DDL 失败路径与错误码（不被静默接受 + 失败后元数据不被改脏）
+MD-T06	tree	tree	tree/md_tree_view_ttl.sh	reuse	树模型 VIEW 与 TTL 元数据闭环
+MD-B01	table	table	table/md_table_ddl.sh	reuse	表模型 DATABASE/TABLE/COLUMN 元数据闭环（DESC/SHOW CREATE/加删列/改类型/属性/注释）
+MD-B02	table	table	table/md_table_view_schema.sh	reuse	表模型 VIEW + information_schema 交叉校验与能力边界
+MD-C01	common	tree	common/md_meta_consistency.sh	reuse	元数据副本一致性 + 重启持久化 + 跨模型命名空间隔离
+MD-C02	common	tree	common/md_dcl_user_role.sh	reuse	权限元数据（USER/ROLE/PRIVILEGE）闭环
+MD-C03	common	tree	common/md_privilege_matrix.sh	reuse	权限矩阵（权限值 × 路径粒度 × 用户/角色 + LIST PRIVILEGES + 越权 803）
+MD-U01	common	tree	common/md_udf_trigger.sh	reuse	真实 jar 的 UDF/Trigger 全链路（注册/SHOW/执行/触发/重启恢复/DROP）
+MD-S01	scale	tree	common/md_scale_bulk.sh	reuse	元数据规模（2000 时序 / 200 表下的 SHOW/COUNT/DESC/information_schema 正确性与耗时）

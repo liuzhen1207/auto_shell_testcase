@@ -1,0 +1,49 @@
+# 探测清单 r3：补第一轮没覆盖/需要确认的语法（会话式 USE、有效 CQ、表视图、类型变更…）
+db_mk_main	tree	CREATE DATABASE root.mdprobe
+db_mk_tpl	tree	CREATE DATABASE root.tpldb
+ts_mk	tree	CREATE TIMESERIES root.mdprobe.d1.s1 INT32
+ts_mk2	tree	CREATE TIMESERIES root.mdprobe.d1.s2 INT64
+ts_mk3	tree	CREATE TIMESERIES root.mdprobe.d2.s1 FLOAT
+ts_mk_multi	tree	CREATE TIMESERIES root.mdprobe.d3.s1 INT32, root.mdprobe.d3.s2 INT64
+ts_drop_multi	tree	DROP TIMESERIES root.mdprobe.d3.s1, root.mdprobe.d3.s2
+ts_show_child_nopath	tree	SHOW CHILD PATHS
+ttl_set_inf	tree	SET TTL TO root.mdprobe.d2 INF
+ttl_show_all2	tree	SHOW ALL TTL
+ttl_unset_from	tree	UNSET TTL FROM root.mdprobe.d2
+ttl_show_all3	tree	SHOW ALL TTL
+show_lock_info_path	tree	SHOW LOCK INFO root.mdprobe
+show_flush_info_path	tree	SHOW FLUSH INFO root.mdprobe
+cq_create_ok	tree	CREATE CQ cq1 RESAMPLE EVERY 10s BEGIN SELECT count(s1) INTO root.mdprobe.cq_res FROM root.mdprobe.d1 END
+cq_show2	tree	SHOW CQS
+cq_drop2	tree	DROP CQ cq1
+tpl_mk	tree	CREATE SCHEMA TEMPLATE tpl_r3 (m1 INT32)
+tpl_set2	tree	SET SCHEMA TEMPLATE tpl_r3 TO root.tpldb
+tpl_create_ts_of	tree	CREATE TIMESERIES OF SCHEMA TEMPLATE ON root.tpldb.dev1
+tpl_show_paths3	tree	SHOW PATHS root.tpldb USING SCHEMA TEMPLATE tpl_r3
+tpl_delete_ts	tree	DELETE TIMESERIES OF SCHEMA TEMPLATE FROM root.tpldb.dev1
+tpl_show_paths4	tree	SHOW PATHS USING SCHEMA TEMPLATE tpl_r3
+tpl_unset2	tree	UNSET SCHEMA TEMPLATE tpl_r3 FROM root.tpldb
+tpl_drop2	tree	DROP SCHEMA TEMPLATE tpl_r3
+t_db_mk	table	CREATE DATABASE mdprobe_t
+t_tbl_mk	table	CREATE TABLE mdprobe_t.t1 (time TIMESTAMP TIME, dev STRING TAG, m1 INT32 FIELD)
+t_sess_show_tables	tblsess	USE mdprobe_t;;SHOW TABLES;
+t_sess_show_devices	tblsess	USE mdprobe_t;;SHOW DEVICES;
+t_sess_count_devices	tblsess	USE mdprobe_t;;COUNT DEVICES;
+t_sess_desc	tblsess	USE mdprobe_t;;DESC t1;
+t_sess_show_create	tblsess	USE mdprobe_t;;SHOW CREATE TABLE t1;
+t_sess_current_db	tblsess	USE mdprobe_t;;SHOW CURRENT_DATABASE;
+t_sess_insert	tblsess	USE mdprobe_t;;INSERT INTO t1 (time, dev, m1) VALUES (1700000000000, 'd1', 1);;SELECT count(*) FROM t1;
+t_sess_show_devices2	tblsess	USE mdprobe_t;;SHOW DEVICES;
+t_sess_show_tables_details	tblsess	USE mdprobe_t;;SHOW TABLES DETAILS;
+t_alter_type_ok	table	ALTER TABLE mdprobe_t.t1 ALTER COLUMN m1 SET DATA TYPE INT64
+t_alter_type_bad	table	ALTER TABLE mdprobe_t.t1 ALTER COLUMN m1 SET DATA TYPE TEXT
+t_view_as_star	table	CREATE VIEW mdprobe_t.v1 (m1 INT32 FIELD) AS root.mdprobe_t.**
+t_view_as_tbl	table	CREATE VIEW mdprobe_t.v2 (m1 INT32 FIELD) AS root.mdprobe_t.t1.**
+t_show_views2	table	SHOW VIEWS FROM mdprobe_t
+t_show_create_view2	table	SHOW CREATE VIEW mdprobe_t.v1
+t_view_drop2	table	DROP VIEW mdprobe_t.v1
+t_view_drop3	table	DROP VIEW mdprobe_t.v2
+t_info_columns_where	table	SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name='t1'
+t_db_drop2	table	DROP DATABASE mdprobe_t
+db_drop_main	tree	DROP DATABASE root.mdprobe
+db_drop_tpl	tree	DROP DATABASE root.tpldb
