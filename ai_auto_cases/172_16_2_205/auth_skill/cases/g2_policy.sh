@@ -49,7 +49,7 @@ case_AUTH014() {
   local f=/data1/iotdb/$NEW/logs/log_datanode_all.log i ip
   local delta total=0
   declare -A before
-  for ip in $DN_LIST; do before[$ip]=$(ssh -o StrictHostKeyChecking=no root@$ip "grep -c 'Fail to check password expiration' $f 2>/dev/null || true" 2>/dev/null); done
+  for ip in $DN_LIST; do before[$ip]=$(ssh -o StrictHostKeyChecking=no root@$ip "grep -c ' ERROR .*Fail to check password expiration' $f 2>/dev/null || true" 2>/dev/null); done
 
   echo "  stop all DNs"
   for ip in $DN_LIST; do
@@ -71,11 +71,18 @@ case_AUTH014() {
 
   for ip in $DN_LIST; do
     local after
-    after=$(ssh -o StrictHostKeyChecking=no root@$ip "grep -c 'Fail to check password expiration' $f 2>/dev/null || true" 2>/dev/null)
+    after=$(ssh -o StrictHostKeyChecking=no root@$ip "grep -c ' ERROR .*Fail to check password expiration' $f 2>/dev/null || true" 2>/dev/null)
     delta=$(( ${after:-0} - ${before[$ip]:-0} ))
     [ "$delta" -gt 0 ] && { echo "  $ip 新增 $delta 条"; total=$((total+delta)); }
   done
   echo "  total new ERROR occurrences: $total"
+  # WARN 级只记录（研发确认：降级放行时改为 WARN + 堆栈属预期行为）
+  local warns=0 w
+  for ip in $DN_LIST; do
+    w=$(ssh -o StrictHostKeyChecking=no root@$ip "grep -c ' WARN .*Fail to check password expiration' $f 2>/dev/null || true" 2>/dev/null)
+    warns=$(( warns + ${w:-0} ))
+  done
+  echo "  WARN-level occurrences (informational): $warns"
   if [ "$total" -gt 0 ]; then
     ssh -o StrictHostKeyChecking=no root@172.16.2.2 "grep -A8 -m1 'Fail to check password expiration' $f 2>/dev/null | head -10" 2>/dev/null | sed 's/^/    /'
     fail "DN 启动窗口内登录打印 ERROR 'Fail to check password expiration'（含 TimeoutException 堆栈，共 $total 条）：降级已放行登录，不应记 ERROR"
