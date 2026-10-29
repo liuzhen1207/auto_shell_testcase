@@ -1,0 +1,28 @@
+# 身份鉴别回归 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	脚本	功能域	类型	说明	执行函数
+
+# 统一收尾（每条用例都做）：8 个 DN 的 log_datanode_all.log 增量扫描（白名单见 lib/lib_auth.sh）
+
+AUTH-001	g1_base.sh	基础鉴别	正向	root 默认用户登录与集群可用	case_AUTH001
+AUTH-002	g1_base.sh	基础鉴别	反向	错误密码登录失败（801，不回显密码）	case_AUTH002
+AUTH-003	g1_base.sh	基础鉴别	反向	不存在用户登录失败（804，与 801 可区分）	case_AUTH003
+AUTH-004	g1_base.sh	用户管理	正向	CREATE USER 后新用户可登录	case_AUTH004
+AUTH-005	g1_base.sh	用户管理	正向	ALTER USER SET PASSWORD 旧密码失效、新密码可用	case_AUTH005
+AUTH-006	g1_base.sh	用户管理	反向	DROP USER 后无法登录	case_AUTH006
+AUTH-007	g1_base.sh	强安全密码	边界	复杂度 a-d：缺特殊字符/数字/大写被拒，齐全通过	case_AUTH007
+AUTH-008	g1_base.sh	授权	正向	未授权不可读、GRANT 后可读、REVOKE 后不可读	case_AUTH008
+AUTH-009	g1_base.sh	用户管理	边界	LIST USER 不暴露密码/哈希	case_AUTH009
+AUTH-010	g1_base.sh	强安全密码	边界	enforce_strong_password 热切换生效	case_AUTH010
+AUTH-011	g2_policy.sh	密码策略	正向	password_expiration_days 可下发/复位，且不影响登录	case_AUTH011
+AUTH-012	g2_policy.sh	密码策略	边界	password_reuse_interval_days>0 时改回旧密码的行为	case_AUTH012
+AUTH-013	g2_policy.sh	密码策略	正向	password_stale_warning_days 可配置且不阻断登录	case_AUTH013
+AUTH-014	g2_policy.sh	日志缺陷	缺陷	未配置过期策略时不应打印 'Fail to check password expiration' ERROR	case_AUTH014
+AUTH-015	g2_policy.sh	用户管理	正向	ALTER USER RENAME 后旧名失效、新名可用	case_AUTH015
+AUTH-016	g2_policy.sh	用户管理	边界	ALTER USER SET MAX_SESSION_PER_USER 生效	case_AUTH016
+AUTH-017	g3_lock.sh	暴力破解	正向	连续 5 次密码错误后账号/IP 锁定（822）	case_AUTH017
+AUTH-018	g3_lock.sh	暴力破解	边界	锁定范围为 IP 级还是用户级（记录）	case_AUTH018
+AUTH-019	g3_lock.sh	暴力破解	正向	ALTER USER ... ACCOUNT UNLOCK 可执行并观察解锁效果	case_AUTH019
+AUTH-020	g3_lock.sh	暴力破解	可靠性	重启 DN 后锁定状态清除	case_AUTH020
+AUTH-021	g3_lock.sh	客户端	反向	连接失败信息不含 IP/端口	case_AUTH021
+AUTH-022	g3_lock.sh	客户端	边界	客户端输出不回显明文密码	case_AUTH022
