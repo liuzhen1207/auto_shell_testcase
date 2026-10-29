@@ -14,8 +14,8 @@ export QS_LONG_DB="${QS_LONG_DB:-root.test.qs_0}"
 
 qs_set_scheduler_conf 1 2000 200
 qs_prepare_cluster || { write_result 2>/dev/null; exit 1; }
-POINTS=$(qs_total_points "$QS_LONG_DB")
-assert_ge "①数据已就绪" "${POINTS:-0}" 1000000
+DEVS=$(qs_ensure_data)
+assert_ge "①数据已就绪" "${DEVS:-0}" 100
 
 RSS0=$(qs_dn_rss_kb "${DN[0]}")
 log "  基线 RSS=${RSS0}KB"

@@ -16,8 +16,8 @@ qs_set_scheduler_conf 1 3600000 50
 qs_prepare_cluster || { write_result 2>/dev/null; exit 1; }
 TS=$(sshx "${DN[0]}" "grep '^driver_task_execution_time_slice_in_ms=' $DB_DIR/conf/iotdb-system.properties | cut -d= -f2-")
 assert_eq "①时间片配置生效" "${TS}" "50"
-POINTS=$(qs_total_points "$QS_LONG_DB")
-assert_ge "②数据已就绪" "${POINTS:-0}" 1000000
+DEVS=$(qs_ensure_data)
+assert_ge "②数据已就绪" "${DEVS:-0}" 100
 
 qs_long_query_bg "select * from $QS_LONG_DB.**;" /tmp/qs10_long.txt
 sleep 3

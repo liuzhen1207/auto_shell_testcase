@@ -1,0 +1,8 @@
+[2026-10-29 16:44:35]   CLI rc=1
+[2026-10-29 16:44:35] FAIL ②未观察到超时错误（最后一个 rc=1）；实际输出见上
+[2026-10-29 16:44:35] === 超时后集群仍可用（资源释放）===
+[2026-10-29 16:44:43] PASS ③超时后仍可查询: 2 >= 1
+[2026-10-29 16:44:48] PASS ④集群仍 8/8: 8
+[2026-10-29 16:44:48] RESULT FAIL fail_flag=1 case=QS-06 consensus=IoTConsensus build=v20121rc11_1023_ea4f835 elapsed=282s
+[2026-10-29 16:44:48] v_warnMessage=②未观察到超时错误（最后一个 rc=1）；实际输出见上 
+[2026-10-29 16:44:48] 结果已追加到 /tmp/auto_shell_testcase/ai_auto_cases/172_20_70_3/query_schedule_skill/results/test_result.csv

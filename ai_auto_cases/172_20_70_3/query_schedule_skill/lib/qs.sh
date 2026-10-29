@@ -12,7 +12,7 @@
 #   - 多级反馈队列 + 队列累计执行时间（LEVEL_TIME_MULTIPLIER=2 硬编码）
 # =============================================================================
 
-QS_LONG_DB="${QS_LONG_DB:-root.qs}"
+QS_LONG_DB="${QS_LONG_DB:-root.test.qs_0}"
 QS_LONG_QUERY_TIMEOUT_SEC="${QS_LONG_QUERY_TIMEOUT_SEC:-1800}"
 
 # ---------------------------------------------------------------------------
@@ -92,6 +92,12 @@ qs_load_data(){
   fi
   QS_LOAD_OK=$(qs_csv_pick "$csv" "INGESTION" "OKOP")
   log "  造数完成 [$tag]: 期望 $(( dev * sen * loop )) 点，实际 okPoint=${QS_LOAD_OK:-?}"
+  # ⚠️ 必须刷盘：用例随后会重启集群（cluster_stop 含 pkill），
+  #    内存里未落盘的数据会丢 —— 实测 800 万点造完后重启只剩 Empty set，
+  #    导致"数据已就绪"断言失败、超时用例也因空集瞬间返回而不触发。
+  log "  强制刷盘并等待落盘完成..."
+  sq "flush;" >/dev/null 2>&1
+  sleep 8
   assert_ge "造数成功" "${QS_LOAD_OK:-0}" 1
 }
 
@@ -164,6 +170,28 @@ qs_total_points(){
   sq "select count(*) from $db.**;" 2>/dev/null \
     | grep -E '^\|' \
     | awk -F'|' '{for(i=2;i<=NF;i++){gsub(/[^0-9]/,"",$i); if($i!="") s+=$i}} END{printf "%d", s}'
+}
+
+# 设备数（show devices 行数；比 count(*) 稳定，后者每序列返回一列、输出可达数千列）
+#   ⚠️ 两个坑：
+#     ① 集群刚启动时查询会报错，错误框只有 1 行 `|`，单次查询会误判成"只有 1 个设备"；
+#     ② 必须重试（最多 ~60s），并把最后一次原始输出落盘，便于定位到底是什么错误。
+qs_device_count(){
+  local db=${1:-$QS_LONG_DB} i n best=0 raw=""
+  for i in $(seq 1 20); do
+    raw=$(sq "show devices $db.**;" 2>/dev/null)
+    n=$(printf '%s\n' "$raw" | grep -cE '^\|')
+    [ -z "$n" ] && n=0
+    [ "$n" -gt "$best" ] && best=$n
+    [ "$best" -ge 10 ] && break
+    sleep 3
+  done
+  if [ "$best" -lt 10 ]; then
+    printf '%s\n' "$raw" > "/tmp/qs_devcount_fail_$$.out" 2>/dev/null
+    log "  [warn] 设备数仍为 ${best}，原始输出见 /tmp/qs_devcount_fail_$$.out"
+    printf '%s\n' "$raw" | head -6 | sed 's/^/      /' 
+  fi
+  echo "$best"
 }
 
 # 序列数
@@ -249,6 +277,7 @@ qs_prepare_cluster(){
     fail "集群未就绪"
     return 1
   fi
+  sleep 10   # 就绪后短暂稳定期，避免紧接着的元数据查询拿到空结果
   qs_verify_conf_effective
   return 0
 }
@@ -267,4 +296,22 @@ qs_query_count(){
 qs_dn_rss_kb(){
   local h=${1:-${DN[0]}}
   sshx "$h" "ps -eo rss,args | grep '[c]om.timecho.iotdb.DataNode' | awk '{print \$1}' | head -1"
+}
+
+# ---------------------------------------------------------------------------
+# 确保有数据：设备数不足则**现场造数**（造完即 flush）
+#   为什么放在用例里而不是外部预置：集群重启后 `show devices` 会有一段时间
+#   返回**空集**（不是报错，实测重启后 60s 仍为空、数分钟后才可见），
+#   外部先造数再重启的写法会稳定失败。用例内"重启后再造"最稳。
+# ---------------------------------------------------------------------------
+qs_ensure_data(){
+  local min_dev="${1:-10}" dev
+  dev=$(qs_device_count "$QS_LONG_DB")
+  if [ "${dev:-0}" -lt "$min_dev" ]; then
+    log "  数据不足（设备数=${dev:-0} < ${min_dev}），现场造数..."
+    qs_load_data 200 10 300 "auto-load" || { warn "造数失败"; echo "${dev:-0}"; return 1; }
+    dev=$(qs_device_count "$QS_LONG_DB")
+    log "  造数后设备数=${dev:-0}"
+  fi
+  echo "${dev:-0}"
 }

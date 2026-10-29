@@ -17,8 +17,8 @@ qs_set_scheduler_conf 1 60000 200
 qs_prepare_cluster || { write_result 2>/dev/null; exit 1; }
 CAP=$(sshx "${DN[0]}" "grep '^max_allowed_concurrent_queries=' $DB_DIR/conf/iotdb-system.properties | cut -d= -f2-")
 assert_eq "①并发上限配置生效" "${CAP}" "2"
-POINTS=$(qs_total_points "$QS_LONG_DB")
-assert_ge "②数据已就绪" "${POINTS:-0}" 1000000
+DEVS=$(qs_ensure_data)
+assert_ge "②数据已就绪" "${DEVS:-0}" 100
 
 log "=== 并发发起 6 个大查询 ==="
 rm -f /tmp/qs11_*.rc

@@ -178,3 +178,44 @@ QS_SKIP_CLEAN=1 USE_FRAMEWORK=0 bash cases/qs_02_short_not_blocked.sh
 1. **定性 399.57ms**：把长查询换成大范围 `group by` 聚合（不返回大结果集），或把短查询压测移到另一台客户端，排除客户端争用
 2. 补 REQ-06（超时中断）、REQ-07（主动取消级联）用例
 3. 补其余 11 条需求点用例
+
+---
+
+## 九、15 条用例的实跑进展（2026-10-29）
+
+首轮挑了 4 条轻量用例在 RC11（`v20121rc11_1023_ea4f835`）上实跑：
+
+| 用例 | 结果 | 关键数据 |
+|---|---|---|
+| **QS-01** 线程数可配 + 非法值回退 | ✅ PASS | `query_thread_count=2` 生效；改 0 后节点未崩、集群仍 8/8、仍可查询 |
+| **QS-14** 队列监控指标 | ✅ PASS | 5 个 DN 指标端点可用；**确实存在调度/队列相关指标**（此前误以为没有） |
+| **QS-11** 并发上限 | ✅ PASS | `max_allowed_concurrent_queries=2` 生效；并发 6 个查询未拖垮集群，6 个都成功（被排队串行执行） |
+| **QS-06** 超时中断 | ❌ **FAIL** | 见下，可能是真实问题 |
+
+其余 11 条尚未实跑。
+
+### QS-06 的失败值得单独看
+
+配置 `query_timeout_threshold=2000`（2 秒）后：
+
+1. `select * from root.test.qs_0.**`（201 设备 / 约 600 万点）**跑了约 2 分钟并正常返回数据，没有被超时中断**；
+2. 改用 `select count(*) ... group by ([..), 1ms)` 时，被**内存上限**挡下：
+   `301: Query is aborted since it requests more memory than can be allocated, bytesToReserve: 3608040B`
+   —— 这是内存保护，不是超时。
+
+**即：`query_timeout_threshold=2000` 未按预期在 2 秒中止查询。**
+
+这与需求 REQ-06（Sentinel 线程按 deadline 中止任务）不符，但**尚未确认为缺陷**，需要确认：
+- 该参数是否只对某些查询形态生效（如仅对带 `-timeout` 的 session 生效）；
+- 是否需要同时设置客户端侧 timeout；
+- DN 启动时是否真的读到了 2000（当前只校验了 `query_thread_count`）。
+
+### 本轮修掉的测试侧 bug（都会导致假失败）
+
+| 现象 | 根因 | 修复 |
+|---|---|---|
+| 13 条用例的"数据已就绪"恒为 0 | `lib/qs.sh` 默认 `QS_LONG_DB=root.qs`，而用例里 `${QS_LONG_DB:-root.test.qs_0}` 因变量已被 lib 设置而**永不生效** → 一直在查不存在的库 | lib 默认值改为 `root.test.qs_0` |
+| 造数后重启集群数据丢失 | benchmark 写完未刷盘，`cluster_stop` 杀进程后内存数据丢失 | `qs_load_data` 末尾强制 `flush` |
+| 重启后 `show devices` 返回空集（非报错） | 集群就绪 ≠ 元数据可查，实测重启后数十秒内为空 | 用例内改用 `qs_ensure_data`（数据不足则现场造数）；`qs_device_count` 加重试并保留原始输出 |
+| 点数统计读成 0/1 | `count(*)` 按序列返回数千列，输出过大 | 就绪判据改用**设备数**（`show devices` 行数） |
+

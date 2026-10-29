@@ -16,9 +16,9 @@ MAX_SEC="${QS_LONG_MAX_SEC:-1800}"
 qs_set_scheduler_conf 1 3600000 200
 qs_prepare_cluster || { write_result 2>/dev/null; exit 1; }
 
-POINTS=$(qs_total_points "$QS_LONG_DB")
-log "  当前总点数=${POINTS:-?}"
-assert_ge "①数据已就绪" "${POINTS:-0}" 1000000
+DEVS=$(qs_ensure_data)
+log "  当前设备数=${DEVS:-?}"
+assert_ge "①数据已就绪" "${DEVS:-0}" 100
 
 log "=== 启动全量长查询 + 持续短查询 ==="
 qs_long_query_bg "select * from $QS_LONG_DB.**;" /tmp/qs03_long.txt

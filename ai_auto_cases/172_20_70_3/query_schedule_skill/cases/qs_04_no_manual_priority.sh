@@ -20,8 +20,8 @@ PRIO=$(sshx "${DN[0]}" "grep -icE '^[a-z_.]*(priority|priority_level|query_prior
 log "  优先级相关配置项条数=${PRIO:-?}"
 assert_eq "①配置中无手动优先级项" "${PRIO:-0}" "0"
 
-POINTS=$(qs_total_points "$QS_LONG_DB")
-assert_ge "②数据已就绪" "${POINTS:-0}" 1000000
+DEVS=$(qs_ensure_data)
+assert_ge "②数据已就绪" "${DEVS:-0}" 100
 
 log "=== ② 不设优先级，验证调度自动生效 ==="
 qs_long_query_bg "select * from $QS_LONG_DB.**;" /tmp/qs04_long.txt

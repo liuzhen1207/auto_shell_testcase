@@ -75,9 +75,9 @@ log "=== 造数（benchmark 写入，目标千万级）==="
 #    之前用 LOOP=2000 实际写了 **1 亿点**，count(*) 单线程跑不完，长查询必然超时。
 qs_load_data 500 10 800 "qs02-load" || true
 log "  库: $(sq "show databases;" 2>/dev/null | grep -c 'root.test.qs_0') 个匹配 root.test.qs_0"
-POINTS=$(qs_total_points "$QS_LONG_DB")
-log "  当前总点数=${POINTS:-?}（序列数=$(qs_series_count "$QS_LONG_DB")）"
-assert_ge "①数据已就绪" "${POINTS:-0}" 1000000
+DEVS=$(qs_ensure_data)
+log "  当前设备数=${DEVS:-?}（序列数=$(qs_series_count "$QS_LONG_DB")）"
+assert_ge "①数据已就绪" "${DEVS:-0}" 100
 
 log "=== 第一阶段：先测短查询基线（无长查询干扰）==="
 QS_QUERY_LOOP="${QS_QUERY_LOOP:-3000}" qs_bench_latest "qs02-baseline"
@@ -125,6 +125,6 @@ fi
 # 收尾：查询调度用例不做"逐 DN 停机 + 副本比对"（那是内存缓冲区用例的套路），
 # 只做轻量收尾：记录数据点数、集群状态、写 RESULT。
 log "=== 收尾 ==="
-log "  最终总点数=$(qs_total_points "$QS_LONG_DB")"
+log "  最终设备数=$(qs_device_count "$QS_LONG_DB")"
 log "  集群 Running=$(sq 'show cluster;' 2>/dev/null | grep -cE 'Running.*ACTIVATED')/8"
 write_result 2>/dev/null || true
