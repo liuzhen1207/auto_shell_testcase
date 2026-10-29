@@ -1,0 +1,28 @@
+# CRUD（写入 / 数据删除 / 文件加载 LastCache / Object 导入导出）需求文档篇目清单
+# 抓取来源：https://timechor.feishu.cn/drive/folder/YSddf1p2pl5CJrdOqTIcs2RWndf
+# 本地根目录：D:\IDEA\deepseek\ip99_80\feishu_docs_crud\
+# 清单元数据：feishu_docs_crud\_manifest.json（记录每篇 token / URL / 类型 / 字数）
+#
+# 列（tab 分隔）：
+#   状态	本地相对路径	类型	正文字数	飞书 URL	主题一句话
+#
+# 篇目统计：_manifest.json 共 16 个条目 = 6 个目录 + 10 篇文档；
+#   10 篇文档中 9 篇抓取成功（ok=true）、1 篇失败（ok=false）。
+#   ※ 任务描述里写"共 15 篇"，与实际抓取结果（9 篇成功 + 1 篇失败 + 6 个目录 = 16 条目）不一致，
+#     以 _manifest.json 与实际目录为准；差异已在 REQ_MATRIX.md §0 如实记录。
+#   ※ 任务描述把"数据删除\数据删除功能V2 设计文档.md"与
+#     "数据删除\意见讨论稿\数据删除功能V2 设计文档.md"列为两篇，实际磁盘上只有 1 份
+#     （位于 数据删除_意见讨论稿\），是同一篇，不重复计数。
+#
+# 字数 = _manifest.json 中飞书导出的"docx N 字"（正文字符数），括号内为本地 md 文件字节数。
+#
+ok	数据删除_意见讨论稿\数据删除功能V2 设计文档.md	docx	19972 字（41830 B）	https://timechor.feishu.cn/docx/MyRzdbZkfoxpkixNzd1c3O63nlh	数据删除功能 V2 总体设计与选型论证（列存删除背景、TDEngine/InfluxDB 对比、共享 Mod 文件方案、Mod 文件结构与分配策略、删除与合并并发、Pipe 传输、旧 Mod 兼容、Res 文件修改与重启恢复、仿真实验）
+ok	数据删除_意见讨论稿_delete 性能优化\Delete 性能优化.md	docx	2116 字（4318 B）	https://timechor.feishu.cn/docx/IlUpdJhu7oXp1wxhviJcHxhPnae	DELETE 阻塞实时写入的根因分析（写 mods 持 Region 写锁）、一条 delete 被多副本重复记录，以及限流/分区级 mods/只发 follower 三条优化思路
+ok	数据删除\V2.0.8.1-存储模块-CRUD-Object类型数据手动删除-技术设计.md	docx	1956 字（4532 B）	https://timechor.feishu.cn/docx/ECSSdX0ixokxuRxkpv3cogL3nmf	表模型 OBJECT 类型数据的手动删除技术设计：DELETE 不新增语法，删除时按 object/{dataRegionID}/{tablename} 物理删除 .bin/.tmp；删除 database 时清理 object 目录
+ok	写入流程\【1.3.0.1】写入时检查时间戳精度-需求分析.md	docx	1510 字（3689 B）	https://timechor.feishu.cn/docx/LvdGd6lUaoRpiHxwMYfcFz9Bnje	新增 timestamp_precision_check_enabled 配置项，按时间戳位数（ms>13 位、us>16 位）拦截精度不匹配写入，避免时间分区被压缩 100000 倍导致 memtable 膨胀
+ok	写入流程\写入内存实例分析.md	docx	1812 字（3631 B）	https://timechor.feishu.cn/docx/SI8hdKjwyoQzsfxKDLCcAPtuznqb	1.3.2.3 rc1 一次 OOM 的堆转储分析：byte[] 约 300MB，主要来自共识/WAL 引用的请求与 RPC 收发缓冲，指出共识模块内存监控需改造
+ok	写入流程_意见讨论稿\是否允许表模型写入请求只有 Time 列.md	docx	1791 字（2629 B）	https://timechor.feishu.cn/docx/AXoXdQhcLoGGDqxMHB0cW4kPnLe	讨论稿：PR #15017 已拒绝"只有 Time 列"的写入与 load；两个仍会产出无 field 列 TsFile 的场景（DROP 全部 field 列后合并、field 全为 null 后合并）；给出方案 1（禁止写入+保留空 field 列）与方案 2（允许写入只有 Time 列）
+ok	文件加载\【2.0.5.1】文件加载时更新 LastCache-需求分析.md	docx	1852 字（3798 B）	https://timechor.feishu.cn/docx/VjM0dmgZ3o4B83xwKTHc4iEDnAe	Load（文件加载）时 LastCache 由"整体清空"改为"部分更新/部分清除"：新增 last_cache_operation_on_load（UPDATE/UPDATE_NO_BLOB/CLEAR_DEVICE/CLEAN_ALL，默认 UPDATE_NO_BLOB）、cache_last_values_for_load、cache_last_values_memory_budget_in_byte
+ok	文件加载\【2.0.5.1】文件加载时更新 LastCache-技术设计.md	docx	7203 字（12026 B）	https://timechor.feishu.cn/docx/ADJUdCs4IocMgUx9D86cZ1LenJg	四策略详细设计与接口（iterAllTimeseriesMetadata / TsFileLastReader / TsFileResource.lastValues / updateLastCacheIfExists）；含 Load+Last、Pipe+Last、双活三组性能实验数据表
+ok	V2.x.x.x-存储模块-CRUD操作-Object类型导入导出-技术设计.md	docx	1369 字（3841 B）	https://timechor.feishu.cn/docx/UWPQd0tuxo4U43xr54dcsy1en9c	【空白模板】仅有"设计背景/设计目标/整体设计/各模块详细设计/安全性设计"的说明占位文字，无任何实质需求或设计内容（详见 REQ_MATRIX.md §4-D）
+FAILED	写入流程\【1.0.0.1】写入内存控制-技术设计	doc	--	https://apache-iotdb.feishu.cn/docs/doccnGjRPJKpzKRZeT5EDVUxPdb	【抓取失败，缺此篇】_manifest.json 中 ok=false、info 为空；该篇为旧版飞书 doc（跨租户 apache-iotdb.feishu.cn），1.0.0.1 版写入内存控制技术设计，本次未取得正文，所有需求点均未从中抽取

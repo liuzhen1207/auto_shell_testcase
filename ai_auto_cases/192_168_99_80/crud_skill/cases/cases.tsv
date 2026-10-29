@@ -1,0 +1,33 @@
+# 存储模块 CRUD 专项 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
+#
+# 用例约定（沿用"合并专项 skill"的做法）：
+#   · 编号前缀统一 CR-；库名统一 root.cr…（例如 root.crsmoke），不借用其它 skill / 长回归的库名
+#   · 写入期先关合并（CMP_EXTRA_WRITE）→ 记基线 → 写完再热开观察；
+#     判据双信号：合并日志条数增量 **且** 文件数/字节数变化（单信号会误判）
+#   · 场景有效性用**硬断言**：场景没造出来（文件数/行数/分区数不达预期）必须 FAIL，不许静默跳过
+#   · 每条用例统一收尾 = 收尾三件套：sync lag 归零 → 逐个停 1 个 DN 比对副本一致性 → CN/DN 日志扫异常
+#   · 协议：默认 IoTConsensus，可用 --consensus IoTConsensusV2 指定（data region 协议由 conf 写入）
+#   · 集合（tools/run_all.sh --set）：smoke|write|delete|load|object|all —— **显式 ID 清单**（不再用编号区间）：
+#     smoke=CR-00；write=CR-01..CR-03；delete=CR-04..CR-10；load=CR-13,CR-14；object=CR-11,CR-12
+#
+# 当前状态：CR-00（骨架 fallback 冒烟）+ CR-01..CR-14（需求矩阵 14 条），共 15 条；
+#   新增脚本必须登记在本文件，否则 tools/selftest.sh 会报"未登记"。
+#   需求矩阵与出处见 docs/REQ_MATRIX.md、docs/req_sources.txt（由并行任务维护）。
+#
+CR-00	cases/common/cr_smoke.sh	tree	file/region	yes	CO_DEVS/CO_ROWS/CO_BATCHES	**冒烟（骨架 fallback）**：树模型 seq 内部合并——多批 flush 造多个 TsFile → 热开合并 → 文件数下降 + 合并前后数据指纹完全一致 + 无卡死线程 + 收尾三件套；库名 root.crsmoke，保证 harness 端到端可用
+CR-01	cases/common/cr_timestamp_precision.sh	tree	write	no	时间戳精度相关键	**时间戳精度检查门禁**（R-01~R-05）：开关 + ms/us 位数阈值 + ns 放行 + 文案/错误码逐字匹配；含兼容性与"10 个时间分区"膨胀对照
+CR-02	cases/common/cr_ts_partition_balance.sh	tree	write	yes	time_partition_interval	**精度检查 × 时间分区**（R-06~R-08）：改 time_partition_interval 后精度门禁行为与文件分布不变/符合预期
+CR-03	cases/common/cr_table_time_only.sh	table	write	no	—	**表模型"只有 Time 列"门禁**（R-12/R-13）：写入必须拒绝（码 ∈ {1100,507} 且文案逐字）、DROP COLUMN 后与全 null 列两条产文件路径、以及 load 侧同语义
+CR-04	cases/common/cr_mod_shape.sh	tree	delete	no	—	**`.mods2` 基础形态**（R-16~R-20,R-22）：删除前无 Mod；被删除覆盖的 TsFile 各 1 个独占 `<tsfile>.mods2`（三副本计数轮询）、未被覆盖者没有；首字节 0x01(树)/0x00(表)；重复删除只追加；共享命名/Res v2 只 WARN（useSharedModFile=false）
+CR-05	cases/common/cr_mod_alloc_threshold.sh	tree	delete	no	—	**Mod 分配阈值边界**（R-21）：时间不重叠不分配、被覆盖者 1:1 独占、重复删除只追加、批量追加把 `.mods2` 顶过 16KB 后行为不变；文档"可配置"实为 private final 30/16KB（模板键 0 命中）⇒ 只 WARN
+CR-06	cases/common/cr_delete_concurrent_compaction.sh	tree	delete	no	CMP_INTERVAL_MS	**删除 × 合并并发**（R-23~R-25）：合并窗口内删除不得丢（N_Mod/C_Mod/cascade），双信号 + 数据面指纹 + 场景有效性（必须先拿到 task starts 且文件数未下降）
+CR-07	cases/common/cr_delete_midstate.sh	tree	delete	no	—	**删除中间态**（R-26~R-27）：memtable 中 / 正在 flush 的文件也被删除覆盖，且不破坏其它设备数据
+CR-08	cases/common/cr_delete_pipe.sh	tree	delete	no	—	**Pipe 传输带删除的 TsFile**（R-33~R-34）：单集群内可构造部分（带 `.mods2` 的 TsFile 经 load/本地传输后删除语义保持）；需 pipe 对端的部分如实列为不可构造
+CR-09	cases/common/cr_mod_lifecycle.sh	tree	delete	yes	—	**Mod 生命周期 + 旧格式兼容 + 重启恢复**（R-28~R-32）：注入 V1 文本 `.mods` → 完整重启后升级为 `.mods2` 且删除生效；已存在 `.mods2` 重启字节不变；合并移除源 TsFile 后其 `.mods2` 必须消失（残留=FAIL）、被删数据不复活；孤儿注入不破坏数据
+CR-10	cases/common/cr_delete_block_write.sh	tree	delete	no	—	**DELETE 阻塞写入量化**（R-38~R-41）：固定规模关/开机制对照，耗时随 TsFile 数变化（**耗时只 WARN**）；硬判=结果正确（删的不可见、未删不丢、删除可见、无异常日志）
+CR-11	cases/common/cr_object_manual_delete.sh	table	object	no	—	**OBJECT 手动删除**（R-46~R-50）：整表/部分/整库删除后 object 真实文件被**异步 GC** 物理清理（轮询等待、逐点按 `{pointTime}_{version}.bin` 判定），未删点的 object 必须保留；与 CO-41（`co_object_ttl.sh`）严格去重
+CR-12	cases/common/cr_object_delete_negative.sh	table	object	no	—	**OBJECT 删除异常路径与开销对照**（R-51~R-53）：无权限/不存在/并发 DROP 的明确结果与错误码；异常路径不得留下不一致元数据或泄漏 object
+CR-13	cases/common/cr_load_lastcache.sh	tree	load	no	—	**Load 时 LastCache 四策略正确性**（R-54~R-60）：`UPDATE`/`UPDATE_NO_BLOB`/`CLEAN_DEVICE`(含回退)/`CLEAN_ALL` 的效果区分（更新/不更新/清理范围），数据面指纹不变
+CR-14	cases/common/cr_load_pipe_last.sh	tree	load	yes	CR14_FILES/CR14_QN/CR14_BUDGET_DEVS/CR14_BUDGET_SMALL/CR14_PIPE_PEER	**Load × Pipe + Last：配置 restart-only 语义 + 性能与内存预算**（R-58/R-59/R-60/R-69/R-70/R-71，配合 R-55~R-57）：5 相位（UPDATE_NO_BLOB × ccl 对照 / CLEAN_DEVICE / 小预算 / 大预算对照，共 4 次三节点重启）逐节点核对生效值；硬判 = SET 不重启无效（properties 已改 + 运行期值不变）→ 重启后生效、load 前后 LAST 正确且三副本一致、并发查询命中 >0、预算两相 LAST 逐字节一致 + 无 OOM、非 SYSTEM 用户 SET 被拒；**耗时方向性只 WARN**；**Pipe 对端（R-70/R-71 需两个独立集群）与"流式回退路径"本环境不可构造 ⇒ 只做 SHOW PIPES 探测 + 注释 + 运行期 warn，如实记录不判 FAIL**

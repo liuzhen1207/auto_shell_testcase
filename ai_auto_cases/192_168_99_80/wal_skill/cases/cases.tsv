@@ -1,0 +1,59 @@
+# 存储模块 WAL（写前日志）专项 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
+#
+# ⚠️ 本文件由 skill 负责人维护：**用例脚本作者不要修改本文件**（曾发生被截断成 16 行的事故）。
+#
+# 用例约定（沿用"合并 / CRUD 专项 skill"的做法）：
+#   · 编号前缀统一 W-；库名统一 root.wal…（例如 root.walsmoke），不借用其它 skill / 长回归的库名
+#   · 每条用例自己负责 清集群 / 写 DN 配置 / 启动；串行执行（并行会互相污染 WAL 文件与日志计数）
+#   · **WAL 观测三件套**：
+#       ① 目录面：`<dn_wal_dirs>/<identifier>/_<versionId>-<startSearchIndex>-<statusCode>.wal`
+#          （statusCode∈{0,1}；IoTConsensus 下 identifier=<database>-<regionId>）与权威指标
+#          `file_count{name="wal"}` / `file_size{name="wal"}`
+#       ② 日志面：WAL 相关行数增量（按源码文案；**注意 `WALNode.java:466-470` 是 DEBUG、默认不落盘**）
+#       ③ 数据面：故障/重启后 count/sum/指纹完全一致（**最终判据**；前两者只是过程证据）
+#   · 场景有效性用**硬断言**（WAL 文件数为 0、阈值没触发、kill 没发生 ⇒ FAIL，不许静默跳过）；
+#     环境或不可观测的项降级 WARN 并打印逐副本证据
+#   · `wal_mode=DISABLE`：仅 `IoTConsensus` 或（`IoTConsensusV2` 且 `iot_consensus_v2_mode=stream`）
+#     且**首次启动**时被拒（`IoTDBStartCheck.java:150-163`）；V2 默认 `batch` **允许** DISABLE
+#     ⇒ 除 W-02 负向用例外，其余用例只用 ASYNC / SYNC
+#   · 协议：默认 IoTConsensus，可用 --consensus IoTConsensusV2 指定
+#   · 集合（tools/run_all.sh --set）：smoke|mode|recover|file|compress|cleanup|mem|object|param|observe|ha|all
+#     —— **显式 ID 清单**（不用编号区间）
+#
+# 首轮实跑范围（用户 2026-10-16 决定）：**核心 12 条、单协议 IoTConsensus**
+#   = W-00, W-01, W-02, W-03, W-04, W-05, W-08, W-11, W-12, W-14, W-17, W-23
+# 需求依据：docs/REQ_MATRIX.md（§1 需求条目 → §2 覆盖矩阵 → §3 逐条构造与判据）
+#   飞书抽取：docs/req_sources/design_extract.md、feature_extract.md；源码印证：docs/req_sources/source_grounding.md
+#   口径决策：docs/DECISIONS.md
+#
+# 当前状态：矩阵 27 条（W-00..W-26）全部登记；脚本分批落地，未落地的由 selftest 报 `planned`（不算失败）。
+#
+W-00	cases/common/wal_smoke.sh	tree	smoke	yes	WAL_DEVS/WAL_ROWS/WAL_BATCHES	**冒烟（骨架门禁）**：写多批 → 记 WAL 目录基线（目录口径 + `file_count{name="wal"}` 指标口径，并把**真实目录结构与文件清单**打印出来做现场标定）→ flush → 确认 WAL 目录确有文件（场景有效性硬断言）→ 读数与指纹一致 → 收尾三件套；库名 root.walsmoke
+W-01	cases/common/wal_mode_matrix.sh	tree	mode	yes	WAL_MODE/WAL_ASYNC_FSYNC_MS/WAL_SYNC_FSYNC_MS	**wal_mode 模式矩阵**：ASYNC 与 SYNC 各自写入正确性 + WAL 目录确有文件 + 耗时/文件数/字节数对照（**耗时只 WARN**）；两模式都必须重启后数据不丢；`wal_mode` 是 **restart-only**
+W-02	cases/common/wal_mode_disable_rejected.sh	tree	mode	yes	WAL_MODE=DISABLE	**集群下 DISABLE 必须被拒绝**（负向门禁）：校验在 `IoTDBStartCheck.java:150-163`（经 `DataNode.java:530 checkSystemConfig()`），条件=`IoTConsensus` 或（`IoTConsensusV2` 且 `iot_consensus_v2_mode=stream`）且 `wal_mode=DISABLE` → DN **启动失败**，文案含 `Configuring the WALMode as disable is not supported under IoTConsensus and IoTConsensusV2 stream mode`；**关键前提**：只在 `isFirstStart()` 执行 ⇒ 必须清数据后首启（已初始化节点重启不会被拒）；**V2 默认 `batch` 模式允许 DISABLE**（`IoTDBConfig.java:1178`）⇒ V2 相必须显式写 `iot_consensus_v2_mode=stream`，否则如实记"该模式允许 DISABLE，不成立"；对照相 ASYNC 能正常起
+W-03	cases/common/wal_mode_restart_only.sh	tree	mode	yes	WAL_MODE	**wal_mode 的 restart-only 语义**：`SET CONFIGURATION 'wal_mode'` 返回文案 + properties 落盘（`wal_props_get`）→ 不重启时运行期值（`cmp_eff`）仍为旧值 → 重启后新值生效（两相各一次重启，逐节点核对）
+W-04	cases/common/wal_recovery_kill9.sh	tree	recover	yes	WAL_KILL_MODE=9/WAL_REPLAY_WIN_SEC	**掉电恢复（WAL 重放）**：写入后（不 flush）`kill -9` **全部 DN**（只杀 1 个只验证共识补齐，不是掉电语义）→ 重启 → **已确认写入的数据一条不少**（count/sum/min/max + 单设备全序列指纹逐项比对）；kill 前 WAL 非空（场景有效性）、重启后 WAL 被消费（`file_count{name="wal"}`/目录数下降或恢复日志）
+W-05	cases/common/wal_recovery_flush_boundary.sh	tree	recover	yes	—	**flush 边界对照**：A 相"写入后立刻 kill -9 全部 DN"（必须靠 WAL 重放）vs B 相"写入 + flush + Async close 后 kill -9"（数据已在 TsFile、对应 WAL 记录已失效）→ **两相数据都必须完整**；并给出两相 kill 前 WAL 字节/文件数对照（B 相更小或已被清理）
+W-06	cases/common/wal_recovery_dn_down.sh	tree	recover	yes	DN_DOWN_WAIT_SEC/DN_RECOVER_WAIT_SEC	**DN 正常下线期写入 + 恢复**：`wal_stop_dn` 停 1 个 DN（**正常 stop**，对照 kill -9）→ 期间继续写入（RF=3 应成功）→ `wal_start_dn` 拉起 → 数据补齐、三副本一致（`consistency_check` 逐个停 DN 比对）；记录该 DN 停机前/恢复后的 WAL 文件数与字节
+W-07	cases/common/wal_recovery_metadata.sh	tree	recover	yes	—	**元数据变更后的 WAL 恢复**：建库/建序列 → 写数据 → `DELETE TIMESERIES` / `DROP` 相关操作（不 flush）→ kill -9 全部 DN → 重启 → schema（`SHOW TIMESERIES`/`COUNT TIMESERIES`）与数据一致；元数据 WAL 恢复边界文档未写 ⇒ 不可判定项如实 WARN
+W-08	cases/common/wal_file_rotate.sh	tree	file	yes	WAL_ROTATE_THRESHOLD_SMALL/WAL_ROTATE_MIN_FILES	**WAL 文件轮转阈值**：`wal_file_size_threshold_in_byte`（hot_reload；文档间 30M/10M 矛盾 ⇒ 先 `cmp_eff` 读实际生效值）调小到 1MB → 同写入量下文件数明显增加、单文件不超过阈值+余量；对照默认阈值文件数更少；数据面指纹一致；文件名形态按 `_<versionId>-<startSearchIndex>-<statusCode>.wal` 解析
+W-09	cases/common/wal_buffer_size.sh	tree	file	yes	WAL_BUFFER_SMALL	**`wal_buffer_size_in_byte`**（**restart-only**；文档间 16M/32M 矛盾 ⇒ 先读生效值）：调小（256KB）后写入正确性 + 轮转/性能表现如实记录；与默认值对照；**耗时只 WARN**
+W-10	cases/common/wal_node_alloc.sh	tree	file	yes	WAL_MAX_NODES	**WALNode 分配（本环境走 FirstCreateStrategy）**：源码 `WALManager.java:76-85` —— IoTConsensus/IoTConsensusV2 一律 `FirstCreateStrategy`（**每 DataRegion 一个 WALNode**，目录名 `<database>-<regionId>`），`max_wal_nodes_num` 在本环境**不生效**；`ElasticStrategy`(0，每 4 个申请者 1 个) / `RoundRobinStrategy`(>0) 只在**非** IoTConsensus（standalone）路径生效（模板注释：only valid in the standalone mode）⇒ 断言：改 `max_wal_nodes_num`（0 vs 2）后 **WALNode 目录数不变且 = 申请者(DataRegion) 数**、目录名形态为 `<db>-<regionId>`；`wal_node_num` 指标交叉验证；多库分布如实记录
+W-11	cases/common/wal_compress_toggle.sh	tree	compress	yes	WAL_COMPRESSION/WAL_COMPRESS_RATIO_MIN	**WAL 压缩开关对照**（`enable_wal_compression` 默认 true、hot_reload）：同一数据量同阈值下 true vs false → 压缩态 WAL 总字节更小（比率低于阈值只 WARN）；**压缩=段级 LZ4、段 <32KB 不压**（`LogWriter.java:110-152`）⇒ 单批数据量必须明显大于 32KB，否则记"场景未成立"+WARN；正面证据用 `wal_buffer{name="wal_compress_cost"}`；两态数据面指纹一致
+W-12	cases/common/wal_compress_recovery.sh	tree	compress	yes	WAL_COMPRESSION=true	**压缩态掉电恢复**：压缩开启 + 未 flush 写入 → kill -9 全部 DN → 重启 → 数据完整（走段解压路径，`WALInputStream.java:487-504`）；场景有效性：WAL 文件存在且体积小于未压缩基线（需 >32KB 单批）；正面证据 `wal_compress_cost`/`wal_uncompress_cost`
+W-13	cases/common/wal_compress_mixed.sh	tree	compress	yes	—	**压缩开关切换后的共存恢复**：压缩是**段级**的（段头 1 字节标 compressionType），**文件级**兼容靠 `WALFileVersion` 的 V1/V2/V3 magic ⇒ "老段未压缩 + 新段压缩"是**设计支持**的组合。用例：未压缩态写入（不 flush）→ 重启开启压缩 → 再写 → kill -9 → 重启 → **两批数据都必须完整（硬断言）**；失败即真发现（留逐副本证据），不预先降级 WARN
+W-14	cases/common/wal_cleanup_period.sh	tree	cleanup	yes	WAL_CLEAN_PERIOD_SMALL_MS/WAL_CLEAN_WIN_SEC	**无效 WAL 清理**：写入 → `flush`（数据落盘后对应 WAL 记录即无效）→ `delete_wal_files_period_in_ms`（hot_reload）调小 → 窗口内文件数/字节下降（三口径交叉：目录 + `file_count{name="wal"}` + `file_size{name="wal"}`）；**反向断言**：未 flush 的部分不得被误删（"覆盖的 MemTable 任一未刷盘就不能删"）；**注意**：`WALNode.java:671-676` 显示 statusCode=1 的文件与"最后一个 WAL 文件"**恒被保留** ⇒ 目录**永不清零**，判据只能写"相比基线下降"，不得写"降到 0/目录为空"；**不要**断言 `WALNode.java:466-470` 的文案（DEBUG、默认不落盘）
+W-15	cases/common/wal_min_effective_ratio.sh	tree	cleanup	yes	WAL_MIN_EFF_RATIO	**`wal_min_effective_info_ratio`**（hot_reload）：调大/调小后 MemTable 快照 vs flush 的选择变化（判据=指标方向性：`wal_node_info{name="effective_ratio_info"}` / `oldest_mem_table_ram_when_cause_snapshot|flush` / `flush_memtable_count{type="wal_flush_memtable_count"}` + 文件面）；数据面必须一致；文档对该参数比较符（< vs ≤）矛盾 ⇒ 不判边界等号；快照内部状态（`WALNode.java:116-118`）无指标 ⇒ 不作判据
+W-16	cases/common/wal_memtable_snapshot.sh	tree	cleanup	yes	WAL_SNAPSHOT_THRESHOLD_BYTES/WAL_MAX_SNAPSHOT_NUM	**MemTable 快照**：`wal_memtable_snapshot_threshold_in_byte` 调小 + `max_wal_memtable_snapshot_num` 边界 → 指标 `oldest_mem_table_ram_when_cause_snapshot` / `flush_memtable_count` 出现变化且次数不超过上限；超上限转 flush（文件面变化）；数据面一致；文档"超过该次数"vs"累计 ≥"矛盾 ⇒ 不判等号边界
+W-17	cases/common/wal_throttle.sh	tree	mem	yes	WAL_THROTTLE_SMALL/WAL_PRESSURE_*	**WAL 阻写（throttle/背压）**：真实键 **`wal_throttle_threshold_in_byte`**（**hot_reload**，可热改；`iot_consensus_throttle_threshold_in_byte` **已废弃**，仅作旁证）调小 + 持续高速写入 → 出现阻写迹象（写入变慢 / `wal_blocked_writers`>0 / `wal_queue_mem_cost{name="wal_queue_current_mem_cost"}` 上升）；**阻写有两套机制**（源码复核）：①WALManager 侧按 WAL 磁盘占用 —— **不阻塞**，只删文件/触发快照、超水位打 WARN；②IoTConsensus 侧 —— **阻塞写入线程约 30s 后返回 `WRITE_PROCESS_REJECT`（拒绝）**。旧键 `iot_consensus_throttle_threshold_in_byte` **优先级更高**且读到即打废弃 WARN，而文档只写了旧键 ⇒ **判据必须「任一键 / 任一机制出现即场景成立」**；`WRITE_PROCESS_REJECT` 类拒绝只 WARN（非阻写类异常才 FAIL）；解除后数据一条不丢
+W-18	cases/common/wal_queue_memory.sh	tree	mem	yes	WAL_PRESSURE_DEVS/WAL_PRESSURE_ROWS	**大压力下 WAL 队列内存受控**：高并发大写入期间采集 `wal_queue_mem_cost{name="wal_queue_current_mem_cost"|"wal_queue_max_mem_cost"}` + `wal_heap_ratio` + `wal_blocked_writers` → **无 `OutOfMemoryError`（`wal_oom_cnt` 必须 0，硬断言）**、DN 进程存活、写入最终成功；内存绝对值只作证据（文档只给相对口径"memtable 内存的 10%"，`wal_buffer_queue_proportion` 为 restart-only）
+W-19	cases/common/wal_object_recovery.sh	table	object	yes	—	**OBJECT 写入的 WAL 恢复**：`to_object(isEOF,offset,content)` 分段写入（如 100 字节分 40/40/20）→ 不 flush → kill -9 全部 DN → 重启 → OBJECT 可读且**与写入前逐字节一致**；**WAL 中只存引用**，真实内容在 `${data_dir}/object_data/<dataRegionId>/${B32(table)}/${B32(tag)}/…/${B32(field)}/<timestamp>.bin`（Base32/RFC4648，仅 A-Z 与 2-7）⇒ 判据=引用能解析到文件且内容一致；未写完的对象查询应为 null、offset≠已写入大小应报错
+W-20	cases/common/wal_object_load_restart.sh	table	object	yes	—	**导入 OBJECT 数据后重启一致性**：LOAD/导入路径写 OBJECT → 完整重启（`wal_restart_all`）→ 数据与元数据一致（count/LENGTH/内容）；文档写"导入导出一期在二期评审补充" ⇒ 若本环境**无法构造** LOAD OBJECT 路径，如实 `warn "场景不可构造"` + 证据，不判 FAIL；与 CR-11/CR-12（OBJECT 删除）严格去重
+W-21	cases/common/wal_param_invalid.sh	tree	param	yes	—	**参数合法性（负向）**：非法取值（`wal_mode=XXX`、负数字节、0 阈值、超范围 ratio、`max_wal_nodes_num=-1`）→ 启动失败或回退默认值并给出明确文案，不得静默接受；只有 `wal_mode=DISABLE` 有明确的流模式禁止路径，其余键以实测（`cmp_eff`/`wal_props_get` 对比）判断"回退默认"还是"原样接受"；**注意**：`wal_min_effective_info_ratio` 源码只判下界（`>0`）⇒ 接受 99 属**实现契约**，只 WARN 不判 FAIL（若模板声明了取值范围则记"文档-实现不一致"）
+W-22	cases/common/wal_param_hotload.sh	tree	param	yes	—	**参数热加载语义**：逐个 `SET CONFIGURATION` 19 个 WAL 键 → 记录返回文案（哪些 restart required）→ 与源码 **restart-only 清单**核对（`wal_mode`/`max_wal_nodes_num`/`wal_buffer_size_in_byte`/`wal_entry_size_limit_in_byte`/`wal_file_list_cache_enabled`/`wal_cache_shrink_clear_enabled`/`dn_wal_dirs`/`wal_buffer_queue_proportion`；其余 hot_reload）；不重启行为不变、重启后生效；**非 SYSTEM 用户 SET 必须被拒**；不要用 `iot_consensus_cache_window_time_in_ms`（无消费者）与 `wal_cache_shrink_clear_enabled`（不在模板、会被丢弃）
+W-23	cases/common/wal_metrics.sh	tree	observe	yes	—	**WAL 可观测性**：**指标名已在源码确认**（`Metric.java:80-85,156-157`）：`file_count{name="wal"}`、`file_size{name="wal"}`、`wal_queue_mem_cost{name=wal_queue_current_mem_cost|wal_queue_max_mem_cost}`、`wal_buffer{name=used_ratio|entries_count|wal_entry_num_for_one_tsfile|serialized_wal_buffer_size|wrote_wal_buffer_size|wal_compress_cost|wal_uncompress_cost|read_wal_buffer_size|read_wal_buffer_cost|write_wal_buffer_cost}`、`wal_cost{stage=make_checkpoint|serialize_wal_entry|sync_wal_buffer}`、`wal_node_num`、`wal_node_info{name=effective_ratio_info|oldest_mem_table_ram_when_cause_snapshot|oldest_mem_table_ram_when_cause_flush}`、`flush_memtable_count{type="wal_flush_memtable_count"}` ⇒ 断言这些指标**存在且写入前后变化方向正确**；缺失只 WARN（版本差异），保留动态发现作兜底
+W-24	cases/common/wal_dir_config.sh	tree	observe	yes	—	**WAL 目录配置**：`dn_wal_dirs`（**restart-only**；`wal_dir` 单数键不存在）指向自定义目录 → 重启后 WAL 文件**确实落到该目录**（且默认目录不再新增）、数据可恢复；多目录（逗号分隔）时如实记录分布
+W-25	cases/common/wal_disk_readonly.sh	tree	ha	yes	—	**WAL 盘只读/写不进去（高可用）**：让 WAL 目录不可写（DN 以 root 运行 ⇒ `chmod` 无效；按序尝试 `chattr +i` / 独立小文件系统写满造 ENOSPC）→ 写入表现（阻塞/报错/降级）如实记录 → 恢复可写后数据一致；**探测-判定-降级三段式**：不可构造 ⇒ `warn "不可构造（原因+证据）"` 并跳过，不判 FAIL
+W-26	cases/common/wal_consensus_matrix.sh	tree	ha	yes	—	**双协议对照**：同一 WAL 场景（写入 → 不 flush → kill -9 全部 DN → 重启 → 数据完整 + 压缩对照）在 IoTConsensus 与 IoTConsensusV2 下各跑一遍（相位间用 `DATA_CONSENSUS=… cmp_cluster_prepare` 切换），逐项对照并如实记录差异（**V2 单副本不落盘是已知现象**；V2 相不要设 DISABLE）
