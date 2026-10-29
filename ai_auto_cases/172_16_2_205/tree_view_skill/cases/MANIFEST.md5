@@ -1,0 +1,9 @@
+ad19c9bcf7bb165a24012fab5735c8ca  cases/g1_attr.sh
+4838128544af91eb789985fcc9898eb9  cases/g2_entries.sh
+170d9dbf8ba718f8eaff691db2b776d4  cases/g3_conflict.sh
+0551c4dfd0c1268fa64458cb64548148  cases/g4_query_toggle.sh
+93ac4bc4177829bd46dbb7c976db9970  cases/g5_ddl.sh
+9c3e20051714c7cca5c56347182070ff  cases/g6_ha.sh
+207ff63265ebcdc07a58fab823ac30f2  cases/g7_isolate.sh
+749ea8ec58eb7fc9f16a952cd377910e  cases/g8_rename.sh
+4367657b4451b66e4538f86d91fbaa0e  cases/g9_load.sh

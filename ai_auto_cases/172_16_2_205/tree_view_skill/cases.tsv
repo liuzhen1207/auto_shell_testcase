@@ -1,0 +1,73 @@
+# 树转表视图 auto_sync_schema 回归 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	脚本	功能域	类型	说明	一致性校验 SQL	是否清库重建(1=是)
+#
+# 统一收尾（每条用例都做）：8 节点日志增量按来源归因 → 各 DN syncLag 归零 → 停 2 台 DN 的副本一致性比对
+
+TV-001	g1_attr.sh	属性与语法	正向	默认不开启自动补列，show create view 不输出该属性	SELECT dev,s1,s9 FROM tv001.v ORDER BY time,dev	1
+TV-002	g1_attr.sh	属性与语法	正向	显式 false：属性可见且不补列	SELECT dev,s1 FROM tv002.v ORDER BY time,dev	0
+TV-003	g1_attr.sh	属性与语法	正向	显式 true：属性可见且新增测点自动补列	SELECT dev,s1,s9 FROM tv003.v ORDER BY time,dev	0
+TV-004	g1_attr.sh	属性与语法	反向	普通表带 auto_sync_schema 报 701	-	0
+TV-005	g1_attr.sh	属性与语法	反向	ALTER TABLE 设置该属性报错	-	0
+TV-006	g1_attr.sh	属性与语法	正向	CREATE OR REPLACE 打开属性后回填并继续补列	SELECT dev,s1,s2,s3 FROM tv006.v ORDER BY time,dev	0
+TV-007	g1_attr.sh	属性与语法	反向	非法属性值报错	-	0
+TV-008	g1_attr.sh	属性与语法	正向	ttl 与 auto_sync_schema 同时生效	SELECT dev,s1 FROM tv008.v ORDER BY time,dev	0
+TV-010	g2_entries.sh	补列入口	正向	CREATE TIMESERIES 触发补列	SELECT dev,s1 FROM tv010.v ORDER BY time,dev	0
+TV-011	g2_entries.sh	补列入口	正向	CREATE ALIGNED TIMESERIES 多列补列	SELECT dev,s1,s2 FROM tv011.v ORDER BY time,dev	0
+TV-012	g2_entries.sh	补列入口	正向	INSERT 自动建序列触发补列	SELECT dev,s1 FROM tv012.v ORDER BY time,dev	0
+TV-013	g2_entries.sh	补列入口	正向	多设备写入分别补列	SELECT dev,s1,s2 FROM tv013.v ORDER BY time,dev	0
+TV-014	g2_entries.sh	补列入口	正向	模板激活到新路径触发补列	SELECT dev,s1,s2 FROM tv014.v ORDER BY time,dev	0
+TV-015	g2_entries.sh	补列入口	正向	模板扩展触发补列	SELECT dev,s1,s3 FROM tv015.v ORDER BY time,dev	0
+TV-016	g2_entries.sh	补列入口	正向	CREATE OR REPLACE 后按新前缀补列，旧前缀不再跟踪	SELECT dev,s1,s2,s9 FROM tv016.v ORDER BY time,dev	0
+TV-017	g2_entries.sh	补列入口	正向	建视图时扫描前缀下已有测点	SELECT dev,s1,s2 FROM tv017.v ORDER BY time,dev	0
+TV-018	g2_entries.sh	补列入口	反向	前缀外新增测点不触发补列	SELECT dev,s1 FROM tv018.v ORDER BY time,dev	0
+TV-020	g3_conflict.sh	冲突与类型	边界	同名不同类型跳过，同批其它列照补	SELECT dev,s1,s2 FROM tv020.v ORDER BY time,dev	0
+TV-021	g3_conflict.sh	冲突与类型	边界	仅大小写不同的测点视为冲突不补列	SELECT dev,s1 FROM tv021.v ORDER BY time,dev	0
+TV-022	g3_conflict.sh	冲突与类型	正向	大写原序列名补为小写列并保留 original name	SELECT dev,s5 FROM tv022.v ORDER BY time,dev	0
+TV-023	g3_conflict.sh	冲突与类型	正向	指定 FIELD 类型可从同名不同型序列中择优	SELECT dev,s1 FROM tv023.v ORDER BY time,dev	0
+TV-024	g3_conflict.sh	冲突与类型	边界	指定类型都不匹配时视为新列且查询为空	-	0
+TV-025	g3_conflict.sh	冲突与类型	反向	FIELD 只写列名不写类型报错	-	0
+TV-026	g3_conflict.sh	冲突与类型	边界	original name 已引用过的测点不再补列	SELECT dev,s1,s7 FROM tv026.v ORDER BY time,dev	0
+TV-030	g4_query_toggle.sh	查询与生命周期	正向	补列后旧行为 null、新写入可见	SELECT dev,s1,s2 FROM tv030.v ORDER BY time	0
+TV-031	g4_query_toggle.sh	查询与生命周期	边界	删除序列后列保留且查询为 null	SELECT dev,s1 FROM tv031.v ORDER BY time	0
+TV-032	g4_query_toggle.sh	查询与生命周期	正向	关闭属性后不再补列	SELECT dev,s1 FROM tv032.v ORDER BY time	0
+TV-033	g4_query_toggle.sh	查询与生命周期	正向	打开属性回填已有测点并继续补列	SELECT dev,s1,s2,s3 FROM tv033.v ORDER BY time	0
+TV-034	g4_query_toggle.sh	查询与生命周期	正向	视图改名后仍自动补列	SELECT dev,s1,s2 FROM tv034.v2 ORDER BY time	0
+TV-035	g4_query_toggle.sh	查询与生命周期	边界	删除视图后建序列不报错	-	0
+TV-036	g4_query_toggle.sh	查询与生命周期	边界	删除视图所在库后建序列不报错	-	0
+TV-037	g4_query_toggle.sh	查询与生命周期	可靠性	集群重启后属性持久化并继续补列	SELECT dev,s1,s2 FROM tv037.v ORDER BY time	0
+TV-038	g4_query_toggle.sh	查询与生命周期	边界	RESTRICT 与 auto_sync_schema 正交	SELECT * FROM tv038.vr ORDER BY time	0
+TV-040	g5_ddl.sh	DDL 组合	正向	auto=true 时 ADD COLUMN 数值列	SELECT dev,s1,s2 FROM tv040.v ORDER BY time,dev	0
+TV-041	g5_ddl.sh	DDL 组合	正向	auto=true 时 ADD COLUMN tag 列	SELECT * FROM tv041.v ORDER BY time	0
+TV-042	g5_ddl.sh	DDL 组合	边界	ADD COLUMN OBJECT（树模型不支持 object）	-	0
+TV-043	g5_ddl.sh	DDL 组合	正向	DROP COLUMN 后不被自动补回	SELECT dev,s1 FROM tv043.v ORDER BY time,dev	0
+TV-044	g5_ddl.sh	DDL 组合	正向	RENAME COLUMN	SELECT dev,s1_new FROM tv044.v ORDER BY time,dev	0
+TV-045	g5_ddl.sh	DDL 组合	反向	重复 ADD COLUMN 报错	-	0
+TV-046	g5_ddl.sh	DDL 组合	边界	ADD COLUMN 与已有列仅大小写不同	-	0
+TV-047	g5_ddl.sh	DDL 组合	正向	auto=true 时手动增删列均生效且不被回补	SELECT dev,s1,s2 FROM tv047.v ORDER BY time,dev	0
+TV-050	g6_ha.sh	高可用	可靠性	1 台 DN 停机时建视图并恢复后补列	SELECT dev,s1,s2 FROM tv050.v ORDER BY time,dev	0
+TV-051	g6_ha.sh	高可用	可靠性	1 台 DN 停机时建序列仍触发补列	SELECT dev,s1,s2 FROM tv051.v ORDER BY time,dev	0
+TV-052	g6_ha.sh	高可用	可靠性	1 台 DN 停机时视图查询与基线一致	-	0
+TV-053	g6_ha.sh	高可用	可靠性	CN leader 切换后新增测点仍补列	-	0
+TV-054	g6_ha.sh	高可用	可靠性	CN leader 切换期间修改属性	-	0
+TV-055	g6_ha.sh	高可用	可靠性	kill -9 一台 DN 后序列创建与补列	-	0
+TV-056	g6_ha.sh	高可用	可靠性	两台 DN 停机时 DR=2 查询仍可用	-	0
+TV-060	g7_isolate.sh	高可用	可靠性	DN 隔离（元数据租约失效）时创建序列失败，恢复后重试补列	-	0
+TV-080	g8_rename.sh	改名与视图	正向	同库设备改名后视图 TAG 应为新设备名（需求 §2.1.1.1）	-	0
+TV-081	g8_rename.sh	改名与视图	正向	设备改名 + auto_sync，改名后数据与 TAG 正确	-	0
+TV-082	g8_rename.sh	改名与视图	正向	跨库改名后目标库视图应包含该设备（需求 §2.1.1.3）	-	0
+TV-083	g8_rename.sh	改名与视图	边界	跨库改名后源库 DROP 被拦截（708/507）且 SHOW INVALID 给出 NewPath	-	0
+TV-084	g8_rename.sh	改名与视图	正向	删别名后源库可删除（官方清理链）	-	0
+TV-085	g8_rename.sh	改名与视图	边界	改名到不存在的库自动建库（当前行为，待研发确认）	-	0
+TV-086	g8_rename.sh	改名与视图	边界	单测点改名：原列保留、改名不触发补列	-	0
+TV-087	g8_rename.sh	改名与视图	边界	RESTRICT 视图在设备改名后仍包含同层级设备	-	0
+TV-088	g8_rename.sh	改名与视图	可靠性	重启 DN 后视图 TAG 仍为新设备名（持久化）	-	0
+TV-089	g8_rename.sh	改名与视图	边界	改名往返（s1→s9→s1）后视图数据可见	-	0
+TV-090	g9_load.sh	LOAD与补列	正向	LOAD TSFILE 创建新序列时触发自动补列（列与类型正确、数据可查）	-	0
+TV-091	g9_load.sh	LOAD与补列	边界	LOAD 已存在列的测点：列保持、数据可查（观察是否触发日志缺陷）	-	0
+TV-092	g9_load.sh	LOAD与补列	正向	LOAD 混合场景：已有列保持、新增列补齐	-	0
+TV-093	g9_load.sh	LOAD与补列	反向	LOAD 到视图前缀之外不补列	-	0
+TV-094	g9_load.sh	LOAD与补列	反向	auto_sync=false 时 LOAD 不补列	-	0
+TV-095	g9_load.sh	LOAD与补列	边界	RESTRICT 视图 + LOAD 层级不匹配不补列	-	0
+TV-096	g9_load.sh	LOAD与补列	边界	重复 LOAD 同一文件：列不重复、行数行为记录	-	0
+TV-097	g9_load.sh	LOAD与补列	可靠性	LOAD 补列后重启 DN，列与数据持久化	-	0

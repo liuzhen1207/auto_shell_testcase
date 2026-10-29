@@ -10,3 +10,8 @@ auto_shell_testcase/CLOUD3_IP122/testcase/bm_20260519_writeview_v20.tar.gz
 # auto_shell_testcase/**/databackup_*/
 # *.tar.gz
 # *.zip
+
+# ai_auto_cases 运行产物：用例跑出来的 results/ logs/ *.out 不入库
+ai_auto_cases/**/results/
+ai_auto_cases/**/logs/
+ai_auto_cases/**/*.out
