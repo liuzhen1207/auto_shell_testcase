@@ -1,5 +1,7 @@
 # 缺陷描述（待确认后登记）：DataNode 启动窗口内登录误报 ERROR「Fail to check password expiration」
 
+> 状态：**已在 PLM 登记：[TDB-896](https://plm.infra.timecho.com/iterations?productId=1&itemId=1493)**（itemId 1493；类型缺陷、P2、迭代 V2.0.13.1、问题发现版本 V2.0.12.1、负责人 江天、所属组长 江天、验证人员 刘珍）。
+
 > 状态：**未登记**，按你的要求先给研发确认。可直接用作 PLM 缺陷单的标题与描述。
 > 关联用例：`auth_skill/cases/g2_policy.sh::AUTH-014`（强制复现版，稳定 FAIL，约 4 分钟）
 
