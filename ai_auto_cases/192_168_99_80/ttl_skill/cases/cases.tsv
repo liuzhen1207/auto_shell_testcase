@@ -1,0 +1,27 @@
+# TTL 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id  脚本  模型  粒度  需要重启集群  关键参数  期望/说明
+#
+# 说明：需要重启集群=yes 的用例会自己 cluster_stop/写 conf/cluster_start；
+#       跑整个集合时用例串行执行（并行会通过日志计数与 TsFile 计数互相污染）。
+#
+TT-01	cases/tree/ttl_tree_basic.sh	tree	database/device/series	yes	TTL_CASE_MS	SET/UNSET/SHOW 基本功能、前缀路径与 303、INF 与默认值、规则继承与优先级、SHOW DEVICES TTL、删库/删序列后规则保留
+TT-02	cases/tree/ttl_tree_expire.sh	tree	device/series	yes	TTL_CASE_MS=60000	过期可见性过滤、TTL 内外边界、写入过期时间戳被拒 607、FLUSH 后物理删除、取消 TTL 后新数据不再被清
+TT-03	cases/tree/ttl_tree_dml.sh	tree	database/device/series	yes	DATA_DEVICES/DATA_ROWS	大数据量(默认 2000 点) + DELETE 数据/元数据 + DROP 重建后规则保留并生效
+TT-04	cases/tree/ttl_tree_scope.sh	tree	root.**/database/device/series	yes	SCOPE_SMALL_MS=5000	作用域语义：三级继承与覆盖、规则热更新对已写数据立即生效、UNSET 后未被物理删除的过期数据重新可见、预置规则作用于后创建设备、TTL=0/负数 700/非法 pattern 700/无规则 UNSET 508
+TB-01	cases/table/ttl_table_basic.sh	table	database/table/view	yes	-	建库/建表/改表 TTL、ttl='INF'/default、继承与解耦、SHOW TABLES/SHOW DATABASES DETAILS/information_schema、非法值 701/700、视图 TTL
+TB-02	cases/table/ttl_table_expire.sh	table	table/view	yes	TTL_CASE_MS=60000	过期行过滤、TTL 内外边界、FLUSH 后物理删除、改小/取消 TTL 行为、视图读过期数据
+TB-03	cases/table/ttl_table_object.sh	table	table/OBJECT	yes	OBJ_WAIT=240	OBJECT 列 + TTL：to_object 写入、查询、过期不可见、object 文件随 TTL 清理（60s 缓冲）、树模型不支持 OBJECT 负向验证
+TB-04	cases/table/ttl_table_dml.sh	table	database/table	yes	DATA_ROWS	大数据量(默认 2000 行) + DELETE 数据/DELETE DEVICES + DROP 重建后 TTL 继承与生效
+TB-05	cases/table/ttl_table_cleanup.sh	table	table/file	yes	TTL_TB_MS=30000	表模型清理阈值：过期表被清理、同库 ttl='INF' 表数据完好、零脏数据文件不得被反复 settle（ratio=1e-6）、ratio=0.0 写放大复现（缺陷门禁）
+TT-05	cases/tree/ttl_show_ttl_scope.sh	tree	authority/db/device	yes	-	TDB-444 回归门禁：`SHOW TTL ON <db>.<dev>.**` 不得返回不相干库规则或 `root.**` 全局规则（缺陷版本会把所有规则都吐出来，所以判据必须是"不得出现不相干路径"，包含类断言抓不到）；含库级 `.**` 同类检查与"无 .** 精确路径"对照组
+TP-01	cases/common/ttl_param_effect.sh	both	cluster params	yes	NEW_INTERVAL_MS	参数值/热加载/重启生效：ttl_check_interval 实测周期（按 region 相邻时间差取中位数）与 restart 提示、compaction 开关热加载门控清理、Part C 三相隔离 expired_data_ratio（判据=partial 候选数；r1 出 partial 即 **TDB-452** 门禁）
+TP-02	cases/common/ttl_cleanup_threshold.sh	tree	file	yes	TTL_TH_MS=30000	文件级清理阈值：全过期→FULLY_DIRTY 整文件删除、部分过期+max_expired_time=INF+极小 ratio→按比例清理、零脏数据文件不得被反复 settle、ratio=0.0 写放大复现（缺陷门禁）
+TP-03	cases/common/ttl_param_effect_mode.sh	tree	cluster params	yes	TTL_RATIO_MS/RATIO_DEVS	expired_data_ratio 生效方式与数值语义：A M=INF+ratio=1e-6 → 部分过期文件被清理（基线，10 设备保证"部分过期"可观测）；B 不重启热改 ratio=0.99 → 仍按旧值清理 + 断言返回 restart is required（restart-only）；C 重启后 ratio=0.99 生效 → 不清理 + 逐节点核对生效值。**不可用 MODS 删空设备测阈值**（该设备常独占文件 ⇒ ratio=1 ⇒ FULLY_DIRTY，与参数无关）。判据只看**含部分过期文件**的 settle 任务（`settle_partial_task_for_db`）：整文件全过期走 FULLY_DIRTY 合法绕过 ratio，只出现它时 PASS+WARN 标注"场景退化、本相未验证门控"
+TP-04	cases/common/ttl_dup_region_register.sh	tree	schedule/region	yes	REG_DEVS=12/REG_WIN_SEC=60	**TDB-610 门禁**：同一个 DataRegion 被注册两次到压缩/TTL 调度列表 ⇒ 该 region 每周期被检查两遍。判据=该库每个 region 的 `Start ttl` 行数 ÷ 不同秒数（取最大），1.00 正常 / ≥1.5（实测 2.00）命中；对照库（不动时间索引缓存）必须 1.00。触发：启动前挪走目标库的 `system/databases/<db>/<regionId>/FileTimeIndexCache_0`（制造"同步恢复"，用例结束会还原）；若节点上部署了只读 agent（/tmp/ttl_dupcheck/insp.jar）则额外 dump `dataRegionList` 断言无重复元素
+TP-05	cases/common/ttl_tier_warn_key.sh	tree	conf/startup log	yes	-	**TDB-611 门禁**：写入 `tier_ttl_in_ms=1000;2000`（与默认 1 层 dn_data_dirs 不匹配）后重启，tier 校验 WARN 必须提示 `tier_ttl_in_ms`、**不得**出现已移除的旧键 `default_ttl_in_ms`；另做静态校验：配置模板里有 `tier_ttl_in_ms`、没有 `default_ttl_in_ms`。用例结束还原 conf 并重启
+# 工具（非用例）
+# tools/run_all.sh                顺序跑用例集并汇总（--set quick|tree|table|dml|param|threshold|defect|all）
+# tools/probe_ratio_isolate.sh    三相隔离诊断（A/B/C），把 expired_data_ratio 生效条件做成对照表给研发
+# tools/probe_sql.sh              语法/行为探针（作用域继承、SHOW 列、表模型属性、边界错误码）
+# tools/selftest.sh               harness 自检（语法、日志正则、conf 写入、断言框架、重名库）

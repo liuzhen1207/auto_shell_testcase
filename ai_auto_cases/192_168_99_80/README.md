@@ -10,6 +10,7 @@
 | `compaction_skill/` | 52（`cases.tsv`；冻结回归集 51 条，缩容 CO-12 单独跑） | 在线合并：seq/unseq/cross 内部与跨空间合并、DELETE 后合并、元数据变更后合并、多类型多编码、对齐序列、参数矩阵/热加载/Fast/repair/OBJECT TTL settle 等 |
 | `crud_skill/` | 15 | CRUD 写路径：INSERT/UPDATE/DELETE、文本与 BLOB、`load`（同步/异步、table/tree、无值列文件）、UPDATE_NO_BLOB 等 |
 | `wal_skill/` | 27 | WAL：模式与重启、`wal_dirs`/内存上限、压缩开关、单盘只读、对象文件、WAL 参数合法性、队列内存压力等 |
+| `ttl_skill/` | 15 | TTL（数据过期清理）：树/表两模型的基础与过期清理、`SHOW TTL` 作用域、参数值/热加载、**expired_data_ratio 门控与写放大**（TDB-452 门禁）、**DataNode 重启重复注册**（TDB-610 门禁）、**tier 告警文案**（TDB-611 门禁）；含 4 个专项探针 |
 
 每个 skill 都是同构结构：
 
@@ -35,6 +36,8 @@ cd compaction_skill && bash tools/run_all.sh --set regression --consensus IoTCon
 cd crud_skill      && bash tools/run_all.sh --set all --consensus IoTConsensus
 # WAL
 cd wal_skill       && bash tools/run_all.sh --set all --consensus IoTConsensus
+# TTL
+cd ttl_skill       && bash tools/run_all.sh --set all --consensus IoTConsensus
 ```
 
 - 版本切换只改 `/data/iotdb/autotest/conf/test.conf` 的 `v_testdb` / `v_commit`；
@@ -52,6 +55,13 @@ cd wal_skill       && bash tools/run_all.sh --set all --consensus IoTConsensus
 | RC10 `c60ce63` | V1 / V2 | 160 PASS / 27 FAIL（含 2 条 harness 自身问题） |
 | RC11 `ea4f835` | V1 / V2 | 162 / 25；新增失败 **0**（唯一变化是 harness 修复后 W-16 转 PASS） |
 | RC12 `c05111d` | V1 → V2 | 进行中 |
+
+**TTL skill 的验证记录**（同一 3C3D）：
+
+| 版本 | 结果 |
+| --- | --- |
+| RC5 `aaf460d` | **13/13 PASS**（`--set all`，约 1h47m）；随后扩充到 15 条 |
+| RC6 `7ae8713e` | TDB-610（`TP-04` 重启重复注册）、TDB-611（`TP-05` tier 告警文案）**均复现 FAIL**；对应修复 `e70fa1fc`、`2212855a76` 只在 master、**未回合 `rc/2.0.12.1`** |
 
 ## 四、2026-10-28/29 的用例侧修复（本轮）
 
