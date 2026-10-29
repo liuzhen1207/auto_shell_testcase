@@ -62,7 +62,14 @@ start-cli.sh -h 172.16.2.2 -p 6667 -u security_admin -pw 'TimechoDB@2021' \
 1. **权限检查已经通过**（否则会像 sys_admin 一样返回 803 缺 SECURITY）；
 2. 失败发生在**执行阶段**：语句被解析、进入授权流程后，严格鉴权路径未处理 `ACCOUNT_UNLOCK` 这个 author type，返回语义错误（701 = `SEMANTIC_ERROR`）。
 
-**对照组（同一集群、normal 模式、root 身份）**：`ALTER USER unltest ACCOUNT UNLOCK` → `Msg: The statement is executed successfully.`（tree / table 方言均成功）。
+**对照组实验（同一集群、normal 模式）**：
+
+| 执行者 | 结果 |
+| --- | --- |
+| root | ✅ `Msg: The statement is executed successfully.`（tree / table 方言均成功） |
+| **有 SECURITY 权限的普通用户**（`grant security on root.** to user sec_exec`） | ✅ **成功** |
+
+→ 由此排除"非 root 身份执行"这一变量：**701 只在三权分立开启后出现**，属模式特有路径未覆盖 `ACCOUNT_UNLOCK`，而非通用权限问题。
 
 ## 五、期望结果
 

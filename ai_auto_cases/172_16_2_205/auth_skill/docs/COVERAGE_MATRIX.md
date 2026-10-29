@@ -57,7 +57,7 @@
 | 编号 | 现象 | 证据 | 判断 |
 | --- | --- | --- | --- |
 | ~~OBS-10~~ | 三权分立下授权后用户查不到数据 | AUTH-008/AUTH-035 | **已定位为用例误判，非产品问题**：三权分立下 `sys_admin` 无数据权限，`create timeseries`/`insert` 被拒（`803 需 WRITE_SCHEMA / WRITE_DATA`），导致数据根本没写入；授权本身正常（`list privileges` 已含 READ_DATA + READ_SCHEMA）。用例改为「security_admin 授权的 writer 用户写数据、reader 用户读」，两条用例已 PASS（AUTH-008 138s、AUTH-035 83s）。该行为符合需求「系统管理员…无数据访问权限」 |
-| **OBS-11（确认为缺陷）** | 三权分立下 `ALTER USER u ACCOUNT UNLOCK` 返回 **`701: Unsupported author type.`** | AUTH-019 | 权限检查**已通过**（security_admin 有 SECURITY；sys_admin 报的是 803 缺 SECURITY），失败点在执行阶段——语句被解析并进入授权流程后，严格鉴权路径未处理 `ACCOUNT_UNLOCK` 这个 author type（`ClusterAuthorityFetcher.handleAccountUnlock` 会把登录地址塞进 roleName 再转发 CN，CN 侧严格鉴权分支未覆盖该类型）。需求《防止口令暴力破解》明确要求提供手动解锁 UNLOCK 语句，因此三权分立下**账号被锁后无任何解锁入口**（root 被禁登录、security_admin 701、sys_admin 803），属功能缺失 |
+| **OBS-11（确认为缺陷）** | 三权分立下 `ALTER USER u ACCOUNT UNLOCK` 返回 **`701: Unsupported author type.`** | AUTH-019 | 权限检查**已通过**（security_admin 有 SECURITY；sys_admin 报的是 803 缺 SECURITY），失败点在执行阶段——语句被解析并进入授权流程后，严格鉴权路径未处理 `ACCOUNT_UNLOCK` 这个 author type（`ClusterAuthorityFetcher.handleAccountUnlock` 会把登录地址塞进 roleName 再转发 CN，CN 侧严格鉴权分支未覆盖该类型）。需求《防止口令暴力破解》明确要求提供手动解锁 UNLOCK 语句，因此三权分立下**账号被锁后无任何解锁入口**（root 被禁登录、security_admin 701、sys_admin 803），属功能缺失。**对照实验**：normal 模式下 root 与「有 SECURITY 权限的普通用户」执行同一语句均成功，排除“非 root 执行”因素，确认问题只出现在三权分立的严格鉴权路径 |
 | ~~OBS-12~~ | 三权分立无法通过 SQL 关闭 | AUTH-034 | **已确认符合需求**：需求文档《V2.0.7.1-安全权限管理-三权分立-需求分析》明确“**三权分立不允许由打开到关闭的切换**”，故 sys_admin 返回 803 是预期行为，不计问题；测试环境恢复方式为改配置 + 重启（运维手段，非 SQL 能力） |
 
 ## 四、未自动化的需求点（3 项，需人工/环境配合）
