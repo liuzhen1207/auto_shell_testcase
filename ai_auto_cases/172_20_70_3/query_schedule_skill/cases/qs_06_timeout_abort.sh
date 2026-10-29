@@ -26,11 +26,11 @@ TRY_SQLS=(
 HIT=0
 for SQL in "${TRY_SQLS[@]}"; do
   log "  尝试: ${SQL:0:70}..."
-  OUT=$(timeout 120 "$CLI" -h "${DN[0]}" -p "$DN_RPC_PORT" -u "$DB_USER" -pw "$ROOT_PW" -e "$SQL" 2>&1)
+  QOUT=$(timeout 120 "$CLI" -h "${DN[0]}" -p "$DN_RPC_PORT" -u "$DB_USER" -pw "$ROOT_PW" -e "$SQL" 2>&1)
   RC=$?
-  echo "$OUT" | head -4 | sed 's/^/    /'
+  echo "$QOUT" | head -4 | sed 's/^/    /'
   log "  CLI rc=${RC}"
-  if echo "$OUT" | grep -qiE "timeout|timed out|超时|QueryTimeout"; then HIT=1; break; fi
+  if echo "$QOUT" | grep -qiE "timeout|timed out|超时|QueryTimeout"; then HIT=1; break; fi
 done
 if [ "$HIT" = "1" ]; then
   pass "②长查询被超时中断（返回超时错误）——REQ-06 生效"

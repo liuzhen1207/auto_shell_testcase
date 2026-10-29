@@ -19,7 +19,7 @@ assert_ge "①数据已就绪" "${DEVS:-0}" 100
 
 log "=== 大结果集查询（期望行数=总点数）==="
 EXP="${POINTS}"
-OUT=$(timeout 1800 "$CLI" -h "${DN[0]}" -p "$DN_RPC_PORT" -u "$DB_USER" -pw "$ROOT_PW" \
+QOUT=$(timeout 1800 "$CLI" -h "${DN[0]}" -p "$DN_RPC_PORT" -u "$DB_USER" -pw "$ROOT_PW" \
       -e "select * from $QS_LONG_DB.**;" 2>&1)
 RC=$?
 GOT=$(echo "$OUT" | grep -cE '^\|' )

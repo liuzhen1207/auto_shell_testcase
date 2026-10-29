@@ -3,9 +3,9 @@ cbb0b8c5e94edadb03c8e1c2515eeba9  cases/qs_01_thread_config.sh
 40ed0a37b52de758e50b68afb7e5dd0e  cases/qs_03_long_query_completes.sh
 9fbf2b23454ca25264d4ddb9d556b39b  cases/qs_04_no_manual_priority.sh
 85674c6579fdc7dad01239a4846ae90f  cases/qs_05_state_machine.sh
-8063c5b223b5bf48fe774dc4942b9b28  cases/qs_06_timeout_abort.sh
+c10d81385132c5edeb121fbfccbd84c8  cases/qs_06_timeout_abort.sh
 46e38b371b7f30162a10fe904b0298f5  cases/qs_07_kill_cascade.sh
-f40d53c2ce383636e10660ddd69943d9  cases/qs_08_blocked_ready.sh
+2ff0d156184d3e9867a7fd88f64698b3  cases/qs_08_blocked_ready.sh
 9e1854c8c7e613b31c7bacc76041200a  cases/qs_09_taskgroup_mlfq.sh
 2935dfd9d80295e2e71eeef32aaea1b6  cases/qs_10_time_slice.sh
 f3db2a5148b8e00343da41e310c5aff0  cases/qs_11_concurrency_cap.sh

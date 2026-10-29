@@ -1,0 +1,5 @@
+# ai_auto_cases 运行产物不入库（仓库根 .gitignore 已有，这里再兜一层）
+results/
+logs/
+*.out
+test_result.csv
