@@ -1,0 +1,94 @@
+<h3>一、环境</h3>
+<ol>
+<li>版本：TimechoDB 2.0.12.1 RC11（build <code>ea4f835</code>，安装目录 <code>v20121rc11_1023_ea4f835</code>），企业版</li>
+<li>部署：3C5D，CN <code>172.20.70.5/.4/.26</code>，DN <code>172.20.70.4/.26/.14/.27/.30</code>，客户端 <code>172.20.70.3</code>；schemaRF=3、dataRF=2；树模型</li>
+<li>关键配置：<code>query_thread_count=1</code>、<code>query_timeout_threshold=1000</code>、<code>driver_task_execution_time_slice_in_ms=200</code></li>
+<li>数据：<code>root.test.qs_0</code> 共 201 设备 × 10 序列 × 3000 点 ≈ 600 万点，已 flush</li>
+</ol>
+<h3>二、复现步骤</h3>
+<p>1. 在 5 台 DN 的 <code>conf/iotdb-system.properties</code> 写入 <code>query_thread_count=1</code> 与 <code>query_timeout_threshold=1000</code>，重启集群。</p>
+<p>2. 确认配置已加载（五台均返回 1000）：</p>
+<pre><code>for h in 172.20.70.4 172.20.70.26 172.20.70.14 172.20.70.27 172.20.70.30; do
+  ssh cluster@$h "grep '^query_timeout_threshold=' /data/iotdb/v20121rc11_1023_ea4f835/conf/iotdb-system.properties"
+done</code></pre>
+<p>3. 执行一条必然超过 1 秒的全量查询：</p>
+<pre><code>/data1/iotdb/testdb/v20121rc11_1023_ea4f835/sbin/start-cli.sh -h 172.20.70.4 \
+  -e "select * from root.test.qs_0.**;"</code></pre>
+<p>4. 再显式带客户端超时重试一次：</p>
+<pre><code>/data1/iotdb/testdb/v20121rc11_1023_ea4f835/sbin/start-cli.sh -h 172.20.70.4 \
+  -timeout 2000 -e "select * from root.test.qs_0.**;"</code></pre>
+<p>5. 统计五台 DN 的超时日志：</p>
+<pre><code>grep -c 'DriverTaskTimeout' /data/iotdb/v20121rc11_1023_ea4f835/logs/log_datanode_*.log</code></pre>
+<h3>三、实际现象</h3>
+<table><tbody>
+<tr><th>实验</th><th>结果</th></tr>
+<tr><td>服务端阈值 1000ms，全量 select *</td><td>跑满 90 秒（被外部 timeout 90 掐断，rc=124），未返回任何超时错误</td></tr>
+<tr><td>客户端显式 -timeout 2000</td><td>跑满 60 秒以上，同样未中止</td></tr>
+<tr><td>五台 DN 的 DriverTaskTimeout 日志</td><td>全部 0 条（Sentinel 线程从未记录超时）</td></tr>
+<tr><td>集群状态</td><td>8/8 Running + ACTIVATED，事后查询正常</td></tr>
+</tbody></table>
+<p>期间唯一出现过的 abort 是内存保护而非超时：<br>
+<code>301: Query is aborted since it requests more memory than can be allocated, bytesToReserve: 3608040B, maxBytesCanReserve: 3423412B</code></p>
+<h3>四、期望结果</h3>
+<ol>
+<li>查询执行时间超过 <code>query_timeout_threshold</code> 后应返回 <code>QueryTimeoutException</code>（或等价超时错误）并中止</li>
+<li>对应 DataNode 日志应出现 <code>[DriverTaskTimeout] Current time is {}, ddl of task is {}</code></li>
+<li>中止后资源释放，集群仍 8/8、后续查询正常</li>
+</ol>
+<h3>五、关键证据</h3>
+<p>配置侧（写入生效）：</p>
+<pre><code>172.20.70.4    query_timeout_threshold=1000
+172.20.70.26   query_timeout_threshold=1000
+172.20.70.14   query_timeout_threshold=1000
+172.20.70.27   query_timeout_threshold=1000
+172.20.70.30   query_timeout_threshold=1000</code></pre>
+<p>日志侧（五台 DN 全部无超时记录）：</p>
+<pre><code>172.20.70.4    all=0 warn=0
+172.20.70.26   all=0 warn=0
+172.20.70.14   all=0 warn=0
+172.20.70.27   all=0 warn=0
+172.20.70.30   all=0 warn=0</code></pre>
+<h3>六、根因分析</h3>
+<p>1. 每次提交只把最后一个 DriverTask 登记为超时哨兵，<code>DriverScheduler.java:328</code>：</p>
+<pre><code>if (!submittedTasks.isEmpty()) {
+  scheduler.enforceTimeLimit(submittedTasks.get(submittedTasks.size() - 1)); // 只有这 1 个进 timeoutQueue
+  for (DriverTask task : submittedTasks) { submitTaskToReadyQueue(task); }
+}</code></pre>
+<p>2. 但任何 task 结束时都会把它摘出超时队列，<code>DriverScheduler.java:452</code>：</p>
+<pre><code>timeoutQueue.remove(task.getDriverTaskId());</code></pre>
+<p>哨兵一旦先结束，整条查询失去超时看护，而同批其他 task 仍在运行。</p>
+<p>3. 片段级兜底只覆盖 FLUSHING 状态，<code>FragmentInstanceManager.java:474</code>：</p>
+<pre><code>if (execution.getStateMachine().getState() == FragmentInstanceState.FLUSHING
+    &amp;&amp; (now - execution.getStartTime()) &gt; execution.getTimeoutInMs()) { ... }</code></pre>
+<p>该方法本身是周期调度的（<code>FragmentInstanceManager.java:123</code>），但 RUNNING 状态的长查询不在兜底范围内。</p>
+<p>4. DDL 创建后固定不变，<code>task/DriverTask.java:52/84</code>：</p>
+<pre><code>private final long ddl;
+this.ddl = computeDeadlineTimeInMs(timeoutMs);</code></pre>
+<p>因此只要哨兵还在 timeoutQueue 内，到期必然触发；未触发只能是哨兵已被第 2 点摘掉，或从未按第 1 点登记。</p>
+<h3>七、影响面</h3>
+<ol>
+<li>失控查询无法被超时保护，可长期占用 Worker 线程；<code>query_thread_count=1</code> 时直接影响其它查询排队</li>
+<li>与需求「Sentinel 线程按 deadline 中止任务」不符</li>
+<li>客户端设置的 query_timeout 同样不生效，影响依赖超时兜底的 JDBC / REST / MQTT 调用方</li>
+</ol>
+<h3>八、修复建议</h3>
+<p>方案 A（止血，改 1 行）：放宽片段级兜底的状态条件，覆盖 RUNNING；代价是可能误杀长时间推进的分析查询，需产品确认。</p>
+<p>方案 B（根治）：摘除哨兵时若同一 query 仍有未结束 task，补登记一个新哨兵：</p>
+<pre><code>timeoutQueue.remove(task.getDriverTaskId());
+queryMap.getOrDefault(task.getDriverTaskId().getQueryId(), Collections.emptyMap())
+    .values().stream().flatMap(Set::stream)
+    .filter(t -&gt; !t.isEndState())
+    .findAny().ifPresent(this::enforceTimeLimit);</code></pre>
+<p>方案 C（先补可观测性，建议无论如何都做）：在 DriverTask 构造与 DriverTaskTimeoutSentinelThread.execute 各加一行日志，打印 task id、ddl、剩余时间。目前从外部完全看不到 ddl 实际值，任何修复都无法验证。</p>
+<h3>九、待确认</h3>
+<ol>
+<li><code>queryContext.getTimeOut()</code> 的取值来源：客户端请求的 timeout、CN 侧配置还是默认值？若被设成极大值，方案 A/B 都不会生效</li>
+<li>语义：<code>query_timeout_threshold</code> 是单个 DriverTask 的 deadline 还是整条查询的 deadline？长分析查询是否应被中止</li>
+<li>是否已有对应已知问题单号（本次现象是完全不触发，而非阈值不够精确）</li>
+</ol>
+<h3>十、验证方法</h3>
+<ol>
+<li>按方案 C 加日志后重跑，确认 <code>ddl - now</code> 约等于 1000ms</li>
+<li>修复后阈值 1s 时该查询应在 1~2s 内返回超时错误，且日志出现 <code>[DriverTaskTimeout]</code></li>
+<li>回归：短查询压测 P99 不受影响；正常时长查询不被误杀</li>
+</ol>
