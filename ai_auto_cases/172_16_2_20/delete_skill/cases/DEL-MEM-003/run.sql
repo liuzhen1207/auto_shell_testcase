@@ -1,0 +1,12 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_mem003;
+CREATE TABLE del_rc10_mem003.t (device_id STRING TAG, value INT32 FIELD);
+INSERT INTO del_rc10_mem003.t(time,device_id,value) VALUES (1792500020000,'d1',0);
+INSERT INTO del_rc10_mem003.t(time,device_id,value) VALUES (1792500020001,'d1',1);
+INSERT INTO del_rc10_mem003.t(time,device_id,value) VALUES (1792500020002,'d1',2);
+INSERT INTO del_rc10_mem003.t(time,device_id,value) VALUES (1792500020003,'d1',3);
+INSERT INTO del_rc10_mem003.t(time,device_id,value) VALUES (1792500020004,'d1',4);
+SET SQL_DIALECT=TABLE;
+DELETE FROM del_rc10_mem003.t WHERE time > 1792500020001 AND time < 1792500020003;
+SET SQL_DIALECT=TABLE;
+SELECT time, device_id, value FROM del_rc10_mem003.t ORDER BY time;

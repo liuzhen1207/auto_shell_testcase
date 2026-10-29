@@ -1,0 +1,15 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_pred005;
+CREATE TABLE del_rc10_pred005.t (device_id STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_rc10_pred005.t(time,device_id,region,v) VALUES (1796100000000,'d_empty','',10);
+INSERT INTO del_rc10_pred005.t(time,device_id,region,v) VALUES (1796100000001,'d_empty','',11);
+INSERT INTO del_rc10_pred005.t(time,device_id,region,v) VALUES (1796100000000,'d_null',NULL,20);
+INSERT INTO del_rc10_pred005.t(time,device_id,region,v) VALUES (1796100000001,'d_null',NULL,21);
+INSERT INTO del_rc10_pred005.t(time,device_id,region,v) VALUES (1796100000000,'d_value','x',30);
+INSERT INTO del_rc10_pred005.t(time,device_id,region,v) VALUES (1796100000001,'d_value','x',31);
+SELECT time,device_id,region,v FROM del_rc10_pred005.t ORDER BY time,device_id;
+DELETE FROM del_rc10_pred005.t WHERE region='';
+SELECT time,device_id,region,v FROM del_rc10_pred005.t ORDER BY time,device_id;
+FLUSH;
+SELECT time,device_id,region,v FROM del_rc10_pred005.t ORDER BY time,device_id;
+SHOW REGIONS;

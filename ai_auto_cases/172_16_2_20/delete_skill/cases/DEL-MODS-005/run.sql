@@ -1,0 +1,15 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_mods005;
+CREATE TABLE del_rc10_mods005.t (device_id STRING TAG, v INT32 FIELD);
+INSERT INTO del_rc10_mods005.t(time,device_id,v) VALUES (1794240000000,'d1',10);
+INSERT INTO del_rc10_mods005.t(time,device_id,v) VALUES (1794240000001,'d1',20);
+INSERT INTO del_rc10_mods005.t(time,device_id,v) VALUES (1794240000002,'d1',30);
+INSERT INTO del_rc10_mods005.t(time,device_id,v) VALUES (1794240000000,'d2',110);
+INSERT INTO del_rc10_mods005.t(time,device_id,v) VALUES (1794240000001,'d2',120);
+INSERT INTO del_rc10_mods005.t(time,device_id,v) VALUES (1794240000000,'d3',210);
+FLUSH;
+DELETE FROM del_rc10_mods005.t WHERE device_id='d1' AND time >= 1794240000001 AND time <= 1794240000002;
+FLUSH;
+DELETE FROM del_rc10_mods005.t WHERE device_id='d2' AND time = 1794240000001;
+FLUSH;
+SELECT time,device_id,v FROM del_rc10_mods005.t ORDER BY time,device_id;

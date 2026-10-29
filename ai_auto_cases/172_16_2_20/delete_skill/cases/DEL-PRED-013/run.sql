@@ -1,0 +1,14 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_pred013;
+CREATE TABLE del_rc10_pred013.t (device_id STRING TAG, sensor STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400000,'d1','s1','r1',10);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400001,'d1','s1','r1',20);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400002,'d1','s1','r1',30);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400000,'d2','s1','r2',110);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400001,'d2','s1','r2',120);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400002,'d2','s1','r2',130);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400000,'d3','s1','r3',210);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400001,'d3','s1','r3',220);
+INSERT INTO del_rc10_pred013.t(time,device_id,sensor,region,v) VALUES (1796786400002,'d3','s1','r3',230);
+FLUSH;
+SELECT time,device_id,sensor,region,v FROM del_rc10_pred013.t ORDER BY time,device_id,sensor;

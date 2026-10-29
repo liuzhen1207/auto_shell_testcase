@@ -1,0 +1,16 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_neg001;
+CREATE TABLE del_rc10_neg001.t (device_id STRING TAG, v INT32 FIELD);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000000,'d1',10);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000001,'d1',11);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000002,'d1',12);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000000,'d2',20);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000001,'d2',21);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000002,'d2',22);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000000,'d3',30);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000001,'d3',31);
+INSERT INTO del_rc10_neg001.t(time,device_id,v) VALUES (1799600000002,'d3',32);
+FLUSH;
+CREATE USER del_neg_reader 'Del@2026password';
+GRANT SELECT ON TABLE del_rc10_neg001.t TO USER del_neg_reader;
+SELECT time,device_id,v FROM del_rc10_neg001.t ORDER BY time;

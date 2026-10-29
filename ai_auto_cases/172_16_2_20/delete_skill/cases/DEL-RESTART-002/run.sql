@@ -1,0 +1,17 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_restart002;
+CREATE TABLE del_rc10_restart002.t (device_id STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000000,'d1','r1',10);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000001,'d1','r1',20);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000002,'d1','r1',30);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000000,'d2','r2',110);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000001,'d2','r2',120);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000002,'d2','r2',130);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000000,'d3','r3',210);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000001,'d3','r3',220);
+INSERT INTO del_rc10_restart002.t(time,device_id,region,v) VALUES (1794410000002,'d3','r3',230);
+FLUSH;
+DELETE FROM del_rc10_restart002.t WHERE device_id='d2';
+DELETE FROM del_rc10_restart002.t WHERE device_id='d3' AND time = 1794410000002;
+FLUSH;
+SELECT time,device_id,region,v FROM del_rc10_restart002.t ORDER BY time,device_id;

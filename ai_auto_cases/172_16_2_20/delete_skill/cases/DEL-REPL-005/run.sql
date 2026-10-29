@@ -1,0 +1,16 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_repl005;
+CREATE TABLE del_rc10_repl005.t (device_id STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD, s STRING FIELD);
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000000,'d1','r1',10,'a0');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000001,'d1','r1',11,'a1');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000002,'d1','r1',12,'a2');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000000,'d2','r2',20,'b0');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000001,'d2','r2',21,'b1');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000002,'d2','r2',22,'b2');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000000,'d3','r3',30,'c0');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000001,'d3','r3',31,'c1');
+INSERT INTO del_rc10_repl005.t(time,device_id,region,v,s) VALUES (1794340000002,'d3','r3',32,'c2');
+FLUSH;
+DELETE FROM del_rc10_repl005.t WHERE device_id='d2' AND time = 1794340000001;
+FLUSH;
+SELECT time,device_id,region,v,s FROM del_rc10_repl005.t ORDER BY time,device_id;

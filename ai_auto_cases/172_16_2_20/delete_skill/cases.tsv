@@ -1,0 +1,87 @@
+case_id	model	protocol	stage	scenario	expected
+DEL-MEM-001	table	BOTH	memory	未flush单点删除	命中点删除；相邻点和其他设备保留；flush后复查
+DEL-MEM-002	table	BOTH	memory	未flush闭区间删除	起止端点删除；端点外数据保留
+DEL-MEM-003	table	BOTH	memory	未flush开区间删除	核对比较符和端点；端点按语义保留
+DEL-MEM-004	table	BOTH	memory	删除后写入同一时间点	新写数据按版本语义可见；旧删除不误伤
+DEL-MEM-005	table	BOTH	memory	仅一行内存数据删除	查询为空；flush和重启后仍为空
+DEL-MEM-006	table	BOTH	memory	删除后不flush重启	恢复后删除仍有效；分析WAL恢复日志
+DEL-MEM-007	table	BOTH	memory	重复删除内存范围	结果幂等；无范围扩大
+DEL-MEM-008	table	BOTH	memory	多个MemTable只删较新范围	较早数据保留；较新命中删除
+DEL-FLUSH-001	table	BOTH	disk	单TsFile中间范围删除	命中点消失；边界和文件其他数据保留；检查mods
+DEL-FLUSH-002	table	BOTH	disk	单TsFile头部范围删除	文件最早点删除；后续数据保留
+DEL-FLUSH-003	table	BOTH	disk	单TsFile尾部范围删除	文件末尾命中删除；此前数据保留
+DEL-FLUSH-004	table	BOTH	disk	覆盖整个TsFile删除	查询为空；记录mods和文件最终状态
+DEL-FLUSH-005	table	BOTH	disk	多次FLUSH形成多TsFile后局部删除	只影响目标文件/时间范围；无关文件可读
+DEL-FLUSH-006	table	BOTH	disk	跨多个TsFile删除	逐文件核对范围与结果
+DEL-FLUSH-007	table	BOTH	disk	跨time partition删除	两分区内命中删除；分区外保留
+DEL-FLUSH-008	table	BOTH	disk	删除后flush新数据	新写文件正确；旧标记不扩大
+DEL-MIX-001	table	BOTH	mixed	同条件删除内存及落盘数据	两阶段命中均删除；非命中均保留
+DEL-MIX-002	table	BOTH	mixed	跨内存和多落盘文件删除	逐region和TsFile核对mods
+DEL-MIX-003	table	BOTH	mixed	删除后重写已落盘时间点	验证版本定义的覆盖/可见性
+DEL-TIME-001	table	BOTH	predicate	time=t	仅t被删
+DEL-TIME-002	table	BOTH	predicate	time<t	t及之后保留
+DEL-TIME-003	table	BOTH	predicate	time<=t	t被删；之后保留
+DEL-TIME-004	table	BOTH	predicate	time>t	t及之前保留
+DEL-TIME-005	table	BOTH	predicate	time>=t	t被删；之前保留
+DEL-TIME-006	table	BOTH	predicate	起止边界相等	仅单点被删
+DEL-TIME-007	table	BOTH	negative	start>end反向区间	明确拒绝或零命中；数据不变
+DEL-TIME-008	table	BOTH	predicate	整数/字符串/时区时间	解析时间精度和时区符合预期
+DEL-PRED-001	table	BOTH	predicate	单TAG等值	仅目标设备被删
+DEL-PRED-002	table	BOTH	predicate	多个TAG AND	同时匹配者删除；只匹配部分者保留
+DEL-PRED-003	table	BOTH	predicate	ATTRIBUTE等值	只删除符合属性的行
+DEL-PRED-004	table	BOTH	predicate	TAG与ATTRIBUTE组合	设备过滤及行过滤分别正确
+DEL-PRED-005	table	BOTH	predicate	空字符串和NULL属性	按文档区分两者语义
+DEL-PRED-006	table	BOTH	predicate	OR互斥分支	命中集合为分支并集
+DEL-PRED-007	table	BOTH	predicate	OR分支交叠	无扩大删除；分支外保留
+DEL-PRED-008	table	BOTH	predicate	嵌套括号及DNF	验证优先级和每个分支的命中集
+DEL-PRED-009	table	BOTH	predicate	LIKE模式	仅测支持语法；验证前后缀和通配符
+DEL-PRED-010	table	BOTH	predicate	IN单值/多值	命中成员删除；其他值保留
+DEL-PRED-011	table	BOTH	negative	空IN及非法LIKE	明确拒绝或版本行为；无部分修改
+DEL-PRED-012	table	BOTH	negative	不存在列/类型不匹配	明确错误；数据和mods不变
+DEL-PRED-013	table	BOTH	negative	WHERE缺失或表达式非法	保护性拒绝；不得意外全表删除
+DEL-PRED-014	table	BOTH	negative	设备匹配超过产品限制	记录限制错误且确认数据不变
+DEL-CAT-001	table	BOTH	category	整行删除含TAG/ATTRIBUTE/FIELD/OBJECT	按整行语义检查各列类别
+DEL-CAT-002	table	BOTH	category	TAG仅作过滤条件	设备命中正确；TAG值定义行为一致
+DEL-CAT-003	table	BOTH	category	ATTRIBUTE时间删除	属性过滤和时间范围交集正确
+DEL-CAT-004	table	BOTH	category	单FIELD列删除	当前版本暂不支持；预期明确报错且全行/其他列数据不变，不得部分删除
+DEL-CAT-005	table	BOTH	category	多FIELD列删除	当前版本暂不支持；预期明确报错且数据与mods不变，不得部分删除
+DEL-OBJ-001	table	BOTH	object	完整EOF对象插入/flush/删除	to_object(true,0,payload)或Tablet写完整对象；对象不可读
+DEL-OBJ-002	table	BOTH	object	多片对象末片EOF后删除	offset连续；末片EOF；只删除目标对象
+DEL-OBJ-003	table	BOTH	object	多个OBJECT只删一个	目标对象消失；保留对象read_object正确
+DEL-OBJ-004	table	BOTH	object	删除后检查.bin/.tmp/.back	目标payload按GC/compaction清理；无临时残留
+DEL-OBJ-005	table	BOTH	object	删对象行但保留其他设备对象	其他对象和普通字段仍正确
+DEL-OBJ-006	table	BOTH	negative	JSON字符串插入OBJECT	预期类型错误；检查普通列是否部分写入
+DEL-OBJ-007	table	BOTH	negative	对象缺EOF/非法offset	拒绝或记录临时态；不作为完整对象判据
+DEL-OBJ-008	table	BOTH	object	OBJECT删除与GC/compaction并发	保留对象仍可读；被删对象最终清理
+DEL-MODS-001	table	BOTH	mods	内存删除后即时及flush后检查	区分无持久mods和落盘标记
+DEL-MODS-002	table	BOTH	mods	解码mods2	校验表谓词/列/时间范围关联对应TsFile
+DEL-MODS-003	table	BOTH	mods	重复和相邻删除标记	允许合并；逻辑范围无漏删误删
+DEL-MODS-004	table	BOTH	mods	compaction前后	新旧TsFile和mods变化可解释；查询不变
+DEL-MODS-005	table	BOTH	recovery	重启后mods恢复	删除仍生效；恢复日志正常
+DEL-RESTART-001	table	BOTH	recovery	flush删除后重启region leader	恢复查询与停止前相同
+DEL-RESTART-002	table	BOTH	recovery	flush删除后重启follower	节点恢复及lag归零后结果一致
+DEL-REPL-001	table	BOTH	replica	全节点在线基准	lag归零后保存确定性完整结果和摘要
+DEL-REPL-002	table	BOTH	replica	逐台停每个DN查询	每次和固定基准比较；恢复并收敛后再停下一台
+DEL-REPL-003	table	BOTH	replica	同步未完成时停follower	只判中间行为；恢复lag归零后最终结果一致
+DEL-REPL-004	table	BOTH	replica	停region leader DN	检查选主、查询可用性、恢复追平后结果
+DEL-REPL-005	table	BOTH	replica	停region follower DN	leader查询正常；恢复后追平
+DEL-REPL-006	table	BOTH	replica	高行数写入后DELETE并逐副本比较	完整结果或可复核摘要一致
+DEL-CONC-001	table	BOTH	concurrency	并发删相邻区间	最终删除集合符合并集
+DEL-CONC-002	table	BOTH	concurrency	并发重复删同区间	结果稳定；mods可解码
+DEL-CONC-003	table	BOTH	concurrency	DELETE与同时间写入并发	按提交顺序判定最终状态
+DEL-CONC-004	table	BOTH	concurrency	DELETE与FLUSH/compaction并发	已删点不复现；文件状态可解释
+DEL-NEG-001	table	BOTH	negative	无权限用户DELETE	权限错误；数据、mods和对象文件不变
+DEL-NEG-002	table	BOTH	negative	不存在db/table的DELETE	错误明确；无孤立region或mods
+DEL-CLEAN-001	table	BOTH	cleanup	清理本用例数据库	只清理本例；其他库查询不变
+DEL-CLEAN-002	table	BOTH	cleanup	失败保留现场	先归档日志/config/SQL/TsFile/mods再清理
+DEL-TREE-001	tree	IoTConsensus	tree	树模型内存点删除	目标路径和时间删除；其他序列保留
+DEL-TREE-002	tree	IoTConsensus	tree	树模型落盘删除和mods	检查路径标记、重启后查询
+DEL-TREE-003	tree	IoTConsensus	tree	树模型通配路径删除	仅路径与时间交集删除
+DEL-TREE-004	tree	IoTConsensus	replica	树模型逐DN停机比较	使用全在线基准及逐DN恢复同步门禁
+
+DEL-MEMLEAK-TREE-001	tree	IoTConsensus	memleak	按WHERE删除数据并重复写入/删除	记录堆与进程内存基线、循环曲线及GC后稳态；查询验证目标已删且范围外保留
+DEL-MEMLEAK-TREE-002	tree	IoTConsensus	memleak	全量删除数据并重复重建/删除	全量删除后查询为空；记录GC后堆与进程内存稳态及增量
+DEL-MEMLEAK-TREE-003	tree	IoTConsensus	memleak	删除timeseries元数据并重复重建/删除	元数据不可见；记录SchemaRegion/堆内存和进程内存稳态
+DEL-MEMLEAK-TABLE-001	table	BOTH	memleak	按WHERE删除数据并重复写入/删除	记录堆与进程内存基线、循环曲线及GC后稳态；查询验证目标已删且范围外保留
+DEL-MEMLEAK-TABLE-002	table	BOTH	memleak	无WHERE全量删除数据并重复重建/删除	全量删除后表仍存在且查询为空；记录GC后堆与进程内存稳态及增量
+DEL-MEMLEAK-TABLE-003	table	BOTH	memleak	DROP TABLE及重建并重复删除元数据	表元数据不可见；记录SchemaRegion/堆内存和进程内存稳态

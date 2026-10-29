@@ -1,0 +1,18 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_mods003;
+CREATE TABLE del_rc10_mods003.t (device_id STRING TAG, v INT32 FIELD);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000000,'d1',10);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000001,'d1',11);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000002,'d1',12);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000003,'d1',13);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000004,'d1',14);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000005,'d1',15);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000000,'d2',110);
+INSERT INTO del_rc10_mods003.t(time,device_id,v) VALUES (1794220000000,'d3',210);
+FLUSH;
+DELETE FROM del_rc10_mods003.t WHERE device_id='d1' AND time >= 1794220000001 AND time <= 1794220000002;
+DELETE FROM del_rc10_mods003.t WHERE device_id='d1' AND time >= 1794220000001 AND time <= 1794220000002;
+SELECT time,device_id,v FROM del_rc10_mods003.t ORDER BY time,device_id;
+DELETE FROM del_rc10_mods003.t WHERE device_id='d1' AND time = 1794220000003;
+FLUSH;
+SELECT time,device_id,v FROM del_rc10_mods003.t ORDER BY time,device_id;

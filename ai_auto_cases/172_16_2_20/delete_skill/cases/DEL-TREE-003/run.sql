@@ -1,0 +1,15 @@
+SET SQL_DIALECT=TREE;
+CREATE DATABASE root.rc10tree003;
+CREATE TIMESERIES root.rc10tree003.north.d1.s1 INT32;
+CREATE TIMESERIES root.rc10tree003.north.d2.s1 INT32;
+CREATE TIMESERIES root.rc10tree003.south.d3.s1 INT32;
+INSERT INTO root.rc10tree003.north.d1(time, s1) VALUES (1798200000000, 10);
+INSERT INTO root.rc10tree003.north.d1(time, s1) VALUES (1798200000001, 11);
+INSERT INTO root.rc10tree003.north.d2(time, s1) VALUES (1798200000000, 20);
+INSERT INTO root.rc10tree003.north.d2(time, s1) VALUES (1798200000001, 21);
+INSERT INTO root.rc10tree003.south.d3(time, s1) VALUES (1798200000000, 30);
+INSERT INTO root.rc10tree003.south.d3(time, s1) VALUES (1798200000001, 31);
+DELETE FROM root.rc10tree003.north.** WHERE time <= 1798200000000;
+SELECT s1 FROM root.rc10tree003.north.d1 ORDER BY time;
+SELECT s1 FROM root.rc10tree003.north.d2 ORDER BY time;
+SELECT s1 FROM root.rc10tree003.south.d3 ORDER BY time;

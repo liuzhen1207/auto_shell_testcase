@@ -1,0 +1,16 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_flush008;
+CREATE TABLE del_rc10_flush008.t (device_id STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_rc10_flush008.t(time,device_id,region,v) VALUES (1793200000000,'d1','r1',10);
+INSERT INTO del_rc10_flush008.t(time,device_id,region,v) VALUES (1793200000001,'d1','r1',20);
+INSERT INTO del_rc10_flush008.t(time,device_id,region,v) VALUES (1793200000002,'d1','r1',30);
+INSERT INTO del_rc10_flush008.t(time,device_id,region,v) VALUES (1793200000003,'d1','r1',40);
+FLUSH;
+SELECT time,device_id,region,v FROM del_rc10_flush008.t ORDER BY time,device_id;
+DELETE FROM del_rc10_flush008.t WHERE device_id='d1' AND time >= 1793200000001 AND time <= 1793200000002;
+SELECT time,device_id,region,v FROM del_rc10_flush008.t ORDER BY time,device_id;
+INSERT INTO del_rc10_flush008.t(time,device_id,region,v) VALUES (1793200000004,'d1','r1',50);
+INSERT INTO del_rc10_flush008.t(time,device_id,region,v) VALUES (1793200000005,'d1','r1',60);
+FLUSH;
+SELECT time,device_id,region,v FROM del_rc10_flush008.t ORDER BY time,device_id;
+SHOW REGIONS;

@@ -1,0 +1,17 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_neg002;
+CREATE TABLE del_rc10_neg002.t (device_id STRING TAG, sensor STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000000,'d1','s1','r1',10);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000001,'d1','s1','r1',11);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000002,'d1','s1','r1',12);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000000,'d2','s1','r2',20);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000001,'d2','s1','r2',21);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000002,'d2','s1','r2',22);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000000,'d3','s1','r3',30);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000001,'d3','s1','r3',31);
+INSERT INTO del_rc10_neg002.t(time,device_id,sensor,region,v) VALUES (1797500000002,'d3','s1','r3',32);
+FLUSH;
+DELETE FROM del_rc10_neg002.t_missing WHERE time >= 1797500000000 AND time <= 1797500000001;
+DELETE FROM del_rc10_neg002_missing.t WHERE device_id='d2';
+SELECT time,device_id,sensor,region,v FROM del_rc10_neg002.t ORDER BY time,device_id;
+SELECT count(*) FROM del_rc10_neg002.t;

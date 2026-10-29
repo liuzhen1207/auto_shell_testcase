@@ -1,0 +1,13 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_cat001;
+CREATE TABLE del_rc10_cat001.t (device_id STRING TAG, region STRING ATTRIBUTE, frame OBJECT FIELD, value INT32 FIELD);
+INSERT INTO del_rc10_cat001.t(time,device_id,region,frame,value) VALUES (1792022400000,'d1','north',to_object(true,0,X'cafebabe'),10);
+INSERT INTO del_rc10_cat001.t(time,device_id,region,frame,value) VALUES (1792022400001,'d1','north',to_object(true,0,X'cafed00d'),20);
+INSERT INTO del_rc10_cat001.t(time,device_id,region,frame,value) VALUES (1792022400000,'d2','south',to_object(true,0,X'deadbeef'),30);
+INSERT INTO del_rc10_cat001.t(time,device_id,region,frame,value) VALUES (1792022400001,'d2','south',to_object(true,0,X'01020304'),40);
+FLUSH;
+SELECT time,device_id,region,READ_OBJECT(frame),value FROM del_rc10_cat001.t ORDER BY time,device_id;
+DELETE FROM del_rc10_cat001.t WHERE time=1792022400000;
+SELECT time,device_id,region,READ_OBJECT(frame),value FROM del_rc10_cat001.t ORDER BY time,device_id;
+FLUSH;
+SELECT time,device_id,region,READ_OBJECT(frame),value FROM del_rc10_cat001.t ORDER BY time,device_id;

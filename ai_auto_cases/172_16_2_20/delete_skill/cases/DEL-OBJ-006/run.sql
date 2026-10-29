@@ -1,0 +1,12 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_rc10_obj006;
+CREATE TABLE del_rc10_obj006.t (device_id STRING TAG, frame OBJECT FIELD, value INT32 FIELD);
+INSERT INTO del_rc10_obj006.t(time,device_id,frame,value) VALUES (1794130000000,'d1','{"k":1}',99);
+INSERT INTO del_rc10_obj006.t(time,device_id,frame,value) VALUES (1794130000001,'d1',to_object(true,0,X'0a0b0c0d'),10);
+INSERT INTO del_rc10_obj006.t(time,device_id,frame,value) VALUES (1794130000000,'d2',to_object(true,0,X'1a1b1c1d'),20);
+INSERT INTO del_rc10_obj006.t(time,device_id,frame,value) VALUES (1794130000001,'d2',to_object(true,0,X'2a2b2c2d'),21);
+FLUSH;
+DELETE FROM del_rc10_obj006.t WHERE device_id='d1' AND time=1794130000001;
+FLUSH;
+SELECT time,device_id,value FROM del_rc10_obj006.t ORDER BY time,device_id;
+SELECT time,device_id,READ_OBJECT(frame),value FROM del_rc10_obj006.t WHERE device_id='d2' ORDER BY time,device_id;
