@@ -66,22 +66,28 @@ case_AUTH034() {
 }
 
 case_AUTH035() {
-  # 三权分立下普通用户：security_admin 建用户并授权 → 普通用户按授权访问
+  # 三权分立下普通用户：security_admin 建用户并授权 → 普通用户按授权读写
+  # sys_admin 无数据权限，写入由 writer 用户执行
   local o
-  TS "DROP USER sep035" >/dev/null 2>&1
+  TS "DROP USER sep035" >/dev/null 2>&1; TS "DROP USER sep035w" >/dev/null 2>&1
+  TS "CREATE USER sep035w 'Sep035w@1234'" >/dev/null 2>&1
   TS "CREATE USER sep035 'Sep035@12345'" >/dev/null 2>&1
   T "DROP DATABASE root.sep035" >/dev/null 2>&1
   T "CREATE DATABASE root.sep035" >/dev/null 2>&1
-  T "CREATE TIMESERIES root.sep035.d1.s1 INT32" >/dev/null 2>&1
-  T "INSERT INTO root.sep035.d1(time,s1) VALUES(1,7)" >/dev/null 2>&1
+  TS "GRANT WRITE_SCHEMA ON root.sep035.** TO USER sep035w" >/dev/null 2>&1
+  TS "GRANT WRITE_DATA ON root.sep035.** TO USER sep035w" >/dev/null 2>&1
+  sleep 32
+  o=$(L sep035w 'Sep035w@1234' "create timeseries root.sep035.d1.s1 int32")
+  echo "  writer create ts -> $(echo "$o" | head -1 | cut -c1-90)"
+  o=$(L sep035w 'Sep035w@1234' "insert into root.sep035.d1(time,s1) values(1,7)")
+  echo "  writer insert -> $(echo "$o" | head -1 | cut -c1-90)"
   o=$(L sep035 'Sep035@12345' "select s1 from root.sep035.d1")
-  echo "  before grant -> $(echo "$o" | sed -n '2p' | cut -c1-80)"
+  echo "  reader before grant -> $(echo "$o" | grep -c 'Empty set')"
   TS "GRANT READ ON root.sep035.** TO USER sep035" >/dev/null 2>&1
   sleep 35
   o=$(L sep035 'Sep035@12345' "select s1 from root.sep035.d1")
-  echo "  after grant -> $(echo "$o" | sed -n '2p' | cut -c1-80)"
   assert_contains "$o" "7" "security_admin 授权后普通用户应可读"
-  TS "DROP USER sep035" >/dev/null 2>&1
+  TS "DROP USER sep035" >/dev/null 2>&1; TS "DROP USER sep035w" >/dev/null 2>&1
   T "DROP DATABASE root.sep035" >/dev/null 2>&1
 }
 

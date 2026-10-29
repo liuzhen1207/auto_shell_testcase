@@ -76,23 +76,33 @@ case_AUTH007() {
 
 case_AUTH008() {
   # 权限：未授权不能读，GRANT 后可读，REVOKE 后不可读
+  # 注意：三权分立下 sys_admin 无数据/写权限（需求：系统管理员无数据访问权限），
+  #       因此数据由 security_admin 授权的 writer 用户写入，reader 用户只做读验证。
   T "DROP DATABASE root.auth008db" >/dev/null 2>&1
-  T "CREATE DATABASE root.auth008db" >/dev/null
-  T "CREATE TIMESERIES root.auth008db.d1.s1 INT32" >/dev/null
-  T "INSERT INTO root.auth008db.d1(time,s1) VALUES(1,1)" >/dev/null
-  TS "DROP USER auth008" >/dev/null 2>&1
-  TS "CREATE USER auth008 'Auth008@12345'" >/dev/null
   local o
+  o=$(T "CREATE DATABASE root.auth008db")
+  [ -z "$o" ] || echo "  create db: $(echo "$o" | head -1)"
+  TS "DROP USER auth008w" >/dev/null 2>&1; TS "DROP USER auth008" >/dev/null 2>&1
+  TS "CREATE USER auth008w 'Auth008w@1234'" >/dev/null 2>&1
+  TS "CREATE USER auth008 'Auth008@12345'" >/dev/null 2>&1
+  TS "GRANT WRITE_SCHEMA ON root.auth008db.** TO USER auth008w" >/dev/null 2>&1
+  TS "GRANT WRITE_DATA ON root.auth008db.** TO USER auth008w" >/dev/null 2>&1
+  sleep 32   # author_cache_expire_time=30s
+  o=$(L auth008w 'Auth008w@1234' "create timeseries root.auth008db.d1.s1 int32")
+  echo "  writer create ts -> $(echo "$o" | head -1 | cut -c1-90)"
+  o=$(L auth008w 'Auth008w@1234' "insert into root.auth008db.d1(time,s1) values(1,1)")
+  echo "  writer insert -> $(echo "$o" | head -1 | cut -c1-90)"
   o=$(L auth008 'Auth008@12345' "select s1 from root.auth008db.d1")
-  echo "$o" | grep -q "Empty set" || fail "未授权用户应查不到数据（期望 Empty set，实际 $(echo "$o" | sed -n '2p')）"
+  echo "$o" | grep -q "Empty set" || fail "未授权用户应查不到数据（期望 Empty set）"
   TS "GRANT READ ON root.auth008db.** TO USER auth008" >/dev/null 2>&1
-  sleep 35   # author_cache_expire_time=30s，授权后需等缓存过期
+  sleep 35
   o=$(L auth008 'Auth008@12345' "select s1 from root.auth008db.d1")
   assert_contains "$o" "1" "授权后应可读"
   TS "REVOKE READ ON root.auth008db.** FROM USER auth008" >/dev/null 2>&1
   sleep 35
   o=$(L auth008 'Auth008@12345' "select s1 from root.auth008db.d1")
   echo "$o" | grep -q "Empty set" || fail "回收权限后应查不到数据"
+  TS "DROP USER auth008w" >/dev/null 2>&1; TS "DROP USER auth008" >/dev/null 2>&1
 }
 
 case_AUTH009() {
