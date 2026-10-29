@@ -1,0 +1,8 @@
+# Region 迁移专项 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	类别	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
+#
+# ⚠️ 本 skill 依赖 MigrateRegionTest 框架（conf/test.conf、clean_env/），详见 README
+# 缺陷：PingCode V2-1067；发现版本 v20102_rc1_0701_5e711bf
+#
+TC-54	功能	cases/tc54_add_peer_residual_lock.sh	tree	cluster	yes	v_cur_db	V2-1067：迁移中停目标 DN + CN leader → 残留 AddRegionPeerProcedure 是否挡住重试迁移（挡住即 FAIL）

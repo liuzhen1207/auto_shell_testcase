@@ -1,0 +1,8 @@
+# 查询调度（query scheduler / MLFQ）专项 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+#
+# 列：case_id	类别	脚本	模型	粒度	是否需要自己启停集群	关键参数	期望/说明
+#
+# 统一口径：query_thread_count=1；短查询用 iot-benchmark LATEST_POINT 30000 次取 P99
+# 需求来源：飞书《V1.0.0.1-计算模块-查询调度》（原文见 requirements/）
+#
+QS-02	功能	cases/qs_02_short_not_blocked.sh	tree	cluster	yes	QS_QUERY_THREADS/QS_LAT_P99_TARGET	REQ-01+REQ-02+REQ-04：单查询线程下并发全量查询，短查询 P99 < 50ms 且长查询正常结束
