@@ -14,8 +14,20 @@ CASE_MSGS=""
 fail() { CASE_FAILS=$((CASE_FAILS+1)); CASE_MSGS="$CASE_MSGS [FAIL] $* ;"; echo "  [FAIL] $*"; }
 ok()   { echo "  [ok] $*"; }
 
-# tree-dialect SQL as root
-T() { $CLI -h "$HOST" -p 6667 -u root -pw "$PW" -sql_dialect tree -e "$1" 2>&1; }
+# 模式：normal（root 全权）| separation（三权分立：sys_admin / security_admin / audit_admin）
+MODE=${MODE:-normal}
+if [ "$MODE" = "separation" ]; then
+  SYSADMIN=${SYSADMIN:-sys_admin}; SECADMIN=${SECADMIN:-security_admin}; AUDITADMIN=${AUDITADMIN:-audit_admin}
+else
+  SYSADMIN=${SYSADMIN:-root}; SECADMIN=${SECADMIN:-root}; AUDITADMIN=${AUDITADMIN:-root}
+fi
+
+# 系统/数据管理员（普通模式=root；三权分立=sys_admin）
+T()  { $CLI -h "$HOST" -p 6667 -u "$SYSADMIN" -pw "$PW" -sql_dialect tree -e "$1" 2>&1; }
+# 安全管理员（用户/角色/权限）
+TS() { $CLI -h "$HOST" -p 6667 -u "$SECADMIN" -pw "$PW" -sql_dialect tree -e "$1" 2>&1; }
+# 审计管理员
+TA() { $CLI -h "$HOST" -p 6667 -u "$AUDITADMIN" -pw "$PW" -sql_dialect tree -e "$1" 2>&1; }
 # login as a user and run one statement
 L() { local u=$1 p=$2 sql=${3:-"show databases"}; $CLI -h "$HOST" -p 6667 -u "$u" -pw "$p" -e "$sql" 2>&1; }
 

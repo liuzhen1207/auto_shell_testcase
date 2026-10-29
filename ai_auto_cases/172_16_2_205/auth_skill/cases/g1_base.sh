@@ -25,19 +25,19 @@ case_AUTH003() {
 }
 
 case_AUTH004() {
-  T "DROP USER auth004" >/dev/null 2>&1
+  TS "DROP USER auth004" >/dev/null 2>&1
   local o
-  o=$(T "CREATE USER auth004 'Auth004@12345'")
+  o=$(TS "CREATE USER auth004 'Auth004@12345'")
   assert_ok "$o" "创建用户应成功"
   o=$(L auth004 'Auth004@12345')
   assert_ok "$o" "新用户应可登录"
 }
 
 case_AUTH005() {
-  T "DROP USER auth005" >/dev/null 2>&1
-  T "CREATE USER auth005 'Auth005@12345'" >/dev/null
+  TS "DROP USER auth005" >/dev/null 2>&1
+  TS "CREATE USER auth005 'Auth005@12345'" >/dev/null
   local o
-  o=$(T "ALTER USER auth005 SET PASSWORD 'Auth005@54321'")
+  o=$(TS "ALTER USER auth005 SET PASSWORD 'Auth005@54321'")
   assert_ok "$o" "修改密码应成功"
   o=$(L auth005 'Auth005@12345')
   assert_err "$o" "旧密码应失效"
@@ -46,10 +46,10 @@ case_AUTH005() {
 }
 
 case_AUTH006() {
-  T "DROP USER auth006" >/dev/null 2>&1
-  T "CREATE USER auth006 'Auth006@12345'" >/dev/null
+  TS "DROP USER auth006" >/dev/null 2>&1
+  TS "CREATE USER auth006 'Auth006@12345'" >/dev/null
   local o
-  o=$(T "DROP USER auth006")
+  o=$(TS "DROP USER auth006")
   assert_ok "$o" "删除用户应成功"
   o=$(L auth006 'Auth006@12345')
   assert_err "$o" "已删除用户应无法登录"
@@ -57,21 +57,21 @@ case_AUTH006() {
 
 case_AUTH007() {
   # 强密码：长度 + 复杂度过 a-d；本版本最小长度 12
-  T "DROP USER auth007" >/dev/null 2>&1
+  TS "DROP USER auth007" >/dev/null 2>&1
   local o
-  o=$(T "CREATE USER auth007 'NoSpecial123456'")
+  o=$(TS "CREATE USER auth007 'NoSpecial123456'")
   assert_err "$o" "缺特殊字符应被拒"
   assert_code "$o" "820" "缺特殊字符应返回 820"
-  o=$(T "CREATE USER auth007 'NoDigit@abcdefg'")
+  o=$(TS "CREATE USER auth007 'NoDigit@abcdefg'")
   assert_err "$o" "缺数字应被拒"
-  o=$(T "CREATE USER auth007 'noupper@123456'")
+  o=$(TS "CREATE USER auth007 'noupper@123456'")
   assert_err "$o" "缺大写应被拒"
-  o=$(T "CREATE USER auth007 'Short@12345'")
+  o=$(TS "CREATE USER auth007 'Short@12345'")
   assert_err "$o" "长度不足 12 应被拒"
   assert_contains "$o" "length" "短密码应提示长度不足"
-  o=$(T "CREATE USER auth007 'Good@1234567'")
+  o=$(TS "CREATE USER auth007 'Good@1234567'")
   assert_ok "$o" "长度>=12 且四类字符齐全应通过"
-  T "DROP USER auth007" >/dev/null 2>&1
+  TS "DROP USER auth007" >/dev/null 2>&1
 }
 
 case_AUTH008() {
@@ -80,44 +80,44 @@ case_AUTH008() {
   T "CREATE DATABASE root.auth008db" >/dev/null
   T "CREATE TIMESERIES root.auth008db.d1.s1 INT32" >/dev/null
   T "INSERT INTO root.auth008db.d1(time,s1) VALUES(1,1)" >/dev/null
-  T "DROP USER auth008" >/dev/null 2>&1
-  T "CREATE USER auth008 'Auth008@12345'" >/dev/null
+  TS "DROP USER auth008" >/dev/null 2>&1
+  TS "CREATE USER auth008 'Auth008@12345'" >/dev/null
   local o
   o=$(L auth008 'Auth008@12345' "select s1 from root.auth008db.d1")
   echo "$o" | grep -q "Empty set" || fail "未授权用户应查不到数据（期望 Empty set，实际 $(echo "$o" | sed -n '2p')）"
-  T "GRANT READ ON root.auth008db.** TO USER auth008" >/dev/null 2>&1
-  sleep 2
+  TS "GRANT READ ON root.auth008db.** TO USER auth008" >/dev/null 2>&1
+  sleep 35   # author_cache_expire_time=30s，授权后需等缓存过期
   o=$(L auth008 'Auth008@12345' "select s1 from root.auth008db.d1")
   assert_contains "$o" "1" "授权后应可读"
-  T "REVOKE READ ON root.auth008db.** FROM USER auth008" >/dev/null 2>&1
-  sleep 2
+  TS "REVOKE READ ON root.auth008db.** FROM USER auth008" >/dev/null 2>&1
+  sleep 35
   o=$(L auth008 'Auth008@12345' "select s1 from root.auth008db.d1")
   echo "$o" | grep -q "Empty set" || fail "回收权限后应查不到数据"
 }
 
 case_AUTH009() {
   local o
-  o=$(T "LIST USER")
+  o=$(TS "LIST USER")
   assert_ok "$o" "LIST USER 应可执行"
   echo "$o" | grep -qiE "password|hash|sha|md5" && fail "LIST USER 暴露了密码相关字段"
 }
 
 case_AUTH010() {
   # 关闭强密码策略后，弱密码应可设置；随后恢复
-  T "SET CONFIGURATION 'enforce_strong_password'='false'" >/dev/null 2>&1
+  TS "SET CONFIGURATION 'enforce_strong_password'='false'" >/dev/null 2>&1
   sleep 2
-  T "DROP USER auth010" >/dev/null 2>&1
+  TS "DROP USER auth010" >/dev/null 2>&1
   local o
-  o=$(T "CREATE USER auth010 'weakpassword'")
+  o=$(TS "CREATE USER auth010 'weakpassword'")
   assert_ok "$o" "关闭强密码策略后弱密码应可设置"
   o=$(L auth010 'weakpassword')
   assert_ok "$o" "弱密码用户应可登录"
-  T "SET CONFIGURATION 'enforce_strong_password'='true'" >/dev/null 2>&1
+  TS "SET CONFIGURATION 'enforce_strong_password'='true'" >/dev/null 2>&1
   sleep 2
-  T "DROP USER auth010" >/dev/null 2>&1
-  o=$(T "CREATE USER auth010 'weakpassword'")
+  TS "DROP USER auth010" >/dev/null 2>&1
+  o=$(TS "CREATE USER auth010 'weakpassword'")
   assert_err "$o" "恢复策略后弱密码应再次被拒"
-  T "DROP USER auth010" >/dev/null 2>&1
+  TS "DROP USER auth010" >/dev/null 2>&1
 }
 
 CASES+=(

@@ -4,39 +4,39 @@
 case_AUTH011() {
   # 密码有效期配置可下发；未配置(0)时不应阻止登录
   local o
-  o=$(T "SET CONFIGURATION 'password_expiration_days'='30'")
+  o=$(TS "SET CONFIGURATION 'password_expiration_days'='30'")
   assert_ok "$o" "password_expiration_days 应可下发"
-  o=$(L root "$PW")
+  o=$(L "$SYSADMIN" "$PW")
   assert_ok "$o" "配置有效期后管理员仍可登录"
-  o=$(T "SET CONFIGURATION 'password_expiration_days'='0'")
+  o=$(TS "SET CONFIGURATION 'password_expiration_days'='0'")
   assert_ok "$o" "password_expiration_days 应可复位为 0"
 }
 
 case_AUTH012() {
   # 历史口令不可复用：配置 >0 后改回旧密码应被拒
-  T "SET CONFIGURATION 'password_reuse_interval_days'='30'" >/dev/null 2>&1
+  TS "SET CONFIGURATION 'password_reuse_interval_days'='30'" >/dev/null 2>&1
   sleep 2
-  T "DROP USER auth012" >/dev/null 2>&1
-  T "CREATE USER auth012 'Auth012@12345'" >/dev/null
-  T "ALTER USER auth012 SET PASSWORD 'Auth012@54321'" >/dev/null
+  TS "DROP USER auth012" >/dev/null 2>&1
+  TS "CREATE USER auth012 'Auth012@12345'" >/dev/null
+  TS "ALTER USER auth012 SET PASSWORD 'Auth012@54321'" >/dev/null
   local o
-  o=$(T "ALTER USER auth012 SET PASSWORD 'Auth012@12345'")
+  o=$(TS "ALTER USER auth012 SET PASSWORD 'Auth012@12345'")
   echo "  改回旧密码: $(echo "$o" | head -1)"
   echo "$o" | grep -qE "820|821|reuse|history" || echo "  NOTE: 未拒绝改回旧密码，需对照需求 g) 确认实现范围"
   o=$(L auth012 'Auth012@54321')
   assert_ok "$o" "当前密码仍应可登录"
-  T "SET CONFIGURATION 'password_reuse_interval_days'='0'" >/dev/null 2>&1
-  T "DROP USER auth012" >/dev/null 2>&1
+  TS "SET CONFIGURATION 'password_reuse_interval_days'='0'" >/dev/null 2>&1
+  TS "DROP USER auth012" >/dev/null 2>&1
 }
 
 case_AUTH013() {
   # 陈旧密码提示：password_stale_warning_days 可配置（时间型提示无法在秒级验证，验证配置生效且不影响登录）
   local o
-  o=$(T "SET CONFIGURATION 'password_stale_warning_days'='1'")
+  o=$(TS "SET CONFIGURATION 'password_stale_warning_days'='1'")
   assert_ok "$o" "password_stale_warning_days 应可下发"
-  o=$(L root "$PW")
+  o=$(L "$SYSADMIN" "$PW")
   assert_ok "$o" "开启陈旧提示后登录仍应成功"
-  T "SET CONFIGURATION 'password_stale_warning_days'='30'" >/dev/null 2>&1
+  TS "SET CONFIGURATION 'password_stale_warning_days'='30'" >/dev/null 2>&1
 }
 
 case_AUTH014() {
@@ -62,7 +62,7 @@ case_AUTH014() {
   done
   log_mark_all >/dev/null 2>&1
   for i in $(seq 1 90); do
-    L root "$PW" "show databases" >/dev/null 2>&1
+    L "$SYSADMIN" "$PW" "show databases" >/dev/null 2>&1
     $CLI -h ${DN_LIST#* } -p 6667 -u root -pw "$PW" -e "show databases" >/dev/null 2>&1
     sleep 0.4
   done
@@ -93,28 +93,28 @@ case_AUTH014() {
 
 case_AUTH015() {
   # 用户重命名后旧名不可登录、新名可登录
-  T "DROP USER auth015old" >/dev/null 2>&1; T "DROP USER auth015new" >/dev/null 2>&1
-  T "CREATE USER auth015old 'Auth015@12345'" >/dev/null
+  TS "DROP USER auth015old" >/dev/null 2>&1; T "DROP USER auth015new" >/dev/null 2>&1
+  TS "CREATE USER auth015old 'Auth015@12345'" >/dev/null
   local o
-  o=$(T "ALTER USER auth015old RENAME TO auth015new")
+  o=$(TS "ALTER USER auth015old RENAME TO auth015new")
   assert_ok "$o" "用户重命名应成功"
   o=$(L auth015old 'Auth015@12345')
   assert_err "$o" "旧用户名应无法登录"
   o=$(L auth015new 'Auth015@12345')
   assert_ok "$o" "新用户名应可登录"
-  T "DROP USER auth015new" >/dev/null 2>&1
+  TS "DROP USER auth015new" >/dev/null 2>&1
 }
 
 case_AUTH016() {
   # 会话数限制：MAX_SESSION_PER_USER 可设置并生效（超出时报错）
-  T "DROP USER auth016" >/dev/null 2>&1
-  T "CREATE USER auth016 'Auth016@12345'" >/dev/null
+  TS "DROP USER auth016" >/dev/null 2>&1
+  TS "CREATE USER auth016 'Auth016@12345'" >/dev/null
   local o
-  o=$(T "ALTER USER auth016 SET MAX_SESSION_PER_USER 1")
+  o=$(TS "ALTER USER auth016 SET MAX_SESSION_PER_USER 1")
   assert_ok "$o" "设置最大会话数应成功"
-  o=$(T "LIST USER")
+  o=$(TS "LIST USER")
   echo "$o" | grep -q "auth016" || fail "LIST USER 未列出新建用户"
-  T "DROP USER auth016" >/dev/null 2>&1
+  TS "DROP USER auth016" >/dev/null 2>&1
 }
 
 CASES+=(

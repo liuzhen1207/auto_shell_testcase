@@ -3,7 +3,7 @@
 # usage: suite_auth.sh [case-id ...]   （不带参数跑全部）
 set -u
 BASE=${BASE:-$(cd "$(dirname "$0")/.." && pwd)}
-[ -f "$BASE/conf/env.conf" ] && . "$BASE/conf/env.conf"
+[ -f "$BASE/scripts/env.conf" ] && . "$BASE/scripts/env.conf"
 NEW=${NEW:-v20121rc12_1027_c05111d}
 export NEW
 
@@ -12,7 +12,7 @@ mkdir -p "$RESULTS"
 RES=$RESULTS/results.tsv
 printf 'id\tfeature\ttype\tverdict\tfails\terrs\tdur_s\tdetail\n' > "$RES"
 
-. $BASE/lib/lib_auth.sh
+. $BASE/scripts/lib_auth.sh
 
 declare -a CASES=()
 for f in $BASE/cases/*.sh; do . "$f"; done
@@ -26,6 +26,15 @@ for entry in "${CASES[@]}"; do
     match=0
     for f in $FILTER; do case "$id" in *"$f"*) match=1;; esac; done
     [ "$match" = "1" ] || continue
+  fi
+  # 模式过滤：三权分立专项仅在 MODE=separation 下执行；root 豁免用例仅在 normal 下有意义
+  if [ "${MODE:-normal}" != "separation" ] && [ "$feature" = "三权分立" ]; then
+    echo "[$(date +%T)] skip $id（三权分立专项，仅 separation 模式执行）"
+    continue
+  fi
+  if [ "${MODE:-normal}" = "separation" ] && [ "$id" = "AUTH-026" ]; then
+    echo "[$(date +%T)] skip $id（root 豁免用例在 separation 模式下无意义）"
+    continue
   fi
   echo "[$(date +%T)] ===== $id | $feature | $ctype | $desc"
   CASE_FAILS=0; CASE_MSGS=""

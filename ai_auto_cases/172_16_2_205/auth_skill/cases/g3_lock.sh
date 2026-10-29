@@ -2,8 +2,8 @@
 # 依据：V2.0.7.1 防止口令暴力破解-需求分析/技术设计、客户端隐去明文密码、连接失败不返回 IP 端口
 
 case_AUTH017() {
-  T "DROP USER auth017" >/dev/null 2>&1
-  T "CREATE USER auth017 'Auth017@12345'" >/dev/null
+  TS "DROP USER auth017" >/dev/null 2>&1
+  TS "CREATE USER auth017 'Auth017@12345'" >/dev/null
   local i o
   for i in 1 2 3 4 5; do
     o=$(L auth017 "Bad@$i")
@@ -16,8 +16,8 @@ case_AUTH017() {
 
 case_AUTH018() {
   # 锁定期间换一个用户（不同用户、同一 IP）验证是否为 IP 级限制
-  T "DROP USER auth018" >/dev/null 2>&1
-  T "CREATE USER auth018 'Auth018@12345'" >/dev/null 2>&1 || echo "  NOTE: 建用户也受影响（IP 已锁）"
+  TS "DROP USER auth018" >/dev/null 2>&1
+  TS "CREATE USER auth018 'Auth018@12345'" >/dev/null 2>&1 || echo "  NOTE: 建用户也受影响（IP 已锁）"
   local o
   o=$(L auth018 'Auth018@12345')
   echo "  other user during lock -> $(echo "$o" | head -1 | cut -c1-100)"
@@ -27,7 +27,7 @@ case_AUTH018() {
 case_AUTH019() {
   # 手动解锁语句可执行（ALTER USER ... ACCOUNT UNLOCK）
   local o
-  o=$(T "ALTER USER auth017 ACCOUNT UNLOCK")
+  o=$(TS "ALTER USER auth017 ACCOUNT UNLOCK")
   assert_ok "$o" "ALTER USER ... ACCOUNT UNLOCK 应可执行"
   o=$(L auth017 'Auth017@12345')
   echo "  after unlock -> $(echo "$o" | head -1 | cut -c1-100)"
@@ -40,8 +40,8 @@ case_AUTH019() {
 
 case_AUTH020() {
   # 重启 DN 后锁定状态应清除（内存计数）：自带造锁步骤，保证可独立执行
-  T "DROP USER auth020" >/dev/null 2>&1
-  T "CREATE USER auth020 'Auth020@12345'" >/dev/null 2>&1
+  TS "DROP USER auth020" >/dev/null 2>&1
+  TS "CREATE USER auth020 'Auth020@12345'" >/dev/null 2>&1
   local i o
   for i in 1 2 3 4 5; do L auth020 "Bad@$i" >/dev/null 2>&1; done
   o=$(L auth020 'Auth020@12345')
@@ -53,7 +53,7 @@ case_AUTH020() {
   o=$(L auth020 'Auth020@12345')
   echo "  after DN restart -> $(echo "$o" | head -1 | cut -c1-90)"
   assert_ok "$o" "重启 DN 后锁定应解除，正确密码可登录"
-  T "DROP USER auth020" >/dev/null 2>&1
+  TS "DROP USER auth020" >/dev/null 2>&1
 }
 
 case_AUTH021() {
@@ -68,7 +68,7 @@ case_AUTH021() {
 case_AUTH022() {
   # 客户端不回显明文密码（-pw 参数不出现在标准输出的提示里）
   local o
-  o=$($CLI -h 172.16.2.2 -p 6667 -u root -pw "$PW" -e "show databases" 2>&1)
+  o=$($CLI -h 172.16.2.2 -p 6667 -u "$SYSADMIN" -pw "$PW" -e "show databases" 2>&1)
   assert_ok "$o" "带密码参数登录应成功"
   echo "$o" | grep -q "$PW" && fail "客户端输出中出现了明文密码" || ok "输出中无明文密码"
 }

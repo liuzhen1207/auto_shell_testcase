@@ -1,5 +1,7 @@
 # 身份鉴别功能测试报告（2.0.12.1 / c05111d）
 
+> 关联缺陷：**[TDB-896](https://plm.infra.timecho.com/iterations?productId=1&itemId=1493)**（DataNode 启动窗口内首次登录误报 ERROR + TimeoutException 堆栈；已登记，待修复后复验）
+
 ## 1. 环境与版本
 
 | 项目 | 内容 |
@@ -111,3 +113,40 @@ auth_v20121_c05111d/
 ├── records/   feishu/（16 篇需求/设计/测试文档原文）
 └── results/   （运行产物，不入库）
 ```
+
+## 11. 追加：需求点覆盖补齐 + 三权分立模式（2026-10-29 下午）
+
+### 11.1 新增用例（补覆盖缺口）
+
+| 用例 | 覆盖需求点 | 结果 |
+| --- | --- | --- |
+| AUTH-023 | 强密码复杂度 b（缺小写字母应被拒） | PASS |
+| AUTH-024 | 强密码需求 e（密码不能等于用户名） | PASS，但实测**未拒绝**（观察项 OBS-6） |
+| AUTH-025 | 强密码需求 a 的“最大长度” | PASS，244 字符未被拒（观察项 OBS-5） |
+| AUTH-026 | 防暴力破解的**特权账户豁免**（文档：root 与三权分立后的安全管理员本机豁免） | **FAIL**：root 连续 6 次错误后仍被锁 822（观察项 OBS-9） |
+| AUTH-027 | 空密码 / 全空格密码应被拒 | PASS |
+| AUTH-030~036 | 三权分立专项 7 条 | 见 §11.3 |
+
+### 11.2 两模式执行结果
+
+| 模式 | 用例数 | PASS | FAIL |
+| --- | --- | --- | --- |
+| normal（root） | 27（三权分立 7 条跳过） | 25 | 2（AUTH-014 已知缺陷、AUTH-026 root 未豁免） |
+| separation（三权分立） | 33（AUTH-026 跳过） | 29 | 4（AUTH-014、AUTH-008、AUTH-035、AUTH-019） |
+
+### 11.3 三权分立模式要点（实测）
+
+1. 开启方式：`SET CONFIGURATION 'enable_separation_of_powers'='true'`，**热生效**；开启后 root 立即被拒登录（803）；
+2. 三个管理员 `sys_admin` / `security_admin` / `audit_admin` 自动存在，默认密码 `TimechoDB@2021`；
+3. 职责分离实测：只有 `security_admin` 能建用户；`sys_admin`/`audit_admin` 建用户返回 803；`sys_admin` 无 SYSTEM 配置权限；
+4. **无法通过 SQL 关闭**：`sys_admin` 返回 `803 No permission to turn off the separation of powers mode`，security/audit 返回无 SYSTEM 权限；只能改配置文件后重启（观察项 OBS-12）；
+5. 三条待研发确认（详见 `coverage_matrix.md` §三）：
+   - OBS-10：三权分立下 `security_admin` 授权后普通用户仍读不到数据（AUTH-008/AUTH-035，normal 模式同语句可读）→ **疑似缺陷**；
+   - OBS-11：三权分立下 `ALTER USER ... ACCOUNT UNLOCK` 返回 701 Unsupported（AUTH-019）；
+   - OBS-12：缺少官方关闭路径说明。
+
+### 11.4 未自动化需求点（3 项）
+
+密码真实过期后拒绝登录（需跨天/改时钟）、锁定自动解锁（restart 生效 + 默认 10 分钟）、已有连接不受锁定影响（需长连接）。建议手工或专项场景覆盖。
+
+> 完整覆盖矩阵见 `coverage_matrix.md`（29/32 需求点已自动化）。
