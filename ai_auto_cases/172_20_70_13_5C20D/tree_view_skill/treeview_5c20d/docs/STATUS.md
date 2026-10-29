@@ -95,6 +95,8 @@ FAIL 时的日志备份也覆盖两端（`run_pipe_case.sh`）。
 `TV-PIPE-04` 功能 ok（`all` 不同步视图），FAIL 因**新缺陷 TV-D6**（接收端 WARN）；
 其余在 `queue_pipe2.sh` 复跑（修了 `show pipes` 方言、PIPE-08 行数断言、`load_config` 导入）。
 
-**新缺陷 TV-D6（P3）**：pipe 接收端 `createSchemaSnapshotDatabaseIfNecessary`
-建库语句漏了 `setEnablePrintExceptionLog(false)`，使"库已存在"的**幂等**情形仍打 WARN（501），
-而同文件另一条建库路径已静默。报告：`docs/DEFECT_TV_D6_pipe_receiver_create_db_warn.md`。
+**TV-D6（P3）→ 已由上游修复**：pipe 接收端 `createSchemaSnapshotDatabaseIfNecessary`
+建库语句漏了 `setEnablePrintExceptionLog(false)`，使"库已存在"的**幂等**情形仍打 WARN（501）。
+上游 [PR #19054](https://github.com/apache/iotdb/pull/19054) 已按同一位置补齐（open，未合并）；
+**不单独提 PLM**，以用例 `TV-PIPE-04` 作为回归验证点（含该修复的构建上应转 PASS）。
+报告：`docs/DEFECT_TV_D6_detail.md`。
