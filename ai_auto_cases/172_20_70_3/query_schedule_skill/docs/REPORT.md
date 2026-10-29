@@ -219,3 +219,23 @@ QS_SKIP_CLEAN=1 USE_FRAMEWORK=0 bash cases/qs_02_short_not_blocked.sh
 | 重启后 `show devices` 返回空集（非报错） | 集群就绪 ≠ 元数据可查，实测重启后数十秒内为空 | 用例内改用 `qs_ensure_data`（数据不足则现场造数）；`qs_device_count` 加重试并保留原始输出 |
 | 点数统计读成 0/1 | `count(*)` 按序列返回数千列，输出过大 | 就绪判据改用**设备数**（`show devices` 行数） |
 
+
+### 附：QS-06 的最小验证（2026-10-29 17:01）
+
+为确认"超时未生效"是否属实，单独做了一次最小验证：`query_timeout_threshold=1000`（1 秒），
+`query_thread_count=1`，跑 `select * from root.test.qs_0.**`（201 设备 / 约 600 万点）：
+
+| 检查项 | 结果 |
+|---|---|
+| 5 个 DN 的 conf 值 | 均为 `1000`（确认写入生效） |
+| 查询结果 | 跑满 90s（被外部 timeout 掐断，rc=124），**未收到超时错误** |
+| 全 5 台 DN 的 `DriverTaskTimeout` 日志条数 | **0**（Sentinel 线程从未记录超时） |
+
+**源码线索**：`DriverScheduler:206` 是
+`new DriverTask(driver, timeOut > 0 ? timeOut : QUERY_TIMEOUT_MS, ...)`，
+即超时按**每次提交的 DriverTask** 计。流式 `select *` 的每个子任务都很快让出时间片（200ms），
+可能永远不触发单任务 DDL —— 这与"长查询必须被整体超时中止"的朴素理解不同。
+
+**结论：不确定是缺陷。** 需要研发确认 `query_timeout_threshold` 的语义：
+是按单个 DriverTask 计，还是按整条查询计；以及什么场景下 Sentinel 才会触发。
+QS-06 已改为"配置生效 + 行为观测"，不再对该行为直接判失败。
