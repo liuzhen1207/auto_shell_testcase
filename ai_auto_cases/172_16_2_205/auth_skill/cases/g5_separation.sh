@@ -101,7 +101,7 @@ CASES+=(
 "AUTH-031|三权分立|正向|sys_admin/security_admin/audit_admin 三账号均可登录|case_AUTH031"
 "AUTH-032|三权分立|正向|职责分离：仅 security_admin 可建用户|case_AUTH032"
 "AUTH-033|三权分立|边界|数据面：sys_admin 可读写，security_admin 不应能读业务数据|case_AUTH033"
-"AUTH-034|三权分立|边界|sys_admin 可改配置但不能关闭三权分立|case_AUTH034"
+"AUTH-034|三权分立|边界|三权分立不可由打开切回关闭（需求明确，803 为预期）|case_AUTH034"
 "AUTH-035|三权分立|正向|三权分立下普通用户按授权访问|case_AUTH035"
 "AUTH-036|三权分立|边界|管理权限不可带 grant option（803）|case_AUTH036"
 )

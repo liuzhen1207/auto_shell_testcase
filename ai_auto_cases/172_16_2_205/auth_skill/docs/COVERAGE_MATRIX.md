@@ -52,13 +52,13 @@
 | normal（root） | 27（三权分立 7 条跳过） | 25 | 2 | AUTH-014（TDB-896 已知缺陷）、AUTH-026（root 未豁免锁定） |
 | separation（三权分立） | 33（AUTH-026 跳过） | 29 | 4 | AUTH-014（已知缺陷）、AUTH-008/AUTH-035（授权不生效）、AUTH-019（UNLOCK 701） |
 
-## 三、separation 模式下需要研发确认的 3 项
+## 三、separation 模式下需要研发确认的 2 项（OBS-12 已确认为需求行为）
 
 | 编号 | 现象 | 证据 | 判断 |
 | --- | --- | --- | --- |
 | OBS-10 | 三权分立下 `security_admin` 执行 `GRANT READ ON root.x.** TO USER u` 成功后，用户仍查不到数据（空集） | AUTH-008（normal 下同样语句可读）、AUTH-035 | **疑似缺陷**：授权在三权分立下未生效；或需额外授权（READ_SCHEMA/其它），需研发确认预期 |
 | OBS-11 | separation 下 `ALTER USER u ACCOUNT UNLOCK` 返回 `701 Unsupported` | AUTH-019 | 需确认：三权分立下是否禁用该语句；若禁用，锁定后如何解锁（管理员也无入口） |
-| OBS-12 | 三权分立**无法通过 SQL 关闭**：sys_admin 返回 `803 No permission to turn off the separation of powers mode`；security/audit 返回无 SYSTEM 权限 | AUTH-034 | 设计上可能刻意为之（防误关），但缺少官方关闭路径说明；目前只能改配置 + 重启 |
+| ~~OBS-12~~ | 三权分立无法通过 SQL 关闭 | AUTH-034 | **已确认符合需求**：需求文档《V2.0.7.1-安全权限管理-三权分立-需求分析》明确“**三权分立不允许由打开到关闭的切换**”，故 sys_admin 返回 803 是预期行为，不计问题；测试环境恢复方式为改配置 + 重启（运维手段，非 SQL 能力） |
 
 ## 四、未自动化的需求点（3 项，需人工/环境配合）
 

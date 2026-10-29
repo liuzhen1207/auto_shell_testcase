@@ -139,11 +139,11 @@ auth_v20121_c05111d/
 1. 开启方式：`SET CONFIGURATION 'enable_separation_of_powers'='true'`，**热生效**；开启后 root 立即被拒登录（803）；
 2. 三个管理员 `sys_admin` / `security_admin` / `audit_admin` 自动存在，默认密码 `TimechoDB@2021`；
 3. 职责分离实测：只有 `security_admin` 能建用户；`sys_admin`/`audit_admin` 建用户返回 803；`sys_admin` 无 SYSTEM 配置权限；
-4. **无法通过 SQL 关闭**：`sys_admin` 返回 `803 No permission to turn off the separation of powers mode`，security/audit 返回无 SYSTEM 权限；只能改配置文件后重启（观察项 OBS-12）；
+4. **无法通过 SQL 关闭——符合需求**：需求文档《V2.0.7.1-安全模块-权限管理-三权分立-需求分析》明确“三权分立不允许由打开到关闭的切换”，因此 `sys_admin` 返回 `803 No permission to turn off the separation of powers mode` 是预期行为（原 OBS-12 撤销）；测试环境恢复方式为改配置文件 + 重启（运维手段）；
 5. 三条待研发确认（详见 `coverage_matrix.md` §三）：
    - OBS-10：三权分立下 `security_admin` 授权后普通用户仍读不到数据（AUTH-008/AUTH-035，normal 模式同语句可读）→ **疑似缺陷**；
    - OBS-11：三权分立下 `ALTER USER ... ACCOUNT UNLOCK` 返回 701 Unsupported（AUTH-019）；
-   - OBS-12：缺少官方关闭路径说明。
+   
 
 ### 11.4 未自动化需求点（3 项）
 
