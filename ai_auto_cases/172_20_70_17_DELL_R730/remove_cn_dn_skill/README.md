@@ -9,8 +9,7 @@
 |---|---|
 | `scripts/rcdn.sh` | 入口（`run` / `list-cases` / `prepare` / `deploy` / `doctor` / `selftest` …） |
 | `scripts/rcdn/` | 框架与 33 条用例的实现（`cases.py` 里的 `extras` 分支即专项用例） |
-| `cases/remove_cases.tsv` | 本环境矩阵（33 条，默认用这个） |
-| `cases/remove_cases_generic.tsv` | 通用矩阵（其他版本复用） |
+| `cases/remove_cases.tsv` | 用例矩阵（33 条，唯一来源；其他版本直接复用本文件，差异化放在 `conf/cluster.*.conf`） |
 | `conf/cluster.conf` | 本环境配置（**唯一需要改的文件**：`HOSTS`/`DB_DIR`/RF/协议） |
 | `conf/cluster.{bigobj,manyobj,tdb861,matrix}.conf` | OBJECT 大对象/海量小文件/TDB-861 探针与全量矩阵的专用配置 |
 | `tools/run_regression.sh` | 一键回归（`all` 会依次跑矩阵 + 三个专用配置 + 探针） |
