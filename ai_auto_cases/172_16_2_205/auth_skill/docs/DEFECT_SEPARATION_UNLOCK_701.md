@@ -62,7 +62,18 @@ start-cli.sh -h 172.16.2.2 -p 6667 -u security_admin -pw 'TimechoDB@2021' \
 1. **权限检查已经通过**（否则会像 sys_admin 一样返回 803 缺 SECURITY）；
 2. 失败发生在**执行阶段**：语句被解析、进入授权流程后，严格鉴权路径未处理 `ACCOUNT_UNLOCK` 这个 author type，返回语义错误（701 = `SEMANTIC_ERROR`）。
 
-**对照组实验（同一集群、normal 模式）**：
+****写法矩阵（security_admin 执行，三权分立开启）**：
+
+| 写法 | 结果 |
+| --- | --- |
+| `ALTER USER u @ '172.16.2.205' ACCOUNT UNLOCK`（IP 级，TC-01652 写法） | ❌ `701: Unsupported author type.` |
+| `ALTER USER u @ '10.0.0.9' ACCOUNT UNLOCK`（任意 IP） | ❌ `701: Unsupported author type.` |
+| `ALTER USER u ACCOUNT UNLOCK`（全局锁，TC-01654 写法） | ❌ `701: Unsupported author type.` |
+| `sys_admin` 执行任意一种 | ❌ `803`（缺 SECURITY，属三权设计） |
+
+→ 三种写法全部失败，说明问题不在语法/参数，而在三权分立鉴权路径未实现 `ACCOUNT_UNLOCK` 这一 author type。
+
+对照组实验（同一集群、normal 模式）**：
 
 | 执行者 | 结果 |
 | --- | --- |
@@ -93,7 +104,7 @@ start-cli.sh -h 172.16.2.2 -p 6667 -u security_admin -pw 'TimechoDB@2021' \
 
 | 可能差异 | 本次实测 |
 | --- | --- |
-| **带 host 的解锁语法** `ALTER USER u@'172.16.2.205' ACCOUNT UNLOCK` | **本 build 不支持**：`700 ... no viable alternative at input 'alter user unltest@'172.16.2.205''`；`u@"ip"`、`u@ip` 同样报 700。语法文件 `IoTDBSqlParser.g4:1302` 有 `usernameWithRoot (AT host=STRING_LITERAL)?`，但部署版本解析不到，需确认是否 build 与源码不一致 |
+| **带 host 的解锁语法** `ALTER USER u @ '172.16.2.205' ACCOUNT UNLOCK` | **可用，但 `@` 两边必须有空格**（与 TC-01652 用例写法一致）。写成 `u@'ip'`、`u@"ip"`、`u@ip` 都会 700 解析失败——这是语法书写问题，不是缺陷 |
 | 验证时的模式 | 若当时**未开启三权分立**（normal + root），解锁是正常的，本次对照实验也成功——差异只在三权分立 |
 | 验证时的版本 | 若是更早的 2.0.x build，可能是**回归**；建议对比 `AccountUnlock` 相关提交 |
 | 验证时的锁类型 | 本次未依赖"真的锁住"：即使账号未锁定，三权分立下该语句同样返回 701（说明是语句层面的问题，不是锁状态问题） |
