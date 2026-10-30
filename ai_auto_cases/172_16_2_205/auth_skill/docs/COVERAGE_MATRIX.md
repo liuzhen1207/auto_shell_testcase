@@ -33,7 +33,7 @@
 | | 自动解锁（lock time） | — | **未覆盖（默认 10 分钟，超时不可接受；配置项为 restart 生效）** |
 | | 手动解锁 ACCOUNT UNLOCK | AUTH-019 | normal 已覆盖；separation 下返回 701 Unsupported（OBS-8） |
 | | 已有连接不受锁定影响 | — | **未覆盖（CLI 单连接，无法构造长会话）** |
-| | 特权账户豁免（root / security_admin 本机） | AUTH-026 | **已覆盖并 FAIL**：root 连续 6 次错误后仍被锁（822）→ 与文档“特权账户豁免”不符（观察项 OBS-9） |
+| **OBS-9（已确认：非缺陷）** | root 远程连续错误密码后被锁 822 | AUTH-026 | **实现符合需求**：需求 L128 限定「**本机登录的** root 或安全管理员不会因密码错误被锁定」。实测：本机（DN 主机）连续 8 次错误后仍可登录；远程（205）6 次后被锁 822（预期）；远程锁定后本机仍可登录。用例已改为本机场景并 PASS，详见 `docs/OBS9_CONFIRMATION_REPORT.md` |
 | | 不存在的用户反复错误不锁定 | — | **未覆盖（会触发 IP 级计数，风险高）** |
 | 会话管理 | MAX_SESSION_PER_USER 设置 | AUTH-016 | 已覆盖（仅设置，未验证超限拒绝） |
 | 授权 | 未授权不可读 / GRANT / REVOKE | AUTH-008 | normal 已覆盖；**separation 下授权后仍读不到（疑似缺陷，见 §三）** |
@@ -49,8 +49,8 @@
 
 | 模式 | 用例数 | PASS | FAIL | 说明 |
 | --- | --- | --- | --- | --- |
-| normal（root） | 27（三权分立 7 条跳过） | 25 | 2 | AUTH-014（TDB-896 已知缺陷）、AUTH-026（root 未豁免锁定） |
-| separation（三权分立） | 33（AUTH-026 跳过） | 29 | 4 | AUTH-014（已知缺陷）、AUTH-008/AUTH-035（授权不生效）、AUTH-019（UNLOCK 701） |
+| normal（root） | 27（三权分立 7 条跳过） | 25 | 2 | AUTH-014（TDB-896 已知缺陷）、AUTH-026（本机豁免已确认符合需求，用例改正后转 PASS） |
+| separation（三权分立） | 33（AUTH-026 跳过） | 31 | 2 | AUTH-014（TDB-896）、AUTH-019（TDB-899 UNLOCK 701） |
 
 ## 三、separation 模式下的问题定位（OBS-12 符合需求、OBS-10 为用例误判、OBS-11 确认为缺陷）
 

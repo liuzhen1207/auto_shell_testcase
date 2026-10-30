@@ -40,12 +40,23 @@ case_AUTH025() {
 }
 
 case_AUTH026() {
-  # 特权账户豁免：root 连续多次错误密码后仍可登录（文档：root 与三权分立后的安全管理员本机豁免）
-  local i o
-  for i in 1 2 3 4 5 6; do L root "Bad@$i" >/dev/null 2>&1; done
-  o=$(L root "$PW")
-  echo "  root after 6 bad attempts -> $(echo "$o" | head -2 | tr '\n' ' ' | cut -c1-100)"
-  assert_ok "$o" "root 应豁免暴力破解锁定（文档明确特权账户豁免）"
+  # 需求（防止口令暴力破解-需求分析 L128）：**本机登录的 root / 安全管理员**不会因密码输入错误被锁定。
+  # 做法：在 DataNode 主机本地执行 CLI（源 IP 即该主机），连续 8 次错误后验证仍可登录。
+  # 注：远程登录的 root 会被锁定（822）——这是需求写明“仅本机豁免”的预期行为，不在本条断言内。
+  local ip=${DN_LIST%% *}
+  local script='
+NEW="$1"; IP="$2"; PW="$3"
+for _d in /data1/iotdb /data2/iotdb /data/iotdb; do
+  [ -x "$_d/$NEW/sbin/start-cli.sh" ] && CLI="$_d/$NEW/sbin/start-cli.sh" && break
+done
+[ -z "${CLI:-}" ] && { echo "NO_CLI"; exit 0; }
+for i in $(seq 1 8); do $CLI -h "$IP" -p 6667 -u root -pw "WrongLocal@9" -e "show cluster" >/dev/null 2>&1; done
+$CLI -h "$IP" -p 6667 -u root -pw "$PW" -e "show cluster" 2>&1 | head -2
+'
+  local out
+  out=$(ssh -o StrictHostKeyChecking=no root@$ip "bash -s -- '$NEW' '$ip' '$PW'" <<< "$script" 2>/dev/null)
+  echo "  本机($ip) 连续 8 次错误后 -> $(echo "$out" | head -1 | cut -c1-90)"
+  assert_ok "$out" "本机登录的 root 应豁免锁定（需求 L128）"
 }
 
 case_AUTH027() {
