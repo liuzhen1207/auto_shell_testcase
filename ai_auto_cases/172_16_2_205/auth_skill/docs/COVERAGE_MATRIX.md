@@ -33,7 +33,7 @@
 | | 自动解锁（lock time） | — | **未覆盖（默认 10 分钟，超时不可接受；配置项为 restart 生效）** |
 | | 手动解锁 ACCOUNT UNLOCK | AUTH-019 | normal 已覆盖；separation 下返回 701 Unsupported（OBS-8） |
 | | 已有连接不受锁定影响 | — | **未覆盖（CLI 单连接，无法构造长会话）** |
-| **OBS-9（已确认：非缺陷）** | root 远程连续错误密码后被锁 822 | AUTH-026 | **实现符合需求**：需求 L128 限定「**本机登录的** root 或安全管理员不会因密码错误被锁定」。实测：本机（DN 主机）连续 8 次错误后仍可登录；远程（205）6 次后被锁 822（预期）；远程锁定后本机仍可登录。用例已改为本机场景并 PASS，详见 `docs/OBS9_CONFIRMATION_REPORT.md` |
+| **OBS-9（已确认：非缺陷）** | root 远程连续错误密码后被锁 822 | AUTH-026 | **实现符合需求**：需求 L128 限定「**本机登录的** root 或安全管理员不会因密码错误被锁定」。实测：本机（DN 主机）连续 8 次错误后仍可登录；远程（205）6 次后被锁 822（预期）；远程锁定后本机仍可登录；锁定粒度为「用户+来源IP+DN」，换来源或换 DN 均不受影响。用例已改为本机场景并 PASS，详见 `docs/OBS9_CONFIRMATION_REPORT.md` 与 `docs/DESIGN_CONFIRMATION_Q1_LOCK_SCOPE.md` |
 | | 不存在的用户反复错误不锁定 | — | **未覆盖（会触发 IP 级计数，风险高）** |
 | 会话管理 | MAX_SESSION_PER_USER 设置 | AUTH-016 | 已覆盖（仅设置，未验证超限拒绝） |
 | 授权 | 未授权不可读 / GRANT / REVOKE | AUTH-008 | normal 已覆盖；**separation 下授权后仍读不到（疑似缺陷，见 §三）** |
