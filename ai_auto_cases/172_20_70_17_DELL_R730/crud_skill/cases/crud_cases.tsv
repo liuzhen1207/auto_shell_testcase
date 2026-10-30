@@ -1,0 +1,75 @@
+P0  crud_insert_single_tree          tree  写入基础   insert 单行写入并回读一致
+P0  crud_insert_single_table         table 写入基础   insert 单行写入（表模型）并回读一致
+P0  crud_insert_multi_rows           tree  写入基础   同设备多行批量 insert 回读一致
+P0  crud_tablet_batch_tree           tree  写入基础   Session Tablet 批量写入（含多设备）回读一致
+P0  crud_tablet_batch_table          table 写入基础   表模型 Tablet 批量写入回读一致
+P0  crud_insert_null_field_tree      tree  写入基础   NULL 字段写入：缺测点语义与查询可见性
+P0  crud_insert_null_object_table    table 写入基础   OBJECT/Binary 列写 NULL（RC5 上有 NPE 风险点，重点用例）
+P0  crud_insert_all_types_tree       tree  写入基础   BOOLEAN/INT32/INT64/FLOAT/DOUBLE/TEXT 全类型往返
+P0  crud_insert_all_types_table      table 写入基础   table 全类型（含 OBJECT/TIMESTAMP/DATE）往返
+P1  crud_timestamp_precision         tree  写入基础   秒/毫秒/微秒/纳秒精度写入与回读
+P1  crud_timestamp_negative          tree  写入基础   负时间戳与 0 时间戳边界
+P1  crud_timestamp_max               tree  写入基础   Long.MAX_VALUE 时间戳边界
+P1  crud_insert_empty_batch          tree  写入基础   0 行批量写入（幂等 / 不报错）
+P0  crud_overwrite_same_ts           tree  覆盖语义   同设备同时间戳重复写入 ⇒ 后写覆盖
+P0  crud_overwrite_partial_cols      table 覆盖语义   部分列覆盖：未给出的列应保留原值
+P1  crud_duplicate_within_batch      tree  覆盖语义   同一批次内重复时间戳的处理
+P0  crud_out_of_order_enabled        tree  乱序写入   enable_ooo=true 时乱序数据可写可查
+P0  crud_out_of_order_disabled       tree  乱序写入   enable_ooo=false 时乱序写入被拒（错误码）
+P1  crud_out_of_order_same_ts        tree  乱序写入   乱序同时间戳与覆盖语义交叉
+P0  crud_aligned_series              tree  写入基础   对齐时间序列写入与查询（ALIGN BY DEVICE）
+P1  crud_aligned_mixed               tree  写入基础   对齐与非对齐序列混写
+P0  crud_schema_auto_create          tree  元数据     无模式写入自动建库/建序列
+P1  crud_schema_auto_create_off      tree  元数据     关闭无模式写入时写未知序列被拒
+P1  crud_insert_missing_db           tree  元数据     写入未创建 database 的行为与错误码
+P1  crud_special_path_chars          tree  元数据     中文/特殊字符/反引号路径写入与查询
+P1  crud_long_path                   tree  元数据   超长路径（长度上限）行为
+P0  crud_type_mismatch               tree  错误处理   类型不匹配写入的报错与数据不受影响
+P1  crud_string_overflow             tree  错误处理   超长 TEXT 写入行为
+P1  crud_nan_inf_values              tree  错误处理   NaN/Infinity 写入与查询表示
+P0  crud_object_column_table         table 写入基础   OBJECT 二进制列写入/回读/查询（RC5 重点）
+P1  crud_huge_batch                  tree  边界     大批量写入（分片/超时）后行数与内容正确
+P0  crud_query_last_row              tree  查询       LAST / 最新值查询
+P0  crud_query_time_range            tree  查询       [start,end) 时间区间查询边界（含端点）
+P1  crud_query_limit_offset          tree  查询     LIMIT/OFFSET、SLIMIT/SOFFSET 组合
+P0  crud_query_aggregation           tree  查询     count/sum/avg/min/max 与空结果语义
+P1  crud_query_group_by_level        tree  查询     GROUP BY LEVEL 分组查询
+P1  crud_query_group_by_time         tree  查询     GROUP BY 时间窗口（含滑动步长）
+P1  crud_query_align_by_device       tree  查询     ALIGN BY DEVICE 多设备对齐输出
+P1  crud_query_expression            tree  查询     表达式/算术/函数查询结果
+P0  crud_query_where_filter          tree  查询     WHERE 数值/文本/时间过滤
+P0  crud_query_null_semantics        table 查询     表模型 NULL 与树模型缺测点的查询差异
+P0  crud_query_object_column         table 查询     OBJECT 列查询与过滤
+P0  crud_query_table_view            table 查询     表视图查询与基表一致性
+P1  crud_query_order_desc            tree  查询     ORDER BY TIME DESC 与分页
+P1  crud_query_cross_db              tree  查询     跨 database 查询
+P1  crud_query_with_ttl              tree  查询     设 TTL 后查询可见性（与 TTL skill 呼应）
+P0  crud_delete_time_range_tree      tree  删除      DELETE 时间区间（树模型）后回读
+P0  crud_delete_time_range_table     table 删除      DELETE 时间区间（表模型）后回读
+P1  crud_delete_device               tree  删除     DELETE DEVICES 设备粒度删除（含元数据）
+P1  crud_delete_database             tree  删除     删库后写入/查询行为
+P1  crud_delete_nonexistent          tree  删除     删除不存在区间/设备的幂等性
+P1  crud_delete_keeps_schema         tree  删除     删数据后元数据保留
+P1  crud_delete_out_of_order         tree  删除     乱序数据的时间区间删除
+P1  crud_delete_object_values        table 删除     OBJECT 列数据删除
+P1  crud_alter_drop_column           table 更新     ALTER TABLE DROP COLUMN 后查询/写入行为
+P1  crud_alter_add_column            table 更新     ALTER TABLE ADD COLUMN 后旧数据查询（补 NULL）
+P0  crud_concurrent_same_device      tree  并发     并发写同一设备：最终行数与内容正确
+P0  crud_concurrent_same_ts          tree  并发     并发写同一时间戳：结果确定且不损坏
+P0  crud_concurrent_delete_insert    tree  并发     删除与写入并发：无异常且语义可解释
+P0  crud_concurrent_delete_query     tree  并发     删除与查询并发：查询不报错/不返回中间态
+P0  crud_consistency_after_restart   tree  一致性   重启后数据与元数据一致
+P0  crud_consistency_wal_replay      tree  一致性   WAL 回放后数据一致（写后立即重启）
+P0  crud_schema_region_group_bootstrap_restart tree 一致性 建组窗口内整体 kill -9、重启后 SchemaRegionGroup 应恢复选主且 schema 读写可用（RATIS-2661 / TDB-372 回归）
+P1  crud_flush_query_equal           tree  一致性   flush 前后查询结果一致
+P1  crud_compaction_query_equal      tree  一致性   合并前后查询结果一致
+P0  crud_replica_read_consistency    tree  一致性   多副本/多节点读一致（data_rf=2）
+P0  crud_regr_tdb442_delete_compaction     tree  回归      TDB-442 删除后的数据在合并后重新出现（关闭 seq/unseq/cross space compaction、inner_compaction_candidate_file_num=2 复现；断言删除后合并不得复活）
+P0  crud_regr_tdb352_object_write_delete    table 回归      TDB-352 高频写入小 Object 且删除旧 Object 时写入变慢/system reject（benchmark 负载下观测写入超时率与延迟，B 级）
+P1  crud_regr_tdb184_query_reserved_size   tree  回归      TDB-184 树模型多设备超时查询导致 reservedSize 持续增长至 max capacity 后查询报错
+P1  crud_regr_tdb423_multi_precision       tree  回归      TDB-423 同一集群可存储不同时间精度（ms/us/ns）并正确回读（描述待补）
+P0  crud_regr_rc5_object_null_npe          table 回归      RC5 发现：表模型 OBJECT 列写 NULL 触发 Binary.getLength() NPE，写入失败（本 skill 运行矩阵的 A 级证据，见 FINDINGS_RC5.md）
+P0  crud_regr_tdb442_combo                 tree  回归      TDB-442 参数组合版：enable_seq/unseq/cross_space_compaction=false + inner_compaction_candidate_file_num=2 下，删除数据经合并不得复活
+P2 crud_ttl_x_crud_delete tree TTL交叉 and delete cross check
+P2 crud_table_delete_granularity table 表模型删除 model delete granularity
+P2 crud_schema_change_write tree Schema变更 change then write

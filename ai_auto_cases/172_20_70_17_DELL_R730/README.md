@@ -7,3 +7,4 @@
 |---|---|---|
 | `remove_cn_dn_skill/` | 摘除 ConfigNode/DataNode、`MIGRATE REGION`、缩容，以及 OBJECT 字段在迁移下的正确性（含单点 4 GiB） | `tools/run_regression.sh` |
 | `proactive_regiongroup_skill/` | RegionGroup 积极扩容（`PROACTIVE` 策略）全量回归：216 例，覆盖默认值/空库/不同 slot 与同 slot 扩容/单设备 50 万测点/资源上限/策略切换/高可用/升级与双协议 | `run_all_proactive.sh` 或 `scripts/pg.sh` |
+| `crud_skill/` | CRUD 语义全量回归（75 例）：树/表模型写入、覆盖与乱序、删除粒度、NULL/OBJECT、查询特性、ALTER、并发、重启/WAL，以及 RATIS-2661/TDB-372 的 SchemaRegionGroup 建组窗口整体 kill -9 恢复 | `tools/run_regression.sh` |
