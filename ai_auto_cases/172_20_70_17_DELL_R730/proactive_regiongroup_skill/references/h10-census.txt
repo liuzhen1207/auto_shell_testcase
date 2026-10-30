@@ -1,0 +1,113 @@
+cases.py:406 [case_smk01_default_policy] schema=min(4, cap_s), data=min(4, cap_d))
+cases.py:408 [case_smk01_default_policy] ctx.api.db_group_num(db, "DATA", dialect="tree") == min(4, cap_d)
+cases.py:409 [case_smk01_default_policy] and min(4, cap_d) > int(ctx.cfg.raw("PG_MIN_DATA_PER_DB") or 2),
+cases.py:441 [case_smk04_tree_distinct_slots] schema=min(index, cap_s), data=min(index, cap_d))
+cases.py:455 [case_smk05_table_distinct_slots] schema=min(index, cap_s), data=min(index, cap_d))
+cases.py:535 [case_dev15_batch_multi_slot] schema=min(3, expected_cap(ctx, "SCHEMA", "table", db)),
+cases.py:536 [case_dev15_batch_multi_slot] data=min(3, cap_d))
+cases.py:553 [case_dev16_batch_existing_plus_new] schema=min(3, expected_cap(ctx, "SCHEMA", "table", db)),
+cases.py:554 [case_dev16_batch_existing_plus_new] data=min(3, expected_cap(ctx, "DATA", "table", db)))
+cases.py:562 [case_obs01_hash_cross_check] devices = device_set(ctx, db, min(5, cap_d) if cap_d > 0 else 5)
+cases.py:637 [case_empty04_drop_one_keeps_other] schema=min(3, expected_cap(ctx, "SCHEMA", "tree", other)),
+cases.py:638 [case_empty04_drop_one_keeps_other] data=min(3, expected_cap(ctx, "DATA", "tree", other)))
+cases.py:666 [case_empty09_multi_db_independent] schema=min(count, expected_cap(ctx, "SCHEMA", "tree", name)),
+cases.py:667 [case_empty09_multi_db_independent] data=min(count, expected_cap(ctx, "DATA", "tree", name)))
+cases.py:769 [case_lim21_table_db_cap] want = min(4, max(b_max[1], cap_d))
+cases_cfg.py:261 [case_dft02_default_schema] schema=min(3, cap_s))
+cases_cfg.py:415 [case_dft12_two_policies_independent] schema=min(6, cap_s), data=min(6, min_d))
+cases_cfg.py:417 [case_dft12_two_policies_independent] f"schema=PROACTIVE ⇒ Schema 组数={_groups(ctx, db, 'SCHEMA')}（期望 min(6, R={cap_s
+cases_dev.py:300 [None] db, "tree", schema=min(1, cap_s), data=min(1, cap_d))
+cases_dev.py:313 [None] schema=min(index, cap_s), data=min(index, cap_d))
+cases_dev.py:315 [None] schema=min(count, cap_s), data=min(count, cap_d))
+cases_dev.py:343 [None] db, "table", schema=min(1, cap_s), data=min(1, cap_d))
+cases_dev.py:350 [None] schema=min(index, cap_s), data=min(index, cap_d))
+cases_dev.py:352 [None] schema=min(count, cap_s), data=min(count, cap_d))
+cases_dev.py:466 [case_dev17_consecutive_numbering] schema=min(kinds, cap_s), data=min(kinds, cap_d))
+cases_dev.py:468 [case_dev17_consecutive_numbering] kinds == len(names) or min(kinds, cap_d) < len(names),
+cases_dev.py:496 [case_dev18_k_gt_r] db, "tree", schema=cap_s, data=min(8, cap_d))
+cases_dev.py:500 [case_dev18_k_gt_r] db, "tree", schema=cap_s, data=min(12, cap_d))
+cases_dev.py:537 [case_dev20_coslot_new_time_partition] schema=min(2, cap_s), data=min(2, cap_d))
+cases_dev.py:545 [case_dev20_coslot_new_time_partition] schema=min(3, cap_s), data=min(3, cap_d))
+cases_dev.py:549 [case_dev20_coslot_new_time_partition] schema=min(3, cap_s), data=min(3, cap_d))
+cases_dev.py:634 [case_dev22_multilevel_device_path] schema=min(1, cap_s), data=min(1, cap_d))
+cases_dev.py:661 [case_dev23_chinese_device_names] schema=min(kinds, cap_s), data=min(kinds, cap_d))
+cases_dev.py:695 [case_dev23_chinese_device_names] db, "tree", schema=min(kinds, cap_s), data=min(kinds, cap_d))
+cases_dev.py:697 [case_dev23_chinese_device_names] ctx.api.db_group_num(db, "DATA", dialect="tree") == min(kinds, cap_d),
+cases_dev.py:727 [case_dev24_table_null_tag] schema=min(1, cap_s), data=min(1, cap_d))
+cases_dev.py:746 [case_dev24_table_null_tag] schema=min(expected, cap_s), data=min(expected, cap_d))
+cases_dev.py:840 [case_obs03_device_vs_database] schema=min(2, cap_s), data=min(cap_d, max(1, min(min_data, partitions))))
+cases_lim.py:439 [case_lim03_fill_to_cap_tree] schema=min(cap_d + 3, cap_s), data=cap_d)
+cases_lim.py:442 [case_lim03_fill_to_cap_tree] schema=min(cap_d + 4, cap_s), data=cap_d)
+cases_lim.py:457 [case_lim04_fill_to_cap_table] schema=min(cap_d + 3, cap_s), data=cap_d)
+cases_lim.py:461 [case_lim04_fill_to_cap_table] schema=min(cap_d + 4, cap_s), data=cap_d)
+cases_lim.py:1009 [case_dis03_partial_available_no_supplement] db, "tree", schema=min(2, cap_s), data=2)
+cases_lim.py:1188 [case_dis07_cn_restart_immediate_write] expected = min(2, cap_d)
+cases_lim.py:1241 [case_rcv01_cn_restart_preserves] expect_groups(ctx, "重启前", db, "tree", schema=min(3, cap_s), data=min(3, cap_d)
+cases_lim.py:1248 [case_rcv01_cn_restart_preserves] _wait_groups(ctx, db, "tree", min(3, cap_s), min(3, cap_d))
+cases_lim.py:1250 [case_rcv01_cn_restart_preserves] schema=min(3, cap_s), data=min(3, cap_d))
+cases_lim.py:1272 [case_rcv02_dn_restart_statuses] expect_groups(ctx, "前置", db, "tree", schema=min(3, cap_s), data=min(3, cap_d))
+cases_lim.py:1312 [case_rcv03_new_slot_after_restart] schema=min(2, cap_s), data=min(2, cap_d))
+cases_lim.py:1319 [case_rcv03_new_slot_after_restart] _wait_groups(ctx, db, "tree", min(2, cap_s), min(2, cap_d))
+cases_lim.py:1321 [case_rcv03_new_slot_after_restart] schema=min(2, cap_s), data=min(2, cap_d))
+cases_lim.py:1354 [case_rcv05_disabled_to_running_no_reclaim] db, "tree", schema=min(2, cap_s), data=2)
+cases_lim.py:1383 [case_rcv05_disabled_to_running_no_reclaim] expect_groups(ctx, "恢复到 Running 后", db, "tree", schema=min(2, cap_s), data=2)
+cases_lim.py:1422 [case_rcv07_leader_change_mapping] expect_groups(ctx, "前置", db, "tree", schema=min(3, cap_s), data=min(3, cap_d))
+cases_lim.py:1456 [case_rcv07_leader_change_mapping] _wait_groups(ctx, db, "tree", min(3, cap_s), min(3, cap_d))
+cases_lim.py:1458 [case_rcv07_leader_change_mapping] schema=min(3, cap_s), data=min(3, cap_d))
+cases_msr.py:440 [None] want = min(env.cap_d, max(min(env.min_d, partitions), k))
+cases_msr.py:455 [None] possible = sorted({min(k, env.cap_d), min(env.min_d, env.cap_d)})
+cases_msr.py:464 [None] schema=min(k, env.cap_s))
+cases_msr.py:479 [case_msr01_tree_1x1] schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:494 [case_msr02_table_1x1] schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:513 [case_msr03_tree_1x10_three_partitions] schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:535 [case_msr04_table_1x10_three_partitions] schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:553 [case_msr04_table_1x10_three_partitions] env.db, env.dialect, schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:576 [case_msr06_table_1x100] schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:599 [case_msr08_table_1x1000] schema=min(1, env.cap_s), data=min(1, env.cap_d))
+cases_msr.py:634 [case_msr08_table_1x1000] _check_schema(ctx, env, "Schema 组只由 slot 数决定（测点数无关）", min(k, env.cap_s),
+cases_msr.py:687 [case_msr13_tree_multi_device_multi_sensor] env.db, env.dialect, schema=min(100, env.cap_s), data=trace.groups)
+cases_msr.py:709 [case_msr14_table_multi_device_multi_sensor] schema=min(100, env.cap_s), data=want)
+cases_msr.py:761 [case_msr16_tree_same_device_partitions_sensors] env.db, env.dialect, schema=min(1, env.cap_s), data=trace.groups)
+cases_msr.py:784 [case_time01_same_slot_new_partition_growth] env.db, env.dialect, schema=min(1, env.cap_s), data=trace.groups)
+cases_msr.py:811 [case_time02_batch_existing_slots_new_partition] expect_groups(ctx, "Schema 组不随时间分区变化", env.db, env.dialect, schema=min(3, env.
+cases_msr.py:839 [case_time03_partition_boundary] schema=min(1, env.cap_s), data=trace.groups)
+cases_msr.py:860 [case_time04_same_slot_across_many_partitions] schema=min(1, env.cap_s), data=trace.groups)
+cases_msr.py:897 [case_time05_new_partition_plus_new_slot] schema=min(k, env.cap_s), data=trace.groups)
+cases_msr.py:918 [case_time06_show_timeslot_matches_partitions] env.db, env.dialect, schema=min(1, env.cap_s), data=trace.groups)
+cases_msr.py:947 [case_time07_count_timeslot_consistency] schema=min(3, env.cap_s), data=trace.groups)
+cases_msr.py:1027 [case_time10_partitions_do_not_grow_unbounded] env.db, env.dialect, schema=min(6, env.cap_s), data=trace.groups)
+cases_msr.py:1043 [case_time11_table_same_tag_new_partition] schema=min(1, env.cap_s), data=trace.groups)
+cases_msr.py:1059 [case_time12_hundred_partitions_single_device] cap_min = min(env.cap_d, env.min_d)
+cases_msr.py:1061 [case_time12_hundred_partitions_single_device] trace.groups == cap_min, f"公式终值={trace.groups}、min(minNum={env.min_d},R={env.c
+cases_msr.py:1063 [case_time12_hundred_partitions_single_device] env.db, env.dialect, schema=min(1, env.cap_s), data=trace.groups)
+cases_ops.py:270 [None] """组数 == ``min(K, expected_cap(K))``，并回读上限自证公式值。"""
+cases_ops.py:481 [case_reb04_hot_reload_auto_back] assert_balanced(ctx, "REB-04 重分摊", db, d, groups=min(k, expected_cap(ctx, "DAT
+cases_ops.py:599 [case_reb12_write_balance_write] stat["groups"] == min(k, expected_cap(ctx, "DATA", d, db)),
+cases_ops.py:619 [case_reb13_single_device_multi_sensors] == min(k, expected_cap(ctx, "DATA", d, db)),
+cases_ops.py:635 [case_reb14_distribution_after_flush] after["groups"] == min(k, expected_cap(ctx, "DATA", d, db)),
+cases_ops.py:754 [case_ha06_schema_scale_during_stop] """HA-06 停 1 个 DN 期间 Schema 扩容（新 slot）：组数 = min(K, expected_cap(SCHEMA))。"""
+cases_ops.py:937 [case_ha12_no_data_loss] "停 1 DN 期间 Schema 扩容（新 slot）：组数 = min(K, expected_cap(SCHEMA))",
+cases_ops2.py:234 [case_ttl01_groups_after_set_ttl] schema=min(4, cap_s), data=min(4, cap_d))
+cases_ops2.py:250 [case_ttl02_small_ttl_write_after_wait] schema=min(2, cap_s), data=min(2, cap_d))
+cases_ops2.py:259 [case_ttl02_small_ttl_write_after_wait] schema=min(4, cap_s), data=min(4, cap_d))
+cases_ops2.py:261 [case_ttl02_small_ttl_write_after_wait] ctx.api.db_group_num(db, "DATA", dialect="tree") == min(4, cap_d),
+cases_ops2.py:262 [case_ttl02_small_ttl_write_after_wait] f"G={ctx.api.db_group_num(db, 'DATA', dialect='tree')}、min(4,{cap_d})")
+cases_ops2.py:276 [case_ttl03_expiry_keeps_groups] schema=min(4, cap_s), data=min(4, cap_d))
+cases_ops2.py:306 [case_ttl03_expiry_keeps_groups] expect_groups(ctx, "过期删除后", db, "tree", schema=min(4, cap_s), data=min(4, cap_
+cases_ops2.py:319 [case_ttl04_unset_ttl_then_expand] schema=min(2, cap_s), data=min(2, cap_d))
+cases_ops2.py:323 [case_ttl04_unset_ttl_then_expand] schema=min(4, cap_s), data=min(4, cap_d))
+cases_ops2.py:354 [case_ttl05_ttl_with_time_partition] schema=min(2, cap_s), data=min(2, cap_d))
+cases_ops2.py:378 [case_ttl07_new_measurement_no_group] schema=min(1, cap_s), data=min(1, cap_d))
+cases_ops2.py:402 [case_ttl08_expiry_cluster_health] schema=min(3, cap_s), data=min(3, cap_d))
+cases_ops2.py:412 [case_ttl08_expiry_cluster_health] expect_groups(ctx, "TTL 过期清理后", db, "tree", schema=min(3, cap_s), data=min(3, 
+cases_ops2.py:502 [case_sys04_user_write_keeps_sys] expect_groups(ctx, "用户库写入 3 个 slot", db, "tree", data=min(3, cap_d))
+cases_ops2.py:551 [case_sys06_sys_stable_under_heavy_write] schema=min(6, cap_s), data=min(6, cap_d))
+cases_ops2.py:579 [case_rst01_groups_and_mapping_survive] expect_groups(ctx, "重启前", db, "tree", schema=min(4, cap_s), data=min(4, cap_d)
+cases_ops2.py:594 [case_rst01_groups_and_mapping_survive] expect_groups(ctx, "重启后", db, "tree", schema=min(4, cap_s), data=min(4, cap_d)
+cases_ops2.py:605 [case_rst02_details_and_regions_consistent] expect_groups(ctx, "重启前", db, "tree", schema=min(3, cap_s), data=min(3, cap_d)
+cases_ops2.py:612 [case_rst02_details_and_regions_consistent] expect_groups(ctx, "重启后", db, "tree", schema=min(3, cap_s), data=min(3, cap_d)
+cases_ops2.py:624 [case_rst03_expand_after_restart] schema=min(2, cap_s), data=min(2, cap_d))
+cases_ops2.py:629 [case_rst03_expand_after_restart] schema=min(6, cap_s), data=min(6, cap_d))
+cases_ops2.py:697 [case_rst06_new_time_partition_after_restart] schema=min(2, cap_s), data=min(2, cap_d))
+cases_ops2.py:710 [case_rst06_new_time_partition_after_restart] schema=min(4, cap_s), data=min(4, cap_d))
+cases_swch.py:209 [case_swch01_auto_to_proactive] n_slots = min(expected_cap(ctx, "DATA", _TREE, db), max(min_num + 2, 4))
