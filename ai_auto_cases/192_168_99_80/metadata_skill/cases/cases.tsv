@@ -15,3 +15,4 @@ MD-C02	common	tree	common/md_dcl_user_role.sh	reuse	权限元数据（USER/ROLE/
 MD-C03	common	tree	common/md_privilege_matrix.sh	reuse	权限矩阵（权限值 × 路径粒度 × 用户/角色 + LIST PRIVILEGES + 越权 803）
 MD-U01	common	tree	common/md_udf_trigger.sh	reuse	真实 jar 的 UDF/Trigger 全链路（注册/SHOW/执行/触发/重启恢复/DROP）
 MD-S01	scale	tree	common/md_scale_bulk.sh	reuse	元数据规模（2000 时序 / 200 表下的 SHOW/COUNT/DESC/information_schema 正确性与耗时）
+MD-B05	table	table	table/md_writable_view.sh	reuse	表模型可写视图（WRITABLE VIEW）元数据闭环 + 并发 ALTER 缓存一致性（TDB-615）
