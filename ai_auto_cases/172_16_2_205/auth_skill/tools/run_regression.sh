@@ -32,7 +32,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-set -- "${ARGS[@]}"
+set -- ${ARGS[@]+"${ARGS[@]}"}
 
 RESULT_ROOT="${RESULT_ROOT:-$BASE/results}"
 OUT_DIR="$RESULT_ROOT/regression_$(date +%Y%m%d_%H%M%S)"
