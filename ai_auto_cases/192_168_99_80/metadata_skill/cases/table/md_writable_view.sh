@@ -85,22 +85,41 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-log "=== 4) schema_cascade 语义（底表加列后视图是否跟随）==="
-assert_ok "建带 schema_cascade=true 的可写视图 wv2（SELECT *）" \
-  "$(sqt "CREATE WRITABLE VIEW $TDB.wv2 AS SELECT * FROM $TDB.t1 WITH (schema_cascade=true);")"
-pre=$(vw_cols "$TDB.wv2")
-log "  底表加列前列集：$pre"
-assert_ok "底表 ADD COLUMN v4" "$(sqt "ALTER TABLE $TDB.t1 ADD COLUMN IF NOT EXISTS v4 INT32 FIELD;")"
-post=$(vw_cols "$TDB.wv2")
-log "  底表加列后列集：$post"
-if [ "$pre" = "$post" ]; then
-  warn "schema_cascade=true 时底表加列后视图列集未变化（$post）—— 需与需求文档核对是否为预期"
-else
-  pass "schema_cascade=true：底表加列后视图列集变化（$pre → $post）"
-fi
+log "=== 4) schema_cascade 语义（视图 DDL 级联到源表）==="
+# 需求：schema_cascade 为 true（默认）时，对视图的元数据修改（加列/删列/TTL/comment）会**同步修改源表**；
+#       false 时不影响源表（且新增列必须已存在于源表）。
+tbl_cols(){ sqt "DESC $TDB.t1;" | awk -F'|' 'NF>=3 {gsub(/^[ \t]+|[ \t]+$/,"",$2); if ($2!="") print $2}' | sort | tr '\n' ','; }
+assert_ok "建 cascade=true 视图 wvt" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wvt AS SELECT dev, v1 FROM $TDB.t1 WITH (schema_cascade=true);")"
+c0=$(tbl_cols)
+assert_ok "cascade=true：ALTER VIEW ADD COLUMN ca1" "$(sqt "ALTER VIEW $TDB.wvt ADD COLUMN ca1 INT32 FIELD;")"
+c1=$(tbl_cols)
+assert_contains "cascade=true：源表出现 ca1（视图 DDL 级联到源表）" "$c1" 'ca1'
+assert_contains "cascade=true：视图列集出现 ca1" "$(vw_cols "$TDB.wvt")" 'ca1'
 
-# ---------------------------------------------------------------------------
+assert_ok "建 cascade=false 视图 wvf" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wvf AS SELECT dev, v1 FROM $TDB.t1 WITH (schema_cascade=false);")"
+bad=$(sqt "ALTER VIEW $TDB.wvf ADD COLUMN cb1 INT32 FIELD;")
+assert_error "cascade=false：ADD COLUMN 新列被拒（列必须已存在于源表）" "$bad" '(701|must already exist)'
+assert_not_contains "cascade=false：源表不出现 cb1" "$(tbl_cols)" 'cb1'
+
+assert_ok "cascade=true：ALTER VIEW DROP COLUMN ca1" "$(sqt "ALTER VIEW $TDB.wvt DROP COLUMN ca1;")"
+assert_not_contains "cascade=true：源表 ca1 一并被删除" "$(tbl_cols)" 'ca1'
+assert_not_contains "cascade=true：视图列集不再有 ca1" "$(vw_cols "$TDB.wvt")" 'ca1'
+
+# 反向（源表加列 → 视图）：按需求不是 cascade 的职责，记录即可
+sqt "ALTER TABLE $TDB.t1 ADD COLUMN v9 INT32 FIELD;" >/dev/null 2>&1
+if printf '%s' "$(vw_cols "$TDB.wvt")" | grep -q 'v9'; then
+  warn "源表加列后视图列集自动跟随（v9）—— 与需求“cascade 只管视图→源表”表述不同，需确认"
+else
+  pass "源表加列后视图列集不跟随（符合需求：cascade 只负责视图 DDL → 源表）"
+fi
+sqt "DROP VIEW IF EXISTS $TDB.wvt;" >/dev/null 2>&1
+sqt "DROP VIEW IF EXISTS $TDB.wvf;" >/dev/null 2>&1
+
 log "=== 5) TDB-615：并发 ALTER 与查询，收尾后不得残留旧列名 ==="
+assert_ok "建并发用视图 wv2（cascade=true）" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wv2 AS SELECT dev, v1, v2 FROM $TDB.t1 WITH (schema_cascade=true);")"
 ROUNDS=${MD615_ROUNDS:-12}
 DONE=/tmp/${TDB}_alter.done
 SEQ=/tmp/${TDB}_desc_seq.txt
@@ -223,8 +242,8 @@ fi
 # ---------------------------------------------------------------------------
 log "=== 7) 清理 ==="
 assert_ok "DROP VIEW wv"  "$(sqt "DROP VIEW IF EXISTS $TDB.wv;")"
-assert_ok "DROP VIEW wv2" "$(sqt "DROP VIEW $TDB.wv2;")"
-assert_ok "DROP VIEW nv"  "$(sqt "DROP VIEW $TDB.nv;")"
+assert_ok "DROP VIEW wv2" "$(sqt "DROP VIEW IF EXISTS $TDB.wv2;")"
+assert_ok "DROP VIEW nv"  "$(sqt "DROP VIEW IF EXISTS $TDB.nv;")"
 sqt "DROP VIEW IF EXISTS $TDB.wv3;" >/dev/null 2>&1
 assert_set_is "SHOW VIEWS 已清空" "$(md_names "$(sqt "SHOW VIEWS FROM $TDB;")")" ""
 
