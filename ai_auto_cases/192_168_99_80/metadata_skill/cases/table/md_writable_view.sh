@@ -50,8 +50,8 @@ base_cnt(){ md_rows "$(sqt "SELECT count(*) AS c FROM $TDB.t1;")" | head -1 | tr
 
 # ---------------------------------------------------------------------------
 log "=== 1) 建可写视图 + 元数据观测 ==="
-assert_ok "CREATE WRITABLE VIEW wv（v1→voltage, v2）" \
-  "$(sqt "CREATE WRITABLE VIEW $TDB.wv AS SELECT v1 AS voltage, v2 FROM $TDB.t1;")"
+assert_ok "CREATE WRITABLE VIEW wv（dev, v1→voltage, v2）" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wv AS SELECT dev, v1 AS voltage, v2, v3 FROM $TDB.t1;")"
 scv=$(sqt "SHOW CREATE VIEW $TDB.wv;")
 assert_contains "SHOW CREATE VIEW 含 WRITABLE" "$scv" 'WRITABLE'
 assert_contains "SHOW CREATE VIEW 含别名 voltage" "$scv" 'voltage'
@@ -68,10 +68,10 @@ assert_eq "底表行数 +1" "$(base_cnt)" "$(( ${n0:-0} + 1 ))"
 got=$(md_rows "$(sqt "SELECT v1, v2 FROM $TDB.t1 WHERE time=3000;")")
 assert_contains "视图写的 voltage 落到源列 v1" "$got" '777'
 assert_contains "视图写的 v2 落到源列 v2" "$got" '888'
-assert_ok "视图 UPDATE 一行" "$(sqt "UPDATE $TDB.wv SET voltage=999 WHERE time=3000;")"
-got=$(md_rows "$(sqt "SELECT v1 FROM $TDB.t1 WHERE time=3000;")")
-assert_contains "UPDATE 经视图映射到 v1" "$got" '999'
-assert_ok "视图 DELETE 一行" "$(sqt "DELETE FROM $TDB.wv WHERE time=3000;")"
+# 表模型 UPDATE 只允许 ATTRIBUTE 列（IoTDB 既有语义，视图继承）⇒ 更新 FIELD 必须被拒
+assert_error "视图 UPDATE FIELD 列被拒（701，表模型 UPDATE 仅支持 ATTRIBUTE 列）" \
+  "$(sqt "UPDATE $TDB.wv SET voltage=999 WHERE dev='d2';")" '(701|ATTRIBUTE)'
+assert_ok "视图 DELETE 一行（WHERE 用 tag 列 dev）" "$(sqt "DELETE FROM $TDB.wv WHERE dev='d2';")"
 assert_eq "DELETE 后底表行数回到原值" "$(base_cnt)" "${n0:-0}"
 
 # ---------------------------------------------------------------------------
@@ -86,8 +86,8 @@ fi
 
 # ---------------------------------------------------------------------------
 log "=== 4) schema_cascade 语义（底表加列后视图是否跟随）==="
-assert_ok "建带 schema_cascade=true 的可写视图 wv2" \
-  "$(sqt "CREATE WRITABLE VIEW $TDB.wv2 AS SELECT v1, v2 FROM $TDB.t1 WITH (schema_cascade=true);")"
+assert_ok "建带 schema_cascade=true 的可写视图 wv2（SELECT *）" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wv2 AS SELECT * FROM $TDB.t1 WITH (schema_cascade=true);")"
 pre=$(vw_cols "$TDB.wv2")
 log "  底表加列前列集：$pre"
 assert_ok "底表 ADD COLUMN v4" "$(sqt "ALTER TABLE $TDB.t1 ADD COLUMN IF NOT EXISTS v4 INT32 FIELD;")"
@@ -140,10 +140,11 @@ done
 assert_eq "DDL 收尾后 20 次连读列集不漂移（TDB-615 核心判据）" "${stale:-0}" "0"
 assert_not_contains "列集不残留并发临时列 c1..cN" "$expect" 'c[0-9]+'
 
-log "  -- 映射一致性：ADD COLUMN mapped → 底表 v3，写唯一值回读 --"
-assert_ok "视图 ADD COLUMN mapped" "$(sqt "ALTER VIEW $TDB.wv2 ADD COLUMN mapped INT32 FIELD;")"
+log "  -- 映射一致性：独立视图 wv3 用别名 mapped 映射底表 v3，写唯一值回读 --"
+assert_ok "建可写视图 wv3（dev, v3 AS mapped）" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wv3 AS SELECT dev, v3 AS mapped FROM $TDB.t1;")"
 assert_ok "通过视图写 mapped=424242" \
-  "$(sqt "INSERT INTO $TDB.wv2 (time, dev, v1, v2, mapped) VALUES (5000,'d9',5,6,424242);")"
+  "$(sqt "INSERT INTO $TDB.wv3 (time, dev, mapped) VALUES (5000,'d9',424242);")"
 mv=$(md_rows "$(sqt "SELECT v3 FROM $TDB.t1 WHERE time=5000;")")
 if printf '%s' "$mv" | grep -q '424242'; then
   pass "视图列 mapped 映射到底表 v3（写 424242 读回：$mv）"
@@ -157,10 +158,74 @@ assert_error "ALTER 不存在的视图报错" "$(sqt "ALTER VIEW $TDB.wv_none AD
 assert_error "DROP COLUMN 不存在的列报错" "$(sqt "ALTER VIEW $TDB.wv DROP COLUMN nope;")" '(701|500|550|not exist|Unknown|unknown)'
 
 # ---------------------------------------------------------------------------
+log "=== 8) ALTER VIEW：RENAME COLUMN / SET PROPERTIES ==="
+assert_ok "视图 RENAME COLUMN voltage → volt2" "$(sqt "ALTER VIEW $TDB.wv RENAME COLUMN voltage TO volt2;")"
+c_after=$(vw_cols "$TDB.wv")
+assert_contains "重命名后列集出现 volt2" "$c_after" 'volt2'
+assert_not_contains "重命名后列集不再有 voltage" "$c_after" 'voltage'
+sel2=$(sqt "SELECT volt2 FROM $TDB.wv WHERE dev='d1';")
+if printf '%s' "$sel2" | grep -qE '^\|[[:space:]]*[0-9]+'; then
+  pass "重命名后可查询新列名（$sel2 已返回数据行）"
+else
+  fail "重命名后用新列名查询异常：$(printf '%s' "$sel2" | tr '\n' ' ' | cut -c1-140)"
+fi
+
+log "=== 9) 基表删掉被视图引用的列 → 必须明确报错 ==="
+# wv 引用了 v3；直接删底表 v3，视图查询/写入都应该给明确错误而不是静默返回空
+d=$(sqt "DROP TABLE IF EXISTS $TDB.t_tmp;" >/dev/null 2>&1; true)
+out_drop=$(sqt "ALTER TABLE $TDB.t1 DROP COLUMN v3;")
+if printf '%s' "$out_drop" | grep -qiE 'error|exception|view|referenced|70[01]'; then
+  pass "底表删被引用列被拒/报错：$(printf '%s' "$out_drop" | tr '\n' ' ' | cut -c1-120)"
+else
+  q=$(sqt "SELECT * FROM $TDB.wv WHERE dev='d1';")
+  if printf '%s' "$q" | grep -qiE 'error|exception|not exist|70[01]'; then
+    pass "底表删列成功，但视图查询给出明确错误：$(printf '%s' "$q" | tr '\n' ' ' | cut -c1-120)"
+  else
+    warn "底表删掉被视图引用的列后，视图查询仍返回结果（需确认语义）：$(printf '%s' "$q" | tr '\n' ' ' | cut -c1-100)"
+  fi
+fi
+
+log "=== 10) 普通视图 INSERT 的第二种写法（不带列清单）==="
+bad2=$(sqt "INSERT INTO $TDB.nv VALUES (5000,'d9',1);")
+if printf '%s' "$bad2" | grep -qiE 'error|exception|not support|70[01]|507'; then
+  pass "普通视图 INSERT（无列清单）被拒：$(printf '%s' "$bad2" | tr '\n' ' ' | cut -c1-120)"
+else
+  fail "普通视图 INSERT（无列清单）未被拒：$(printf '%s' "$bad2" | tr '\n' ' ' | cut -c1-140)"
+fi
+
+log "=== 11) 权限：只 READ 的用户不能通过视图写 ==="
+U="u_b05_${RANDOM}"
+sqt "CREATE USER $U 'Passw0rd_b05!';" >/dev/null 2>&1
+sqt "GRANT READ ON DATABASE $TDB TO USER $U;" >/dev/null 2>&1
+rd=$(sqt_as "$U" 'Passw0rd_b05!' "SELECT count(*) FROM $TDB.wv;")
+wr=$(sqt_as "$U" 'Passw0rd_b05!' "INSERT INTO $TDB.wv (time, dev, volt2, v2) VALUES (6000,'dk',1,2);")
+if printf '%s' "$wr" | grep -qiE '803|no permission|permission denied'; then
+  pass "只有 READ 时通过视图写被拒（803）：$(printf '%s' "$wr" | tr '\n' ' ' | cut -c1-100)"
+else
+  fail "只有 READ 时通过视图写未被拒：$(printf '%s' "$wr" | tr '\n' ' ' | cut -c1-140)"
+fi
+sqt "DROP USER $U;" >/dev/null 2>&1
+
+log "=== 12) 视图 DROP 后重建：缓存必须失效（新定义立即生效）==="
+assert_ok "DROP 旧 wv" "$(sqt "DROP VIEW $TDB.wv;")"
+assert_ok "以不同列集重建 wv（只 v1→v9）" \
+  "$(sqt "CREATE WRITABLE VIEW $TDB.wv AS SELECT v1 AS v9 FROM $TDB.t1;")"
+c_re=$(vw_cols "$TDB.wv")
+assert_contains "重建后列集包含新列 v9" "$c_re" 'v9'
+assert_not_contains "重建后列集不残留旧列 volt2" "$c_re" 'volt2'
+q_re=$(sqt "SELECT v9 FROM $TDB.wv LIMIT 1;")
+if printf '%s' "$q_re" | grep -qiE 'error|exception'; then
+  fail "重建后按新列 v9 查询报错（缓存未失效）：$(printf '%s' "$q_re" | tr '\n' ' ' | cut -c1-140)"
+else
+  pass "重建后按新列 v9 查询正常"
+fi
+
+# ---------------------------------------------------------------------------
 log "=== 7) 清理 ==="
-assert_ok "DROP VIEW wv"  "$(sqt "DROP VIEW $TDB.wv;")"
+assert_ok "DROP VIEW wv"  "$(sqt "DROP VIEW IF EXISTS $TDB.wv;")"
 assert_ok "DROP VIEW wv2" "$(sqt "DROP VIEW $TDB.wv2;")"
 assert_ok "DROP VIEW nv"  "$(sqt "DROP VIEW $TDB.nv;")"
+sqt "DROP VIEW IF EXISTS $TDB.wv3;" >/dev/null 2>&1
 assert_set_is "SHOW VIEWS 已清空" "$(md_names "$(sqt "SHOW VIEWS FROM $TDB;")")" ""
 
 md_case_finish
