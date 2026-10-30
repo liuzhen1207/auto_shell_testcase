@@ -3,7 +3,7 @@
 # usage: suite_auth.sh [case-id ...]   （不带参数跑全部）
 set -u
 BASE=${BASE:-$(cd "$(dirname "$0")/.." && pwd)}
-[ -f "$BASE/scripts/env.conf" ] && . "$BASE/scripts/env.conf"
+for _p in "$BASE/conf/env.conf" "$BASE/scripts/env.conf"; do [ -f "$_p" ] && . "$_p" && break; done
 NEW=${NEW:-v20121rc12_1027_c05111d}
 export NEW
 
@@ -12,7 +12,7 @@ mkdir -p "$RESULTS"
 RES=$RESULTS/results.tsv
 printf 'id\tfeature\ttype\tverdict\tfails\terrs\tdur_s\tdetail\n' > "$RES"
 
-. $BASE/scripts/lib_auth.sh
+for _p in "$BASE/lib/lib_auth.sh" "$BASE/scripts/lib_auth.sh"; do [ -f "$_p" ] && . "$_p" && break; done
 
 declare -a CASES=()
 for f in $BASE/cases/*.sh; do . "$f"; done

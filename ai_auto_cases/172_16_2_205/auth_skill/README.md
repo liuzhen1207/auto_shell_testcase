@@ -4,7 +4,7 @@
 
 ```bash
 scp -r auth_skill root@172.16.2.205:/data2/auto_test/
-ssh root@172.16.2.205 'cd /data2/auto_test/auth_skill && bash tools/suite_auth.sh AUTH-001'
+ssh root@172.16.2.205 'cd /data2/auto_test/auth_skill && bash tools/run_regression.sh'
 ```
 
 依赖：`bash`、`ssh` 免密到 8 个节点、`start-cli.sh`（随版本安装包）。不需要 jq。

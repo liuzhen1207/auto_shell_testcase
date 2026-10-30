@@ -1,8 +1,6 @@
 #!/bin/bash
 # Hard reset: kill every IoTDB java process on the 8 nodes, wipe data/logs, then start in strict order.
 set -u
-BASE="${BASE:-$(cd "$(dirname "$0")/.." && pwd)}"
-[ -f "$BASE/conf/env.conf" ] && . "$BASE/conf/env.conf"
 NEW=${NEW:-v20121rc12_1027_c05111d}
 CLI=/data2/iotdb/$NEW/sbin/start-cli.sh
 CN_LIST="172.16.2.26 172.16.2.27 172.16.2.28"

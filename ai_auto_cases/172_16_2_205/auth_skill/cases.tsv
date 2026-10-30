@@ -1,8 +1,8 @@
-# 身份鉴别回归 skill 用例矩阵（机器可读；tab 分隔；# 与空行忽略）
+# 身份鉴别回归用例矩阵（机器可读；tab 分隔；# 与空行忽略）
 #
 # 列：case_id	脚本	功能域	类型	说明	执行函数
-
-# 统一收尾（每条用例都做）：8 个 DN 的 log_datanode_all.log 增量扫描（白名单见 lib/lib_auth.sh）
+#
+# 模式：normal=不开启三权分立（27 条）；separation=开启三权分立（33 条）；合计 34 条
 
 AUTH-001	g1_base.sh	基础鉴别	正向	root 默认用户登录与集群可用	case_AUTH001
 AUTH-002	g1_base.sh	基础鉴别	反向	错误密码登录失败（801，不回显密码）	case_AUTH002
@@ -26,3 +26,15 @@ AUTH-019	g3_lock.sh	暴力破解	正向	ALTER USER ... ACCOUNT UNLOCK 可执行�
 AUTH-020	g3_lock.sh	暴力破解	可靠性	重启 DN 后锁定状态清除	case_AUTH020
 AUTH-021	g3_lock.sh	客户端	反向	连接失败信息不含 IP/端口	case_AUTH021
 AUTH-022	g3_lock.sh	客户端	边界	客户端输出不回显明文密码	case_AUTH022
+AUTH-023	g4_gaps.sh	强安全密码	边界	复杂度 b：缺小写字母应被拒	case_AUTH023
+AUTH-024	g4_gaps.sh	强安全密码	边界	需求 e：密码不能等于用户名	case_AUTH024
+AUTH-025	g4_gaps.sh	强安全密码	边界	需求 a：密码最大长度限制	case_AUTH025
+AUTH-026	g4_gaps.sh	暴力破解	边界	特权账户（root）豁免锁定	case_AUTH026
+AUTH-027	g4_gaps.sh	用户管理	反向	空密码/全空格密码应被拒	case_AUTH027
+AUTH-030	g5_separation.sh	三权分立	反向	开启后 root（超级用户）禁止登录（803）	case_AUTH030
+AUTH-031	g5_separation.sh	三权分立	正向	sys_admin/security_admin/audit_admin 三账号均可登录	case_AUTH031
+AUTH-032	g5_separation.sh	三权分立	正向	职责分离：仅 security_admin 可建用户	case_AUTH032
+AUTH-033	g5_separation.sh	三权分立	边界	数据面：sys_admin 可读写，security_admin 不应能读业务数据	case_AUTH033
+AUTH-034	g5_separation.sh	三权分立	边界	三权分立不可由打开切回关闭（需求明确，803 为预期）	case_AUTH034
+AUTH-035	g5_separation.sh	三权分立	正向	三权分立下普通用户按授权访问	case_AUTH035
+AUTH-036	g5_separation.sh	三权分立	边界	管理权限不可带 grant option（803）	case_AUTH036

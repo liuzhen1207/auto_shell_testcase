@@ -1,3 +1,5 @@
-d13e380cfab57e0057108390da42ba7a  cases/g1_base.sh
-3a2ca13246dde168f274a1f07b6922ec  cases/g2_policy.sh
-7e6b87de1bfa62b3681b15fd2af1f4dc  cases/g3_lock.sh
+552c8a275a7b2e215f30e35a1449cee3  cases/g1_base.sh
+5959f06882aa399313b632d0bc6ebc1a  cases/g2_policy.sh
+18dafd7d6fd6bf86b130f6e25aa548bd  cases/g3_lock.sh
+ab487bc4ca9bac0b141c57965c941bab  cases/g4_gaps.sh
+48cbe601645d5810dec46490ba05aefe  cases/g5_separation.sh
