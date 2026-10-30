@@ -25,12 +25,12 @@ bash tools/run_regression.sh --no-restore
 | 模式 | 用例数 | 说明 |
 | --- | --- | --- |
 | **normal**（不开启三权分立） | **27** | root 全权；跳过三权分立专项 7 条 |
-| **separation**（开启三权分立） | **33** | 用 sys_admin / security_admin / audit_admin；跳过 AUTH-026（root 豁免在此模式无意义） |
-| 合计（去重） | **34** | AUTH-030~036 仅 separation；AUTH-026 仅 normal |
+| **separation**（开启三权分立） | **34** | 用 sys_admin / security_admin / audit_admin；跳过 AUTH-026（root 豁免在此模式无意义） |
+| 合计（去重） | **35** | AUTH-030~037 仅 separation；AUTH-026 仅 normal |
 
 产物：`results/run_<时间戳>/results.tsv` 与逐用例 `<ID>.out`；每条用例都会扫描 8 个 DN 的 `log_datanode_all.log` 增量（白名单见 `lib/lib_auth.sh`）。
 
-## 用例分组（34 条）
+## 用例分组（35 条）
 
 | 文件 | 组 | 条数 | 覆盖 |
 | --- | --- | --- | --- |
@@ -38,7 +38,7 @@ bash tools/run_regression.sh --no-restore
 | `cases/g2_policy.sh` | 密码策略 | 6 | 有效期下发、历史口令不可复用、陈旧密码提示、**密码过期校验 ERROR 缺陷回归**、用户重命名、会话数限制 |
 | `cases/g3_lock.sh` | 暴力破解与客户端 | 6 | 5 次错误后锁定 822、锁定范围（用户级）、ACCOUNT UNLOCK、重启 DN 清锁、连接失败不暴露 IP:端口、不回显明文密码 |
 | `cases/g4_gaps.sh` | 需求缺口补充 | 5 | 强密码缺小写、密码等于用户名、最大长度、root 豁免锁定、空密码/全空格 |
-| `cases/g5_separation.sh` | 三权分立专项 | 7 | root 禁登 803、三管理员登录、职责分离、数据面权限、配置权限与不可关闭、普通用户授权、grant option 限制 |
+| `cases/g5_separation.sh` | 三权分立专项 | 8 | root 禁登 803、三管理员登录、职责分离、数据面权限、配置权限与不可关闭、普通用户授权、grant option 限制、security_admin 本机豁免 |
 
 ## 已知缺陷
 
@@ -46,7 +46,6 @@ bash tools/run_regression.sh --no-restore
 | --- | --- | --- |
 | AUTH-014 | **TDB-896** | 密码过期校验降级仍打 ERROR + 堆栈（见下） |
 | AUTH-019（separation） | **TDB-899** | 三权分立下 `ALTER USER ... ACCOUNT UNLOCK` 返回 `701 Unsupported author type`，锁定后无解锁入口 |
-| AUTH-026（normal） | OBS-9（待确认） | root 连续错误后仍被锁 822，与需求“特权账户豁免”不符 |
 
 ### TDB-896（AUTH-014）
 

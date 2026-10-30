@@ -2,7 +2,7 @@
 #
 # 列：case_id	脚本	功能域	类型	说明	执行函数
 #
-# 模式：normal=不开启三权分立（27 条）；separation=开启三权分立（33 条）；合计 34 条
+# 模式：normal=不开启三权分立（27 条）；separation=开启三权分立（34 条）；合计 35 条
 
 AUTH-001	g1_base.sh	基础鉴别	正向	root 默认用户登录与集群可用	case_AUTH001
 AUTH-002	g1_base.sh	基础鉴别	反向	错误密码登录失败（801，不回显密码）	case_AUTH002
@@ -38,3 +38,4 @@ AUTH-033	g5_separation.sh	三权分立	边界	数据面：sys_admin 可读写，
 AUTH-034	g5_separation.sh	三权分立	边界	三权分立不可由打开切回关闭（需求明确，803 为预期）	case_AUTH034
 AUTH-035	g5_separation.sh	三权分立	正向	三权分立下普通用户按授权访问	case_AUTH035
 AUTH-036	g5_separation.sh	三权分立	边界	管理权限不可带 grant option（803）	case_AUTH036
+AUTH-037	g5_separation.sh	三权分立	边界	security_admin 本机豁免锁定（需求 L128）	case_AUTH037

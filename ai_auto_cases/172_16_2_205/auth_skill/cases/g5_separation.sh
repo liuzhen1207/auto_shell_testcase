@@ -102,6 +102,25 @@ case_AUTH036() {
   TS "DROP USER sep036" >/dev/null 2>&1
 }
 
+case_AUTH037() {
+  # 需求 L128：本机登录的 root **或安全管理员**不因密码错误被锁定。
+  # 三权分立下 security_admin 是三权之一的“安全管理员”，验证其本机豁免是否生效。
+  local ip=${DN_LIST%% *}
+  local script='
+NEW="$1"; IP="$2"; PW="$3"
+for _d in /data1/iotdb /data2/iotdb /data/iotdb; do
+  [ -x "$_d/$NEW/sbin/start-cli.sh" ] && CLI="$_d/$NEW/sbin/start-cli.sh" && break
+done
+[ -z "${CLI:-}" ] && { echo "NO_CLI"; exit 0; }
+for i in $(seq 1 8); do $CLI -h "$IP" -p 6667 -u security_admin -pw "WrongLocal@9" -e "list user" >/dev/null 2>&1; done
+$CLI -h "$IP" -p 6667 -u security_admin -pw "$PW" -e "list user" 2>&1 | head -3
+'
+  local out
+  out=$(ssh -o StrictHostKeyChecking=no root@$ip "bash -s -- '$NEW' '$ip' '$PW'" <<< "$script" 2>/dev/null)
+  echo "  本机($ip) security_admin 连续 8 次错误后 -> $(echo "$out" | head -2 | tr '\n' ' ' | cut -c1-90)"
+  assert_ok "$out" "本机登录的 security_admin 应豁免锁定（需求 L128）"
+}
+
 CASES+=(
 "AUTH-030|三权分立|反向|开启后 root（超级用户）禁止登录（803）|case_AUTH030"
 "AUTH-031|三权分立|正向|sys_admin/security_admin/audit_admin 三账号均可登录|case_AUTH031"
@@ -110,4 +129,5 @@ CASES+=(
 "AUTH-034|三权分立|边界|三权分立不可由打开切回关闭（需求明确，803 为预期）|case_AUTH034"
 "AUTH-035|三权分立|正向|三权分立下普通用户按授权访问|case_AUTH035"
 "AUTH-036|三权分立|边界|管理权限不可带 grant option（803）|case_AUTH036"
+"AUTH-037|三权分立|边界|security_admin 本机豁免锁定（需求 L128）|case_AUTH037"
 )

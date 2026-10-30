@@ -1,4 +1,4 @@
-# 身份鉴别需求点覆盖矩阵（32 条用例）
+# 身份鉴别需求点覆盖矩阵（35 条用例）
 
 > 对照 16 篇需求/设计/测试文档（`records/feishu/`），逐条给出覆盖用例与结论。
 > 执行模式：**normal**（root 全权）与 **separation**（三权分立）各跑一遍。
@@ -44,13 +44,14 @@
 | | 配置权限与不可关闭 | AUTH-034 | 已覆盖（sys_admin 无 SYSTEM；关闭报 803） |
 | | 普通用户按授权访问 | AUTH-035 | separation 下授权无效（同 AUTH-008，疑似缺陷） |
 | | 管理权限不可带 grant option | AUTH-036 | 已覆盖 |
+| | 安全管理员本机豁免锁定（需求 L128） | AUTH-037 | 已覆盖（separation 下 PASS） |
 
 ## 二、两模式执行结果
 
 | 模式 | 用例数 | PASS | FAIL | 说明 |
 | --- | --- | --- | --- | --- |
-| normal（root） | 27（三权分立 7 条跳过） | 25 | 2 | AUTH-014（TDB-896 已知缺陷）、AUTH-026（本机豁免已确认符合需求，用例改正后转 PASS） |
-| separation（三权分立） | 33（AUTH-026 跳过） | 31 | 2 | AUTH-014（TDB-896）、AUTH-019（TDB-899 UNLOCK 701） |
+| normal（root） | 27（三权分立 8 条跳过） | 26 | 1 | AUTH-014（TDB-896 已知缺陷）、AUTH-026（本机豁免已确认符合需求，用例改正后转 PASS） |
+| separation（三权分立） | 34（AUTH-026 跳过） | 32 | 2 | AUTH-014（TDB-896）、AUTH-019（TDB-899 UNLOCK 701） |
 
 ## 三、separation 模式下的问题定位（OBS-12 符合需求、OBS-10 为用例误判、OBS-11 确认为缺陷）
 

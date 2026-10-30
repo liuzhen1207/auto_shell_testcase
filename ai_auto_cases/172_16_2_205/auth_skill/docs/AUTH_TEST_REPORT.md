@@ -159,4 +159,5 @@ auth_v20121_c05111d/
 - 需求限定为「**本机登录的** root / 安全管理员不被锁定」（需求分析 L128），原用例从远程客户端发起，测的不是豁免场景；
 - 复核实测：本机（DN 主机）连续 8 次错误 → 仍可登录 ✅；远程 6 次 → 822 锁定（预期）；**远程锁定后本机仍可登录**；
 - 结论：**非缺陷**，用例 AUTH-026 已重写为本机场景并 PASS；`known_failures.conf` 已移除该条；
-- 详见 `docs/OBS9_CONFIRMATION_REPORT.md`（含 2 个开放问题：远程 root 误锁的运维手段、三权分立下 security_admin 本机豁免待补测）。
+- **Q2 补测（三权分立下 security_admin 本机豁免）**：本机 8 次错误后 `list user` 仍成功 ✅；远程 6 次后 822；远程锁定后本机仍可登录 → **豁免生效，非缺陷**；已固化为用例 AUTH-037（separation 下 PASS）；
+- 详见 `docs/OBS9_CONFIRMATION_REPORT.md`（剩余开放问题：远程 root 误锁后的运维手段）。
