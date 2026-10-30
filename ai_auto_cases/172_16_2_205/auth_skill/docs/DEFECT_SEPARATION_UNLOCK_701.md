@@ -1,6 +1,6 @@
 # 缺陷描述（待确认后登记）：三权分立下 `ALTER USER ... ACCOUNT UNLOCK` 报 `701 Unsupported author type`
 
-> 状态：**未登记**。你说之前验证过这个功能，所以我在 §七 单独列了"可能与你那次验证的差异点"，方便你直接找研发对口径。
+> 状态：**已在 PLM 登记：[TDB-899](https://plm.infra.timecho.com/iterations?productId=1&itemId=1499)**（itemId 1499；类型缺陷、P1、迭代 V2.0.14.1、问题发现版本 V2.0.12.1、负责人 舒文炜、所属组长 田原、验证人员 刘珍）。
 > 关联用例：`auth_skill/cases/g3_lock.sh::AUTH-019`（separation 模式下 FAIL）；复现脚本：`auth_skill/tools/probe_obs10_11.sh`
 
 ## 一、建议字段

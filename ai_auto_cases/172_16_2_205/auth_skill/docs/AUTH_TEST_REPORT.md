@@ -143,7 +143,7 @@ auth_v20121_c05111d/
 5. 三条观察结论（详见 `coverage_matrix.md` §三）：
    - **OBS-10（用例误判，已修正）**：三权分立下 `sys_admin` 无数据权限，`create timeseries`/`insert` 被 803 拒绝（需 WRITE_SCHEMA / WRITE_DATA），
      数据未写入导致后续查询为空；用例改为「security_admin 授权的 writer 写数据、reader 读」，AUTH-008 / AUTH-035 已 PASS；
-   - **OBS-11（确认为缺陷）**：三权分立下 `ALTER USER ... ACCOUNT UNLOCK` 返回 `701: Unsupported author type.`——权限检查通过后在执行阶段失败，
+   - **OBS-11（确认为缺陷，已登记 [TDB-899](https://plm.infra.timecho.com/iterations?productId=1&itemId=1499)）**：三权分立下 `ALTER USER ... ACCOUNT UNLOCK` 返回 `701: Unsupported author type.`——权限检查通过后在执行阶段失败，
      严格鉴权路径未覆盖 `ACCOUNT_UNLOCK` 类型；root 被禁登录、sys_admin 缺 SECURITY，导致**账号锁定后无任何解锁入口**；
    - **OBS-12（符合需求）**：需求明确「三权分立不允许由打开到关闭的切换」，803 为预期。
    
