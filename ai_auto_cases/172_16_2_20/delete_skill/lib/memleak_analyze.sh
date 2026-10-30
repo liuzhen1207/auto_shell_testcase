@@ -28,7 +28,7 @@ for d in "$BASE"/studies/DEL-MEMLEAK-*/; do
         den=k*sxx-sx*sx
         slope=(den==0)?0:(k*sxy-sx*sy)/den
         s=slope; if(s<0) s=-s
-        v=(s>T)?"LEAK_SUSPECT":"STABLE"
+        v=(slope>T)?"LEAK_SUSPECT":"STABLE"
         printf "%d %d %d %d %.1f %s\n", first, wv, h[m], wv-first, slope, v
       }' "$d/post-gc-heap.csv")
     set -- $line

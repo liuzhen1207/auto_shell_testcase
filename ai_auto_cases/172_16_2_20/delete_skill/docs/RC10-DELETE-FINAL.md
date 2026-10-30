@@ -95,19 +95,38 @@
 | DEL-MEMLEAK-TABLE-001 | 按 WHERE 删除 | -18.6 ~ +62.0 KB/cyc | 预热后走平，无泄漏迹象 |
 | DEL-MEMLEAK-TABLE-002 | 全量删除 | -21.0 ~ +28.3 KB/cyc | 走平，无泄漏迹象 |
 | DEL-MEMLEAK-TREE-001 | 树模型按 WHERE 删除 | -3.6 ~ +31.9 KB/cyc | 走平，无泄漏迹象 |
-| DEL-MEMLEAK-TREE-002 | 树模型全量删除 | -13.4 ~ +67.9 KB/cyc | 走平，无泄漏迹象 |
-| **DEL-MEMLEAK-TABLE-003** | **DROP TABLE 反复重建** | **+3.0 ~ +193.3 KB/cyc** | **疑似慢速增长，需复测** |
-| DEL-MEMLEAK-TREE-003 | 删/建 timeseries 元数据 | — | 未完成（DDL 过慢，200 轮约需 6 小时） |
+| DEL-MEMLEAK-TREE-002 | 树模型全量删除 | -13.4 ~ +67.9 KB/cyc | 走平，无泄漏迹象（DN23 单点偏高，见注） |
+| **DEL-MEMLEAK-TABLE-003** | **DROP TABLE 反复重建** | **+89 ~ +193 KB/cyc（3 台 DN）** | **确认增长，4/4 复现** |
+| **DEL-MEMLEAK-TREE-003** | **删/建 timeseries 元数据** | **+218 ~ +260 KB/cyc（3 台 DN）** | **确认增长，增幅更大** |
 
-`DEL-MEMLEAK-TABLE-003` 的 DN21 是唯一明确单调的序列：post-GC 堆 92MB（40 轮）→ 125MB（200 轮），160 轮 +32MB，无走平迹象；DN23/DN24 也有 +118/+101 KB/cycle。该用例每轮 `DROP TABLE` + `CREATE TABLE`，属**元数据反复建删**场景。
+### 元数据反复建删的增长是可复现的
 
-需要注意的反证：TABLE-001 的 DN23、TREE-002 的 DN23 斜率高，但它们的预热基线只有 13MB / 3MB（其余 DN 约 35~40MB），是区域缓存尚未加载完的"追赶"，不是泄漏。
+`DEL-MEMLEAK-TABLE-003` 做了 1 次正式 + 3 次复测，每次都重置集群、独立跑 200 轮：
 
-**结论**：数据删除路径（WHERE 删除、全量删除、树模型删除）在 200 轮 churn 下 post-GC 堆走平；**元数据反复建删（TABLE-003）存在慢速增长迹象，建议单独复测确认后再决定是否立缺陷**。单次运行、11 个采样点、GC 噪声约 ±5MB，尚不足以直接定性。
+| 运行 | DN19 | DN21 | DN22 | DN23 | DN24 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| run | -14 | **+193** | +3 | **+119** | **+102** |
+| rep1 | +19 | **+102** | **+182** | **+93** | +21 |
+| rep2 | +12 | **+104** | **+169** | **+98** | +22 |
+| rep3 | +7 | **+89** | **+162** | **+118** | -36 |
+
+（单位 KB/周期，拟合区间 40~200 轮，剔除预热段）
+
+四次运行都是同样的形态：**承载该表 DataRegion 的 2~3 台 DN 持续增长，其余 DN 走平**，斜率稳定在 +89 ~ +193 KB/周期，200 轮内**没有平台**。DN21 的绝对量：post-GC 堆 82~92MB（40 轮）→ 100~125MB（200 轮），单轮次增长 18~32MB。
+
+`DEL-MEMLEAK-TREE-003`（每轮删 100 个 + 建 100 个 timeseries）更明显：DN21 **+260**、DN22 **+218**、DN23 **+254** KB/周期，跑满 200 轮用了 6 小时。
+
+### 不是泄漏的两处
+
+- `TABLE-001` 的 DN23（+62）与 `TREE-002` 的 DN23（+67.9）：这两台 DN 在 40 轮时的基线只有 13MB / 3MB，而同级其余 DN 已到 35~40MB，属于区域缓存尚未加载完的"追赶"，不是泄漏。
+- 纯数据删除路径（`TABLE-001/002`、`TREE-001/002`）在 200 轮 churn 后 post-GC 堆都在 80~87MB 附近波动，**没有增长趋势**。
+
+**结论**：**数据删除不泄漏；元数据反复建删（DROP TABLE/CREATE TABLE、DELETE/CREATE TIMESERIES）会导致 DataNode post-GC 堆持续增长**，4 次运行可复现、200 轮内未见平台。建议按缺陷立项（P2 候选），并补一轮 1000 轮长跑确认是否最终平台化。
 
 复现命令：
 
 ```bash
 bash /data2/iotdb/rc10_matrix/scripts/memleak_study.sh DEL-MEMLEAK-TABLE-003   # CYCLES=200 DEVICES=100 EVERY=20
-bash /data2/iotdb/rc10_matrix/scripts/memleak_analyze.sh
+bash /data2/iotdb/rc10_matrix/scripts/memleak_study.sh DEL-MEMLEAK-TREE-003    # 同上，DDL 场景约 6 小时
+bash /data2/iotdb/rc10_matrix/scripts/memleak_analyze.sh                       # 输出 studies/analysis.txt
 ```
