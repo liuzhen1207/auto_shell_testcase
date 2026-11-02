@@ -1,5 +1,12 @@
-# Group: TDB-125 —— 某个 DN 异常时授权不应提示超时（2.0.13.1 ReleaseNote）
-# 原缺陷：DN/C N 处于 unknown 时执行 GRANT 报"授权超时"，但权限实际已生效。
+#!/bin/bash
+# ============================================================================
+# 来源 ReleaseNote：TDB-125
+#   标题：修复某个 DN 异常时，实际授权成功但是提示授权超时的问题
+#   修复版本：V2.0.13.1（验证版本 2.0.13.1 / ab6d3de）
+#   场景：某个 CN/DN 处于 unknown 状态时执行 GRANT 会提示"授权超时"，但权限实际已生效
+#   修复后语义：DN 不可达 → 返回成功；DN 无响应 → 818 AUTH_OPERATE_EXCEPTION
+#              「Auth plan has been committed, but DataNode permission cache invalidation failed」
+# ============================================================================
 # 修复后：授权 procedure 不再同步等待所有 DN 刷新缓存，DN 不可达时应快速成功。
 # 关键判据：①返回成功（无 timeout/超时）②耗时 < 5 秒 ③权限确实生效 ④用户能读到数据
 

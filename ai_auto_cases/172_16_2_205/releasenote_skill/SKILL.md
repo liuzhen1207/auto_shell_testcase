@@ -35,9 +35,19 @@ bash tools/run_regression.sh RN-002
 
 ## 如何新增一条 ReleaseNote 用例
 
-1. 在 `cases/` 下新建 `rnNN_<主题>.sh`，实现 `case_RNxxx()`，断言用 `lib/lib_rn.sh` 的 `ok/fail/assert_*`；
-2. 在文件末尾把它加入 `CASES+=("RN-xxx|功能域|类型|说明|case_RNxxx")`；
-3. 若该场景**已知会失败**（未修复/环境限制），写到 `conf/known_failures.conf`：
+**命名约定**：`cases/TDB_<编号>_v<来源版本>.sh`，例如 `TDB_125_v2.0.13.1.sh`（不建版本子目录）。
+
+1. 新建上述文件，文件头注释写明来源与标题（便于追溯）：
+   ```bash
+   # 来源 ReleaseNote：TDB-xxx
+   #   标题：<ReleaseNote 标题>
+   #   修复版本：Vx.y.z（验证版本 <被测版本> / <build>）
+   #   场景/修复后语义：...
+   ```
+2. 实现 `case_RNxxx()`，断言用 `lib/lib_rn.sh` 的 `ok/fail/assert_*`；
+3. 文件末尾加入 `CASES+=("RN-xxx|功能域|类型|说明|case_RNxxx")`；
+4. 在 `cases.tsv` 增加一行，`来源版本` 列填该 ReleaseNote 的版本；
+5. 若场景**已知会失败**（未修复/环境限制），写到 `conf/known_failures.conf`：
    ```
    RN-004|TDB-xxx|说明
    ```
@@ -49,7 +59,7 @@ releasenote_skill/
 ├── SKILL.md
 ├── README.md
 ├── cases.tsv
-├── cases/rn01_tdb125.sh
+├── cases/TDB_125_v2.0.13.1.sh
 ├── conf/env.conf
 ├── conf/known_failures.conf
 ├── lib/lib_rn.sh

@@ -28,4 +28,5 @@ PW=TimechoDB@2021
 1. 用例会 **kill -9 / SIGSTOP** 一台 DataNode，并在结束时恢复；请在专用测试集群执行；
 2. 故障注入目标自动选**非 `HOST`** 的 DN（否则 CLI 连不上，测不出授权行为）；
 3. 所有 SQL 调用带 `timeout 90` 保护，避免 DN 无响应时用例卡死；
-4. 若集群已是异常状态（例如上一轮用例把 DN 停在 STOP），先跑 `tree_view_skill/tools/hard_reset.sh` 重置。
+4. 用例文件命名：`cases/TDB_<编号>_v<来源版本>.sh`（不建版本子目录）；
+5. 若集群已是异常状态（例如上一轮用例把 DN 停在 STOP），先跑 `tree_view_skill/tools/hard_reset.sh` 重置。
