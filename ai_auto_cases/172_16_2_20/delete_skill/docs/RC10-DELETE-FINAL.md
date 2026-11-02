@@ -130,3 +130,19 @@ bash /data2/iotdb/rc10_matrix/scripts/memleak_study.sh DEL-MEMLEAK-TABLE-003   #
 bash /data2/iotdb/rc10_matrix/scripts/memleak_study.sh DEL-MEMLEAK-TREE-003    # 同上，DDL 场景约 6 小时
 bash /data2/iotdb/rc10_matrix/scripts/memleak_analyze.sh                       # 输出 studies/analysis.txt
 ```
+
+### RC1（2.0.13.1，`ab6d3de`）1000 轮复核
+
+把同一用例搬到 2.0.13.1 RC1 上跑满 **1000 轮**（100 设备/轮，每 50 轮强制 GC 采样），结论：**仍然泄漏，未见平台**。
+
+| DN | 100 轮 | 1000 轮 | 增长 | 斜率 |
+|---|---:|---:|---:|---:|
+| .19 | 76,620 KB | 118,249 KB | +41,629 KB | +46.3 KB/轮 |
+| .21 | 71,793 KB | 134,602 KB | +62,809 KB | +69.8 KB/轮 |
+| .22 | 69,408 KB | 115,824 KB | +46,416 KB | +51.6 KB/轮 |
+| .23 | 70,131 KB | 114,769 KB | +44,638 KB | +49.6 KB/轮 |
+| .24 | 77,936 KB | 173,262 KB | +95,326 KB | +105.9 KB/轮 |
+
+**5 台 DN 全部单调上升、无走平迹象**，900 轮增长 44~95 MB。RC1 上 DDL 还明显更慢（12 秒/轮 vs RC10 的 2.5 秒/轮），建议与内存问题一并排查。
+
+缺陷报告见 [`DEFECT-metadata-churn-heap-growth.md`](DEFECT-metadata-churn-heap-growth.md)。
