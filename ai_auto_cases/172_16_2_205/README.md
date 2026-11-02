@@ -19,5 +19,7 @@
 
 ## 说明
 
+- 换版本回归步骤、四条命令与预期基线见 [`RUNBOOK.md`](RUNBOOK.md)。
+
 - 每个模块是一个 `*_skill/` 包，可整体拷到测试机直接跑（`tools/run_regression.sh` 一键回归）。
 - 运行产物（`results/`、`logs/`、`*.out`）不提交，见仓库根 `.gitignore`。
