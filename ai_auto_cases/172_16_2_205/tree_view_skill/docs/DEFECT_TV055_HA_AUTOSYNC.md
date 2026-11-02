@@ -1,6 +1,9 @@
 # 缺陷描述（待登记）：kill -9 一台 DataNode 后，树转表视图未补列 / 建序列误报 503
 
-> 状态：**未登记**（缺 PLM 字段：迭代、负责人、所属组长、验证人员待填）
+> 状态：**暂缓登记（证据不足）** — 2026-11-02 研发反馈：①`503 already exist` 与打印日志有关，已修复（commit 未同步到被测源码）；②"未补列"研发未能复现（其环境显示补列成功）。
+> 我方复核：2026-10-30 18:46 那次"未补列"失败的环境异常——用例重启 DN 172.16.2.5 **三次均失败**（`start_dn ... FAILED after 3 attempts`），当时 DN 仍处于宕机状态，结论不可靠；
+> 后续 3 次隔离复跑（11-02）功能断言**全部通过**（fails=0），仅因 CN 侧 HA 日志噪声被判 FAIL。
+> 结论：**503 部分已由研发修复**；"未补列"待 commit 同步后用"DN 恢复成功 + 全量日志"复核后再决定是否登记。
 > 关联用例：`tree_view_skill/cases/g6_ha.sh::case_TV055`（"kill -9 一台 DN 后序列创建与补列"）
 > 复现环境：TimechoDB **2.0.13.1 / ab6d3de**，3C5D，IoTConsensusV2
 
@@ -24,7 +27,7 @@
 | --- | --- |
 | 版本 | 2.0.13.1，BuildInfo **ab6d3de**，安装目录 `v20131rc1_1030_ab6d3de` |
 | 集群 | 3 ConfigNode（172.16.2.26/27/28）+ 5 DataNode（172.16.2.2~6），SR=3 / DR=2 |
-| 共识协议 | **IoTConsensusV2**（`data_region_consensus_protocol_class`） |
+| 共识协议 | **IoTConsensus/IoTConsensusV2**（`data_region_consensus_protocol_class`） |
 | 关键配置 | 视图 `CREATE VIEW ... WITH (auto_sync_schema=true)`；其余默认 |
 
 ## 三、复现步骤
