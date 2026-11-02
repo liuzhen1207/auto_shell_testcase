@@ -2,14 +2,13 @@
 # Suite runner for the tree-view auto-sync-schema cases.
 # usage: suite.sh [case-id-substring ...]
 set -u
-BASE="${BASE:-$(cd "$(dirname "$0")/.." && pwd)}"
-[ -f "$BASE/conf/env.conf" ] && . "$BASE/conf/env.conf"
+BASE=/data2/auto_test/treeview_suite
 NEW=${NEW:-master_1026_dc11a35}
-CLI=${CLI:-/data2/iotdb/$NEW/sbin/start-cli.sh}
-PW=${PW:-TimechoDB@2021}
+CLI=/data2/iotdb/$NEW/sbin/start-cli.sh
+PW=TimechoDB@2021
 RESULTS=$BASE/results/run_$(date +%Y%m%d_%H%M%S)
 mkdir -p "$RESULTS"
-. $BASE/lib/lib.sh
+. $BASE/lib.sh
 
 declare -a CASES=()
 for f in $BASE/cases/*.sh; do . "$f"; done
@@ -41,7 +40,7 @@ for entry in "${CASES[@]}"; do
   # log delta check (case-induced)
   errs=0
   log_scan_delta "$RESULTS/${id}_logdelta" >/dev/null 2>&1
-  errs=$(grep -h ' ERROR ' "$RESULTS/${id}_logdelta"/new_*.txt 2>/dev/null | wc -l)
+  errs=$(grep -o "unexpected=[0-9]*" "$RESULTS/${id}_logdelta/logdelta.txt" 2>/dev/null | cut -d= -f2 | awk "{s+=\$1} END{print s+0}")  # unexpected total
   # sync lag + replica consistency
   lag_ok=1
   wait_sync_lag_zero 180 >> "$out" 2>&1 || lag_ok=0

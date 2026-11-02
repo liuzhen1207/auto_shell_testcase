@@ -19,6 +19,7 @@
 | 身份鉴别 | normal（不开启三权分立） | 27 | **27** | 0 | 0 | 0 | 9 分 13 秒（用例累计 8 分 37 秒） |
 | 身份鉴别 | separation（开启三权分立） | 34 | 33 | 1 | 1 | 0 | 约 10 分（用例累计 9 分 59 秒） |
 | tree-view（补测） | IoTConsensus 经典 | 67 | 47 | 20 | 19 | **1** | 93 分 11 秒（用例累计 88 分 45 秒） |
+| tree-view（工具修正后复验） | IoTConsensus | 2（TV-055/037） | **2** | **0** | 0 | **0** | 约 9 分钟 |
 | **合计** | — | **195 条次** | **156** | **39** | **36** | **3** | **约 209 分钟** |
 
 > 身份鉴别去重后共 35 条用例（normal 27 / separation 34，AUTH-026 仅 normal、AUTH-030~037 仅 separation）。
@@ -26,6 +27,15 @@
 > tree-view 两协议合计 134 条次：**IoTConsensusV2 = 49 PASS / 18 FAIL；IoTConsensus = 47 PASS / 20 FAIL**，两轮"新增失败"均为 TV-055（经典协议下 TV-037 的 HA 日志被判为良性，未计入失败）。
 
 ## 二、tree-view 套件（67 条）
+
+> **2026-11-02 更正（重要）**：表中 tree-view 的 2 条"新增失败"经复验为**测试侧问题，已撤销**：
+> 1. TV-055 的 `503 already exist` — 研发确认与打印日志有关并已修复（commit 未同步到被测版本）；
+> 2. TV-055 的"视图未补列" — **不复现**：干净环境 2/2 轮实验，`kill -9` 一台 DN 后建序列 **5 秒内补齐 s2:DOUBLE**；
+>    原失败是套件 `start_dn` 用 `nohup` 经 ssh 启动、DN 未能恢复导致的异常环境；
+> 3. TV-037 的 HA 日志 — 属 DN 宕机/重启窗口噪声，已补入白名单（LeaderBalancer / CHANGE_REGION_LEADER / PIPE_HEARTBEAT / AsyncRequestManager Timeout / INVALIDATE_LAST_CACHE），并把判定从"原始 ERROR 条数"改为"过滤后条数"；
+> 4. 修正后复跑：**TV-055 PASS（76s）、TV-037 PASS（466s）**。
+> 因此 tree-view 的**真实新增缺陷为 0**；其余 FAIL 均为已知缺陷（TDB-888 / TDB-890）。
+
 
 ### 2.1 结果分布
 

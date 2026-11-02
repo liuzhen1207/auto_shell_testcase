@@ -1,4 +1,10 @@
 # 缺陷描述（待登记）：kill -9 一台 DataNode 后，树转表视图未补列 / 建序列误报 503
+> **最终结论（2026-11-02 13:09）：撤销本条，属测试误判。**
+> - `503 already exist`：研发反馈与打印日志有关，已修复（commit 未同步）；
+> - "视图未补列"：**不复现**。干净环境复跑 2/2 轮，`kill -9` 一台 DN 后建序列，**5 秒内即完成补列**；
+> - 原失败根因：套件 `start_dn` 用 `nohup ... &` 经 ssh 启动，DN 进程随会话退出（日志见 `start_dn 172.16.2.5 FAILED after 3 attempts`），断言在 DN 未恢复的环境下执行；
+> - 工具修正：`start_dn` 改 `setsid`；判定由"原始 ERROR 条数"改为"过滤后条数"；补 CN 侧 HA 噪声白名单（LeaderBalancer / CHANGE_REGION_LEADER / PIPE_HEARTBEAT / AsyncRequestManager Timeout / INVALIDATE_LAST_CACHE）。
+> - 修正后复跑：**TV-055 PASS（76s，fails=0 logErr=0）、TV-037 PASS（466s）**。
 
 > 状态：**暂缓登记（证据不足）** — 2026-11-02 研发反馈：①`503 already exist` 与打印日志有关，已修复（commit 未同步到被测源码）；②"未补列"研发未能复现（其环境显示补列成功）。
 > 我方复核：2026-10-30 18:46 那次"未补列"失败的环境异常——用例重启 DN 172.16.2.5 **三次均失败**（`start_dn ... FAILED after 3 attempts`），当时 DN 仍处于宕机状态，结论不可靠；

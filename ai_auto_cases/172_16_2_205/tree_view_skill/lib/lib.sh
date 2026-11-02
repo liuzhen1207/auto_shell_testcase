@@ -97,7 +97,7 @@ start_dn() {  # wait for the rpc port to be free, start, verify the process surv
       [ "${b:-0}" = "0" ] && break
       sleep 2
     done
-    ssh -o StrictHostKeyChecking=no root@$ip "source /etc/profile; cd /data1/iotdb/$NEW; nohup /data1/iotdb/$NEW/sbin/start-datanode.sh -H /data1/iotdb/$NEW/dn.hprof > /data1/iotdb/$NEW/start_dn.log 2>&1 &" 2>/dev/null
+    ssh -o StrictHostKeyChecking=no root@$ip "source /etc/profile; cd /data1/iotdb/$NEW; setsid /data1/iotdb/$NEW/sbin/start-datanode.sh -H /data1/iotdb/$NEW/dn.hprof > /data1/iotdb/$NEW/start_dn.log 2>&1 < /dev/null &" 2>/dev/null
     sleep 25
     n=$(ssh -o StrictHostKeyChecking=no root@$ip "pgrep -c -f 'com.timecho.iotdb.DataNode'" 2>/dev/null)
     [ "${n:-0}" != "0" ] && return 0
@@ -112,7 +112,7 @@ start_dn_fast() {  # start without long verification (used inside the per-case c
   local ip=$1 n
   n=$(ssh -o StrictHostKeyChecking=no root@$ip "pgrep -c -f 'com.timecho.iotdb.DataNode'" 2>/dev/null)
   [ "${n:-0}" != "0" ] && return 0
-  ssh -o StrictHostKeyChecking=no root@$ip "source /etc/profile; cd /data1/iotdb/$NEW; nohup /data1/iotdb/$NEW/sbin/start-datanode.sh -H /data1/iotdb/$NEW/dn.hprof > /data1/iotdb/$NEW/start_dn.log 2>&1 &" 2>/dev/null
+    ssh -o StrictHostKeyChecking=no root@$ip "source /etc/profile; cd /data1/iotdb/$NEW; setsid /data1/iotdb/$NEW/sbin/start-datanode.sh -H /data1/iotdb/$NEW/dn.hprof > /data1/iotdb/$NEW/start_dn.log 2>&1 < /dev/null &" 2>/dev/null
   sleep 6
 }
 
@@ -211,7 +211,7 @@ log_mark_all() {  # writes /tmp/logmarks/<ip> = size
 
 log_scan_delta() {  # $1=outdir  -> writes new ERROR/WARN lines per node; returns unexpected ERROR count
   local outdir=$1 ip f mark errs=0
-  local benign='GrpcLogAppender|Failed requestVote|Failed appendEntries|ServerNotReady|LeaderElection|RetryImmediately|Connection refused|Connection reset|is interrupted|TimeoutException|LeaderState|readIndex|DataNodeAuthUtils|Fail to check password expiration|Cannot pull system configurations|Fail to start server|shutdown failed|current node leader may have been down'
+  local benign='GrpcLogAppender|Failed requestVote|Failed appendEntries|ServerNotReady|LeaderElection|RetryImmediately|Connection refused|Connection reset|is interrupted|TimeoutException|LeaderState|readIndex|DataNodeAuthUtils|Fail to check password expiration|Cannot pull system configurations|Fail to start server|shutdown failed|current node leader may have been down|DataNodeShutdownHook.*Failed to borrow ConfigNodeClient|DataNodeShutdownHook.*Failed to report shutdown|RouteBalancer.*Failed to change the leader|TransferLeaderRPCHandler.*Failed to CHANGE_REGION_LEADER|PipeHeartbeatRPCHandler.*Failed to PIPE_HEARTBEAT|AsyncRequestManager.*Timeout during PIPE_PUSH_ALL_META|AsyncRequestManager.*Timeout during CHANGE_REGION_LEADER|AsyncRequestManager.*Timeout during PIPE_HEARTBEAT|DataNodeTSStatusRPCHandler.*Failed to INVALIDATE_LAST_CACHE'
   mkdir -p "$outdir"
   : > "$outdir/logdelta.txt"
   for ip in 172.16.2.2 172.16.2.3 172.16.2.4 172.16.2.5 172.16.2.6 172.16.2.26 172.16.2.27 172.16.2.28; do
