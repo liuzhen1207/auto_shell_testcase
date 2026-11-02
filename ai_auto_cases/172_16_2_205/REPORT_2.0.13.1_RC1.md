@@ -75,7 +75,19 @@
 
 - 用例：`查询与生命周期 / 可靠性 / 集群重启后属性持久化并继续补列`
 - 现象：断言全部通过，但用例执行期间 DN 日志新增 **357 条 HA 类 ERROR**（分类 `FAIL_OTHER_LOG`），样例：`DataNodeShutdownHook:272 - Failed to borrow ConfigNodeClient`
-- 判断：属**集群重启窗口的 HA 噪声**，非功能失败；是否纳入白名单需研发确认（若为预期，建议加入 `lib.sh` 的良性日志白名单，否则每次回归都会报 1 条新增）
+- **具体日志**（经典协议全量 10:03:50~10:10:40 窗口内实际抓取，按条数排序）：
+
+| 条数 | 日志内容 | 性质 |
+| --- | --- | --- |
+| 4 | `ERROR o.a.i.d.s.DataNodeShutdownHook:272 - Failed to borrow ConfigNodeClient` | DN 主动停机时 CN 不可达 → **预期噪声**（用例本身重启集群） |
+| 1 | `ERROR o.a.i.d.s.DataNodeShutdownHook:274 - Failed to report shutdown` | 同上 |
+| 1 | `ERROR o.a.r.s.i.RaftServerImpl:1574 - ... Failed appendEntries* 6->3#45-t50 ...` | 已在 `lib.sh` 白名单内（Raft 复制噪声） |
+| 2+2 | `ERROR o.a.i.d.s.t.ViewColumnAutoSyncTrigger:141/149 - Failed to add columns to the tree to table views ... tv038.vn ...` | **非噪声**：属下一用例（TV-038）视图补列失败，与 TV-055 疑似同源 |
+
+- **单独复跑 TV-037（11:06~11:14）：PASS，462s，logErr=0** → 证明这些日志只在"完整回归中集群刚被前一用例折腾过"的窗口出现，属环境残留噪声；
+- 建议：
+  1. 把 `DataNodeShutdownHook:272 Failed to borrow ConfigNodeClient` / `:274 Failed to report shutdown` 加入 `lib.sh` 良性白名单（DN 被主动停止时必然出现）；
+  2. **不要**把 `ViewColumnAutoSyncTrigger:14x Failed to add columns ...` 加白名单——那是补列失败的真实信号，应与 TV-055 一起排查。
 
 ## 三、身份鉴别套件（35 条，两模式）
 
