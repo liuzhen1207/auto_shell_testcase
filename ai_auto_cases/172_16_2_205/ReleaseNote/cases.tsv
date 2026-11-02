@@ -1,0 +1,5 @@
+# ReleaseNote 套件用例矩阵（tab 分隔）
+# 列：case_id	脚本	功能域	类型	说明	执行函数
+RN-001	cases/rn01_tdb125.sh	TDB-125 授权	正向	基线：DN 正常时 GRANT 成功	case_RN001
+RN-002	cases/rn01_tdb125.sh	TDB-125 授权	可靠性	kill -9 一台 DN 后 GRANT 不超时且权限生效	case_RN002
+RN-003	cases/rn01_tdb125.sh	TDB-125 授权	可靠性	SIGSTOP 一台 DN（无响应）后 GRANT 不超时且权限生效	case_RN003
