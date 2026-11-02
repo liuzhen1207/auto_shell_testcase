@@ -8,8 +8,8 @@ BASE="${BASE:-$(cd "$(dirname "$0")/.." && pwd)}"
 bash "$BASE/tools/suite_rn.sh" "$@"
 rc=$?
 case "$rc" in
-  0)  echo "[ReleaseNote] 全部通过"; exit 0 ;;
-  10) echo "[ReleaseNote] 存在失败用例（详见 results.tsv）"; exit 10 ;;
-  4)  echo "[ReleaseNote] 环境异常"; exit 4 ;;
-  *)  echo "[ReleaseNote] 失败（rc=$rc）"; exit 3 ;;
+  0)  echo "[releasenote_skill] 全部通过"; exit 0 ;;
+  10) echo "[releasenote_skill] 存在失败用例（详见 results.tsv）"; exit 10 ;;
+  4)  echo "[releasenote_skill] 环境异常"; exit 4 ;;
+  *)  echo "[releasenote_skill] 失败（rc=$rc）"; exit 3 ;;
 esac

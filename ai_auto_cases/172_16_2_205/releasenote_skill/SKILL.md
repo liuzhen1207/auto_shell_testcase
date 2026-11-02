@@ -1,4 +1,4 @@
-# ReleaseNote 回归套件
+# releasenote_skill 回归套件
 
 把每个版本 ReleaseNote 里的**修复点/改进点**逐条固化为可重复执行的用例，供后续版本回归。
 
@@ -45,7 +45,7 @@ bash tools/run_regression.sh RN-002
 ## 目录
 
 ```
-ReleaseNote/
+releasenote_skill/
 ├── SKILL.md
 ├── README.md
 ├── cases.tsv

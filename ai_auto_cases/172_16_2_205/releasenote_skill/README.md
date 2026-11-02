@@ -1,4 +1,4 @@
-# ReleaseNote 套件使用说明
+# releasenote_skill 套件使用说明
 
 ## 安装到测试机
 
