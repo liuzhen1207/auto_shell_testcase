@@ -19,3 +19,5 @@ RN-113	cases/TIMECHODB_0711_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0711 日志规范	�
 RN-115	cases/TIMECHODB_0295_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0295 启动健壮性	可靠性	meta_data_cache_enable=false 时 DN 仍能启动	case_RN115
 RN-116	cases/TIMECHODB_0732_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0732 监控指标	功能	IoTConsensus 内存指标不得为负	case_RN116
 RN-117	cases/TIMECHODB_0365_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0365 客户端稳定性	可靠性	反复创建不可达 session 不应 OOM	case_RN117
+RN-118	cases/TIMECHODB_0648_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0648 JOIN 聚合	功能	两表 JOIN 后 last() 不应报 time 歧义	case_RN118
+RN-119	cases/TIMECHODB_0616_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0616 登录健壮性	负向	不存在用户登录不应导致 DN 空指针	case_RN119

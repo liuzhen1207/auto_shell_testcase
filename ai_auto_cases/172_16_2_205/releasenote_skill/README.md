@@ -56,6 +56,9 @@ PW=TimechoDB@2021
 | RN-116 | TIMECHODB-0732 | IoTConsensus 内存类指标不存在负值 | PASS |
 | RN-117 | TIMECHODB-0365 | 反复创建不可达 session 不 OOM、线程不暴涨 | PASS |
 
+| RN-118 | TIMECHODB-0648 | 两表 JOIN 后 `last()` 分组查询不报 `Column 'time' is ambiguous` | PASS |
+| RN-119 | TIMECHODB-0616 | 不存在用户登录不导致 DN `handleClientExit` NPE | PASS |
+
 > 数据同步类（pipe / 接收端-发送端）缺陷**未纳入**：需要双环境，205 单集群无法闭环。
 
 ### 已知失败（2.0.13.1 实测仍未修复）
@@ -63,3 +66,14 @@ PW=TimechoDB@2021
 | 用例 | 缺陷单 | 现象 | 处置 |
 | --- | --- | --- | --- |
 | RN-111 | TIMECHODB-0779 | `set configuration "query_cost_stat_window"='5.61'` 返回 301 报错，但**非法值仍被写入 CN 的 `iotdb-system.properties`**（实测第 60 行 `query_cost_stat_window=5.61`） | 记入 `conf/known_failures.conf`，套件判定为 **KNOWN**（不计失败），建议重新提缺陷 |
+
+### 未纳入的缺陷（及原因）
+
+| 缺陷 | 原因 |
+| --- | --- |
+| TIMECHODB-0635 `failed_login_attempts=0` | 该配置 `set configuration` 返回 "restart is required"，需重启集群才生效；同场景已由 `auth_skill` 覆盖 |
+| TIMECHODB-0715 改编码后 SELECT INTO | 2.0.13.1 已不支持 `SELECT INTO` 语法（实测 3 种写法均 700 解析失败），场景不适用 |
+| TIMECHODB-0656 pattern_match UDF | 需先注册 UDF 库（iotdb-library），当前构建未内置 |
+| TIMECHODB-0663 安全包强密码默认值 | 安全包（安全版）专属，当前为企业版构建 |
+| TIMECHODB-0667 剔除连接审计日志 | 需第二个客户端 IP + 黑名单配置，单机无法构造 |
+| pipe / 接收端-发送端类全部 | 需双集群环境 |
