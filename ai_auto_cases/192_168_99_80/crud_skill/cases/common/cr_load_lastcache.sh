@@ -411,12 +411,14 @@ cr13_tbl_phase(){ local PH=$1 ST=$2 CCL=$3 TBL="t_p$PH" HAS_BLOB=1 rc NOW B_LO N
     log "  相 $PH 表 BLOB：R_post(blob)=[$(printf '%s' "$PB" | tr '\n' ' ')] R_clear(blob)=[$(printf '%s' "$CB" | tr '\n' ' ')]"
     case "$ST" in
       UPDATE_NO_BLOB)
-        if [ "$PB" = "$CB" ] && [ "$PB" != "$PRE" ]; then
-          fail "  相 $PH S8（R-65）：UPDATE_NO_BLOB 下 BLOB 序列 R_post == R_clear 但两者都 != R_pre ⇒ 需人工核对（R_pre=[$PRE]）"
-        elif [ "$PB" = "$CB" ]; then
-          warn "  W：相 $PH BLOB 的 R_post 与 R_clear 相同（可能是 EMPTY/不可读）⇒ 记录：[$PB]"
+        # 【2026-11-02 研发确认】UPDATE_NO_BLOB 下 BLOB 序列的 LAST 在 load 后**等于真值**（缓存失效/回源）是预期行为。
+        # 注意：不能把 BLOB 的 LAST（十六进制）与数值列的 R_pre 比较——类型不同，恒不相等（旧实现因此永远判"需人工核对"）。
+        if [ "$PB" = "$CB" ]; then
+          pass "  相 $PH S8（R-65）：UPDATE_NO_BLOB 下 BLOB 序列 R_post == R_clear（缓存与真值一致，研发已确认此为预期）"
+        elif [ -z "$PB" ] && [ -z "$CB" ]; then
+          warn "  W：相 $PH BLOB 的 R_post 与 R_clear 都为空（不可读）⇒ 记录，不判"
         else
-          pass "  相 $PH S8（R-65）：UPDATE_NO_BLOB 下 BLOB 序列未返回旧缓存值（R_post != R_clear）"
+          fail "  相 $PH S8（R-65）：UPDATE_NO_BLOB 下 BLOB 序列 R_post != R_clear ⇒ 缓存与真值不一致（R_post=[$PB] R_clear=[$CB]）"
         fi ;;
       UPDATE)
         if [ "$CCL" = false ]; then

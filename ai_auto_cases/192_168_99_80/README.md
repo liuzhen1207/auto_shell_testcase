@@ -56,6 +56,9 @@ cd diskusage_skill && bash tools/run_all.sh --set all
 - 跑前建议先 `bash preflight_manifests.sh`，确保 `cases/MANIFEST.md5` 与实际脚本一致（防"改过用例忘了同步清单"）。
 - 缩容用例 `CO-12` 会把 DN/CN 真的移除（集群降为 2C2D，不自动恢复），
   已从冻结回归集里摘出，建议**单独、最后**跑。
+- **常规回归档（34 条，约 4h10m）**：`bash tools/rc13_regular_regression.sh`
+  —— 串行跑 `metadata(14) → ttl(15) → diskusage(5)`，产物 `rc13reg_<模块>.csv` / `rc13reg.log` / `rc13reg.state`。
+  建议每版本跑这一档；存储面三套（合并/CRUD/WAL，93 条）按需跑全量档（约 27h）。
 
 ## 三、已跑版本与结论（2026-10 ~ 2026-11）
 
@@ -63,7 +66,8 @@ cd diskusage_skill && bash tools/run_all.sh --set all
 | --- | --- | --- |
 | RC10 `c60ce63` | V1 / V2 | 160 PASS / 27 FAIL（含 2 条 harness 自身问题） |
 | RC11 `ea4f835` | V1 / V2 | 162 / 25；新增失败 **0**（唯一变化是 harness 修复后 W-16 转 PASS） |
-| RC12 `c05111d` | V1 → V2 | 进行中 |
+| RC12 `c05111d` | V1 → V2 | 全量跑完（V1 84/9、V2 82/11） |
+| **RC13 `ab6d3de`（2.0.13.1）** | V1 | **128 条 → 125 PASS / 3 FAIL**：CR-03（TDB-873 产品）、W-21（已知架构）、CO-33（场景不可构造）；常规回归 34/34 全绿；**TDB-610 / TDB-611 门禁转 PASS** |
 
 **TTL skill 的验证记录**（同一 3C3D）：
 

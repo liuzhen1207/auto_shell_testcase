@@ -200,7 +200,9 @@ is_error(){
   # 曾因此把它误判为报错。
   printf '%s\n' "$1" | grep -vE '^\|' | grep -qE 'IoTDBSQLException|Exception|^Error:|ERROR' && return 0
   if printf '%s\n' "$1" | grep -qE '^Msg:'; then
-    printf '%s\n' "$1" | grep -qE '^Msg: The statement is executed successfully\.$' || return 0
+    # 2026-10-30：RC1 成功文案可能是 `... successfully.Executed successfully.`（双结尾），
+    # 用行尾锚点会误判成报错 ⇒ 改成**前缀**匹配。
+    printf '%s\n' "$1" | grep -qE '^Msg: The statement is executed successfully' || return 0
   fi
   return 1
 }
