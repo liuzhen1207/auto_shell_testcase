@@ -30,3 +30,16 @@ PW=TimechoDB@2021
 3. 所有 SQL 调用带 `timeout 90` 保护，避免 DN 无响应时用例卡死；
 4. 用例文件命名：`cases/TDB_<编号>_v<来源版本>.sh`（不建版本子目录）；
 5. 若集群已是异常状态（例如上一轮用例把 DN 停在 STOP），先跑 `tree_view_skill/tools/hard_reset.sh` 重置。
+
+## 已覆盖缺陷（2.0.13.1 / ab6d3de 实测）
+
+| 用例 | 来源缺陷单 | 场景 | 结果 |
+| --- | --- | --- | --- |
+| RN-001~003 | TDB-125 | DN 异常时 GRANT 不超时、权限生效 | PASS |
+| RN-101 | TIMECHODB-0684 | GROUP BY + ORDER BY + LIMIT 不得把 limit 下推到聚合之下（d1 count=2） | PASS |
+| RN-102 | TIMECHODB-0686 | DELETE 时间区间 min>max 不再返回底层 305，给出语义化错误 | PASS |
+| RN-103 | TIMECHODB-0683 | date_bin 空时间区间（time>=2 and time<1）不报 301，返回空结果 | PASS |
+| RN-104 | TIMECHODB-0698 | ALTER TIMESERIES 改 encoding/compression 不再报 700 语法错误 | PASS |
+| RN-105 | TIMECHODB-0679 | 重复创建用户时 WARN 不打印完整堆栈 | PASS |
+
+> 数据同步类（pipe / 接收端-发送端）缺陷**未纳入**：需要双环境，205 单集群无法闭环。

@@ -3,3 +3,8 @@
 RN-001	cases/TDB_125_v2.0.13.1.sh	V2.0.13.1	TDB-125 授权	正向	基线：DN 正常时 GRANT 成功	case_RN001
 RN-002	cases/TDB_125_v2.0.13.1.sh	V2.0.13.1	TDB-125 授权	可靠性	kill -9 一台 DN 后 GRANT 不超时且权限生效	case_RN002
 RN-003	cases/TDB_125_v2.0.13.1.sh	V2.0.13.1	TDB-125 授权	可靠性	SIGSTOP 一台 DN（无响应）后 GRANT 不超时且权限生效	case_RN003
+RN-101	cases/TIMECHODB_0684_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0684 查询正确性	功能	GROUP BY + ORDER BY + LIMIT 时 d1 的 count 应为 2	case_RN101
+RN-102	cases/TIMECHODB_0686_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0686 错误信息	负向	DELETE 时间区间 min>max 不应返回底层 305	case_RN102
+RN-103	cases/TIMECHODB_0683_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0683 date_bin	功能	空时间区间查询不应报 301	case_RN103
+RN-104	cases/TIMECHODB_0698_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0698 序列编码	功能	ALTER TIMESERIES 同时改 encoding/compression 应生效	case_RN104
+RN-105	cases/TIMECHODB_0679_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0679 日志规范	日志	重复创建用户 WARN 不应带堆栈	case_RN105
