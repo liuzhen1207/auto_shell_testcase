@@ -101,8 +101,16 @@ bash <repo>/releasenote_skill/versions/v2.0.13.1/TDB-65/scripts/run_matrix.sh
 5. **门禁**：每轮有 5 道门禁（集群就绪、协议生效、数据落盘、syncLag、证据落盘），失败先看门禁日志再怀疑产品；
 6. **RN 目录约定与 205 不同**：本环境 `releasenote_skill` 用 `versions/<版本>/<RN>/`（含 java/scripts/evidence）；205 环境按 `cases/TDB_<编号>_v<版本>.sh`。若要统一，需要一次迁移（见下）。
 
-## 七、待办（可选）
+## 七、两个环境的分工约定（已确认）
 
-- [ ] 把本环境 `releasenote_skill` 迁移成与 205 一致的 `cases/TDB_<编号>_v<版本>.sh` + `cases.tsv` 结构；
+| 环境 | `releasenote_skill` 结构 | 定位 |
+| --- | --- | --- |
+| **172_16_2_20**（本环境） | `versions/<版本>/<RN>/{README,release_note_test_report.md,scripts,java,evidence}` | **取证型 RN 验证**：每个 RN 带脚本、Java 取证程序与原始证据，面向"拿证据回填 PLM" |
+| 172_16_2_205 | `cases/TDB_<编号>_v<版本>.sh` + `cases.tsv`（无版本子目录） | **可自动化回归用例**：纳入套件一键跑，面向每版本回归 |
+
+结论：**两者用途不同，不强行统一**；本环境保留 `versions/` 结构。
+
+### 其余待办
+
 - [ ] delete_skill 的 `env.conf` 版本段改成脚本参数（避免换版本改文件）；
 - [ ] 把 205 的 tree_view_skill / auth_skill 引入本环境（若本环境也需要这两块回归）。

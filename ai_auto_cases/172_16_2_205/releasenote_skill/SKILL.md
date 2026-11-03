@@ -33,6 +33,13 @@ bash tools/run_regression.sh RN-002
 > 源码依据：`TSStatusCode.java:192 AUTH_OPERATE_EXCEPTION(818)`、`ProcedureMessages.java:100`；
 > 权限缓存失效已改为异步下发（`AuthOperationProcedure.java:214` → `CnToDnAsyncRequestType.INVALIDATE_PERMISSION_CACHE`）。
 
+## 与其他环境的结构差异（已确认，不必统一）
+
+| 环境 | 结构 | 定位 |
+| --- | --- | --- |
+| **172_16_2_205**（本目录） | `cases/TDB_<编号>_v<版本>.sh` + `cases.tsv` | 可自动化回归用例，纳入套件一键跑 |
+| 172_16_2_20 | `versions/<版本>/<RN>/{scripts,java,evidence}` | 取证型 RN 验证（带 Java 取证程序与原始证据，用于回填 PLM） |
+
 ## 如何新增一条 ReleaseNote 用例
 
 **命名约定**：`cases/TDB_<编号>_v<来源版本>.sh`，例如 `TDB_125_v2.0.13.1.sh`（不建版本子目录）。
