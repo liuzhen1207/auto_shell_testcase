@@ -42,4 +42,10 @@ PW=TimechoDB@2021
 | RN-104 | TIMECHODB-0698 | ALTER TIMESERIES 改 encoding/compression 不再报 700 语法错误 | PASS |
 | RN-105 | TIMECHODB-0679 | 重复创建用户时 WARN 不打印完整堆栈 | PASS |
 
+| RN-106 | TIMECHODB-0687 | 对齐序列 device 用写入创建后查询不报 ClassCastException 且能查出数据 | PASS |
+| RN-107 | TIMECHODB-0670 | 不开三权分立时设置 MAX/MIN_SESSION_PER_USER 不报 NPE | PASS |
+| RN-108 | TIMECHODB-0699 | 不支持的 encoding=DICTIONARY(INT32) 返回简洁语义化错误、不带堆栈 | PASS |
+| RN-109 | TIMECHODB-0744 | 无 grant option 的普通用户不得把 SYSTEM 转授他人 | PASS |
+| RN-110 | TIMECHODB-0423 | 普通用户对不存在 db 路径建 view 不再返回 305 内部错误（改为 803 权限提示） | PASS |
+
 > 数据同步类（pipe / 接收端-发送端）缺陷**未纳入**：需要双环境，205 单集群无法闭环。

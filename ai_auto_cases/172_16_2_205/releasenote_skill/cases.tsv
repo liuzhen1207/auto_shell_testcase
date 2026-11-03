@@ -8,3 +8,8 @@ RN-102	cases/TIMECHODB_0686_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0686 错误信息	�
 RN-103	cases/TIMECHODB_0683_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0683 date_bin	功能	空时间区间查询不应报 301	case_RN103
 RN-104	cases/TIMECHODB_0698_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0698 序列编码	功能	ALTER TIMESERIES 同时改 encoding/compression 应生效	case_RN104
 RN-105	cases/TIMECHODB_0679_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0679 日志规范	日志	重复创建用户 WARN 不应带堆栈	case_RN105
+RN-106	cases/TIMECHODB_0687_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0687 对齐序列	功能	对齐序列 device 用写入创建后查询不应 ClassCastException	case_RN106
+RN-107	cases/TIMECHODB_0670_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0670 连接数限制	功能	不开三权分立时设置 MAX/MIN_SESSION_PER_USER 不报 NPE	case_RN107
+RN-108	cases/TIMECHODB_0699_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0699 错误信息	负向	不支持的 encoding 应返回简洁语义化错误	case_RN108
+RN-109	cases/TIMECHODB_0744_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0744 权限越权	安全	无 grant option 的普通用户不得转授 SYSTEM	case_RN109
+RN-110	cases/TIMECHODB_0423_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0423 视图权限	负向	普通用户对不存在 db 建 view 不应返回 305	case_RN110
