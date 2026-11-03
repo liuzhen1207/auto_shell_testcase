@@ -1,0 +1,33 @@
+#!/bin/bash
+# ============================================================================
+# 来源缺陷单：TIMECHODB-0599
+#   【TIMECHODB-0599】 在一个已存在的设备下，创建新的序列时，忽略创建语句指定的对齐和非对齐属性，使用当前设备的对齐和非对齐属性，而非报错
+#   自动抽取用例（按缺陷单复现步骤顺序执行，断言无异常）
+#   验证版本：2.0.13.1 / ab6d3de
+#   预期摘要：不报错  复现步骤  create timeseries root.a.b.c int32 create aligned timeseries root.a.b (d int32)  研发侧 问题原因 当手动 / 自动创
+# ============================================================================
+RN0599_SQL=(
+"create timeseries root.a.b.c int32"
+"create aligned timeseries root.a.b (d int32)"
+)
+
+case_RN0599() {
+  local st out unexpected=0
+  for st in "${RN0599_SQL[@]}"; do
+    out=$( T "$st" )
+    # 幂等：对象已存在视为可接受
+    if echo "$out" | grep -qiE 'already exists|already been created'; then
+      ok "已存在(幂等): $(echo "$st" | cut -c1-55)"; continue
+    fi
+    if echo "$out" | grep -qiE 'Exception|ERROR|internal error|NullPointerException'; then
+      unexpected=$((unexpected+1))
+      fail "$(echo "$st" | cut -c1-65) -> $(echo "$out" | head -1 | cut -c1-110)"
+    else
+      ok "$(echo "$st" | cut -c1-55)"
+    fi
+  done
+}
+
+CASES+=(
+"TIMECHODB-0599 自动抽取|TIMECHODB-0599|功能|在一个已存在的设备下，创建新的序列时，忽略创建语句指定的对齐和非对齐属性，使用当前设备的对齐和非对齐属性，而非报错|case_RN0599"
+)
