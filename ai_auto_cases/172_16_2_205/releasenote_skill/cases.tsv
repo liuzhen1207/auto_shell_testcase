@@ -16,3 +16,6 @@ RN-110	cases/TIMECHODB_0423_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0423 视图权限	�
 RN-111	cases/TIMECHODB_0779_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0779 配置热加载	负向	非法 query_cost_stat_window 不应写入配置文件	case_RN111
 RN-112	cases/TIMECHODB_0734_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0734 JDBC	功能	空 ResultSet 上 findColumn 不应 NPE	case_RN112
 RN-113	cases/TIMECHODB_0711_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0711 日志规范	日志	session.close 后 DN 不应打印 TTransportException	case_RN113
+RN-115	cases/TIMECHODB_0295_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0295 启动健壮性	可靠性	meta_data_cache_enable=false 时 DN 仍能启动	case_RN115
+RN-116	cases/TIMECHODB_0732_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0732 监控指标	功能	IoTConsensus 内存指标不得为负	case_RN116
+RN-117	cases/TIMECHODB_0365_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0365 客户端稳定性	可靠性	反复创建不可达 session 不应 OOM	case_RN117

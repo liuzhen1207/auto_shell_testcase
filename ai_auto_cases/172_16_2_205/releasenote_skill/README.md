@@ -52,6 +52,10 @@ PW=TimechoDB@2021
 | RN-112 | TIMECHODB-0734 | 空 ResultSet 上 findColumn 不抛 NPE（返回列号或 SQLException） | PASS |
 | RN-113 | TIMECHODB-0711 | session.close() 后 DN 不打印 TTransportException/Connection reset | PASS |
 
+| RN-115 | TIMECHODB-0295 | `meta_data_cache_enable=false` 时 DataNode 仍能启动（恢复后 8/8） | PASS |
+| RN-116 | TIMECHODB-0732 | IoTConsensus 内存类指标不存在负值 | PASS |
+| RN-117 | TIMECHODB-0365 | 反复创建不可达 session 不 OOM、线程不暴涨 | PASS |
+
 > 数据同步类（pipe / 接收端-发送端）缺陷**未纳入**：需要双环境，205 单集群无法闭环。
 
 ### 已知失败（2.0.13.1 实测仍未修复）
