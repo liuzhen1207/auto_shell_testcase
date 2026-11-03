@@ -19,6 +19,9 @@
 
 ## 说明
 
+- 套件清单、部署与执行命令、预期基线见 [`RUNBOOK.md`](RUNBOOK.md)。
+
+
 - 每个模块是一个 `*_skill/` 包，拷到测试机 `/data2/iotdb/rc10_matrix` 即可按 README 直接跑。
 - 运行产物（`results/`、`logs/`、`*.out`、`artifacts/`）不提交，见仓库根 `.gitignore`；证据留在测试机。
 - 口令不写入仓库，脚本从测试机既有 `conf/test.conf` 读取 `root_pw`。
