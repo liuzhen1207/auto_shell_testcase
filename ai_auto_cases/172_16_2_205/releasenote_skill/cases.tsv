@@ -13,3 +13,6 @@ RN-107	cases/TIMECHODB_0670_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0670 连接数限�
 RN-108	cases/TIMECHODB_0699_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0699 错误信息	负向	不支持的 encoding 应返回简洁语义化错误	case_RN108
 RN-109	cases/TIMECHODB_0744_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0744 权限越权	安全	无 grant option 的普通用户不得转授 SYSTEM	case_RN109
 RN-110	cases/TIMECHODB_0423_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0423 视图权限	负向	普通用户对不存在 db 建 view 不应返回 305	case_RN110
+RN-111	cases/TIMECHODB_0779_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0779 配置热加载	负向	非法 query_cost_stat_window 不应写入配置文件	case_RN111
+RN-112	cases/TIMECHODB_0734_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0734 JDBC	功能	空 ResultSet 上 findColumn 不应 NPE	case_RN112
+RN-113	cases/TIMECHODB_0711_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0711 日志规范	日志	session.close 后 DN 不应打印 TTransportException	case_RN113

@@ -48,4 +48,14 @@ PW=TimechoDB@2021
 | RN-109 | TIMECHODB-0744 | 无 grant option 的普通用户不得把 SYSTEM 转授他人 | PASS |
 | RN-110 | TIMECHODB-0423 | 普通用户对不存在 db 路径建 view 不再返回 305 内部错误（改为 803 权限提示） | PASS |
 
+| RN-111 | TIMECHODB-0779 | 非法 query_cost_stat_window 值不应写入 iotdb-system.properties | **KNOWN**（2.0.13.1 仍未修复，见下） |
+| RN-112 | TIMECHODB-0734 | 空 ResultSet 上 findColumn 不抛 NPE（返回列号或 SQLException） | PASS |
+| RN-113 | TIMECHODB-0711 | session.close() 后 DN 不打印 TTransportException/Connection reset | PASS |
+
 > 数据同步类（pipe / 接收端-发送端）缺陷**未纳入**：需要双环境，205 单集群无法闭环。
+
+### 已知失败（2.0.13.1 实测仍未修复）
+
+| 用例 | 缺陷单 | 现象 | 处置 |
+| --- | --- | --- | --- |
+| RN-111 | TIMECHODB-0779 | `set configuration "query_cost_stat_window"='5.61'` 返回 301 报错，但**非法值仍被写入 CN 的 `iotdb-system.properties`**（实测第 60 行 `query_cost_stat_window=5.61`） | 记入 `conf/known_failures.conf`，套件判定为 **KNOWN**（不计失败），建议重新提缺陷 |

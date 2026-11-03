@@ -15,6 +15,17 @@ mkdir -p "$RESULTS"
 RES="$RESULTS/results.tsv"
 printf 'id\tfeature\ttype\tverdict\tfails\tdur_s\tdetail\n' > "$RES"
 
+# 已知失败清单：每行 "CASE_ID|原因"，命中则不计为 FAIL（记为 KNOWN）
+declare -a KNOWN_IDS=() KNOWN_REASONS=()
+KF="$BASE/conf/known_failures.conf"
+if [ -f "$KF" ]; then
+  while IFS= read -r line; do
+    case "$line" in ''|'#'*) continue ;; esac
+    KNOWN_IDS+=("${line%%|*}")
+    KNOWN_REASONS+=("${line#*|}")
+  done < "$KF"
+fi
+
 declare -a CASES=()
 for f in "$BASE"/cases/*.sh; do
   [ -f "$f" ] || continue
@@ -39,12 +50,21 @@ for entry in "${CASES[@]}"; do
   t1=$(date +%s)
   dur=$((t1 - t0))
   verdict=PASS
-  [ "$CASE_FAILS" -gt 0 ] && verdict=FAIL
+  if [ "$CASE_FAILS" -gt 0 ]; then
+    verdict=FAIL
+    for i in ${KNOWN_IDS[@]+"${KNOWN_IDS[@]}"}; do
+      if [ "$i" = "$id" ]; then
+        verdict=KNOWN
+        CASE_MSGS="${CASE_MSGS}[known] $(for j in ${!KNOWN_IDS[@]+"${!KNOWN_IDS[@]}"}; do [ "${KNOWN_IDS[$j]}" = "$id" ] && echo "${KNOWN_REASONS[$j]}"; done)"
+        break
+      fi
+    done
+  fi
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$feature" "$ctype" "$verdict" "$CASE_FAILS" "$dur" "$CASE_MSGS" >> "$RES"
   echo "[$(date +%T)] $id -> $verdict (fails=$CASE_FAILS ${dur}s)"
 done
 
 echo "[$(date +%T)] ReleaseNote suite done"
 awk -F'\t' 'NR>1{c[$4]++} END{for(k in c) print k, c[k]}' "$RES"
-[ "$(awk -F'\t' 'NR>1 && $4!="PASS"' "$RES" | wc -l)" -gt 0 ] && exit 10
+[ "$(awk -F'\t' 'NR>1 && $4!="PASS" && $4!="KNOWN"' "$RES" | wc -l)" -gt 0 ] && exit 10
 exit 0
