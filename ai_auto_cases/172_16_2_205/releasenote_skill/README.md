@@ -139,3 +139,10 @@ bash tools/mode.sh off                             # 写回 false + hard_reset �
 ```bash
 bash tools/mode.sh on && RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122 && bash tools/mode.sh off
 ```
+
+### 审计日志类：本环境不可用（已验证）
+
+`enable_audit_log=true` + 重启后，`root.__audit.**` 只出现 `password_history` 系列，**没有操作审计记录**；
+配置模板中也无 `auditable_*` 键。结论：操作审计需安全包/专门授权构建，详见 [`docs/audit_status.md`](docs/audit_status.md)。
+
+`tools/mode.sh audit-on|audit-off` 已就绪，换到支持审计的构建后可直接复用模式门控。
