@@ -21,117 +21,44 @@ RN-116	cases/TIMECHODB_0732_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0732 监控指标	�
 RN-117	cases/TIMECHODB_0365_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0365 客户端稳定性	可靠性	反复创建不可达 session 不应 OOM	case_RN117
 RN-118	cases/TIMECHODB_0648_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0648 JOIN 聚合	功能	两表 JOIN 后 last() 不应报 time 歧义	case_RN118
 RN-119	cases/TIMECHODB_0616_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0616 登录健壮性	负向	不存在用户登录不应导致 DN 空指针	case_RN119
-RN-0099	cases/TIMECHODB_0099_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0099 自动抽取	功能	DB与Table反复设置TTL后，导致插入数据查询不到，返回空列表	case_RN0099
-RN-0095	cases/TIMECHODB_0095_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0095 自动抽取	功能	date和timestamp类型的数据，02-29和04-31写入会成功: 02-28,04-30，期望报错	case_RN0095
-RN-0056	cases/TIMECHODB_0056_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0056 自动抽取	功能	没有 mods 和 ttl 也选出了 settle 任务	case_RN0056
-RN-0059	cases/TIMECHODB_0059_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0059 自动抽取	功能	删除数据后，触发合并时会导致已删除数据再次被查询	case_RN0059
-RN-0048	cases/TIMECHODB_0048_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0048 自动抽取	功能	write back sink这里面指定目标db为大写（NEWDB）时,会直接创建 NEWDB的database, 不能	case_RN0048
-RN-0053	cases/TIMECHODB_0053_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0053 自动抽取	功能	table]3c3d,1个datanode down, 创建table失败	case_RN0053
-RN-0038	cases/TIMECHODB_0038_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0038 自动抽取	功能	table]没有任何列的table可以创建，但是不能写入	case_RN0038
-RN-0572	cases/TIMECHODB_0572_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0572 自动抽取	功能	清除DN上的缓存参数为on local时出现空指针异常报错	case_RN0572
 RN-0727	cases/TIMECHODB_0727_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0727 自动抽取	功能	1.3.6.1 TierManager 可能返回错误的 tier 导致合并生成的文件直接进入最高层级	case_RN0727
-RN-0389	cases/TIMECHODB_0389_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0389 自动抽取	功能	查询优化项 ] 3个相同的表/视图 做LEFT JOIN  指定using(device_id,time) 预期没有	case_RN0389
 RN-0688	cases/TIMECHODB_0688_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0688 自动抽取	功能	异步加载】异步加载带mods的tsfile，会忽略mods自动补全数据	case_RN0688
-RN-0708	cases/TIMECHODB_0708_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0708 自动抽取	功能	2.0.6.4】并发写入+修改序列编码和压缩（开启合并）出现死锁问题	case_RN0708
-RN-0704	cases/TIMECHODB_0704_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0704 自动抽取	功能	2.0.6.4】修改序列编码和压缩，IF PERMITTED语句实现存在问题，对不存在的序列使用会报错 Invali	case_RN0704
 RN-0592	cases/TIMECHODB_0592_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0592 自动抽取	功能	Load 在某些特殊情况下（aligned 类型不同，tableSchema 不同时）等，会忽略 mods 导入	case_RN0592
-RN-0612	cases/TIMECHODB_0612_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0612 自动抽取	功能	修复存储引擎对于某个表结构正在修改的 table，刷盘后文件中的 tableSchema 还是以最开始的 table	case_RN0612
 RN-0675	cases/TIMECHODB_0675_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0675 自动抽取	功能	2.0.7.1][用户连接数限制]1c1d 多用户配置，有几率实际连接数大于最大连接数	case_RN0675
-RN-0657	cases/TIMECHODB_0657_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0657 自动抽取	功能	V2.0.7.1_RC9】表模型中，拥有SECURITY权限的用户1，授予用户6关于__audit权限范围内INSE	case_RN0657
-RN-0656	cases/TIMECHODB_0656_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0656 自动抽取	功能	使用模式匹配函数查询会出现索引越界的报错	case_RN0656
 RN-0632	cases/TIMECHODB_0632_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0632 自动抽取	功能	2.0.7.1][tree]select * from root.__audit.password_history.	case_RN0632
 RN-0590	cases/TIMECHODB_0590_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0590 自动抽取	功能	Load 在某些特殊情况下（aligned 类型不同，tableSchema 不同时）等，会忽略 mods 导入	case_RN0590
-RN-0600	cases/TIMECHODB_0600_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0600 自动抽取	功能	insertMultiTablets时，部分设备的自动创建，不应该影响无需自动创建的设备的写入（这些设备的对齐属性与	case_RN0600
 RN-0597	cases/TIMECHODB_0597_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0597 自动抽取	功能	insertMultiTablets时，部分设备的自动创建，不应该影响无需自动创建的设备的写入（这些设备的对齐属性与	case_RN0597
 RN-0598	cases/TIMECHODB_0598_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0598 自动抽取	功能	在一个已存在的设备下，创建新的序列时，忽略创建语句指定的对齐和非对齐属性，使用当前设备的对齐和非对齐属性，而非报错	case_RN0598
 RN-0599	cases/TIMECHODB_0599_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0599 自动抽取	功能	在一个已存在的设备下，创建新的序列时，忽略创建语句指定的对齐和非对齐属性，使用当前设备的对齐和非对齐属性，而非报错	case_RN0599
 RN-0587	cases/TIMECHODB_0587_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0587 自动抽取	功能	表模型】插入数据后，若使用UPDATE更新表属性列为FIELD列会出现NPE	case_RN0587
 RN-0580	cases/TIMECHODB_0580_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0580 自动抽取	功能	强密码】在干净的服务中，当普通用户设置密码后，再次重置为使用过的密码，预期失败，但是实际上更新成功了	case_RN0580
-RN-0577	cases/TIMECHODB_0577_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0577 自动抽取	功能	表模型】表名含有中文长度为2个字符时，通过接口InsertTablet接口写入异常，提示"XX" is not a 	case_RN0577
-RN-0576	cases/TIMECHODB_0576_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0576 自动抽取	功能	表模型】表名包含大于等于4个长度的中文，通过接口InsertTablet写入数据，此时写入不会报错，但表名会变成 【	case_RN0576
 RN-0559	cases/TIMECHODB_0559_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0559 自动抽取	功能	2.0.6.1][aggregate-processor]效率不高，长时间处理大量聚合，会影响写入	case_RN0559
-RN-0557	cases/TIMECHODB_0557_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0557 自动抽取	功能	2.0.6.1][aggregate-processor]会处理已经删除的原始数据序列，预期不要处理	case_RN0557
 RN-0558	cases/TIMECHODB_0558_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0558 自动抽取	功能	2.0.6.1 RC4 查询写回遇到空指针 Cannot invoke "com.google.common.uti	case_RN0558
 RN-0556	cases/TIMECHODB_0556_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0556 自动抽取	功能	2.0.6.1][aggregate-processor]output.database最好有校验，当指定非法值时，	case_RN0556
 RN-0554	cases/TIMECHODB_0554_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0554 自动抽取	功能	2.0.6.1][aggregate-processor]负数时间戳没有被处理	case_RN0554
 RN-0551	cases/TIMECHODB_0551_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0551 自动抽取	功能	2.0.6.1][aggregate-processor]视图不能被aggregate-processor捕获处理	case_RN0551
-RN-0517	cases/TIMECHODB_0517_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0517 自动抽取	功能	v2.0.6.1】查询写回报错“Msg: org.apache.iotdb.jdbc.IoTDBSQLExcepti	case_RN0517
-RN-0536	cases/TIMECHODB_0536_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0536 自动抽取	功能	位操作函数】对于null值处理和trino不一致，部分函数之间也不一致	case_RN0536
-RN-0529	cases/TIMECHODB_0529_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0529 自动抽取	功能	v2.0.6.1】MATCH_RECOGNIZE DEFINE不支持字符串过滤	case_RN0529
-RN-0479	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0479 自动抽取	功能	安全 ] 2.0.6.1 RC1 drop user 成功应该断开它的连接，否则再创建同名用户，此僵尸用户就复活了	case_RN0479
-RN-0450	cases/TIMECHODB_0450_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0450 自动抽取	功能	表模型SQL】CASE WHEN执行查询时，报305服务内部错误异常	case_RN0450
 RN-0459	cases/TIMECHODB_0459_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0459 自动抽取	功能	表模型-权限】创建用户失败后，再次修改未创建成功的用户密码，报305内部服务异常	case_RN0459
 RN-0443	cases/TIMECHODB_0443_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0443 自动抽取	功能	树模型SQL】同一表达式在case when子句中与子句外，其对应结果不一致	case_RN0443
-RN-0446	cases/TIMECHODB_0446_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0446 自动抽取	功能	TIMESTAMP 类型聚合查询结果错误	case_RN0446
-RN-0444	cases/TIMECHODB_0444_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0444 自动抽取	功能	树转表 ] alter view view_not_exist add column col from col; C	case_RN0444
 RN-0410	cases/TIMECHODB_0410_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0410 自动抽取	功能	大TEXT对象 + align by device + order by time 查询报内存不足	case_RN0410
-RN-0433	cases/TIMECHODB_0433_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0433 自动抽取	功能	树模型】BLOB数据类型，执行last查询，返回的结果集中，Value对应的值显示乱码	case_RN0433
-RN-0427	cases/TIMECHODB_0427_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0427 自动抽取	功能	高精度时间戳取余结果不符合预期	case_RN0427
-RN-0424	cases/TIMECHODB_0424_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0424 自动抽取	功能	query mem leak ] 查询报内存不足后有 MemoryLeakException	case_RN0424
-RN-0426	cases/TIMECHODB_0426_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0426 自动抽取	功能	树模型-V2.0.5.1 】通过聚合函数max_by或min_by查询时间戳差值报301: Index 2 out 	case_RN0426
-RN-0425	cases/TIMECHODB_0425_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0425 自动抽取	功能	进1.3.5.6 [ query mem leak ] 查询报内存不足后有 MemoryLeakException	case_RN0425
-RN-0415	cases/TIMECHODB_0415_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0415 自动抽取	功能	查询 ] 查询遇到 Not enough memory for sorting 产生的临时文件夹没有删除，期望清理干	case_RN0415
-RN-0413	cases/TIMECHODB_0413_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0413 自动抽取	功能	树模型-SQL】执行最新点查询数据丢失1条数据信息	case_RN0413
-RN-0412	cases/TIMECHODB_0412_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0412 自动抽取	功能	树模型-SQL】普通用户拥有WRITE_DATA和WRITE_SCHEMA权限，创建view报305内部服务错误异常	case_RN0412
 RN-0406	cases/TIMECHODB_0406_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0406 自动抽取	功能	cross join : 2个树转表视图cross join 结果集太大 报错 301: positionCount	case_RN0406
-RN-0404	cases/TIMECHODB_0404_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0404 自动抽取	功能	树转表 ] 2.0.5.1 RC4 多个相同视图隐式连接查询报错：301: Measurement value_5 	case_RN0404
-RN-0280	cases/TIMECHODB_0280_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0280 自动抽取	功能	TsFile 2.1.0】使用在Window编译下python tsfile的whl包，无法查询IoTDB的data	case_RN0280
-RN-0393	cases/TIMECHODB_0393_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0393 自动抽取	功能	Limit 在查询时被不正确消除	case_RN0393
-RN-0402	cases/TIMECHODB_0402_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0402 自动抽取	功能	树转表 ] 查询视图失败（where不指定field列，指定time和tag）：ArrayIndexOutOfBou	case_RN0402
 RN-0396	cases/TIMECHODB_0396_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0396 自动抽取	功能	窗口函数】查询空值，一次性执行多遍完整流程，会出现java.lang.IndexOutOfBoundsExcepti	case_RN0396
 RN-0385	cases/TIMECHODB_0385_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0385 自动抽取	功能	树转表] 2.0.5.1 RC3 3个视图join 查询 指定了where time <= , DN java.la	case_RN0385
-RN-0353	cases/TIMECHODB_0353_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0353 自动抽取	功能	表模型V2.0.5.1-RC2】MATCH_RECOGNIZE执行查询，遇到301: Source handle i	case_RN0353
-RN-0351	cases/TIMECHODB_0351_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0351 自动抽取	功能	表模型V2.0.5.1-RC2】MATCH_RECOGNIZE执行查询过程中遇到time out 超时	case_RN0351
-RN-0348	cases/TIMECHODB_0348_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0348 自动抽取	功能	表模型V2.0.5.1-RC2】MATCH_RECOGNIZE校验信息中，状态码以及message信息需优化	case_RN0348
-RN-0354	cases/TIMECHODB_0354_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0354 自动抽取	功能	2051 rc2】windows环境 使用表模型示例数据 测试 LEFT JOIN 出现中文乱码	case_RN0354
-RN-0362	cases/TIMECHODB_0362_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0362 自动抽取	功能	ainode】外置模型无法导入	case_RN0362
 RN-0332	cases/TIMECHODB_0332_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0332 自动抽取	功能	表模型V2.0.5.1-RC1】approx_most_frequent第2个参数为浮点数时，报301异常报错	case_RN0332
 RN-0331	cases/TIMECHODB_0331_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0331 自动抽取	功能	表模型V2.0.5.1-RC1】approx_most_frequent函数所需参数为空时，报305内部服务异常	case_RN0331
-RN-0345	cases/TIMECHODB_0345_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0345 自动抽取	功能	窗口函数】窗口函数查询带有空值的数据会有多种问题	case_RN0345
-RN-0343	cases/TIMECHODB_0343_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0343 自动抽取	功能	窗口函数】在窗口函数中不结合frame使用ORDER BY对多个列进行排序，会报错null	case_RN0343
 RN-0341	cases/TIMECHODB_0341_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0341 自动抽取	功能	窗口函数】窗口函数offset PRECEDING和offset FOLLOWING中的允许offset为取值不合法	case_RN0341
 RN-0337	cases/TIMECHODB_0337_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0337 自动抽取	功能	窗口函数】窗口函数参数一个都不用则会出现305异常	case_RN0337
-RN-0330	cases/TIMECHODB_0330_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0330 自动抽取	功能	窗口函数】若窗口函数执行了排序，则写在表名后面的ORDER BY TAG列会失效	case_RN0330
-RN-0274	cases/TIMECHODB_0274_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0274 自动抽取	功能	dbeaver】【树模型】【5群】Status code: 700, Query Statement: "xxxxx	case_RN0274
-RN-0318	cases/TIMECHODB_0318_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0318 自动抽取	功能	多层 Join Using 嵌套使用时消除不必要的 SortNode	case_RN0318
 RN-0317	cases/TIMECHODB_0317_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0317 自动抽取	功能	表模型】对于不支持ASOF RIGHT JOIN查询时，报305异常内部错误	case_RN0317
-RN-0306	cases/TIMECHODB_0306_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0306 自动抽取	功能	Join + 聚合下推 查询场景出现异常	case_RN0306
 RN-0303	cases/TIMECHODB_0303_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0303 自动抽取	功能	表模型-V2.0.4.1_RC1】表模型全量查询时，报301异常	case_RN0303
-RN-0298	cases/TIMECHODB_0298_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0298 自动抽取	功能	UDAF  group by 查询执行异常	case_RN0298
 RN-0299	cases/TIMECHODB_0299_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0299 自动抽取	功能	StreamAggOperator 处理 Empty Block 时发生异常	case_RN0299
-RN-0297	cases/TIMECHODB_0297_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0297 自动抽取	功能	UDTF】内置表值函数SESSION的TIMECOL参数缺少默认值，导致使用时不写TIMECOL会报错	case_RN0297
 RN-0293	cases/TIMECHODB_0293_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0293 自动抽取	功能	表模型】delete devices + where 条件，所有的devices均被删除了	case_RN0293
-RN-0288	cases/TIMECHODB_0288_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0288 自动抽取	功能	表模型V2.0.4.1-RC1】APPROX_COUNT_DISTINCT指定标准误差最小值时，执行查询结果报异常	case_RN0288
-RN-0259	cases/TIMECHODB_0259_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0259 自动抽取	功能	spark-iotdb-table-connector】使用spark-sql写iotdb时，类型转换错误	case_RN0259
-RN-0240	cases/TIMECHODB_0240_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0240 自动抽取	功能	表模型V2.0.3.1-RC1】Not Exists查询结果不正确	case_RN0240
-RN-0245	cases/TIMECHODB_0245_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0245 自动抽取	功能	表模型】普通用户拥有INSERT权限，通过export-schema.sh导出元数据异常	case_RN0245
-RN-0251	cases/TIMECHODB_0251_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0251 自动抽取	功能	表模型-SQL】distinct查询中，非法格式校验状态码需要优化	case_RN0251
-RN-0249	cases/TIMECHODB_0249_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0249 自动抽取	功能	SortNode 在分布式规划时被不正确消除	case_RN0249
-RN-0099	cases/TIMECHODB_0099_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0099 自动抽取	功能	DB与Table反复设置TTL后，导致插入数据查询不到，返回空列表	case_RN0099
-RN-0213	cases/TIMECHODB_0213_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0213 自动抽取	功能	聚合查询 distinct 命中聚合下推优化且与 group by date_bin 联用时执行异常	case_RN0213
 RN-0207	cases/TIMECHODB_0207_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0207 自动抽取	功能	树模型SQL】普通用户仅有WRITE_DATA权限，select into目标序列的所属数据库不存在时，对应的Che	case_RN0207
 RN-0205	cases/TIMECHODB_0205_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0205 自动抽取	功能	鉴权】使用root创建多个普通用户并给第一个用户赋予全部权限，然后使用第一个用户给其他用户赋予权限会报305异常：C	case_RN0205
-RN-0200	cases/TIMECHODB_0200_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0200 自动抽取	功能	表模型V2.0.2.1-RC5】修改不存在的DB时，报305: String index out of range:	case_RN0200
-RN-0185	cases/TIMECHODB_0185_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0185 自动抽取	功能	group 超过 1024，部分聚合函数（First、Last、Sum、Extreme）查询报 BigArrary 	case_RN0185
-RN-0161	cases/TIMECHODB_0161_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0161 自动抽取	功能	权限]使用非root用户，有database的create,insert权限，却看不到该database，创建不了表	case_RN0161
-RN-0187	cases/TIMECHODB_0187_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0187 自动抽取	功能	insert null 值 不会覆盖当前值	case_RN0187
-RN-0154	cases/TIMECHODB_0154_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0154 自动抽取	功能	表注释列】指定注释为‘’时，查询报错301: Ratis request failed Unknown/301: C	case_RN0154
-RN-0178	cases/TIMECHODB_0178_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0178 自动抽取	功能	OPC-UA】表模型支持 NPE  && 多一层空级	case_RN0178
 RN-0169	cases/TIMECHODB_0169_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0169 自动抽取	功能	对象存储 + export-tsfle】导出文件失败	case_RN0169
-RN-0158	cases/TIMECHODB_0158_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0158 自动抽取	功能	表模型】非关联标量子查询 not in查询结果集不正确	case_RN0158
 RN-0157	cases/TIMECHODB_0157_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0157 自动抽取	功能	set sql_dialect】使用表模型的cli创建表模型的数据库并use后，使用set sql_dialect切	case_RN0157
 RN-0135	cases/TIMECHODB_0135_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0135 自动抽取	功能	OPC DA】datanode异常退出	case_RN0135
-RN-0146	cases/TIMECHODB_0146_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0146 自动抽取	功能	表模型-FULL JOIN】表达式全连接查询报305内部服务错误异常	case_RN0146
-RN-0126	cases/TIMECHODB_0126_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0126 自动抽取	功能	表模型SQL】数据类型DATE与INT32求和时，其返回状态码需更改	case_RN0126
-RN-0124	cases/TIMECHODB_0124_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0124 自动抽取	功能	OPC DA】 Cannot invoke "org.apache.tsfile.utils.Binary.toSt	case_RN0124
-RN-0120	cases/TIMECHODB_0120_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0120 自动抽取	功能	tree]创建view，show timeseries 时会出现 非用户创建的序列	case_RN0120
 RN-0118	cases/TIMECHODB_0118_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0118 自动抽取	功能	Format函数中参数数量与pattern中格式化描述的不匹配报错会有两种信息，且日志会出现不符合预期的警告	case_RN0118
 RN-0119	cases/TIMECHODB_0119_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0119 自动抽取	功能	Format函数中参数数量与pattern中格式化描述的不匹配当查询空表时不会报错，而Java.format执行同样	case_RN0119
 RN-0095	cases/TIMECHODB_0095_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0095 自动抽取	功能	date和timestamp类型的数据，02-29和04-31写入会成功: 02-28,04-30，期望报错	case_RN0095
-RN-0107	cases/TIMECHODB_0107_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0107 自动抽取	功能	表模型】多个聚合函数执行查询报301异常	case_RN0107
 RN-0100	cases/TIMECHODB_0100_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0100 自动抽取	功能	table]多条批量写入，有错误数据，则多行都为null，正确的值也为null	case_RN0100
-RN-0056	cases/TIMECHODB_0056_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0056 自动抽取	功能	没有 mods 和 ttl 也选出了 settle 任务	case_RN0056
-RN-0059	cases/TIMECHODB_0059_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0059 自动抽取	功能	删除数据后，触发合并时会导致已删除数据再次被查询	case_RN0059
-RN-0048	cases/TIMECHODB_0048_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0048 自动抽取	功能	write back sink这里面指定目标db为大写（NEWDB）时,会直接创建 NEWDB的database, 	case_RN0048
 RN-0053	cases/TIMECHODB_0053_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0053 自动抽取	功能	table]3c3d,1个datanode down, 创建table失败	case_RN0053
 RN-0038	cases/TIMECHODB_0038_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0038 自动抽取	功能	table]没有任何列的table可以创建，但是不能写入	case_RN0038
