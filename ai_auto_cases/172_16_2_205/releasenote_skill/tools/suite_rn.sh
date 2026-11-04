@@ -27,6 +27,7 @@ if [ -f "$KF" ]; then
 fi
 
 declare -a CASES=()
+declare -A MODE_OF=()
 for f in "$BASE"/cases/*.sh; do
   [ -f "$f" ] || continue
   . "$f"
@@ -42,6 +43,12 @@ for entry in "${CASES[@]}"; do
   if [ ${#want[@]} -gt 0 ]; then
     hit=0; for w in ${want[@]+"${want[@]}"}; do [ "$w" = "$id" ] && hit=1; done
     [ "$hit" = "0" ] && continue
+  fi
+  want_mode="${MODE_OF[$id]:-normal}"
+  if [ "${RN_MODE:-normal}" != "$want_mode" ]; then
+    echo "[$(date +%T)] $id -> SKIP (需要 $want_mode 模式，当前 ${RN_MODE:-normal})"
+    printf '%s\t%s\t%s\tSKIP\t0\t0\t需 %s 模式\n' "$id" "$feature" "$ctype" "$want_mode" >> "$RES"
+    continue
   fi
   echo "[$(date +%T)] ===== $id | $feature | $ctype | $desc"
   CASE_FAILS=0; CASE_MSGS=""

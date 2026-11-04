@@ -33,7 +33,6 @@ RN-0599	cases/TIMECHODB_0599_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0599 自动抽取	
 RN-0587	cases/TIMECHODB_0587_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0587 自动抽取	功能	表模型】插入数据后，若使用UPDATE更新表属性列为FIELD列会出现NPE	case_RN0587
 RN-0580	cases/TIMECHODB_0580_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0580 自动抽取	功能	强密码】在干净的服务中，当普通用户设置密码后，再次重置为使用过的密码，预期失败，但是实际上更新成功了	case_RN0580
 RN-0559	cases/TIMECHODB_0559_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0559 自动抽取	功能	2.0.6.1][aggregate-processor]效率不高，长时间处理大量聚合，会影响写入	case_RN0559
-RN-0558	cases/TIMECHODB_0558_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0558 自动抽取	功能	2.0.6.1 RC4 查询写回遇到空指针 Cannot invoke "com.google.common.uti	case_RN0558
 RN-0556	cases/TIMECHODB_0556_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0556 自动抽取	功能	2.0.6.1][aggregate-processor]output.database最好有校验，当指定非法值时，	case_RN0556
 RN-0554	cases/TIMECHODB_0554_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0554 自动抽取	功能	2.0.6.1][aggregate-processor]负数时间戳没有被处理	case_RN0554
 RN-0551	cases/TIMECHODB_0551_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0551 自动抽取	功能	2.0.6.1][aggregate-processor]视图不能被aggregate-processor捕获处理	case_RN0551
@@ -51,7 +50,6 @@ RN-0317	cases/TIMECHODB_0317_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0317 自动抽取	
 RN-0303	cases/TIMECHODB_0303_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0303 自动抽取	功能	表模型-V2.0.4.1_RC1】表模型全量查询时，报301异常	case_RN0303
 RN-0299	cases/TIMECHODB_0299_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0299 自动抽取	功能	StreamAggOperator 处理 Empty Block 时发生异常	case_RN0299
 RN-0293	cases/TIMECHODB_0293_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0293 自动抽取	功能	表模型】delete devices + where 条件，所有的devices均被删除了	case_RN0293
-RN-0207	cases/TIMECHODB_0207_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0207 自动抽取	功能	树模型SQL】普通用户仅有WRITE_DATA权限，select into目标序列的所属数据库不存在时，对应的Che	case_RN0207
 RN-0205	cases/TIMECHODB_0205_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0205 自动抽取	功能	鉴权】使用root创建多个普通用户并给第一个用户赋予全部权限，然后使用第一个用户给其他用户赋予权限会报305异常：C	case_RN0205
 RN-0169	cases/TIMECHODB_0169_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0169 自动抽取	功能	对象存储 + export-tsfle】导出文件失败	case_RN0169
 RN-0157	cases/TIMECHODB_0157_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0157 自动抽取	功能	set sql_dialect】使用表模型的cli创建表模型的数据库并use后，使用set sql_dialect切	case_RN0157
@@ -62,3 +60,5 @@ RN-0095	cases/TIMECHODB_0095_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0095 自动抽取	
 RN-0100	cases/TIMECHODB_0100_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0100 自动抽取	功能	table]多条批量写入，有错误数据，则多行都为null，正确的值也为null	case_RN0100
 RN-0053	cases/TIMECHODB_0053_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0053 自动抽取	功能	table]3c3d,1个datanode down, 创建table失败	case_RN0053
 RN-0038	cases/TIMECHODB_0038_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0038 自动抽取	功能	table]没有任何列的table可以创建，但是不能写入	case_RN0038
+RN-121	cases/TIMECHODB_0678_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0678 三权分立	负向	security_admin 查询不存在用户权限应明确提示而非 301	case_RN121
+RN-122	cases/TIMECHODB_0619_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0619 三权分立	负向	security_admin 给不存在用户赋权应有明确提示	case_RN122

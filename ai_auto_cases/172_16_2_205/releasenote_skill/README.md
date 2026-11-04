@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**61 个用例：PASS 60 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）**，单次全量约 20 分钟。
+**62 个用例：PASS 59 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 2（三权分立用例，普通模式跳过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -109,3 +109,33 @@ PW=TimechoDB@2021
 - 最终**剪掉 55 条无法自动化的**（老版本语法、依赖 pipe/多集群、占位符、需特殊环境），保留 41 条稳定通过的
 
 淘汰明细见 [`docs/pruned_auto_cases.md`](docs/pruned_auto_cases.md)，每条记录了失败原因。
+
+### 三权分立模式用例（模式门控）
+
+套件支持按模式运行，用例文件中用 `MODE_OF["RN-xxx"]="separation"` 声明所需模式：
+
+```bash
+bash tools/mode.sh on                              # 热加载开启三权分立
+RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122
+bash tools/mode.sh off                             # 写回 false + hard_reset 恢复
+```
+
+| 用例 | 缺陷单 | 验证点 | 2.0.13.1 结果 |
+| --- | --- | --- | --- |
+| RN-121 | TIMECHODB-0678 | security_admin 查询不存在用户权限应返回明确提示而非 301 | **PASS**（实测返回 `804: No such user`） |
+| RN-122 | TIMECHODB-0619 | security_admin 给不存在用户赋权应有明确提示 | **PASS** |
+
+普通模式下这两个用例会自动 **SKIP**（结果表记为 SKIP），不影响日常回归。
+
+### 三权分立模式补充结果（2026-11-04 实测）
+
+| 用例 | 缺陷单 | 结果 |
+| --- | --- | --- |
+| RN-121 | TIMECHODB-0678 | **PASS**（2.0.13.1 返回 `804: No such user`，301 已修复） |
+| RN-122 | TIMECHODB-0619 | **PASS** |
+
+在普通模式下这两条记 SKIP；单跑三权分立批次时全通过：
+
+```bash
+bash tools/mode.sh on && RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122 && bash tools/mode.sh off
+```
