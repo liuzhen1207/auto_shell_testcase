@@ -67,7 +67,14 @@ cd diskusage_skill && bash tools/run_all.sh --set all
 | RC10 `c60ce63` | V1 / V2 | 160 PASS / 27 FAIL（含 2 条 harness 自身问题） |
 | RC11 `ea4f835` | V1 / V2 | 162 / 25；新增失败 **0**（唯一变化是 harness 修复后 W-16 转 PASS） |
 | RC12 `c05111d` | V1 → V2 | 全量跑完（V1 84/9、V2 82/11） |
-| **RC13 `ab6d3de`（2.0.13.1）** | V1 | **128 条 → 125 PASS / 3 FAIL**：CR-03（TDB-873 产品）、W-21（已知架构）、CO-33（场景不可构造）；常规回归 34/34 全绿；**TDB-610 / TDB-611 门禁转 PASS** |
+| **RC13 `ab6d3de`（2.0.13.1）** | V1 | **128 条 → 126 PASS / 2 FAIL**：CR-03（TDB-873 产品缺陷）、W-21（已知架构问题，按约定不提单）；常规回归 34/34 全绿；**TDB-610 / TDB-611 门禁转 PASS** |
+| **RC13 `ab6d3de`（2.0.13.1）** | V2 | **128 条 → 117 PASS / 10 FAIL**：CR-03、W-21、**ttl_table_expire（新产品缺陷 TDB-930，pipe NPE 吞 607）**、W-06/W-11/W-12（V2 特有）、CO-06（TDB-836）、DT-09、CO-41、CR-13（用例侧跨相污染） |
+
+> 本轮修掉 11 处**用例侧**问题（详见各 skill 注释与 commit 信息），其中最关键的两处：
+> ① `co_repair_unsorted_load.sh` 生成器 classpath **硬编码 `timechodb-server-2.0.12.1.jar`**（2.0.13.1 已改名 ⇒ 生成物为空 ⇒ load 0 行 ⇒ 21 条级联失败），改为按 glob 取实际 jar 并校验产物；
+> ② `cr_load_lastcache.sh` 把 BLOB 的 LAST（hex）与数值列 `R_pre` 比较（类型不同恒不等），按研发确认口径改为 `R_post == R_clear` 即 PASS。
+> 修完后 **CO-33 在 V1/V2 双 PASS**（593s / 592s）。
+
 
 **TTL skill 的验证记录**（同一 3C3D）：
 

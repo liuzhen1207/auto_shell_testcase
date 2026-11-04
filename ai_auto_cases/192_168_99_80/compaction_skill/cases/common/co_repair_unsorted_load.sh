@@ -105,8 +105,23 @@ c33_nrows(){ c33_rows "$1" | wc -l | tr -d ' '; }
 c33_gen(){ local stage=$1 dev=$2 off=${3:-0} vb=${4:-11} mode=${5:-unsorted} base out
   base=$(sshx "$NODE" 'date +%s%3N' | tr -dc '0-9')
   sshx "$NODE" "rm -rf $stage; mkdir -p $stage" >/dev/null 2>&1
-  out=$(sshx "$NODE" "cd $RMT && java -cp $DB_DIR/lib/timechodb-server-2.0.12.1.jar:$DB_DIR/lib/common-dependency.jar:$RMT UnsortedTsFileGen $dev $stage $base $off $vb $mode" 2>&1 | tail -1)
+  # 2026-11-04：jar 名不能写死（2.0.12.1 → 2.0.13.1 已改名），按 glob 取实际的 server jar
+  local srvjar
+  srvjar=$(sshx "$NODE" "ls $DB_DIR/lib/timechodb-server-*.jar 2>/dev/null | head -1" 2>/dev/null | tr -d '\r')
+  if [ -z "$srvjar" ]; then
+    log "    !! 未找到 $DB_DIR/lib/timechodb-server-*.jar ⇒ 生成器无法编译/运行"
+    fail "  CO-33 生成器 classpath 缺失（server jar 不存在）"
+    echo E; return
+  fi
+  out=$(sshx "$NODE" "cd $RMT && java -cp $srvjar:$DB_DIR/lib/common-dependency.jar:$RMT UnsortedTsFileGen $dev $stage $base $off $vb $mode" 2>&1 | tail -1)
   [ -n "$out" ] || out="(java 无输出)"
+  # 2026-11-04：校验真的产出了 .tsfile（之前只看字符串非空，生成失败也会"看起来成功"）
+  local nf
+  nf=$(sshx "$NODE" "ls $stage/*.tsfile 2>/dev/null | wc -l" 2>/dev/null | tr -dc '0-9')
+  if [ "${nf:-0}" -lt 1 ]; then
+    log "    !! 生成失败：$stage 下没有任何 .tsfile（java 输出：$out）"
+    fail "  CO-33 未排序 TsFile 未生成（$stage 为空）"
+  fi
   log "    生成未排序 TsFile：$out（device=$dev base=$base offset=$off valueBase=$vb mode=$mode）"
   printf '%s' "$out"; }
 # 顺序/乱序空间文件数（cmp_su 输出形如 "77:1/0 78:1/0 "，取合计）
