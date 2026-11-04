@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**68 个用例：PASS 64 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**72 个用例：PASS 68 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -170,3 +170,14 @@ bash tools/mode.sh on && RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122
 
 全量映射与分类（已覆盖 4 / 可扩展候选 17 / 暂不纳入 71 及原因）见
 [`docs/pingcode_v2_liuzhen.md`](docs/pingcode_v2_liuzhen.md)。
+
+### PingCode V2（创建人：刘珍）第二批
+
+| 用例 | PingCode | 场景 | 结果 |
+| --- | --- | --- | --- |
+| RN-130 | V2-375 | 改序列类型不应在 CN 打印 `StateMachineProcedure not set next state` | PASS |
+| RN-131 | V2-397 | `in/not in + order by limit` 子查询的 distinct 不应 `/ by zero` | PASS |
+| RN-132 | V2-430 | BLOB 列 `last/last_by` 不应抛 `StatisticsClassException` | PASS |
+| RN-133 | V2-757 | 非对齐序列 `EXPLAIN ANALYZE` 计划中 IdentitySinkNode 应含 `DownStreamPlanNodeId` | PASS |
+
+PingCode V2 覆盖已达 **8 条**，剩余 13 条可扩展候选（见 `docs/pingcode_v2_liuzhen.md`）。

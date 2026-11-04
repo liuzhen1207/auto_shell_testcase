@@ -68,3 +68,7 @@ RN-126	cases/V2_374_v2.0.13.1.sh	V2.0.13.1	V2-374 数据类型大小写	功能	a
 RN-127	cases/V2_378_v2.0.13.1.sh	V2.0.13.1	V2-378 cast 查询	功能	select cast(1.1 as float) 不应抛 UnsupportedOperationException	case_RN127
 RN-128	cases/V2_942_v2.0.13.1.sh	V2.0.13.1	V2-942 load balance 校验	负向	load balance to datanode 不存在 ID 应报错	case_RN128
 RN-129	cases/V2_345_v2.0.13.1.sh	V2.0.13.1	V2-345 解析健壮性	可靠性	非法 offset/limit 应快速报错不得 OOM	case_RN129
+RN-130	cases/V2_375_v2.0.13.1.sh	V2.0.13.1	V2-375 CN 日志	日志	改序列类型不应在 CN 打印 not set next state ERROR	case_RN130
+RN-131	cases/V2_397_v2.0.13.1.sh	V2.0.13.1	V2-397 sort 算子	功能	in/not in + order by limit 子查询不应 / by zero	case_RN131
+RN-132	cases/V2_430_v2.0.13.1.sh	V2.0.13.1	V2-430 BLOB 聚合	功能	BLOB 列 last 不应抛 StatisticsClassException	case_RN132
+RN-133	cases/V2_757_v2.0.13.1.sh	V2.0.13.1	V2-757 explain analyze	功能	非对齐序列计划 IdentitySinkNode 应含 DownStreamPlanNodeId	case_RN133
