@@ -25,7 +25,6 @@ RN-0727	cases/TIMECHODB_0727_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0727 自动抽取	
 RN-0688	cases/TIMECHODB_0688_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0688 自动抽取	功能	异步加载】异步加载带mods的tsfile，会忽略mods自动补全数据	case_RN0688
 RN-0592	cases/TIMECHODB_0592_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0592 自动抽取	功能	Load 在某些特殊情况下（aligned 类型不同，tableSchema 不同时）等，会忽略 mods 导入	case_RN0592
 RN-0675	cases/TIMECHODB_0675_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0675 自动抽取	功能	2.0.7.1][用户连接数限制]1c1d 多用户配置，有几率实际连接数大于最大连接数	case_RN0675
-RN-0632	cases/TIMECHODB_0632_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0632 自动抽取	功能	2.0.7.1][tree]select * from root.__audit.password_history.	case_RN0632
 RN-0590	cases/TIMECHODB_0590_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0590 自动抽取	功能	Load 在某些特殊情况下（aligned 类型不同，tableSchema 不同时）等，会忽略 mods 导入	case_RN0590
 RN-0597	cases/TIMECHODB_0597_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0597 自动抽取	功能	insertMultiTablets时，部分设备的自动创建，不应该影响无需自动创建的设备的写入（这些设备的对齐属性与	case_RN0597
 RN-0598	cases/TIMECHODB_0598_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0598 自动抽取	功能	在一个已存在的设备下，创建新的序列时，忽略创建语句指定的对齐和非对齐属性，使用当前设备的对齐和非对齐属性，而非报错	case_RN0598
@@ -62,3 +61,6 @@ RN-0053	cases/TIMECHODB_0053_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0053 自动抽取	
 RN-0038	cases/TIMECHODB_0038_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0038 自动抽取	功能	table]没有任何列的table可以创建，但是不能写入	case_RN0038
 RN-121	cases/TIMECHODB_0678_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0678 三权分立	负向	security_admin 查询不存在用户权限应明确提示而非 301	case_RN121
 RN-122	cases/TIMECHODB_0619_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0619 三权分立	负向	security_admin 给不存在用户赋权应有明确提示	case_RN122
+RN-123	cases/TIMECHODB_0629_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0629 解锁语法	功能	表模型 alter user @ ip ACCOUNT unlock 应可解析	case_RN123
+RN-124	cases/TIMECHODB_0632_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0632 口令安全	安全	password_history 不应出现明文口令	case_RN124
+RN-125	cases/TIMECHODB_0618_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0618 三权分立	功能	security_admin 应能改用户名（不再 701）	case_RN125

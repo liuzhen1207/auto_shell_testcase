@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**62 个用例：PASS 59 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 2（三权分立用例，普通模式跳过）**，单次全量约 20 分钟。
+**65 个用例：PASS 60 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -146,3 +146,13 @@ bash tools/mode.sh on && RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122
 配置模板中也无 `auditable_*` 键。结论：操作审计需安全包/专门授权构建，详见 [`docs/audit_status.md`](docs/audit_status.md)。
 
 `tools/mode.sh audit-on|audit-off` 已就绪，换到支持审计的构建后可直接复用模式门控。
+
+### 2026-11-04 增补（第 1、2 项扩展）
+
+| 用例 | 缺陷单 | 场景 | 结果 |
+| --- | --- | --- | --- |
+| RN-123 | TIMECHODB-0629 | 表模型 `alter user u @ 'ip' ACCOUNT unlock` 语法应与树模型一致 | **PASS**（两种方言均可解析） |
+| RN-124 | TIMECHODB-0632 | `password_history` 不应出现明文口令 | **PASS**（查询结果无明文） |
+| RN-125 | TIMECHODB-0618 | 三权分立下 security_admin 改名不应报 701 Unsupported author type | **PASS**（separation 模式） |
+
+三权分立批次现为 **3/3 PASS**（RN-121 / RN-122 / RN-125）。

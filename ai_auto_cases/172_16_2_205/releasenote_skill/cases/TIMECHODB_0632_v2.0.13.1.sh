@@ -1,48 +1,41 @@
 #!/bin/bash
 # ============================================================================
-# 来源缺陷单：TIMECHODB-0632
-#   【TIMECHODB-0632】 [2.0.7.1][tree]select * from root.__audit.password_history._0有密码明文，显示格式与其他用户不同
-#   自动抽取用例（按缺陷单复现步骤顺序执行，断言无异常）
+# 来源缺陷单：【TIMECHODB-0632】[tree] select * from root.__audit.password_history._0
+#   能看到密码明文，且显示格式与其他用户不同
+#   期望：口令历史中不出现明文口令
 #   验证版本：2.0.13.1 / ab6d3de
-#   预期摘要：复现步骤  select * from root.__audit.password_history._0  2025-10-15 rc7 验证通过 image.png   研发侧 问题原因    解决方案    影响分析
+#   判据：对新用户改一次口令后，查询其 password_history，输出中不得出现明文口令串
 # ============================================================================
-RN0632_SQL=(
-"select * from root.__audit.password_history._0"
-)
+RN0632_USER=rn0632_u
+RN0632_PW1='Rn0632@Old1234'
+RN0632_PW2='Rn0632@New5678'
 
-case_RN0632() {
-  local st out unexpected=0 RN_EXPECT_ERROR=0
-  rn_run() {  # 方言自适配：先试首选方言，700/701 解析错误则换另一种方言重试
-    local st=$1 o1 o2
-    o1=$( T "$st" )
-    if echo "$o1" | grep -qE '700: |701: '; then
-      o2=$( Q "$st" )
-      if ! echo "$o2" | grep -qE '700: |701: '; then echo "$o2"; return; fi
-    fi
-    echo "$o1"
-  }
-  for st in "${RN0632_SQL[@]}"; do
-    out=$( rn_run "$st" )
-    # 幂等：对象已存在视为可接受
-    if echo "$out" | grep -qiE 'already exists|already been created'; then
-      ok "已存在(幂等): $(echo "$st" | cut -c1-55)"; continue
-    fi
-    # 策略类错误：弱口令/无列/已存在，不算缺陷
-    if echo "$out" | grep -qiE '820:|507:|501:'; then
-      ok "策略/幂等类返回(可接受): $(echo "$st" | cut -c1-45)"; continue
-    fi
-    if echo "$out" | grep -qiE 'Exception|ERROR|internal error|NullPointerException'; then
-      if [ "$RN_EXPECT_ERROR" = "1" ]; then
-        ok "预期报错: $(echo "$st" | cut -c1-50)"
-      else
-        fail "$(echo "$st" | cut -c1-65) -> $(echo "$out" | head -1 | cut -c1-110)"
-      fi
-    else
-      ok "$(echo "$st" | cut -c1-55)"
-    fi
-  done
+case_RN124() {
+  local out uid hist
+  T "drop user $RN0632_USER" >/dev/null 2>&1
+  assert_ok "$(T "create user $RN0632_USER '$RN0632_PW1'")" "创建用户（旧口令）"
+  assert_ok "$(T "alter user $RN0632_USER set password '$RN0632_PW2'")" "修改口令（触发 password_history）"
+
+  uid=$(T "list user" 2>/dev/null | awk -F'|' -v u="$RN0632_USER" '{gsub(/ /,"",$2); gsub(/ /,"",$3); if ($3==u) print $2}' | head -1)
+  echo "  UserId=$uid"
+  if [ -z "$uid" ]; then
+    fail "未能从 list user 解析出 UserId"
+    T "drop user $RN0632_USER" >/dev/null 2>&1
+    return 1
+  fi
+
+  hist=$(T "select * from root.__audit.password_history._$uid")
+  echo "  password_history 记录行数：$(echo "$hist" | grep -c '^|20')"
+
+  if echo "$hist" | grep -qF "$RN0632_PW1" || echo "$hist" | grep -qF "$RN0632_PW2"; then
+    fail "password_history 中出现明文口令（缺陷未修复）"
+  else
+    ok "password_history 未出现明文口令"
+  fi
+
+  T "drop user $RN0632_USER" >/dev/null 2>&1
 }
 
 CASES+=(
-"RN-0632|TIMECHODB-0632 自动抽取|功能|2.0.7.1][tree]select * from root.__audit.password_history.|case_RN0632"
+"RN-124|TIMECHODB-0632 口令安全|安全|password_history 不应出现明文口令|case_RN124"
 )
