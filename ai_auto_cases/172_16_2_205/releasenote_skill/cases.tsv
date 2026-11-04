@@ -64,3 +64,7 @@ RN-122	cases/TIMECHODB_0619_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0619 三权分立	�
 RN-123	cases/TIMECHODB_0629_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0629 解锁语法	功能	表模型 alter user @ ip ACCOUNT unlock 应可解析	case_RN123
 RN-124	cases/TIMECHODB_0632_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0632 口令安全	安全	password_history 不应出现明文口令	case_RN124
 RN-125	cases/TIMECHODB_0618_v2.0.13.1.sh	V2.0.13.1	TIMECHODB-0618 三权分立	功能	security_admin 应能改用户名（不再 701）	case_RN125
+RN-126	cases/V2_374_v2.0.13.1.sh	V2.0.13.1	V2-374 数据类型大小写	功能	alter timeseries set data type text（小写）应成功	case_RN126
+RN-127	cases/V2_378_v2.0.13.1.sh	V2.0.13.1	V2-378 cast 查询	功能	select cast(1.1 as float) 不应抛 UnsupportedOperationException	case_RN127
+RN-128	cases/V2_942_v2.0.13.1.sh	V2.0.13.1	V2-942 load balance 校验	负向	load balance to datanode 不存在 ID 应报错	case_RN128
+RN-129	cases/V2_345_v2.0.13.1.sh	V2.0.13.1	V2-345 解析健壮性	可靠性	非法 offset/limit 应快速报错不得 OOM	case_RN129

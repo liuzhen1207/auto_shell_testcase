@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**65 个用例：PASS 60 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**68 个用例：PASS 64 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -156,3 +156,17 @@ bash tools/mode.sh on && RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122
 | RN-125 | TIMECHODB-0618 | 三权分立下 security_admin 改名不应报 701 Unsupported author type | **PASS**（separation 模式） |
 
 三权分立批次现为 **3/3 PASS**（RN-121 / RN-122 / RN-125）。
+
+### PingCode 缺陷（创建人：刘珍）→ 回归用例
+
+通过 PingCode CLI（`V2` 项目）按创建人过滤，共 **93 条**，其中 4 条已转为用例并在 2.0.13.1 实测通过：
+
+| 用例 | PingCode | 场景 | 结果 |
+| --- | --- | --- | --- |
+| RN-126 | V2-374 | `alter timeseries ... set data type text`（小写）应与 TEXT 一致成功 | PASS |
+| RN-127 | V2-378 | `select cast(1.1 as float)` 不应抛 UnsupportedOperationException | PASS |
+| RN-128 | V2-942 | `load balance to datanode 999`（不存在）应报错而非成功 | PASS |
+| RN-129 | V2-345 | 非法 `offset/limit` 应快速报错，不得 parser 死循环 OOM | PASS |
+
+全量映射与分类（已覆盖 4 / 可扩展候选 17 / 暂不纳入 71 及原因）见
+[`docs/pingcode_v2_liuzhen.md`](docs/pingcode_v2_liuzhen.md)。
