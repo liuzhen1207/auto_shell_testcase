@@ -29,7 +29,8 @@ case_RN136() {
   fi
 
   echo "  重启 CN ..."
-  ssh -o StrictHostKeyChecking=no root@$RN862_IP "cd /data/iotdb/$NEW && setsid /data/iotdb/$NEW/sbin/start-confignode.sh > /tmp/rn862_start.log 2>&1 < /dev/null &" 2>/dev/null
+  # 用已有的重启脚本（内部 setsid + 校验），避免 ssh 挂住
+  ssh -n -o StrictHostKeyChecking=no root@$RN862_IP "bash /tmp/cn_restart.sh $NEW" 2>/dev/null | tail -2
   wait_running 420 >/dev/null 2>&1 || true
   echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
 }

@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**72 个用例：PASS 68 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**77 个用例：PASS 69 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -197,3 +197,15 @@ RN_SLOW=1 bash tools/suite_rn.sh RN-134 RN-135 RN-136
 | RN-136 | V2-862 | stop ConfigNode 不应产生 NullPointerException |
 
 > 打上 `SLOW_OF["RN-xxx"]="1"` 标记即进入慢组，流程与普通用例一致，只是默认不跑。
+
+### PingCode V2（创建人：刘珍）第三批 + 慢用例组验证
+
+| 用例 | PingCode | 场景 | 结果 |
+| --- | --- | --- | --- |
+| RN-137 | V2-916 | 时间列名为 `d_datetime` 时 `DELETE ... WHERE d_datetime BETWEEN` 应成功 | PASS |
+| RN-138 | V2-801 | `timestamp_precision=ns` 写入不应产生 `Integer overflow` 告警 | PASS（慢，7.3 分钟） |
+
+慢用例组（`RN_SLOW=1`）实测：**4/4 PASS**（RN-134/135/136/138，合计约 10 分钟）。
+其中修复了用例侧的 `ssh` 无 `-n` 导致挂起的问题，并改为复用 `start_dn` / `/tmp/cn_restart.sh`。
+
+PingCode V2 覆盖：**13 条**（9 条常规 + 4 条慢组），剩余 8 条可扩展候选、71 条暂不纳入。

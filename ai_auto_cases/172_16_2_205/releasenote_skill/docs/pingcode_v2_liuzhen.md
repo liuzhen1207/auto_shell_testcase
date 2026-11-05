@@ -2,7 +2,7 @@
 
 数据来源：PingCode 项目 `V2`（TimechoDB-V2.x），按 **创建人=刘珍** 过滤，共 93 条（2026-11-04 导出）。
 
-已覆盖（2.0.13.1 实测通过）：**8 条**。
+已覆盖（2.0.13.1 实测通过）：**13 条**（其中 4 条归入慢用例组，`RN_SLOW=1` 开启）。
 
 | 编号 | 状态 | 标题（截断） | 分类 | 说明 |
 | --- | --- | --- | --- | --- |
@@ -13,19 +13,19 @@
 | V2-397 | 发版 | 查询失败，sort算子：java.lang.ArithmeticException: / by zero | 已覆盖 | 用例 RN-131 |
 | V2-430 | 发版 | 修改数据类型，last查询失败：StatisticsClassException: BLOB statistics does not sup | 已覆盖 | 用例 RN-132 |
 | V2-757 | 发版 | 【2.0.9.1】[explain analyze 功能优化] 非对齐序列查询计划中IdentitySinkNode缺失DownStream | 已覆盖 | 用例 RN-133 |
+| V2-801 | 发版 | [2.0.9.1] 时间戳精度是ns ,写入几条数据，  DataNode CommonDateTimeUtils 【报Integer ov | 已覆盖 | 用例 RN-138(慢) |
+| V2-861 | 开发 | 【2.0.9.2】【查询】stop DataNode时查询会打印一些error日志 | 已覆盖 | 用例 RN-135(慢) |
+| V2-862 | 发版 | 【2.0.9.2】【ConfigNode】stop confignode 过程中有空指针 | 已覆盖 | 用例 RN-136(慢) |
+| V2-883 | 发版 | 【2.0.9.2】【表级存储空间统计】stop DN 时 TableDiskUsageIndex 12秒 刷1万多条WARN （服务停止顺序 | 已覆盖 | 用例 RN-134(慢) |
+| V2-916 | 发版 | 【master_0525_5caf05a】【time列名字不是time】表模型DELETE ... WHERE <time_column>  | 已覆盖 | 用例 RN-137 |
 | V2-942 | 发版 | 【2.0.10.1】【load balance to datanode 】load balance to datanode 没有语义检查，1 | 已覆盖 | 用例 RN-128 |
 | V2-377 | 发版 | 修改数据类型 ，CN Follower  节点：java.nio.BufferUnderflowException: null 和 Null | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-380 | 发版 | 日志优化：SELECT_INTO 过程中，drop 写回表 ，DN ERROR 日志可改为INFO 或WARN ：SemanticExcep | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-396 | 发版 | 表视图（定义基于树模型非对齐设备）last查询可优化，当前实现是：没下推，且为正序scan，会扫描所有的数据。田原：对于非对齐设备，虽然聚合 | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-771 | 发版 | 【2.0.9.1】分区表自动修复,停止DataNode后 ，CN Leader节点刷大量ERROR日志 ：TSStatus类转换异常 | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-774 | 发版 | 【2.0.9.1】分区表自动修复功能，3C3D，stop ConfigNode Leader 进程不退出且持续刷大量日志 | 可扩展候选 | SQL/CLI 可验证，待评估 |
-| V2-801 | 发版 | [2.0.9.1] 时间戳精度是ns ,写入几条数据，  DataNode CommonDateTimeUtils 【报Integer ov | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-803 | 发版 | [2.0.9.1] 分区表自动修复，参数值测试，partition_table_recover_worker_num=0，DN 和 CN 刷 | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-842 | 发版 | 【2.0.9.2】【查询】系统执行过期查询信息清理任务时有WARN ：The memory cost to be released is l | 可扩展候选 | SQL/CLI 可验证，待评估 |
-| V2-861 | 开发 | 【2.0.9.2】【查询】stop DataNode时查询会打印一些error日志 | 可扩展候选 | SQL/CLI 可验证，待评估 |
-| V2-862 | 发版 | 【2.0.9.2】【ConfigNode】stop confignode 过程中有空指针 | 可扩展候选 | SQL/CLI 可验证，待评估 |
-| V2-883 | 发版 | 【2.0.9.2】【表级存储空间统计】stop DN 时 TableDiskUsageIndex 12秒 刷1万多条WARN （服务停止顺序 | 可扩展候选 | SQL/CLI 可验证，待评估 |
-| V2-916 | 发版 | 【master_0525_5caf05a】【time列名字不是time】表模型DELETE ... WHERE <time_column>  | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-976 | 发版 | 【2.0.10.1】【ConfigNode】MIGRATE REGION 在 CN leader 切换期间被提前标记成功，show migr | 可扩展候选 | SQL/CLI 可验证，待评估 |
 | V2-1042 | 发版 | 【2.0.10.1】【CompressionRatio】show regions CompressionRatio 显示为0，计算公式中分子 | 暂不纳入 | 需多轮集群重建/长时压测 |
 | V2-1043 | 发版 | 【2.0.10.1】【表模型 show regions中的TsFileSize】TsFileSize 不能把 object size 加进去 | 暂不纳入 | 需多轮集群重建/长时压测 |
@@ -101,6 +101,6 @@
 
 ## 汇总
 
-- 已覆盖: 8
-- 可扩展候选: 13
+- 已覆盖: 13
+- 可扩展候选: 8
 - 暂不纳入: 71

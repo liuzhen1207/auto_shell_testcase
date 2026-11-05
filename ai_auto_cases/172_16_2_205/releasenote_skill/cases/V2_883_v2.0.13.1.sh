@@ -37,7 +37,7 @@ case_RN134() {
   fi
 
   echo "  重启 DN $RN883_IP ..."
-  ssh -o StrictHostKeyChecking=no root@$RN883_IP "cd /data1/iotdb/$NEW && setsid /data1/iotdb/$NEW/sbin/start-datanode.sh > /tmp/rn883_start.log 2>&1 < /dev/null &" 2>/dev/null
+  start_dn $RN883_IP >/dev/null 2>&1
   wait_running 360 >/dev/null 2>&1 || true
   echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
 }
