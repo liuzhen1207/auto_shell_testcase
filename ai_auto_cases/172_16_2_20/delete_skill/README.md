@@ -1,9 +1,21 @@
-# delete_skill — DELETE 语义全量回归（3C5D / RC10）
+# delete_skill — DELETE 语义全量回归（3C5D）
 
 TimechoDB DELETE 语义、内存与落盘删除、mods 标记、OBJECT 清理、副本一致性的自动化回归包。
 3 CN + 5 DN，SchemaRegion 3 副本、DataRegion 2 副本，按轮次切换 `IoTConsensus` / `IoTConsensusV2`。
 
 ## 规模与结果
+
+### 2.0.13.1 RC1（`ab6d3de`，2026-11-02 ~ 11-05，仅 IoTConsensus）
+
+| 项 | 数值 |
+| --- | --- |
+| 轮次 | 85 / 85（IoTConsensus） |
+| 通过 | 78 |
+| 失败 | **7**（全部 `FAIL_DN_DIFF`） |
+| 累计执行时长 | **56h26m**（203,216 秒），平均 39.8 分钟/轮 |
+| 结论 | 7 轮失败同源于 **TDB-939**（删除标记未落盘，见下） |
+
+### 2.0.12.1 RC10（`c60ce63`，2026-10-24 ~ 10-29，两协议）
 
 | 项 | 数值 |
 | --- | --- |
@@ -12,8 +24,14 @@ TimechoDB DELETE 语义、内存与落盘删除、mods 标记、OBJECT 清理、
 | 通过 | **161** |
 | 失败 | 2（`DEL-TREE-002` / `DEL-TREE-004`，同一可复现的 1 秒级 syncLag 尖峰） |
 | 累计执行时长 | 108h34m（去重后）；含重跑 122h19m / 184 次执行 |
-| 单轮实测 | ≈ 40 分钟 |
-| 被测版本 | TimechoDB 2.0.12.1 RC10 `c60ce63` |
+
+## 已知缺陷
+
+| 缺陷 | 版本 | 影响用例 | 状态 |
+| --- | --- | --- | --- |
+| [TDB-939](https://plm.infra.timecho.com/iterations?productId=1&itemId=1562) DELETE 后紧跟 FLUSH 时删除标记未落盘，已删数据重新可见且多副本不一致（P1，江天） | 2.0.13.1 RC1 | `DEL-PRED-007` / `008`、`DEL-MEMLEAK-TABLE-001` / `002`、`DEL-MEMLEAK-TREE-001` / `002` / `003` | 排期确认（迭代 V2.0.15.1） |
+
+根因摘要：`DataRegion.deleteByTable` 释放写锁后才给已落盘文件写 mods；命中"正在 flush、未关闭"的文件时走 `deleteDataInMemory` → `modsToMemtable` → 调用方不写 mods；若 flush 收尾的 drain 已执行过，该条目成为孤儿，磁盘上无 mods，已删行重新可见。详见 [`docs/DEFECT-TDB-939-delete-vs-flush-mods.md`](docs/DEFECT-TDB-939-delete-vs-flush-mods.md)。
 
 详细结论见 [`docs/RC10-DELETE-FINAL.md`](docs/RC10-DELETE-FINAL.md)，逐轮机读报告见
 [`docs/RC10-DELETE-REPORT.md`](docs/RC10-DELETE-REPORT.md)。
