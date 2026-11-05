@@ -28,6 +28,7 @@ fi
 
 declare -a CASES=()
 declare -A MODE_OF=()
+declare -A SLOW_OF=()
 for f in "$BASE"/cases/*.sh; do
   [ -f "$f" ] || continue
   . "$f"
@@ -43,6 +44,11 @@ for entry in "${CASES[@]}"; do
   if [ ${#want[@]} -gt 0 ]; then
     hit=0; for w in ${want[@]+"${want[@]}"}; do [ "$w" = "$id" ] && hit=1; done
     [ "$hit" = "0" ] && continue
+  fi
+  if [ "${SLOW_OF[$id]:-0}" = "1" ] && [ "${RN_SLOW:-0}" != "1" ]; then
+    echo "[$(date +%T)] $id -> SKIP (慢用例，需 RN_SLOW=1)"
+    printf '%s\t%s\t%s\tSKIP\t0\t0\t慢用例，需 RN_SLOW=1\n' "$id" "$feature" "$ctype" >> "$RES"
+    continue
   fi
   want_mode="${MODE_OF[$id]:-normal}"
   if [ "${RN_MODE:-normal}" != "$want_mode" ]; then

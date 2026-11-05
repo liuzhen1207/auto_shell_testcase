@@ -181,3 +181,19 @@ bash tools/mode.sh on && RN_MODE=separation bash tools/suite_rn.sh RN-121 RN-122
 | RN-133 | V2-757 | 非对齐序列 `EXPLAIN ANALYZE` 计划中 IdentitySinkNode 应含 `DownStreamPlanNodeId` | PASS |
 
 PingCode V2 覆盖已达 **8 条**，剩余 13 条可扩展候选（见 `docs/pingcode_v2_liuzhen.md`）。
+
+### 慢用例组（停节点/长流程）
+
+以下用例涉及"停节点"流程，单条 3~10 分钟，**默认跳过**（结果记 SKIP），需要时用 `RN_SLOW=1` 显式开启：
+
+```bash
+RN_SLOW=1 bash tools/suite_rn.sh RN-134 RN-135 RN-136
+```
+
+| 用例 | PingCode | 场景 |
+| --- | --- | --- |
+| RN-134 | V2-883 | stop DN 时 TableDiskUsageIndex WARN 不应成灾（原 12 秒 14345 条）、无混淆类型名 |
+| RN-135 | V2-861 | 并发查询中 stop DN 不应产生 NullPointerException 日志 |
+| RN-136 | V2-862 | stop ConfigNode 不应产生 NullPointerException |
+
+> 打上 `SLOW_OF["RN-xxx"]="1"` 标记即进入慢组，流程与普通用例一致，只是默认不跑。

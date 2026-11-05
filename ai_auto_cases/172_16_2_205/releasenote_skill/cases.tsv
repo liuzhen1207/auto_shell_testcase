@@ -72,3 +72,6 @@ RN-130	cases/V2_375_v2.0.13.1.sh	V2.0.13.1	V2-375 CN 日志	日志	改序列类�
 RN-131	cases/V2_397_v2.0.13.1.sh	V2.0.13.1	V2-397 sort 算子	功能	in/not in + order by limit 子查询不应 / by zero	case_RN131
 RN-132	cases/V2_430_v2.0.13.1.sh	V2.0.13.1	V2-430 BLOB 聚合	功能	BLOB 列 last 不应抛 StatisticsClassException	case_RN132
 RN-133	cases/V2_757_v2.0.13.1.sh	V2.0.13.1	V2-757 explain analyze	功能	非对齐序列计划 IdentitySinkNode 应含 DownStreamPlanNodeId	case_RN133
+RN-134	cases/V2_883_v2.0.13.1.sh	V2.0.13.1	V2-883 停DN日志	日志	stop DN 时 TableDiskUsageIndex WARN 不应成灾	case_RN134
+RN-135	cases/V2_861_v2.0.13.1.sh	V2.0.13.1	V2-861 停DN查询	可靠性	并发查询中 stop DN 不应产生 NPE 日志	case_RN135
+RN-136	cases/V2_862_v2.0.13.1.sh	V2.0.13.1	V2-862 停CN日志	可靠性	stop ConfigNode 不应产生 NullPointerException	case_RN136
