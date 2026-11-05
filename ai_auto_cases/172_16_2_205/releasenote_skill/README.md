@@ -209,3 +209,20 @@ RN_SLOW=1 bash tools/suite_rn.sh RN-134 RN-135 RN-136
 其中修复了用例侧的 `ssh` 无 `-n` 导致挂起的问题，并改为复用 `start_dn` / `/tmp/cn_restart.sh`。
 
 PingCode V2 覆盖：**13 条**（9 条常规 + 4 条慢组），剩余 8 条可扩展候选、71 条暂不纳入。
+
+### 双协议回归结果（2026-11-05）
+
+| 协议 | 用例 | PASS | KNOWN | SKIP | 备注 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `IoTConsensus`（经典，默认） | 77 | **69** | 1 | 7 | 基线 |
+| `IoTConsensusV2` | 77 | **69** | 1 | 7 | 与经典完全一致，**0 差异** |
+
+切换命令：
+
+```bash
+bash tools/mode.sh proto-v2    # 写 data_region_consensus_protocol_class=...IoTConsensusV2 + hard_reset
+bash tools/suite_rn.sh
+bash tools/mode.sh proto-iot   # 切回经典
+```
+
+> 协议切换需要清数据重建（hard_reset），单次约 4 分钟。

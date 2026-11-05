@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================================
 # 三权分立模式切换（releasenote_skill 专用）
-#   usage: mode.sh on|off|audit-on|audit-off|status
+#   usage: mode.sh on|off|audit-on|audit-off|proto-v2|proto-iot|status
 #   on  : 热加载开启（set configuration enable_separation_of_powers=true）
 #   off : 写回 false 并重启集群（hard_reset），恢复到 normal 模式
 # ============================================================================
@@ -57,9 +57,20 @@ case "$ACT" in
     wait_running 480 >/dev/null 2>&1 || true
     echo "  Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
     ;;
+  proto-v2|proto-iot)
+    cls=
+    if [ "$ACT" = "proto-v2" ]; then cls=org.apache.iotdb.consensus.iot.IoTConsensusV2; else cls=org.apache.iotdb.consensus.iot.IoTConsensus; fi
+    echo "[$(date +%T)] 切换数据面协议 -> $cls（需清数据重建）"
+    for ip in $DN_LIST; do
+      ssh -n -o StrictHostKeyChecking=no root@$ip "f=$DN_DIR/conf/iotdb-system.properties; touch \$f; sed -i '/^data_region_consensus_protocol_class=/d' \$f; echo 'data_region_consensus_protocol_class=$cls' >> \$f" 2>/dev/null
+    done
+    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn_proto_switch.log 2>&1 )
+    wait_running 480 >/dev/null 2>&1 || true
+    echo "  Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
+    ;;
   status)
     T "show variables" 2>/dev/null | grep -i 'separation' | head -3
     ;;
   *)
-    echo "usage: mode.sh on|off|audit-on|audit-off|status"; exit 2 ;;
+    echo "usage: mode.sh on|off|audit-on|audit-off|proto-v2|proto-iot|status"; exit 2 ;;
 esac
