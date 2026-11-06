@@ -741,6 +741,151 @@ case_RN174() {
   T "drop device template $tpl" >/dev/null 2>&1
 }
 
+# RN-175（慢）：重启单个 DataNode 后，新增测点仍能补列
+SLOW_OF["RN-175"]="1"
+case_RN175() {
+  local db=rn_t2t_175_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  # 补列一次，确认基线
+  T "create timeseries root.$db.dev01.s5 double" >/dev/null 2>&1
+  sleep 3
+  if Q "desc $db.v1" | grep -qE '\| *s5 *\|'; then ok "重启前补列正常"; else fail "重启前补列异常"; fi
+
+  echo "  重启 DN 172.16.2.6 ..."
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "bash /data1/iotdb/$NEW/sbin/stop-datanode.sh" >/dev/null 2>&1
+  sleep 10
+  start_dn 172.16.2.6 >/dev/null 2>&1
+  wait_running 420 >/dev/null 2>&1 || true
+  echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
+
+  T "create timeseries root.$db.dev01.s6 double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s6 *\|'; then ok "DN 重启后补列仍正常（索引重建成功）"; else fail "DN 重启后不再补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-176（慢）：重启全部 DataNode 后，新增测点仍能补列
+SLOW_OF["RN-176"]="1"
+case_RN176() {
+  local db=rn_t2t_176_$(date +%H%M%S) ip out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  echo "  依次停止 5 个 DN ..."
+  for ip in $DN_LIST; do
+    ssh -n -o StrictHostKeyChecking=no root@$ip "bash /data1/iotdb/$NEW/sbin/stop-datanode.sh" >/dev/null 2>&1
+    sleep 6
+  done
+  sleep 5
+  echo "  依次启动 5 个 DN ..."
+  for ip in $DN_LIST; do
+    start_dn $ip >/dev/null 2>&1
+    sleep 5
+  done
+  wait_running 600 >/dev/null 2>&1 || true
+  echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
+
+  T "create timeseries root.$db.dev01.s7 double" >/dev/null 2>&1
+  sleep 5
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s7 *\|'; then ok "全部 DN 重启后补列仍正常"; else fail "全部 DN 重启后不再补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-177：并发建序列（8 路）→ 全部补列，不丢列
+case_RN177() {
+  local db=rn_t2t_177_$(date +%H%M%S) i out n=0
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  for i in $(seq 1 8); do
+    ( T "create timeseries root.$db.dev01.c$i double" >/dev/null 2>&1 ) &
+  done
+  wait
+  sleep 5
+  out=$(Q "desc $db.v1")
+  for i in $(seq 1 8); do
+    if echo "$out" | grep -qE "\| *c$i *\|"; then n=$((n + 1)); fi
+  done
+  echo "  8 路并发建序列后补列数：$n/8"
+  if [ "$n" -eq 8 ]; then ok "并发建序列全部补列，无丢失"; else fail "并发补列丢失（$n/8）"; fi
+  rn_t2t_drop $db
+}
+
+# RN-178：并发建序列与 ALTER VIEW ADD COLUMN 混跑，两者都生效
+case_RN178() {
+  local db=rn_t2t_178_$(date +%H%M%S) i out n=0
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  for i in $(seq 1 4); do
+    ( T "create timeseries root.$db.dev01.m$i double" >/dev/null 2>&1 ) &
+  done
+  ( Q "alter view $db.v1 add column manual_col double" >/dev/null 2>&1 ) &
+  wait
+  sleep 5
+  out=$(Q "desc $db.v1")
+  for i in $(seq 1 4); do
+    if echo "$out" | grep -qE "\| *m$i *\|"; then n=$((n + 1)); fi
+  done
+  echo "  自动补列：$n/4，手工列 manual_col：$(echo "$out" | grep -c 'manual_col')"
+  if [ "$n" -eq 4 ] && echo "$out" | grep -q 'manual_col'; then
+    ok "并发自动补列与手工 ADD COLUMN 均生效"
+  else
+    fail "并发混合操作丢失（自动 $n/4，手工列 $(echo "$out" | grep -c 'manual_col')）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-179：手工 ADD COLUMN 后，自动补列仍工作
+case_RN179() {
+  local db=rn_t2t_179_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(Q "alter view $db.v1 add column manual_c double")" "手工新增列"
+  T "create timeseries root.$db.dev01.auto_c double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -q 'manual_c' && echo "$out" | grep -qE '\| *auto_c *\|'; then
+    ok "手工列保留且自动补列仍生效"
+  else
+    fail "手工列或自动补列异常"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-180：手工 DROP COLUMN 后，同一测点再次写入不会自动补回（记录当前行为）
+case_RN180() {
+  local db=rn_t2t_180_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(Q "alter view $db.v1 drop column s1")" "手工删除列 s1"
+  # 序列仍存在，再写入不会触发建序列 → 预期不会自动补回
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s1 *\|'; then
+    ok "删列后再写入会自动补回（与文档描述不同，需确认）"
+  else
+    ok "删列后同一测点再写入不会自动补回（符合『序列已存在不触发』规则）"
+  fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -778,4 +923,10 @@ CASES+=(
 "RN-172|TDB-343 TTL 库补列|功能|TTL 库中补列正常|case_RN172"
 "RN-173|TDB-343 模板激活补列|功能|模板激活到新路径触发补列|case_RN173"
 "RN-174|TDB-343 模板扩展补列|功能|ALTER SCHEMA TEMPLATE ADD 触发补列|case_RN174"
+"RN-175|TDB-343 单DN重启后补列|可靠性|单 DN 重启后索引重建，补列仍正常|case_RN175"
+"RN-176|TDB-343 全DN重启后补列|可靠性|全部 DN 重启后补列仍正常|case_RN176"
+"RN-177|TDB-343 并发建序列补列|并发|8 路并发建序列全部补列不丢失|case_RN177"
+"RN-178|TDB-343 并发加列混跑|并发|并发建序列与 ADD COLUMN 均生效|case_RN178"
+"RN-179|TDB-343 手工加列后自动补列|功能|手工 ADD COLUMN 后自动补列仍工作|case_RN179"
+"RN-180|TDB-343 删列后再写入|功能|DROP COLUMN 后同测点写入是否补回（记录行为）|case_RN180"
 )

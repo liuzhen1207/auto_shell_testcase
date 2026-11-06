@@ -111,3 +111,9 @@ RN-171	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 跨设备 null	功能	无数�
 RN-172	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 TTL 库补列	功能	TTL 库中补列正常	case_RN172
 RN-173	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 模板激活补列	功能	模板激活到新路径触发补列	case_RN173
 RN-174	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 模板扩展补列	功能	ALTER SCHEMA TEMPLATE ADD 触发补列	case_RN174
+RN-175	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 单DN重启后补列	可靠性	单 DN 重启后补列仍正常	case_RN175
+RN-176	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 全DN重启后补列	可靠性	全部 DN 重启后补列仍正常	case_RN176
+RN-177	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发建序列补列	并发	8 路并发建序列全部补列	case_RN177
+RN-178	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发加列混跑	并发	并发建序列与 ADD COLUMN 均生效	case_RN178
+RN-179	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 手工加列后自动补列	功能	手工 ADD COLUMN 后自动补列仍工作	case_RN179
+RN-180	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 删列后再写入	功能	DROP COLUMN 后同测点写入是否补回	case_RN180
