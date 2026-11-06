@@ -986,6 +986,96 @@ case_RN185() {
   rn_t2t_drop $db
 }
 
+# RN-186：prefix 下无测点时建视图（0 列），后续建测点补列
+case_RN186() {
+  local db=rn_t2t_186_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库（无任何测点）"
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "在空 prefix 上建视图"
+  out=$(Q "desc $db.v1")
+  local n; n=$(echo "$out" | grep -cE '\| *(s|k)[0-9]')
+  echo "  空 prefix 视图初始字段数：$n（应为 0）"
+  if [ "${n:-0}" -eq 0 ]; then ok "空 prefix 视图无字段列"; else fail "空 prefix 视图意外含字段列"; fi
+
+  T "create timeseries root.$db.dev01.first double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *first *\|'; then ok "后续建测点自动补列"; else fail "空视图后续未补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-187：restrict=true 且 tag 数 == 剩余层级 → 命中并补列
+case_RN187() {
+  local db=rn_t2t_187_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.zone.dev01.s1 double" >/dev/null 2>&1
+  # 设备在 root.db.zone 下剩余 1 层，restrict 视图 1 个 tag → 命中
+  assert_ok "$(Q "create view $db.vr(dev string tag) restrict with(auto_sync_schema = true) as root.$db.zone.**")" "建 restrict 视图（1 tag）"
+  T "create timeseries root.$db.zone.dev01.r1 double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.vr")
+  if echo "$out" | grep -qE '\| *r1 *\|'; then ok "restrict 层级匹配时补列"; else fail "restrict 层级匹配未补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-188：restrict=true 但 tag 数 != 剩余层级 → 不命中、不补列
+case_RN188() {
+  local db=rn_t2t_188_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.zone.dev01.s1 double" >/dev/null 2>&1
+  # 设备在 root.db.zone 下剩余 2 层，restrict 视图 1 个 tag → 不命中
+  assert_ok "$(Q "create view $db.vr(zone string tag) restrict with(auto_sync_schema = true) as root.$db.**")" "建 restrict 视图（1 tag，层级不匹配）"
+  T "create timeseries root.$db.zone.dev01.r2 double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.vr")
+  if echo "$out" | grep -qE '\| *r2 *\|'; then
+    fail "restrict 层级不匹配却补列了"
+  else
+    ok "restrict 层级不匹配时不补列（符合命中规则）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-189：非 restrict 且 tag 数 > 设备层级 → 补列，缺失 tag 补 null
+case_RN189() {
+  local db=rn_t2t_189_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  # 设备在 root.db 下只剩 1 层，视图声明 2 个 tag（非 restrict，2>=1 命中）
+  assert_ok "$(Q "create view $db.vbig(zone string tag, dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建 2 tag 非 restrict 视图"
+  out=$(Q "select * from $db.vbig")
+  echo "  查询输出：$(echo "$out" | grep -c '^|') 行"
+  if echo "$out" | grep -q 'null' && echo "$out" | grep -q 'dev01'; then
+    ok "缺失的 tag 列补 null（zone=null，dev=dev01）"
+  else
+    fail "缺失 tag 未补 null（$(echo "$out" | tail -2 | tr '\n' ' ')）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-190：仅授予 CREATE 的普通用户仍无法建视图（缺 READ_SCHEMA 权限项，记录当前权限模型行为）
+case_RN190() {
+  local db=rn_t2t_190_$(date +%H%M%S) u=rn_u190_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "create user $u 'Rn190@123456'" >/dev/null 2>&1
+  Q "grant create on database $db to user $u" >/dev/null 2>&1
+  out=$(LT "$u" 'Rn190@123456' "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")
+  echo "  仅 CREATE 权限用户建视图：$(echo "$out" | head -1 | cut -c1-160)"
+  if echo "$out" | grep -q '803'; then
+    ok "仅 CREATE 权限时被拒（缺 READ_SCHEMA，且该权限项不可授予）"
+  else
+    ok "仅 CREATE 权限时可建视图（$(echo "$out" | head -1 | cut -c1-80)）"
+  fi
+  T "drop user $u" >/dev/null 2>&1
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -1034,4 +1124,9 @@ CASES+=(
 "RN-183|TDB-343 共享序列双视图|功能|同一序列被重叠视图引用时各自补列|case_RN183"
 "RN-184|TDB-343 并发INSERT补列|并发|并发 INSERT 建序列全部补列|case_RN184"
 "RN-185|TDB-343 补列中查询|并发|补列进行中并发查询不报错|case_RN185"
+"RN-186|TDB-343 空 prefix 视图|功能|空 prefix 建视图后新增测点补列|case_RN186"
+"RN-187|TDB-343 restrict 命中补列|功能|restrict 且 tag 数等于层级时补列|case_RN187"
+"RN-188|TDB-343 restrict 不命中|功能|restrict 且 tag 数不等于层级时不补列|case_RN188"
+"RN-189|TDB-343 缺失 tag 补 null|功能|tag 数大于层级时缺失 tag 补 null|case_RN189"
+"RN-190|TDB-343 仅CREATE权限|安全|仅授予 CREATE 的普通用户建视图行为记录|case_RN190"
 )

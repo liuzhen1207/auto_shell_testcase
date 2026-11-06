@@ -122,3 +122,8 @@ RN-182	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 换视图重扫	功能	DROP �
 RN-183	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 共享序列双视图	功能	同一序列被重叠视图引用各自补列	case_RN183
 RN-184	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发INSERT补列	并发	并发 INSERT 建序列全部补列	case_RN184
 RN-185	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 补列中查询	并发	补列进行中并发查询不报错	case_RN185
+RN-186	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 空 prefix 视图	功能	空 prefix 建视图后新增测点补列	case_RN186
+RN-187	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 restrict 命中补列	功能	restrict 且 tag 数等于层级时补列	case_RN187
+RN-188	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 restrict 不命中	功能	restrict 且 tag 数不等于层级时不补列	case_RN188
+RN-189	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 缺失 tag 补 null	功能	tag 数大于层级时缺失 tag 补 null	case_RN189
+RN-190	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 仅CREATE权限	安全	仅授予 CREATE 的用户建视图行为记录	case_RN190
