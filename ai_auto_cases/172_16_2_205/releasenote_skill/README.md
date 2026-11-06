@@ -241,11 +241,25 @@ bash tools/mode.sh proto-iot   # 切回经典
 | RN-144 | `ALTER VIEW ... SET PROPERTIES auto_sync_schema = false` 后不再补列 | PASS |
 | RN-145 | 同名大小写/类型冲突时不补列且写入不报错 | PASS |
 | RN-146 | prefix 下同时存在 `s1`/`S1` 时建视图报 617 | PASS |
+| RN-147 | 除建视图外（新增测点、false→true 补扫）遇冲突一律忽略、不报错 | PASS |
 
 实现要点（实测）：
 - 时间列必须由视图 `(dev string tag)` 与 `AS root.db.**` 推断，DDL 需带库名（`create view db.v1(...)`），否则报 `701: database is not specified`；
 - 修改属性语法为 `ALTER VIEW db.v1 SET PROPERTIES auto_sync_schema = false`（不带括号）；
 - 冲突用例用 `dev02.S1 int32` 对 `s1 DOUBLE`，视图不新增列、原列类型保持。
+
+#### TDB-343 冲突口径（研发已确认 2026-11-06）
+
+> 只有创建树转表视图时才会因列类型冲突返回失败，其他路径默认忽略。
+
+| 路径 | 期望 | 用例 |
+| --- | --- | --- |
+| 建视图（未声明 Field 列） | 冲突 → 617 失败 | RN-146 |
+| 建好视图后新增冲突测点 | 忽略、不报错、不加列 | RN-145 |
+| false→true 补扫 | 忽略、属性切换成功 | RN-147 |
+| 开启属性后新增普通测点 | 正常补列 | RN-147 |
+
+补充：建视图时的列检测与 `auto_sync_schema` 开关无关（不开属性也会检测并可能 617）。
 
 #### TDB-343 实测发现（值得留意）
 

@@ -183,6 +183,48 @@ case_RN146() {
   rn_t2t_drop $db
 }
 
+# RN-147：研发确认真实口径——除「创建视图」外，其余路径遇冲突一律忽略（含属性切换补扫）
+case_RN147() {
+  local db=rn_t2t_147_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+
+  # 建视图时无冲突 → 成功
+  assert_ok "$(Q "create view $db.v1(dev string tag) as root.$db.**")" "建视图（仅 s1，无属性）"
+  # 建好之后新增冲突测点 → 应忽略、不报错
+  assert_ok "$(T "create timeseries root.$db.dev02.S1 int32")" "新增冲突测点 S1（应忽略不报错）"
+  sleep 2
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *S1 *\|'; then
+    fail "冲突测点 S1 被加进了视图列"
+  else
+    ok "冲突测点未进视图（忽略而非报错）"
+  fi
+
+  # false→true 补扫遇冲突 → 应忽略，属性可正常开启
+  out=$(Q "alter view $db.v1 set properties auto_sync_schema = true")
+  echo "  开启属性返回：$(echo "$out" | head -1 | cut -c1-150)"
+  assert_ok "$out" "开启 auto_sync_schema 不因冲突而失败"
+  out=$(Q "show create view $db.v1")
+  if echo "$out" | grep -q 'auto_sync_schema=true'; then
+    ok "属性已成功切换为 true"
+  else
+    fail "属性未切换为 true"
+  fi
+
+  # 开启后新增普通测点 → 正常补列（功能仍然有效）
+  T "create timeseries root.$db.dev01.s9 double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s9 *\|'; then
+    ok "开启属性后新测点 s9 正常补列"
+  else
+    fail "开启属性后 s9 未补列"
+  fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -192,4 +234,5 @@ CASES+=(
 "RN-144|TDB-343 关闭属性|功能|属性关闭后新增测点不再补列|case_RN144"
 "RN-145|TDB-343 冲突不补列|功能|同名大小写/类型冲突时不补列且写入不报错|case_RN145"
 "RN-146|TDB-343 小写冲突拒绝|负向|prefix 下 s1/S1 小写冲突时建视图应报 617|case_RN146"
+"RN-147|TDB-343 非创建路径忽略|功能|除建视图外遇冲突（含属性切换补扫）一律忽略不报错|case_RN147"
 )
