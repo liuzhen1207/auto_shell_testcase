@@ -229,6 +229,8 @@ bash tools/mode.sh proto-iot   # 切回经典
 
 ### TDB-343 树转表视图自动扩列（auto_sync_schema）
 
+TDB-343 组共 **52 条**用例（RN-139 ~ RN-190）：50 条常规/并发 + 2 条节点重启（慢组），2 条模板类环境受限 SKIP。
+
 来源：PLM 需求 docs/90 + 设计 docs/913，测试点清单见 [`docs/tree2table_auto_sync_points.md`](docs/tree2table_auto_sync_points.md)（171 条测试点 + 25 条歧义待确认）。
 
 | 用例 | 验证点 | 结果 |
