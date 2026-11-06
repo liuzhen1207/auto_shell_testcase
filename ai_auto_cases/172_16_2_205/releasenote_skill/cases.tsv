@@ -84,3 +84,13 @@ RN-144	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 关闭属性	功能	关闭属
 RN-145	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 冲突不补列	功能	同名大小写/类型冲突不补列	case_RN145
 RN-146	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 小写冲突拒绝	负向	prefix 下 s1/S1 小写冲突时建视图应报 617	case_RN146
 RN-147	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 非创建路径忽略	功能	除建视图外遇冲突（含属性切换补扫）一律忽略不报错	case_RN147
+RN-148	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 同批多测点补列	功能	一条设备同批写多个新测点全部补列	case_RN148
+RN-149	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 多设备补列	功能	多设备各自新测点分别补列	case_RN149
+RN-150	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 非前缀路径隔离	功能	非视图 prefix 路径测点不影响视图	case_RN150
+RN-151	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 重叠前缀双视图	功能	重叠 prefix 两个视图都补列	case_RN151
+RN-152	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 显式类型选列	功能	显式声明 Field 类型时按类型选测点	case_RN152
+RN-153	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 仅声明列名	功能	只声明列名不给类型的实际行为	case_RN153
+RN-154	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 类型变更不同步	功能	树模型改类型不同步到视图列	case_RN154
+RN-155	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 删序列保留列	功能	删序列后视图保留列且查询为空	case_RN155
+RN-156	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 original_name 命中	功能	original_name 命中时可查新设备数据	case_RN156
+RN-157	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 comment 保留	功能	视图 comment 在扩列后保留	case_RN157

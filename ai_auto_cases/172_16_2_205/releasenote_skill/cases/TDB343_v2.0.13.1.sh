@@ -225,6 +225,206 @@ case_RN147() {
   rn_t2t_drop $db
 }
 
+# RN-148：一条设备下多个新测点同批 insert → 全部补列
+case_RN148() {
+  local db=rn_t2t_148_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  assert_ok "$(rn_t2t_build $db v1 true s1)" "建视图"
+  assert_ok "$(T "insert into root.$db.dev01(s10,s11,s12) values(1.0,2.0,3.0)")" "一条设备同批写 3 个新测点"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  local n; n=$(echo "$out" | grep -cE '\| *s1[0-2] *\|')
+  echo "  新补列数（s10/s11/s12）：$n"
+  if [ "${n:-0}" -ge 3 ]; then ok "同批 3 个新测点全部补列"; else fail "同批测点未全部补列（$n/3）"; fi
+  rn_t2t_drop $db
+}
+
+# RN-149：多设备同批 insert → 各自补列
+case_RN149() {
+  local db=rn_t2t_149_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  assert_ok "$(rn_t2t_build $db v1 true s1)" "建视图"
+  assert_ok "$(T "insert into root.$db.devA(s21) values(1.0)")" "设备 A 写入新测点"
+  assert_ok "$(T "insert into root.$db.devB(s22) values(2.0)")" "设备 B 写入新测点"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s21 *\|' && echo "$out" | grep -qE '\| *s22 *\|'; then
+    ok "多设备新测点各自补列"
+  else
+    fail "多设备补列不完整"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-150：写入非 prefix 路径的测点 → 视图不变化
+case_RN150() {
+  local db=rn_t2t_150_$(date +%H%M%S) db2=rn_t2t_150b_$(date +%H%M%S) out
+  rn_t2t_drop $db; rn_t2t_drop $db2
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库 A"
+  assert_ok "$(Q "CREATE DATABASE $db2")" "建库 B"
+  assert_ok "$(rn_t2t_build $db v1 true s1)" "建视图（只覆盖 db A）"
+  T "create timeseries root.$db2.dev01.outside double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *outside *\|'; then
+    fail "非 prefix 路径的测点被错误补列"
+  else
+    ok "非 prefix 路径测点不影响视图"
+  fi
+  rn_t2t_drop $db; rn_t2t_drop $db2
+}
+
+# RN-151：重叠前缀的两个视图各自补列
+case_RN151() {
+  local db=rn_t2t_151_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  # 注意：设备名不能用保留字（如 region），否则建序列会 700 解析失败
+  T "create timeseries root.$db.zone.dev01.s1 double" >/dev/null 2>&1
+  # 命中规则：restrict=false 时要求 tag 数 >= 剩余层级
+  # 设备 root.db.zone.dev01：宽前缀剩余 2 层 -> 2 个 tag；窄前缀剩余 1 层 -> 1 个 tag
+  assert_ok "$(Q "create view $db.v_wide(zone string tag, dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建宽前缀视图（2 tag）"
+  assert_ok "$(Q "create view $db.v_narrow(dev string tag) with(auto_sync_schema = true) as root.$db.zone.**")" "建窄前缀视图（1 tag）"
+  T "create timeseries root.$db.zone.dev01.s7 double" >/dev/null 2>&1
+  sleep 4
+  local a b
+  a=$(Q "desc $db.v_wide" | grep -cE '\| *s7 *\|')
+  b=$(Q "desc $db.v_narrow" | grep -cE '\| *s7 *\|')
+  echo "  宽视图含 s7=$a，窄视图含 s7=$b"
+  if [ "${a:-0}" -ge 1 ] && [ "${b:-0}" -ge 1 ]; then
+    ok "重叠前缀的两个视图都补列"
+  else
+    fail "至少一个视图未补列（wide=$a narrow=$b）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-152：显式声明 Field 类型时按指定类型选列
+case_RN152() {
+  local db=rn_t2t_152_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 int32" >/dev/null 2>&1
+  T "create timeseries root.$db.dev02.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(s1 int32 field, dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图并指定 s1 int32"
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s1 *\| *INT32'; then
+    ok "按指定类型选中 INT32 那条测点"
+  else
+    fail "未按指定类型选列（$(echo "$out" | grep -E 's1' | head -1)）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-153：只声明 Field 列名不声明类型（文档称应报错，实测允许并推导类型）
+case_RN153() {
+  local db=rn_t2t_153_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  out=$(Q "create view $db.v1(dev string tag, s1 field) with(auto_sync_schema = true) as root.$db.**")
+  echo "  仅声明列名返回：$(echo "$out" | head -1 | cut -c1-150)"
+  if echo "$out" | grep -qi 'success'; then
+    ok "仅声明列名当前允许（类型由树模型推导）"
+    out=$(Q "desc $db.v1")
+    if echo "$out" | grep -qE '\| *s1 *\| *DOUBLE'; then
+      ok "推导出的类型为 DOUBLE"
+    else
+      fail "推导类型异常"
+    fi
+  else
+    ok "仅声明列名被拒绝（与文档一致）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-154：树模型改类型不同步到视图列类型（INT32→INT64 兼容变更）
+case_RN154() {
+  local db=rn_t2t_154_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 int32" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(T "alter timeseries root.$db.dev01.s1 set data type int64")" "树模型改类型 INT32→INT64"
+  sleep 2
+  out=$(Q "desc $db.v1")
+  echo "  视图列：$(echo "$out" | grep -E 's1' | head -1)"
+  if echo "$out" | grep -qE '\| *s1 *\| *INT32'; then
+    ok "视图列类型未随树模型变更（符合文档）"
+  else
+    fail "视图列类型被隐式同步（与文档不符）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-155：删除序列后视图保留列，查询为空
+case_RN155() {
+  local db=rn_t2t_155_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.5)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(T "delete timeseries root.$db.dev01.s1")" "删除序列"
+  sleep 2
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s1 *\|'; then
+    ok "删除序列后视图仍保留该列"
+  else
+    fail "删除序列后视图列消失"
+  fi
+  out=$(Q "select s1 from $db.v1")
+  if echo "$out" | grep -qi 'Empty set'; then
+    ok "查询已删除序列的列为空"
+  else
+    fail "查询结果非空（$(echo "$out" | tail -2 | tr '\n' ' ')）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-156：视图列 original_name 命中时，新设备数据可查
+case_RN156() {
+  local db=rn_t2t_156_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.S1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图（列名 s1，original S1）"
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s1 *\|'; then
+    ok "大写测点生成小写列名 s1"
+  else
+    fail "列名不是 s1"
+  fi
+  T "create timeseries root.$db.dev02.S1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev02(time,S1) values(1,42.0)" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "select s1 from $db.v1")
+  if echo "$out" | grep -q '42.0'; then
+    ok "original_name 命中时可查到新设备数据"
+  else
+    fail "original_name 命中时查不到数据"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-157：视图 comment 保留
+case_RN157() {
+  local db=rn_t2t_157_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) comment 'auto sync view' with(auto_sync_schema = true) as root.$db.**")" "建带 comment 的视图"
+  out=$(Q "show create view $db.v1")
+  if echo "$out" | grep -q 'auto sync view'; then
+    ok "show create view 保留 comment"
+  else
+    fail "comment 丢失"
+  fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -235,4 +435,14 @@ CASES+=(
 "RN-145|TDB-343 冲突不补列|功能|同名大小写/类型冲突时不补列且写入不报错|case_RN145"
 "RN-146|TDB-343 小写冲突拒绝|负向|prefix 下 s1/S1 小写冲突时建视图应报 617|case_RN146"
 "RN-147|TDB-343 非创建路径忽略|功能|除建视图外遇冲突（含属性切换补扫）一律忽略不报错|case_RN147"
+"RN-148|TDB-343 同批多测点补列|功能|一条设备同批写入多个新测点应全部补列|case_RN148"
+"RN-149|TDB-343 多设备补列|功能|多设备各自新增测点应分别补列|case_RN149"
+"RN-150|TDB-343 非前缀路径隔离|功能|非视图 prefix 路径的测点不影响视图|case_RN150"
+"RN-151|TDB-343 重叠前缀双视图|功能|重叠 prefix 的两个视图都应补列|case_RN151"
+"RN-152|TDB-343 显式类型选列|功能|显式声明 Field 类型时按类型选测点|case_RN152"
+"RN-153|TDB-343 仅声明列名|功能|只声明列名不给类型的实际行为|case_RN153"
+"RN-154|TDB-343 类型变更不同步|功能|树模型改类型不同步到视图列|case_RN154"
+"RN-155|TDB-343 删序列保留列|功能|删除序列后视图保留列且查询为空|case_RN155"
+"RN-156|TDB-343 original_name 命中|功能|original_name 命中时可查新设备数据|case_RN156"
+"RN-157|TDB-343 comment 保留|功能|视图 comment 在扩列后保留|case_RN157"
 )

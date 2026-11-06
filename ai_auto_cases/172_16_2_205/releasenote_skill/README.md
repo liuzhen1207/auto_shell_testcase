@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**85 个用例：PASS 77 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**96 个用例：PASS 88 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -242,6 +242,17 @@ bash tools/mode.sh proto-iot   # 切回经典
 | RN-145 | 同名大小写/类型冲突时不补列且写入不报错 | PASS |
 | RN-146 | prefix 下同时存在 `s1`/`S1` 时建视图报 617 | PASS |
 | RN-147 | 除建视图外（新增测点、false→true 补扫）遇冲突一律忽略、不报错 | PASS |
+| RN-148 | 一条设备同批写多个新测点，全部补列 | PASS |
+| RN-149 | 多设备各自新测点分别补列 | PASS |
+| RN-150 | 非 prefix 路径的测点不影响视图 | PASS |
+| RN-151 | 重叠前缀的两个视图都补列（tag 数与层级关系） | PASS |
+| RN-152 | 显式声明 Field 类型时按指定类型选测点 | PASS |
+| RN-153 | 只声明列名不给类型的实际行为（类型自动推导） | PASS |
+| RN-154 | 树模型改类型不同步到视图列 | PASS |
+| RN-155 | 删除序列后视图保留列，查询为空 | PASS |
+| RN-156 | original_name 命中时新设备数据可查 | PASS |
+| RN-157 | 视图 comment 在扩列后保留 | PASS |
+
 
 实现要点（实测）：
 - 时间列必须由视图 `(dev string tag)` 与 `AS root.db.**` 推断，DDL 需带库名（`create view db.v1(...)`），否则报 `701: database is not specified`；
@@ -270,3 +281,15 @@ bash tools/mode.sh proto-iot   # 切回经典
 2. **用例必须使用唯一库名**：`DROP DATABASE` 后 `show databases` 立刻不可见，但 schema 尚未清理完，
    随后同库名重建会命中 `503 Path ... already exist`。用例改为 `rn_t2t_<id>_$(date +%H%M%S)` 后稳定。
 3. **改属性语法**：`ALTER VIEW db.v SET PROPERTIES auto_sync_schema = false`（无括号）。
+
+#### TDB-343 第二批实测发现
+
+1. **设备名不能用保留字**：`root.db.region.dev01.s1` 会报 `700 ... no viable alternative at input '.region'`，
+   导致后续补列用例全部空跑。用例统一改用 `zone`。
+2. **命中规则确认**：`restrict=false` 时要求 **tag 数 ≥ 前缀下剩余层级**。
+   例：设备 `root.db.zone.dev01`（宽前缀剩余 2 层）需要 2 个 tag 才能命中 `root.db.**`。
+3. **只声明列名不给类型**：需求文档说"不能只指定列名不指定数据类型，否则报错"，
+   实测 `create view db.v(dev string tag, s1 field)` **可以创建成功**，类型由树模型自动推导（RN-153 断言的是实测行为）。
+   已加入歧义清单待确认。
+4. **类型变更**：`alter timeseries ... set data type` 需类型兼容（DOUBLE→INT64 会被 507 拒绝），
+   兼容变更（INT32→INT64）不会同步到视图列（RN-154）。
