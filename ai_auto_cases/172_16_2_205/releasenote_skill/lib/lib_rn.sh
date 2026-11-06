@@ -14,6 +14,7 @@
 T()  { timeout 90 $CLI -h "$HOST" -p 6667 -u root -pw "$PW" -sql_dialect tree  -e "$1" 2>&1; }
 Q()  { timeout 90 $CLI -h "$HOST" -p 6667 -u root -pw "$PW" -sql_dialect table -e "$1" 2>&1; }
 L()  { timeout 90 $CLI -h "$HOST" -p 6667 -u "$1"  -pw "$2" -sql_dialect tree  -e "$3" 2>&1; }
+LT() { timeout 90 $CLI -h "$HOST" -p 6667 -u "$1"  -pw "$2" -sql_dialect table -e "$3" 2>&1; }
 
 CASE_FAILS=0
 CASE_MSGS=""

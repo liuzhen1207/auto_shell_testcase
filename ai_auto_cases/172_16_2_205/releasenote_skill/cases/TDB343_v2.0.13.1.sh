@@ -886,6 +886,106 @@ case_RN180() {
   rn_t2t_drop $db
 }
 
+# RN-181：无权限用户不能创建树转表视图（沿用 CREATE VIEW 权限）
+case_RN181() {
+  local db=rn_t2t_181_$(date +%H%M%S) u=rn_u181_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "create user $u 'Rn181@123456'" >/dev/null 2>&1
+  out=$(LT "$u" 'Rn181@123456' "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")
+  echo "  无权限用户建视图返回：$(echo "$out" | head -1 | cut -c1-140)"
+  if echo "$out" | grep -qiE '803|820|no permission|没有权限|privilege'; then
+    ok "无权限用户建视图被拒绝"
+  else
+    fail "无权限用户竟能建视图（$(echo "$out" | head -1 | cut -c1-100)）"
+  fi
+  T "drop user $u" >/dev/null 2>&1
+  rn_t2t_drop $db
+}
+
+# RN-182：DROP 旧视图后新建不同名视图，列按当前 prefix 重新扫描（不继承旧列）
+case_RN182() {
+  local db=rn_t2t_182_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图 v1"
+  assert_ok "$(Q "drop view $db.v1")" "删除 v1"
+  T "create timeseries root.$db.dev01.s2 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v2(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "新建视图 v2"
+  out=$(Q "desc $db.v2")
+  if echo "$out" | grep -qE '\| *s2 *\|'; then ok "新视图按当前 prefix 重新扫描（含 s2）"; else fail "新视图未扫描到 s2"; fi
+  rn_t2t_drop $db
+}
+
+# RN-183：同一序列被两个重叠视图引用，各自补列互不干扰
+case_RN183() {
+  local db=rn_t2t_183_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.zone.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v_wide(zone string tag, dev string tag) with(auto_sync_schema = true) as root.$db.**")" "宽视图（2 tag）"
+  assert_ok "$(Q "create view $db.v_narrow(dev string tag) with(auto_sync_schema = true) as root.$db.zone.**")" "窄视图（1 tag）"
+  T "create timeseries root.$db.zone.dev01.shared double" >/dev/null 2>&1
+  sleep 4
+  local a b
+  a=$(Q "desc $db.v_wide" | grep -cE '\| *shared *\|')
+  b=$(Q "desc $db.v_narrow" | grep -cE '\| *shared *\|')
+  echo "  同一序列在宽/窄视图中的列数：$a / $b"
+  if [ "${a:-0}" -ge 1 ] && [ "${b:-0}" -ge 1 ]; then
+    ok "同一序列被两个视图引用时各自补列"
+  else
+    fail "重叠视图补列异常（$a/$b）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-184：并发 INSERT 自动建序列，补列不丢
+case_RN184() {
+  local db=rn_t2t_184_$(date +%H%M%S) i out n=0
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  for i in $(seq 1 6); do
+    ( T "insert into root.$db.dev01(time,k$i) values($i,$i.0)" >/dev/null 2>&1 ) &
+  done
+  wait
+  sleep 5
+  out=$(Q "desc $db.v1")
+  for i in $(seq 1 6); do
+    if echo "$out" | grep -qE "\| *k$i *\|"; then n=$((n + 1)); fi
+  done
+  echo "  并发 INSERT 后补列数：$n/6"
+  if [ "$n" -eq 6 ]; then ok "并发 INSERT 建序列全部补列"; else fail "并发 INSERT 补列丢失（$n/6）"; fi
+  rn_t2t_drop $db
+}
+
+# RN-185：补列进行中并发查询不报错
+case_RN185() {
+  local db=rn_t2t_185_$(date +%H%M%S) i out err=0
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  # 一边不断建新测点，一边并发查询视图
+  ( for i in $(seq 1 8); do T "create timeseries root.$db.dev01.q$i double" >/dev/null 2>&1; done ) &
+  for i in $(seq 1 6); do
+    out=$(Q "select * from $db.v1")
+    if echo "$out" | grep -qiE 'Msg:|Exception'; then
+      err=$((err + 1))
+      echo "  查询异常：$(echo "$out" | head -1 | cut -c1-120)"
+    fi
+  done
+  wait
+  echo "  补列期间并发查询异常次数：$err"
+  if [ "$err" -eq 0 ]; then ok "补列期间并发查询无异常"; else fail "补列期间查询出现 $err 次异常"; fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -929,4 +1029,9 @@ CASES+=(
 "RN-178|TDB-343 并发加列混跑|并发|并发建序列与 ADD COLUMN 均生效|case_RN178"
 "RN-179|TDB-343 手工加列后自动补列|功能|手工 ADD COLUMN 后自动补列仍工作|case_RN179"
 "RN-180|TDB-343 删列后再写入|功能|DROP COLUMN 后同测点写入是否补回（记录行为）|case_RN180"
+"RN-181|TDB-343 视图权限|安全|无权限用户不能创建树转表视图|case_RN181"
+"RN-182|TDB-343 换视图重扫|功能|DROP 后新建视图按当前 prefix 重扫|case_RN182"
+"RN-183|TDB-343 共享序列双视图|功能|同一序列被重叠视图引用时各自补列|case_RN183"
+"RN-184|TDB-343 并发INSERT补列|并发|并发 INSERT 建序列全部补列|case_RN184"
+"RN-185|TDB-343 补列中查询|并发|补列进行中并发查询不报错|case_RN185"
 )

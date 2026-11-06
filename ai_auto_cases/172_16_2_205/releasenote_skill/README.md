@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**119 个用例：PASS 107 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**124 个用例：PASS 112 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -275,6 +275,12 @@ bash tools/mode.sh proto-iot   # 切回经典
 | RN-178 | 并发建序列 + `ADD COLUMN` 混跑，两者都生效 | PASS |
 | RN-179 | 手工 `ADD COLUMN` 后自动补列仍工作 | PASS |
 | RN-180 | 手工 `DROP COLUMN` 后同测点再写入不会自动补回（记录行为） | PASS |
+| RN-181 | 无权限用户不能创建树转表视图（沿用 CREATE VIEW 权限） | PASS |
+| RN-182 | DROP 后新建视图按当前 prefix 重扫，不继承旧列 | PASS |
+| RN-183 | 同一序列被重叠视图引用时各自补列 | PASS |
+| RN-184 | 并发 INSERT 建序列全部补列（6 路） | PASS |
+| RN-185 | 补列进行中并发查询不报错 | PASS |
+
 
 
 
@@ -342,6 +348,12 @@ bash tools/mode.sh proto-iot   # 切回经典
 
 ```bash
 SKIP_OF["RN-xxx"]="跳过原因"   # 用例文件里声明，套件执行时记 SKIP 并输出原因
+```
+
+#### 新增 lib 能力：LT()
+
+```bash
+LT 用户名 密码 "SQL"   # 以表方言、指定用户执行（用于权限类用例）
 ```
 
 #### TDB-343 第五批：故障与并发

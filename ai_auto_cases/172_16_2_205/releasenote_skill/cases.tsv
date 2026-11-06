@@ -117,3 +117,8 @@ RN-177	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发建序列补列	并发	
 RN-178	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发加列混跑	并发	并发建序列与 ADD COLUMN 均生效	case_RN178
 RN-179	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 手工加列后自动补列	功能	手工 ADD COLUMN 后自动补列仍工作	case_RN179
 RN-180	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 删列后再写入	功能	DROP COLUMN 后同测点写入是否补回	case_RN180
+RN-181	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 视图权限	安全	无权限用户不能创建树转表视图	case_RN181
+RN-182	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 换视图重扫	功能	DROP 后新建视图按当前 prefix 重扫	case_RN182
+RN-183	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 共享序列双视图	功能	同一序列被重叠视图引用各自补列	case_RN183
+RN-184	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发INSERT补列	并发	并发 INSERT 建序列全部补列	case_RN184
+RN-185	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 补列中查询	并发	补列进行中并发查询不报错	case_RN185
