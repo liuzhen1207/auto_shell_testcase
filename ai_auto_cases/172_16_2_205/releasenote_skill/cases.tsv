@@ -94,3 +94,8 @@ RN-154	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 类型变更不同步	功能	
 RN-155	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 删序列保留列	功能	删序列后视图保留列且查询为空	case_RN155
 RN-156	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 original_name 命中	功能	original_name 命中时可查新设备数据	case_RN156
 RN-157	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 comment 保留	功能	视图 comment 在扩列后保留	case_RN157
+RN-158	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 乱序写入补列	时序	历史时间戳写新测点应补列且可查	case_RN158
+RN-159	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 晚到数据补列	时序	晚到数据建新测点应补列且可查	case_RN159
+RN-160	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 跨分区补列	时序	跨时间分区写新测点应补列	case_RN160
+RN-161	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 BLOB 测点补列	时序	BLOB 类型测点补列且类型正确	case_RN161
+RN-162	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 对齐设备补列	时序	对齐设备多测点均应补列	case_RN162

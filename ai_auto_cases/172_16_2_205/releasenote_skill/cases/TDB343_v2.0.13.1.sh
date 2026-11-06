@@ -425,6 +425,98 @@ case_RN157() {
   rn_t2t_drop $db
 }
 
+# RN-158：乱序写入（历史时间戳）新建测点 → 补列
+case_RN158() {
+  local db=rn_t2t_158_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(2000000,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  # 历史时间戳 + 新测点
+  assert_ok "$(T "insert into root.$db.dev01(time,s_old) values(1000,9.9)")" "历史时间戳写入新测点"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s_old *\|'; then ok "乱序写入的新测点已补列"; else fail "乱序写入未补列"; fi
+  out=$(Q "select s_old from $db.v1")
+  if echo "$out" | grep -q '9.9'; then ok "乱序数据可通过视图查询"; else fail "视图查不到乱序数据"; fi
+  rn_t2t_drop $db
+}
+
+# RN-159：晚到数据（早于已有数据的时间戳）新建测点 → 补列
+case_RN159() {
+  local db=rn_t2t_159_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(3000000,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  assert_ok "$(T "insert into root.$db.dev01(time,s_late) values(500,7.7)")" "晚到数据写入新测点"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s_late *\|'; then ok "晚到数据的新测点已补列"; else fail "晚到数据未补列"; fi
+  out=$(Q "select s_late from $db.v1")
+  if echo "$out" | grep -q '7.7'; then ok "晚到数据可通过视图查询"; else fail "视图查不到晚到数据"; fi
+  rn_t2t_drop $db
+}
+
+# RN-160：跨时间分区（3 天后）写入新测点 → 补列
+case_RN160() {
+  local db=rn_t2t_160_$(date +%H%M%S) out ts
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  ts=$(( $(date +%s) * 1000 + 3 * 86400000 ))
+  assert_ok "$(T "insert into root.$db.dev01(time,s_day3) values($ts,3.3)")" "跨分区（3 天后）写入新测点"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s_day3 *\|'; then ok "跨分区写入的新测点已补列"; else fail "跨分区未补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-161：BLOB 类型测点 → 补列且类型为 BLOB
+case_RN161() {
+  local db=rn_t2t_161_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  assert_ok "$(T "create timeseries root.$db.dev01.b1 blob")" "创建 BLOB 测点"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qiE '\| *b1 *\| *BLOB'; then ok "BLOB 测点已补列且类型正确"; else fail "BLOB 测点补列异常"; fi
+  rn_t2t_drop $db
+}
+
+# RN-162：对齐设备（aligned timeseries）→ 补列
+case_RN162() {
+  local db=rn_t2t_162_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  # 测点名不能与视图已有列 s1 冲突（同名不同类型会被按规则忽略）
+  assert_ok "$(T "create aligned timeseries root.$db.devAl(a1 int32, a2 int64)")" "创建对齐设备（2 个新测点）"
+  sleep 3
+  out=$(Q "desc $db.v1")
+  local a b
+  a=$(echo "$out" | grep -cE '\| *a1 *\| *INT32')
+  b=$(echo "$out" | grep -cE '\| *a2 *\| *INT64')
+  echo "  对齐设备补列：a1(INT32)=$a, a2(INT64)=$b"
+  if [ "${a:-0}" -ge 1 ] && [ "${b:-0}" -ge 1 ]; then
+    ok "对齐设备的两个测点均补列"
+  else
+    fail "对齐设备补列不完整（a=$a b=$b）"
+  fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -445,4 +537,9 @@ CASES+=(
 "RN-155|TDB-343 删序列保留列|功能|删除序列后视图保留列且查询为空|case_RN155"
 "RN-156|TDB-343 original_name 命中|功能|original_name 命中时可查新设备数据|case_RN156"
 "RN-157|TDB-343 comment 保留|功能|视图 comment 在扩列后保留|case_RN157"
+"RN-158|TDB-343 乱序写入补列|时序|历史时间戳写入新测点应补列且可查|case_RN158"
+"RN-159|TDB-343 晚到数据补列|时序|晚到数据建新测点应补列且可查|case_RN159"
+"RN-160|TDB-343 跨分区补列|时序|跨时间分区写入新测点应补列|case_RN160"
+"RN-161|TDB-343 BLOB 测点补列|时序|BLOB 类型测点补列且类型正确|case_RN161"
+"RN-162|TDB-343 对齐设备补列|时序|对齐设备多测点均应补列|case_RN162"
 )
