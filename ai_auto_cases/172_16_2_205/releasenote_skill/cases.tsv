@@ -1,5 +1,3 @@
-# releasenote_skill 用例矩阵（tab 分隔）
-# 列：case_id	脚本	来源版本	功能域	类型	说明	执行函数
 RN-001	cases/TDB_125_v2.0.13.1.sh	V2.0.13.1	TDB-125 授权	正向	基线：DN 正常时 GRANT 成功	case_RN001
 RN-002	cases/TDB_125_v2.0.13.1.sh	V2.0.13.1	TDB-125 授权	可靠性	kill -9 一台 DN 后 GRANT 不超时且权限生效	case_RN002
 RN-003	cases/TDB_125_v2.0.13.1.sh	V2.0.13.1	TDB-125 授权	可靠性	SIGSTOP 一台 DN（无响应）后 GRANT 不超时且权限生效	case_RN003
@@ -77,3 +75,11 @@ RN-135	cases/V2_861_v2.0.13.1.sh	V2.0.13.1	V2-861 停DN查询	可靠性	并发�
 RN-136	cases/V2_862_v2.0.13.1.sh	V2.0.13.1	V2-862 停CN日志	可靠性	stop ConfigNode 不应产生 NullPointerException	case_RN136
 RN-137	cases/V2_916_v2.0.13.1.sh	V2.0.13.1	V2-916 自定义时间列	功能	时间列名 d_datetime 时 DELETE 应成功	case_RN137
 RN-138	cases/V2_801_v2.0.13.1.sh	V2.0.13.1	V2-801 ns 精度	日志	ns 精度写入不应 Integer overflow	case_RN138
+RN-139	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 建视图扫描	功能	建视图时扫描已有测点成列	case_RN139
+RN-140	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 INSERT 补列	功能	INSERT 建序列后自动补列且可查	case_RN140
+RN-141	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 显式建序列补列	功能	CREATE TIMESERIES 后自动补列	case_RN141
+RN-142	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 默认不补列	功能	未开启属性不补列	case_RN142
+RN-143	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 base table 拒绝	负向	base table 带属性应 701	case_RN143
+RN-144	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 关闭属性	功能	关闭属性后不补列	case_RN144
+RN-145	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 冲突不补列	功能	同名大小写/类型冲突不补列	case_RN145
+RN-146	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 小写冲突拒绝	负向	prefix 下 s1/S1 小写冲突时建视图应报 617	case_RN146

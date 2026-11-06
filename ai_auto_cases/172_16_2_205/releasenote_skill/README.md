@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**77 个用例：PASS 69 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**85 个用例：PASS 77 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -226,3 +226,33 @@ bash tools/mode.sh proto-iot   # 切回经典
 ```
 
 > 协议切换需要清数据重建（hard_reset），单次约 4 分钟。
+
+### TDB-343 树转表视图自动扩列（auto_sync_schema）
+
+来源：PLM 需求 docs/90 + 设计 docs/913，测试点清单见 [`docs/tree2table_auto_sync_points.md`](docs/tree2table_auto_sync_points.md)（171 条测试点 + 25 条歧义待确认）。
+
+| 用例 | 验证点 | 结果 |
+| --- | --- | --- |
+| RN-139 | 建视图时扫描 prefixPath 已有测点成列 + `show create view` 展示属性 | PASS |
+| RN-140 | `INSERT` 自动建序列后视图自动补列且可查 | PASS |
+| RN-141 | 显式 `CREATE TIMESERIES` 后自动补列 | PASS |
+| RN-142 | 未开启属性的视图不补列（默认 false） | PASS |
+| RN-143 | base table 带 `auto_sync_schema` 报 701 | PASS |
+| RN-144 | `ALTER VIEW ... SET PROPERTIES auto_sync_schema = false` 后不再补列 | PASS |
+| RN-145 | 同名大小写/类型冲突时不补列且写入不报错 | PASS |
+| RN-146 | prefix 下同时存在 `s1`/`S1` 时建视图报 617 | PASS |
+
+实现要点（实测）：
+- 时间列必须由视图 `(dev string tag)` 与 `AS root.db.**` 推断，DDL 需带库名（`create view db.v1(...)`），否则报 `701: database is not specified`；
+- 修改属性语法为 `ALTER VIEW db.v1 SET PROPERTIES auto_sync_schema = false`（不带括号）；
+- 冲突用例用 `dev02.S1 int32` 对 `s1 DOUBLE`，视图不新增列、原列类型保持。
+
+#### TDB-343 实测发现（值得留意）
+
+1. **建视图会被 617 拒绝**：prefixPath 下若同时存在 `s1` 与 `S1`（小写冲突），
+   `create view ... with(auto_sync_schema=true)` 直接报
+   `617: The measurements s1 and S1 share the same lower case when auto detect`，视图创建失败。
+   已固化为 RN-146。
+2. **用例必须使用唯一库名**：`DROP DATABASE` 后 `show databases` 立刻不可见，但 schema 尚未清理完，
+   随后同库名重建会命中 `503 Path ... already exist`。用例改为 `rn_t2t_<id>_$(date +%H%M%S)` 后稳定。
+3. **改属性语法**：`ALTER VIEW db.v SET PROPERTIES auto_sync_schema = false`（无括号）。
