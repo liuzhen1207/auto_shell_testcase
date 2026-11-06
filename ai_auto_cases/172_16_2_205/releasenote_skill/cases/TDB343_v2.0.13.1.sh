@@ -1,4 +1,8 @@
 #!/bin/bash
+# 模板链路当前版本受环境限制：set device template 只支持树模型库，
+# 而树转表视图必须建在表模型库（详见 docs/tree2table_template_limitation.md）
+SKIP_OF["RN-173"]="模板仅支持树模型库，树转表视图需表模型库"
+SKIP_OF["RN-174"]="模板仅支持树模型库，树转表视图需表模型库"
 # ============================================================================
 # 来源需求：TDB-343 树转表视图自动扩列（auto_sync_schema）
 #   需求文档：PLM docs/90   设计文档：PLM docs/913
@@ -517,6 +521,226 @@ case_RN162() {
   rn_t2t_drop $db
 }
 
+# RN-163：视图改名后，新增测点仍补列
+case_RN163() {
+  local db=rn_t2t_163_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(Q "alter view $db.v1 rename to v2")" "视图改名"
+  T "create timeseries root.$db.dev01.s5 double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v2")
+  if echo "$out" | grep -qE '\| *s5 *\|'; then ok "改名后的视图仍能补列"; else fail "改名后不再补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-164：CREATE OR REPLACE 视图后补列，属性保留
+case_RN164() {
+  local db=rn_t2t_164_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "首次建视图"
+  assert_ok "$(Q "create or replace view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "OR REPLACE 重建视图"
+  out=$(Q "show create view $db.v1")
+  if echo "$out" | grep -q 'auto_sync_schema=true'; then ok "OR REPLACE 后属性保留为 true"; else fail "OR REPLACE 后属性丢失"; fi
+  T "create timeseries root.$db.dev01.s6 double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s6 *\|'; then ok "OR REPLACE 后新测点仍补列"; else fail "OR REPLACE 后不补列"; fi
+  rn_t2t_drop $db
+}
+
+# RN-165：DROP VIEW 后重建，补列恢复正常
+case_RN165() {
+  local db=rn_t2t_165_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(Q "drop view $db.v1")" "删除视图"
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "重建同名视图"
+  T "create timeseries root.$db.dev01.s7 double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s7 *\|'; then ok "重建后的视图能正常补列"; else fail "重建后不补列（索引残留？）"; fi
+  rn_t2t_drop $db
+}
+
+# RN-166：不同 database 的前缀边界不误命中
+case_RN166() {
+  local dbA=rn_t2t_166a_$(date +%H%M%S) out
+  local dbB="${dbA}b"
+  rn_t2t_drop $dbA; rn_t2t_drop $dbB
+  assert_ok "$(Q "CREATE DATABASE $dbA")" "建库 A"
+  assert_ok "$(Q "CREATE DATABASE $dbB")" "建库 B（名字以 A 为前缀）"
+  T "create timeseries root.$dbA.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $dbA.v(dev string tag) with(auto_sync_schema = true) as root.$dbA.**")" "在 A 建视图"
+  T "create timeseries root.$dbB.dev01.outside double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $dbA.v")
+  if echo "$out" | grep -qE '\| *outside *\|'; then
+    fail "B 库的测点误命中 A 库视图"
+  else
+    ok "不同 database 前缀边界未误命中"
+  fi
+  rn_t2t_drop $dbA; rn_t2t_drop $dbB
+}
+
+# RN-167：不同 database 的同名视图互不影响
+case_RN167() {
+  local db1=rn_t2t_167a_$(date +%H%M%S) out
+  local db2="${db1}b"
+  rn_t2t_drop $db1; rn_t2t_drop $db2
+  assert_ok "$(Q "CREATE DATABASE $db1")" "建库 1"
+  assert_ok "$(Q "CREATE DATABASE $db2")" "建库 2"
+  T "create timeseries root.$db1.dev01.s1 double" >/dev/null 2>&1
+  T "create timeseries root.$db2.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db1.v(dev string tag) with(auto_sync_schema = true) as root.$db1.**")" "库1 同名视图"
+  assert_ok "$(Q "create view $db2.v(dev string tag) with(auto_sync_schema = true) as root.$db2.**")" "库2 同名视图"
+  T "create timeseries root.$db1.dev01.s9 double" >/dev/null 2>&1
+  sleep 3
+  local a b
+  a=$(Q "desc $db1.v" | grep -cE '\| *s9 *\|')
+  b=$(Q "desc $db2.v" | grep -cE '\| *s9 *\|')
+  echo "  库1 视图含 s9=$a，库2 视图含 s9=$b"
+  if [ "${a:-0}" -ge 1 ] && [ "${b:-0}" -eq 0 ]; then
+    ok "同名视图按库隔离，仅命中的库补列"
+  else
+    fail "同名视图隔离异常（a=$a b=$b）"
+  fi
+  rn_t2t_drop $db1; rn_t2t_drop $db2
+}
+
+# RN-168：聚合查询访问新补列
+case_RN168() {
+  local db=rn_t2t_168_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "insert into root.$db.dev01(time,s2) values(2,2.0)" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "select count(s2), last(s2), avg(s2) from $db.v1")
+  if echo "$out" | grep -q '2.0'; then ok "聚合查询（count/last/avg）可访问新补列"; else fail "聚合查询新列异常"; fi
+  rn_t2t_drop $db
+}
+
+# RN-169：GROUP BY / ORDER BY 使用新补列
+case_RN169() {
+  local db=rn_t2t_169_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "insert into root.$db.dev01(time,s3) values(1,3.0)" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "select dev, count(s3) from $db.v1 group by dev")
+  if echo "$out" | grep -q 'dev01'; then ok "GROUP BY 可用新补列"; else fail "GROUP BY 新列异常"; fi
+  out=$(Q "select dev, s3 from $db.v1 order by s3 desc")
+  if echo "$out" | grep -q '3.0'; then ok "ORDER BY 可用新补列"; else fail "ORDER BY 新列异常"; fi
+  rn_t2t_drop $db
+}
+
+# RN-170：SELECT * 包含新补列，旧行补 null
+case_RN170() {
+  local db=rn_t2t_170_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "insert into root.$db.dev01(time,s2) values(2,2.0)" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "select * from $db.v1")
+  echo "  select * 输出：$(echo "$out" | grep -c '^|') 行"
+  if echo "$out" | grep -q 'null' && echo "$out" | grep -q '2.0'; then
+    ok "SELECT * 含新补列且旧行补 null"
+  else
+    fail "SELECT * 结果异常"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-171：跨设备查询时新列在无数据设备上为 null
+case_RN171() {
+  local db=rn_t2t_171_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.devA.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.devA(time,s1) values(1,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "create timeseries root.$db.devB.s2 double" >/dev/null 2>&1
+  T "insert into root.$db.devB(time,s2) values(2,2.0)" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "select * from $db.v1")
+  echo "  $(echo "$out" | grep -E 'devA|devB' | head -2 | tr '\n' ' ')"
+  if echo "$out" | grep -qE 'devA.*null' && echo "$out" | grep -qE 'devB.*2.0'; then
+    ok "跨设备查询时新列在无数据设备上补 null"
+  else
+    fail "跨设备 null 补位异常"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-172：带 TTL 的 database 中自动补列正常
+case_RN172() {
+  local db=rn_t2t_172_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "create database $db with (ttl=86400000)")" "建带 TTL 的库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "create timeseries root.$db.dev01.s8 double" >/dev/null 2>&1
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *s8 *\|'; then ok "TTL 库中补列正常"; else fail "TTL 库中补列失败"; fi
+  rn_t2t_drop $db
+}
+
+# RN-173：模板激活到新路径触发补列
+case_RN173() {
+  local db=rn_t2t_173_$(date +%H%M%S) tpl=rn_tpl173_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create device template $tpl(ta float, tb double)" >/dev/null 2>&1
+  T "set device template $tpl to root.$db.dev05" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(T "create timeseries using device template on root.$db.dev05")" "激活模板到新路径"
+  sleep 4
+  out=$(Q "desc $db.v1")
+  local a b
+  a=$(echo "$out" | grep -cE '\| *ta *\|')
+  b=$(echo "$out" | grep -cE '\| *tb *\|')
+  echo "  模板激活后补列：ta=$a tb=$b"
+  if [ "${a:-0}" -ge 1 ] && [ "${b:-0}" -ge 1 ]; then
+    ok "模板激活到新路径后两个测点均补列"
+  else
+    fail "模板激活补列不完整（ta=$a tb=$b）"
+  fi
+  rn_t2t_drop $db
+  T "drop device template $tpl" >/dev/null 2>&1
+}
+
+# RN-174：模板扩展（ALTER SCHEMA TEMPLATE ADD）触发补列
+case_RN174() {
+  local db=rn_t2t_174_$(date +%H%M%S) tpl=rn_tpl174_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create device template $tpl(ta float)" >/dev/null 2>&1
+  T "set device template $tpl to root.$db.dev06" >/dev/null 2>&1
+  T "create timeseries using device template on root.$db.dev06" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图（已含 ta）"
+  assert_ok "$(T "alter schema template $tpl add (tc int64)")" "模板扩展新增 tc"
+  sleep 5
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *tc *\|'; then ok "模板扩展后新测点补列"; else fail "模板扩展未补列"; fi
+  rn_t2t_drop $db
+  T "drop device template $tpl" >/dev/null 2>&1
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -542,4 +766,16 @@ CASES+=(
 "RN-160|TDB-343 跨分区补列|时序|跨时间分区写入新测点应补列|case_RN160"
 "RN-161|TDB-343 BLOB 测点补列|时序|BLOB 类型测点补列且类型正确|case_RN161"
 "RN-162|TDB-343 对齐设备补列|时序|对齐设备多测点均应补列|case_RN162"
+"RN-163|TDB-343 改名后补列|功能|视图改名后仍能补列|case_RN163"
+"RN-164|TDB-343 OR REPLACE 补列|功能|OR REPLACE 视图后属性保留且仍补列|case_RN164"
+"RN-165|TDB-343 重建视图补列|功能|DROP 后重建视图仍补列|case_RN165"
+"RN-166|TDB-343 库前缀边界|功能|相邻库名前缀不误命中|case_RN166"
+"RN-167|TDB-343 同名视图隔离|功能|不同库同名视图互不影响|case_RN167"
+"RN-168|TDB-343 聚合访问新列|功能|count/last/avg 可访问新补列|case_RN168"
+"RN-169|TDB-343 GROUP/ORDER 新列|功能|GROUP BY / ORDER BY 可用新补列|case_RN169"
+"RN-170|TDB-343 SELECT * 新列|功能|SELECT * 含新列且旧行补 null|case_RN170"
+"RN-171|TDB-343 跨设备 null|功能|无数据设备上新列为 null|case_RN171"
+"RN-172|TDB-343 TTL 库补列|功能|TTL 库中补列正常|case_RN172"
+"RN-173|TDB-343 模板激活补列|功能|模板激活到新路径触发补列|case_RN173"
+"RN-174|TDB-343 模板扩展补列|功能|ALTER SCHEMA TEMPLATE ADD 触发补列|case_RN174"
 )

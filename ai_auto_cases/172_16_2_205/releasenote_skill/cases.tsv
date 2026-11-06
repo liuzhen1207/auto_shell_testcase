@@ -99,3 +99,15 @@ RN-159	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 晚到数据补列	时序	晚
 RN-160	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 跨分区补列	时序	跨时间分区写新测点应补列	case_RN160
 RN-161	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 BLOB 测点补列	时序	BLOB 类型测点补列且类型正确	case_RN161
 RN-162	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 对齐设备补列	时序	对齐设备多测点均应补列	case_RN162
+RN-163	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 改名后补列	功能	视图改名后仍能补列	case_RN163
+RN-164	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 OR REPLACE 补列	功能	OR REPLACE 后属性保留且仍补列	case_RN164
+RN-165	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 重建视图补列	功能	DROP 后重建视图仍补列	case_RN165
+RN-166	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 库前缀边界	功能	相邻库名前缀不误命中	case_RN166
+RN-167	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 同名视图隔离	功能	不同库同名视图互不影响	case_RN167
+RN-168	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 聚合访问新列	功能	count/last/avg 可访问新补列	case_RN168
+RN-169	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 GROUP/ORDER 新列	功能	GROUP BY/ORDER BY 可用新补列	case_RN169
+RN-170	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 SELECT * 新列	功能	SELECT * 含新列且旧行补 null	case_RN170
+RN-171	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 跨设备 null	功能	无数据设备上新列为 null	case_RN171
+RN-172	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 TTL 库补列	功能	TTL 库中补列正常	case_RN172
+RN-173	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 模板激活补列	功能	模板激活到新路径触发补列	case_RN173
+RN-174	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 模板扩展补列	功能	ALTER SCHEMA TEMPLATE ADD 触发补列	case_RN174

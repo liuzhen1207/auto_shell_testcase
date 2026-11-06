@@ -29,6 +29,7 @@ fi
 declare -a CASES=()
 declare -A MODE_OF=()
 declare -A SLOW_OF=()
+declare -A SKIP_OF=()
 for f in "$BASE"/cases/*.sh; do
   [ -f "$f" ] || continue
   . "$f"
@@ -44,6 +45,11 @@ for entry in "${CASES[@]}"; do
   if [ ${#want[@]} -gt 0 ]; then
     hit=0; for w in ${want[@]+"${want[@]}"}; do [ "$w" = "$id" ] && hit=1; done
     [ "$hit" = "0" ] && continue
+  fi
+  if [ -n "${SKIP_OF[$id]:-}" ]; then
+    echo "[$(date +%T)] $id -> SKIP (${SKIP_OF[$id]})"
+    printf '%s\t%s\t%s\tSKIP\t0\t0\t%s\n' "$id" "$feature" "$ctype" "${SKIP_OF[$id]}" >> "$RES"
+    continue
   fi
   if [ "${SLOW_OF[$id]:-0}" = "1" ] && [ "${RN_SLOW:-0}" != "1" ]; then
     echo "[$(date +%T)] $id -> SKIP (慢用例，需 RN_SLOW=1)"

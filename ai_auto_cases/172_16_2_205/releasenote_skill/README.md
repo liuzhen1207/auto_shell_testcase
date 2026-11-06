@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**101 个用例：PASS 93 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**113 个用例：PASS 103 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -257,6 +257,19 @@ bash tools/mode.sh proto-iot   # 切回经典
 | RN-160 | 跨时间分区（3 天后）写入新测点补列 | PASS |
 | RN-161 | BLOB 类型测点补列且类型正确 | PASS |
 | RN-162 | 对齐设备（aligned，多测点）均补列 | PASS |
+| RN-163 | 视图改名后仍能补列 | PASS |
+| RN-164 | `CREATE OR REPLACE` 后属性保留且仍补列 | PASS |
+| RN-165 | `DROP VIEW` 后重建仍补列 | PASS |
+| RN-166 | 相邻库名前缀（db、dbb）不误命中 | PASS |
+| RN-167 | 不同库同名视图按库隔离 | PASS |
+| RN-168 | 聚合查询（count/last/avg）访问新列 | PASS |
+| RN-169 | `GROUP BY` / `ORDER BY` 使用新列 | PASS |
+| RN-170 | `SELECT *` 含新列且旧行补 null | PASS |
+| RN-171 | 跨设备查询时新列补 null | PASS |
+| RN-172 | TTL 库中补列正常 | PASS |
+| RN-173 | 模板激活触发补列 | SKIP（环境受限） |
+| RN-174 | 模板扩展触发补列 | SKIP（环境受限） |
+
 
 
 
@@ -307,3 +320,19 @@ bash tools/mode.sh proto-iot   # 切回经典
   设计如此，用例已改用不冲突的测点名（`a1/a2`）。
 - **乱序/晚到/跨分区**三种写入时机都能触发补列，且补列后历史数据可通过视图查询。
 - **BLOB 测点**补列后列类型为 BLOB，与树模型一致。
+
+#### TDB-343 模板链路：环境受限（已记录）
+
+文档 §3.2.2 第 7 条与 §3.4 场景 2 描述「模板激活 / 模板扩展触发补列」，实测在当前版本无法构造：
+
+- `set device template` 只支持**树模型库**：表模型库执行报 `500 Database is not set`；
+- 树转表视图必须建在**表模型库**：树模型库执行报 `500 Unknown database`。
+
+两者互斥 → 模板链路用例 RN-173/RN-174 标记 `SKIP_OF`（带原因跳过），证据与建议见
+[`docs/tree2table_template_limitation.md`](docs/tree2table_template_limitation.md)。
+
+#### 新增套件能力：SKIP_OF
+
+```bash
+SKIP_OF["RN-xxx"]="跳过原因"   # 用例文件里声明，套件执行时记 SKIP 并输出原因
+```
