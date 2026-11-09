@@ -31,3 +31,15 @@
 - 缺陷报告（含时间线证据、代码定位、修复建议）：`../../delete_skill/docs/DEFECT-TDB-939-delete-vs-flush-mods.md`
 - 回归全量报告：`../../delete_skill/docs/RC10-DELETE-REPORT.md`（RC1 部分见测试机 `/data2/iotdb/rc10_matrix/report/RC10-DELETE-REPORT.md`）
 - 证据目录（测试机 172.16.2.20）：`/data2/iotdb/rc10_matrix/artifacts/IoTConsensus/DEL-PRED-008/`
+
+## 协议对比（2026-11-06 ~ 11-09 补充验证）
+
+| 协议 | 轮次 | PASS | FAIL | 去重耗时 |
+| --- | ---: | ---: | ---: | ---: |
+| IoTConsensus（V1） | 85 | 78 | 7 | 56h26m |
+| IoTConsensusV2（V2） | 78 | 78 | 0 | 51h56m |
+| 合计 | 163 | 156 | 7 | 108h23m（含重跑 115h3m / 173 次执行） |
+
+- TDB-939 的 4 个代表用例在 V2 上全部通过 → **缺陷为 V1 特有**，与 IoTConsensus 的日志派发/重放路径相关。
+- V2 观察到 1 次间歇性单行复活（`DEL-REPL-002`，1/4 次；重启后复活 `d3` 的 `.001` 行，两副本一致；随后连跑 2 次通过），是否与本缺陷同源待研发确认。
+- `DEL-NEG-001` 首轮失败为用例排序不确定（`ORDER BY time` 并列），已改为 `ORDER BY time, device_id`，与产品无关。
