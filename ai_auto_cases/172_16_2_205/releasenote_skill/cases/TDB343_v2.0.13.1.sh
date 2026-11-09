@@ -1057,21 +1057,56 @@ case_RN189() {
   rn_t2t_drop $db
 }
 
-# RN-190：仅授予 CREATE 的普通用户仍无法建视图（缺 READ_SCHEMA 权限项，记录当前权限模型行为）
+# RN-190：普通用户建树转表视图的最小授权集合（树 READ_SCHEMA + READ_DATA；表 CREATE）
 case_RN190() {
   local db=rn_t2t_190_$(date +%H%M%S) u=rn_u190_$(date +%H%M%S) out
   rn_t2t_drop $db
   assert_ok "$(Q "CREATE DATABASE $db")" "建库"
   T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
   T "create user $u 'Rn190@123456'" >/dev/null 2>&1
-  Q "grant create on database $db to user $u" >/dev/null 2>&1
+
+  # 1) 未授权时被拒
+  out=$(LT "$u" 'Rn190@123456' "create view $db.v0(dev string tag) with(auto_sync_schema = true) as root.$db.**")
+  if echo "$out" | grep -q '803'; then ok "未授权时建视图被拒（803）"; else fail "未授权竟能建视图"; fi
+
+  # 2) 仅树模型 READ_SCHEMA：仍缺表模型 CREATE
+  T "grant read_schema on root.$db.** to user $u" >/dev/null 2>&1
   out=$(LT "$u" 'Rn190@123456' "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")
-  echo "  仅 CREATE 权限用户建视图：$(echo "$out" | head -1 | cut -c1-160)"
-  if echo "$out" | grep -q '803'; then
-    ok "仅 CREATE 权限时被拒（缺 READ_SCHEMA，且该权限项不可授予）"
+  echo "  仅 READ_SCHEMA：$(echo "$out" | head -1 | cut -c1-130)"
+  if echo "$out" | grep -qE '803.*CREATE'; then
+    ok "仅树 READ_SCHEMA 时提示缺表模型 CREATE（权限分层可见）"
   else
-    ok "仅 CREATE 权限时可建视图（$(echo "$out" | head -1 | cut -c1-80)）"
+    ok "仅树 READ_SCHEMA 时结果：$(echo "$out" | head -1 | cut -c1-80)"
   fi
+
+  # 3) 补齐：树 READ_SCHEMA + READ_DATA，表 CREATE
+  T "grant read_data on root.$db.** to user $u" >/dev/null 2>&1
+  Q "grant create on database $db to user $u" >/dev/null 2>&1
+  out=$(LT "$u" 'Rn190@123456' "create view $db.v2(dev string tag) with(auto_sync_schema = true) as root.$db.**")
+  echo "  完整授权：$(echo "$out" | head -1 | cut -c1-130)"
+  assert_ok "$out" "完整授权后普通用户可建视图"
+
+  # 4) 视图可正常补列
+  T "create timeseries root.$db.dev01.s9 double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v2")
+  if echo "$out" | grep -qE '\| *s9 *\|'; then ok "普通用户建的视图能正常补列"; else fail "该视图未补列"; fi
+
+  # 5) 查询还需表模型 SELECT
+  out=$(LT "$u" 'Rn190@123456' "select * from $db.v2")
+  if echo "$out" | grep -qE '803.*SELECT'; then
+    ok "查询需额外表模型 SELECT（提示明确）"
+  else
+    ok "查询结果：$(echo "$out" | head -1 | cut -c1-90)"
+  fi
+  Q "grant select on table $db.v2 to user $u" >/dev/null 2>&1
+  out=$(LT "$u" 'Rn190@123456' "select * from $db.v2")
+  if echo "$out" | grep -qiE 'Msg:|803'; then
+    fail "授予 SELECT 后仍无法查询（$(echo "$out" | head -1 | cut -c1-110)）"
+  else
+    ok "授予表模型 SELECT 后可查询视图"
+  fi
+
   T "drop user $u" >/dev/null 2>&1
   rn_t2t_drop $db
 }

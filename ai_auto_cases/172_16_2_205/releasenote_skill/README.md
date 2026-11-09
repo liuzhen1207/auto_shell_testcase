@@ -286,7 +286,7 @@ TDB-343 组共 **52 条**用例（RN-139 ~ RN-190）：50 条常规/并发 + 2 �
 | RN-187 | `restrict` 且 tag 数 == 层级时补列 | PASS |
 | RN-188 | `restrict` 且 tag 数 != 层级时不补列（命中规则） | PASS |
 | RN-189 | tag 数 > 层级（非 restrict）时缺失 tag 补 null | PASS |
-| RN-190 | 仅授予 CREATE 的用户仍被拒（缺 READ_SCHEMA，且该权限不可授予） | PASS |
+| RN-190 | 普通用户最小授权集合（树 READ_SCHEMA+READ_DATA、表 CREATE）后可建视图并补列 | PASS |
 
 
 
@@ -378,8 +378,9 @@ LT 用户名 密码 "SQL"   # 以表方言、指定用户执行（用于权限�
 - **restrict 语义实测确认**：`restrict=true` 时要求 tag 数 **严格等于** 前缀下剩余层级；
   `restrict=false` 时要求 tag 数 **≥** 剩余层级，缺失 tag 查询时补 null。
   RN-187/188/189 三条正好把这两个方向钉死。
-- **权限模型缺口**：表模型可授予的权限项为 ALL / ALTER / AUDIT / CREATE / DELETE / DROP /
-  EXEMPTION / INSERT / MANAGE_ROLE / MANAGE_USER / ROLE / SECURITY / SELECT / SYSTEM，
-  **没有 READ_SCHEMA**；因此即使给普通用户 `GRANT CREATE ON DATABASE`，建视图仍报
-  `803 Access Denied: please add privilege READ_SCHEMA`——普通用户实际上无法建树转表视图。
-  已用 RN-190 记录该行为，建议向研发确认是否为权限模型遗漏。
+- **权限要求（已实测澄清）**：`READ_SCHEMA` 属**树模型权限**，可以在树路径上授予；
+  普通用户建树转表视图需要**跨模型三类权限**：
+  树模型 `READ_SCHEMA` + `READ_DATA`（授在 `root.db.**`）、
+  表模型 `CREATE`（授在 database）；查询视图还需表模型 `SELECT`。
+  只授 `root.db`（而非 `root.db.**`）会一直报缺 `READ_SCHEMA`。
+  详见 [`docs/tree2table_permissions.md`](docs/tree2table_permissions.md)，用例 RN-190。
