@@ -36,6 +36,17 @@ for r in $(seq 1 $ROUNDS); do
     stop)     ssh -n -o StrictHostKeyChecking=no root@$TARGET "kill -STOP $PID" 2>/dev/null; sleep 12 ;;
     kill9)    ssh -n -o StrictHostKeyChecking=no root@$TARGET "kill -9 $PID" 2>/dev/null; sleep 3 ;;
     kill9wait) ssh -n -o StrictHostKeyChecking=no root@$TARGET "kill -9 $PID" 2>/dev/null; sleep 20 ;;
+    stopwait)  ssh -n -o StrictHostKeyChecking=no root@$TARGET "kill -STOP $PID" 2>/dev/null
+               w=0
+               ST=Running
+               for k in $(seq 1 24); do
+                 # 表格列: |NodeID|NodeType|Status|... -> $3=NodeType, $4=Status
+                 ST=$(T "show cluster;" 2>/dev/null | grep "172.16.2.6" | awk -F"|" '{gsub(/ /,"",$4); print $4}')
+                 w=$((w + 5))
+                 if [ -n "$ST" ] && [ "$ST" != "Running" ]; then break; fi
+                 sleep 5
+               done
+               echo "  等待 ${w}s 后 DN6 状态=$ST" | tee -a "$LOG" ;;
   esac
 
   # 故障期间建序列（失败则重试，最多 6 次）
@@ -48,7 +59,7 @@ for r in $(seq 1 $ROUNDS); do
   echo "  写入返回：$(echo "$W" | cut -c1-90)" | tee -a "$LOG"
 
   # 恢复
-  if [ "$MODE" = "stop" ]; then
+  if [ "$MODE" = "stop" ] || [ "$MODE" = "stopwait" ]; then
     ssh -n -o StrictHostKeyChecking=no root@$TARGET "kill -CONT $PID" 2>/dev/null
   else
     DN_START
