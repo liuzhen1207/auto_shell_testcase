@@ -57,6 +57,9 @@ case_AUTH006() {
 
 case_AUTH007() {
   # 强密码：长度 + 复杂度过 a-d；本版本最小长度 12
+  # 防御：确保强密码策略处于开启态（历史运行可能把它落盘成 false，导致本用例假失败）
+  TS "SET CONFIGURATION 'enforce_strong_password'='true'" >/dev/null 2>&1
+  sleep 2
   TS "DROP USER auth007" >/dev/null 2>&1
   local o
   o=$(TS "CREATE USER auth007 'NoSpecial123456'")
