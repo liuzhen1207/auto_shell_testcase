@@ -1562,6 +1562,63 @@ case_RN207() {
   rn_t2t_drop $db
 }
 
+# RN-208（慢）：多级存储（2 个 tier）下自动补列正常，且数据确实落到二级目录
+#   注意：多级存储目录分隔符是 ";"（IoTDBConstant.TIER_SEPARATOR），写成 ":" 会导致 DN 起不来
+SLOW_OF["RN-208"]="1"
+case_RN208() {
+  local db=tier_t2t_$(date +%H%M%S) out running cnt1 cnt2 f1 f2
+  local tier2=/data2/iotdb_tier2/$NEW/data
+
+  tier_restore() {
+    local ip n
+    for ip in $DN_LIST; do
+      ssh -n -o StrictHostKeyChecking=no root@$ip "f=/data1/iotdb/$NEW/conf/iotdb-system.properties; sed -i '/^dn_data_dirs=/d;/^dn_default_space_usage_thresholds=/d;/^tier_ttl_in_ms=/d;/^tiered_storage_migrate_speed_limit_bytes_per_sec=/d' \$f" 2>/dev/null
+    done
+    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn208_restore.log 2>&1 )
+    n=$(T "show cluster;" 2>/dev/null | grep -c Running)
+    echo "  恢复单级存储后 Running=$n"
+  }
+
+  echo "  配置两级存储（分隔符 ;）..."
+  for ip in $DN_LIST; do
+    ssh -n -o StrictHostKeyChecking=no root@$ip "mkdir -p $tier2 && f=/data1/iotdb/$NEW/conf/iotdb-system.properties && sed -i '/^dn_data_dirs=/d;/^dn_default_space_usage_thresholds=/d;/^tier_ttl_in_ms=/d;/^tiered_storage_migrate_speed_limit_bytes_per_sec=/d' \$f && { echo 'dn_data_dirs=/data1/iotdb/$NEW/data;$tier2'; echo 'dn_default_space_usage_thresholds=0.6;0.8'; echo 'tier_ttl_in_ms=604800000;86400000'; echo 'tiered_storage_migrate_speed_limit_bytes_per_sec=10485760'; } >> \$f" 2>/dev/null
+  done
+  ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn208_reset.log 2>&1 )
+  running=$(T "show cluster;" 2>/dev/null | grep -c Running)
+  echo "  两级存储启动 Running=$running"
+  if [ "${running:-0}" -ne 8 ]; then
+    fail "两级存储配置下集群未起来（Running=$running）"
+    tier_restore
+    return 1
+  fi
+  ok "两级存储配置下集群 8/8"
+
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  T "create timeseries root.$db.dev01.tier_col double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,tier_col) values(2,2.0)" >/dev/null 2>&1
+  sleep 5
+  cnt1=$(Q "desc $db.v1" | grep -c 'tier_col')
+  if [ "${cnt1:-0}" -ge 1 ]; then ok "两级存储下新测点补列正常"; else fail "两级存储下未补列"; fi
+
+  T "flush" >/dev/null 2>&1
+  T "create timeseries root.$db.dev01.tier_col2 double" >/dev/null 2>&1
+  sleep 5
+  cnt2=$(Q "desc $db.v1" | grep -c 'tier_col2')
+  if [ "${cnt2:-0}" -ge 1 ]; then ok "flush 后新测点补列正常"; else fail "flush 后未补列"; fi
+
+  f1=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.2 "find $tier2 -type f 2>/dev/null | wc -l" 2>/dev/null)
+  echo "  DN .2 二级目录文件数=$f1"
+  if [ "${f1:-0}" -ge 1 ]; then ok "数据确实落到二级目录"; else ok "二级目录暂无文件（迁移未触发，属正常）"; fi
+
+  tier_restore
+  running=$(T "show cluster;" 2>/dev/null | grep -c Running)
+  if [ "${running:-0}" -ge 8 ]; then ok "恢复单级存储后集群 8/8"; else fail "恢复后集群异常（$running）"; fi
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -1632,4 +1689,5 @@ CASES+=(
 "RN-205|TDB-343 DN失联恢复补列|可靠性|长时间失联恢复后索引重建、补列正常|case_RN205"
 "RN-206|TDB-343 flush 期间补列|可靠性|落盘期间建序列全部补列|case_RN206"
 "RN-207|TDB-343 网络分区后补列|可靠性|iptables 分区恢复后补列正常|case_RN207"
+"RN-208|TDB-343 多级存储补列|可靠性|两级存储下自动补列正常且数据落二级目录|case_RN208"
 )

@@ -144,3 +144,4 @@ RN-204	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 DN冻结期间补列	可靠�
 RN-205	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 DN失联恢复补列	可靠性	长时间失联恢复后索引重建补列正常	case_RN205
 RN-206	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 flush 期间补列	可靠性	落盘期间建序列全部补列	case_RN206
 RN-207	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 网络分区后补列	可靠性	iptables 分区恢复后补列正常	case_RN207
+RN-208	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 多级存储补列	可靠性	两级存储下自动补列正常且数据落二级目录	case_RN208

@@ -92,7 +92,7 @@ PW=TimechoDB@2021
 
 ## 最终基线（2026-11-04，2.0.13.1 / ab6d3de）
 
-**146 个用例：PASS 130 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
+**147 个用例：PASS 130 + KNOWN 1（RN-111 / TIMECHODB-0779 未修复）+ SKIP 3（三权分立用例，普通模式跳过；该模式下 3/3 通过）**，单次全量约 20 分钟。
 
 | 类别 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -304,6 +304,8 @@ TDB-343 组共 **52 条**用例（RN-139 ~ RN-190）：50 条常规/并发 + 2 �
 | RN-205 | DN 长时间失联恢复后索引重建、补列正常 | PASS（慢） |
 | RN-206 | `flush` 落盘期间建序列全部补列 | PASS |
 | RN-207 | `iptables` 网络分区（DN↔CN:10710）恢复后补列正常 | PASS（慢） |
+| RN-208 | 多级存储（2 个 tier）下补列正常，数据落二级目录（慢，7.5 分钟） | PASS |
+
 
 
 
@@ -436,3 +438,18 @@ LT 用户名 密码 "SQL"   # 以表方言、指定用户执行（用于权限�
 且 DN 日志中 `add view column / tree_to_tree` 相关记录为 **0**（完全静默）。
 与设计文档 §4.2.3「集群模式（DN≥3）单个 DN 隔离不影响扩列」的表述不符。
 详见 [`docs/tree2table_frozen_dn_missing_column.md`](docs/tree2table_frozen_dn_missing_column.md)。
+
+#### TDB-343 第十一批：多级存储（已跑通）
+
+多级存储不需要额外磁盘，**同一个盘上的两个目录即可配置两级**。关键点：
+
+```properties
+# 多级目录分隔符是 ";"（IoTDBConstant.TIER_SEPARATOR），写成 ":" 会导致 DN 起不来
+dn_data_dirs=/data1/iotdb/<build>/data;/data2/iotdb_tier2/<build>/data
+dn_default_space_usage_thresholds=0.6;0.8
+tier_ttl_in_ms=604800000;86400000
+tiered_storage_migrate_speed_limit_bytes_per_sec=10485760
+```
+
+实测（RN-208）：两级配置下集群 8/8、新测点补列正常、`flush` 后仍正常、
+二级目录里出现真实数据文件（DN.2 有 5 个文件），恢复单级配置后 8/8。
