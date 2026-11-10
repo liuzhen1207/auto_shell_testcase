@@ -1,0 +1,171 @@
+[
+ {
+  "id": "CHK-186",
+  "bug": "V2-186",
+  "scope": "dn",
+  "pattern": "BufferUnderflowException",
+  "title": "跨时间分区 object 写入 BufferUnderflow"
+ },
+ {
+  "id": "CHK-375",
+  "bug": "V2-375",
+  "scope": "cn",
+  "pattern": "not set next state, but return HAS_MORE_STATE",
+  "title": "改序列类型 CN StateMachineProcedure 未设下一状态"
+ },
+ {
+  "id": "CHK-377",
+  "bug": "V2-377",
+  "scope": "cn",
+  "pattern": "Deserialization error for write plan",
+  "title": "改数据类型 CN Follower 反序列化错误"
+ },
+ {
+  "id": "CHK-376",
+  "bug": "V2-376",
+  "scope": "dn",
+  "pattern": "has overlapped data",
+  "title": "多盘 dn_data_dirs 合并重叠数据"
+ },
+ {
+  "id": "CHK-427",
+  "bug": "V2-427",
+  "scope": "dn",
+  "pattern": "INNER_SEQ task meets error",
+  "title": "并发合并 INNER_SEQ 报错"
+ },
+ {
+  "id": "CHK-430",
+  "bug": "V2-430",
+  "scope": "dn",
+  "pattern": "StatisticsClassException",
+  "title": "改类型后 last 查询统计类型异常"
+ },
+ {
+  "id": "CHK-743",
+  "bug": "V2-743",
+  "scope": "dn",
+  "pattern": "Internal error processing requestStatementId",
+  "title": "审计开启并发写 requestStatementId 处理异常"
+ },
+ {
+  "id": "CHK-907",
+  "bug": "V2-907",
+  "scope": "dn",
+  "pattern": "Cannot record login history",
+  "title": "审计登录历史记录失败"
+ },
+ {
+  "id": "CHK-910",
+  "bug": "V2-910",
+  "scope": "dn",
+  "pattern": "Internal error processing openSession",
+  "title": "openSession 内部错误"
+ },
+ {
+  "id": "CHK-940",
+  "bug": "V2-940",
+  "scope": "cn",
+  "pattern": "ReconfigurationInProgressException",
+  "title": "缩容 Ratis 重配置冲突"
+ },
+ {
+  "id": "CHK-967",
+  "bug": "V2-967",
+  "scope": "cn",
+  "pattern": "Internal error processing loadBalance",
+  "title": "loadBalance 处理异常"
+ },
+ {
+  "id": "CHK-969",
+  "bug": "V2-969",
+  "scope": "cn",
+  "pattern": "ConsensusGroupAlreadyExistException",
+  "title": "加 ConfigNode 共识组已存在"
+ },
+ {
+  "id": "CHK-1006",
+  "bug": "V2-1006",
+  "scope": "dn",
+  "pattern": "PipeRuntimeSinkCriticalException",
+  "title": "Pipe 远程导出 OBJECT 连接资源异常"
+ },
+ {
+  "id": "CHK-1019",
+  "bug": "V2-1019",
+  "scope": "cn",
+  "pattern": "ConsensusGroupModifyPeerException",
+  "title": "迁移并发 ConsensusGroupModifyPeer 异常"
+ },
+ {
+  "id": "CHK-1056",
+  "bug": "V2-1056",
+  "scope": "dn",
+  "pattern": "Cannot calculate occupied space of folder",
+  "title": "snapshot 目录空间计算失败"
+ },
+ {
+  "id": "CHK-1090",
+  "bug": "V2-1090",
+  "scope": "dn",
+  "pattern": "unexpected consensusGroupId",
+  "title": "cancel 迁移 TSyncLogEntries 组 ID 异常"
+ },
+ {
+  "id": "CHK-1126",
+  "bug": "V2-1126",
+  "scope": "dn",
+  "pattern": "Internal error processing resetPeerList",
+  "title": "resetPeerList 内部错误"
+ },
+ {
+  "id": "CHK-1038",
+  "bug": "V2-1038",
+  "scope": "dn",
+  "pattern": "Frame size .* larger than protect max size",
+  "title": "审计超大记录导致 thrift frame 超限"
+ },
+ {
+  "id": "CHK-902",
+  "bug": "V2-902",
+  "scope": "dn",
+  "pattern": "getTableSchemaMap\\(\\)\" is null",
+  "title": "迁移快照 getTableSchemaMap 空指针（TDB-902，已知未修复）",
+  "known_issue": true
+ },
+ {
+  "id": "CHK-185",
+  "bug": "V2-185",
+  "scope": "dn",
+  "pattern": "DiskSpaceInsufficientException",
+  "title": "object 写入磁盘空间不足异常"
+ },
+ {
+  "id": "CHK-400",
+  "bug": "V2-400",
+  "scope": "dn",
+  "pattern": "ArrayIndexOutOfBoundsException",
+  "title": "并发读写查询数组越界"
+ },
+ {
+  "id": "CHK-771",
+  "bug": "V2-771",
+  "scope": "cn",
+  "pattern": "ClassCastException",
+  "title": "停 DN 后分区表自动修复 CN ClassCast"
+ },
+ {
+  "id": "CHK-1046",
+  "bug": "V2-1046",
+  "scope": "dn",
+  "pattern": "IllegalStateException",
+  "title": "JDBC 查询中重启 DN IllegalState"
+ },
+ {
+  "id": "CHK-1109",
+  "bug": "V2-1109",
+  "scope": "dn",
+  "pattern": "OutOfMemoryError",
+  "title": "SchemaRegion 资源残留导致 OOM"
+ }
+]

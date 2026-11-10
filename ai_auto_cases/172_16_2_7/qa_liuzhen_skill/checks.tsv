@@ -1,0 +1,24 @@
+CHK-186	V2-186	dn	active	BufferUnderflowException
+CHK-375	V2-375	cn	active	not set next state, but return HAS_MORE_STATE
+CHK-377	V2-377	cn	active	Deserialization error for write plan
+CHK-376	V2-376	dn	active	has overlapped data
+CHK-427	V2-427	dn	active	INNER_SEQ task meets error
+CHK-430	V2-430	dn	active	StatisticsClassException
+CHK-743	V2-743	dn	active	Internal error processing requestStatementId
+CHK-907	V2-907	dn	active	Cannot record login history
+CHK-910	V2-910	dn	active	Internal error processing openSession
+CHK-940	V2-940	cn	active	ReconfigurationInProgressException
+CHK-967	V2-967	cn	active	Internal error processing loadBalance
+CHK-969	V2-969	cn	active	ConsensusGroupAlreadyExistException
+CHK-1006	V2-1006	dn	active	PipeRuntimeSinkCriticalException
+CHK-1019	V2-1019	cn	active	ConsensusGroupModifyPeerException
+CHK-1056	V2-1056	dn	active	Cannot calculate occupied space of folder
+CHK-1090	V2-1090	dn	active	unexpected consensusGroupId
+CHK-1126	V2-1126	dn	active	Internal error processing resetPeerList
+CHK-1038	V2-1038	dn	active	Frame size .* larger than protect max size
+CHK-902	V2-902	dn	known	getTableSchemaMap\(\)" is null
+CHK-185	V2-185	dn	active	DiskSpaceInsufficientException
+CHK-400	V2-400	dn	active	ArrayIndexOutOfBoundsException
+CHK-771	V2-771	cn	active	ClassCastException
+CHK-1046	V2-1046	dn	active	IllegalStateException
+CHK-1109	V2-1109	dn	active	OutOfMemoryError
