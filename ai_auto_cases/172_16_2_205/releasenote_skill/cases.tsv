@@ -140,3 +140,7 @@ RN-200	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 超长测点	功能	120 字�
 RN-201	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 改类型后补列	功能	手工改列类型后新测点仍补列	case_RN201
 RN-202	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 并发建同名视图	并发	并发建同名视图一成功一 551	case_RN202
 RN-203	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 建序列与删视图并发	并发	并发删视图不崩溃且集群健康	case_RN203
+RN-204	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 DN冻结期间补列	可靠性	DN 冻结期间建序列恢复后补列正常	case_RN204
+RN-205	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 DN失联恢复补列	可靠性	长时间失联恢复后索引重建补列正常	case_RN205
+RN-206	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 flush 期间补列	可靠性	落盘期间建序列全部补列	case_RN206
+RN-207	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 网络分区后补列	可靠性	iptables 分区恢复后补列正常	case_RN207

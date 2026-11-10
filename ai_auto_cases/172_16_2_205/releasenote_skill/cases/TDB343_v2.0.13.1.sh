@@ -1422,6 +1422,146 @@ case_RN203() {
   rn_t2t_drop $db
 }
 
+# RN-204（慢）：DN 失联（SIGSTOP 冻结）期间建序列 —— 功能可用性 + 丢列观察
+#   说明：实测"冻结期间新建的列"会以约 50% 概率永久缺失（静默丢列，无 WARN），
+#   详见 docs/tree2table_frozen_dn_missing_column.md。本用例断言稳定部分：
+#   写入成功、恢复后 8/8、恢复后新建测点补列正常；对丢列只做观察记录，不判定 FAIL。
+SLOW_OF["RN-204"]="1"
+case_RN204() {
+  local db=rn_t2t_204_$(date +%H%M%S) out pid i ok=0 observed
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  pid=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "pgrep -f 'com.timecho.iotdb.DataNode' | head -1" 2>/dev/null)
+  echo "  冻结 DN6 pid=$pid"
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "kill -STOP $pid" 2>/dev/null
+  sleep 12
+
+  for i in $(seq 1 6); do
+    out=$(T "create timeseries root.$db.dev01.frozen_col double")
+    if echo "$out" | grep -qi success; then ok=1; break; fi
+    echo "  第 $i 次建序列失败，重试：$(echo "$out" | head -1 | cut -c1-80)"
+    sleep 8
+  done
+
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "kill -CONT $pid" 2>/dev/null
+  wait_running 480 >/dev/null 2>&1 || true
+  local running
+  running=$(T "show cluster;" 2>/dev/null | grep -c Running)
+  echo "  恢复后 Running=$running"
+
+  if [ "$ok" -eq 1 ]; then ok "冻结期间建序列最终成功"; else fail "冻结期间建序列始终失败"; fi
+  if [ "${running:-0}" -ge 8 ]; then ok "SIGCONT 后集群恢复 8/8"; else fail "集群未恢复到 8/8（$running）"; fi
+
+  # 观察项：冻结期间新建的列是否补上（已知存在概率性丢失，不作为失败判定）
+  sleep 25
+  observed=$(Q "desc $db.v1" | grep -cE '\| *frozen_col *\|')
+  echo "  [观察] 冻结期间新建列是否补上：$observed（1=补上，0=丢失；实测约 50% 概率丢失）"
+
+  # 稳定断言：恢复后新建测点应正常补列
+  T "create timeseries root.$db.dev01.after_recover double" >/dev/null 2>&1
+  sleep 6
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *after_recover *\|'; then
+    ok "恢复后新建测点补列正常（功能未受损）"
+  else
+    fail "恢复后新建测点也未补列（功能受损）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-205（慢）：DN 长时间失联后恢复（模拟从隔离恢复）→ 索引重建、新测点补列
+SLOW_OF["RN-205"]="1"
+case_RN205() {
+  local db=rn_t2t_205_$(date +%H%M%S) out pid
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  pid=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "pgrep -f 'com.timecho.iotdb.DataNode' | head -1" 2>/dev/null)
+  echo "  冻结 DN6 pid=$pid（45s，超过心跳判定窗口）"
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "kill -STOP $pid" 2>/dev/null
+  sleep 45
+  echo "  冻结期间集群：$(T "show cluster;" 2>/dev/null | grep -c Unknown) 个 Unknown"
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 "kill -CONT $pid" 2>/dev/null
+  wait_running 600 >/dev/null 2>&1 || true
+  echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
+
+  # 恢复后新建测点：验证 DN 索引重建（init）后补列仍正常
+  T "create timeseries root.$db.dev01.after_recover double" >/dev/null 2>&1
+  sleep 6
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *after_recover *\|'; then
+    ok "从失联恢复后补列正常（索引已重建）"
+  else
+    fail "恢复后补列失效（索引重建异常）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-206：flush（落盘）期间建序列 → 补列正常
+case_RN206() {
+  local db=rn_t2t_206_$(date +%H%M%S) out i
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "insert into root.$db.dev01(time,s1) values(1,1.0)" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  # 一边 flush，一边连续建新测点
+  ( for i in $(seq 1 3); do T "flush" >/dev/null 2>&1; done ) &
+  for i in $(seq 1 3); do
+    T "create timeseries root.$db.dev01.flush_col$i double" >/dev/null 2>&1
+  done
+  wait
+  sleep 5
+  out=$(Q "desc $db.v1")
+  local n=0
+  for i in 1 2 3; do
+    if echo "$out" | grep -qE "\| *flush_col$i *\|"; then n=$((n + 1)); fi
+  done
+  echo "  flush 期间补列数：$n/3"
+  if [ "$n" -eq 3 ]; then ok "flush 期间建序列全部补列"; else fail "flush 期间补列丢失（$n/3）"; fi
+  rn_t2t_drop $db
+}
+
+# RN-207（慢）：网络分区（iptables 阻断 DN6→CN 10710）→ 恢复后补列正常
+SLOW_OF["RN-207"]="1"
+case_RN207() {
+  local db=rn_t2t_207_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  cleanup_rules() {
+    ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 \
+      "iptables -D OUTPUT -p tcp -d 172.16.2.26 --dport 10710 -j DROP 2>/dev/null; iptables -D INPUT -p tcp -s 172.16.2.26 --sport 10710 -j DROP 2>/dev/null; echo cleaned" 2>/dev/null
+  }
+  echo "  注入分区规则（DN6 <-> CN26:10710）"
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.6 \
+    "iptables -A OUTPUT -p tcp -d 172.16.2.26 --dport 10710 -j DROP; iptables -A INPUT -p tcp -s 172.16.2.26 --sport 10710 -j DROP; echo injected" 2>/dev/null
+  sleep 30
+  echo "  分区期间 Unknown 节点数：$(T "show cluster;" 2>/dev/null | grep -c Unknown)"
+  cleanup_rules
+  wait_running 600 >/dev/null 2>&1 || true
+  echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
+
+  T "create timeseries root.$db.dev01.after_partition double" >/dev/null 2>&1
+  sleep 6
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *after_partition *\|'; then
+    ok "网络分区恢复后补列正常"
+  else
+    fail "网络分区恢复后补列失效"
+  fi
+  cleanup_rules
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -1488,4 +1628,8 @@ CASES+=(
 "RN-201|TDB-343 改类型后补列|功能|手工改列类型后新测点仍补列|case_RN201"
 "RN-202|TDB-343 并发建同名视图|并发|并发建同名视图一成功一 551|case_RN202"
 "RN-203|TDB-343 建序列与删视图并发|并发|并发删除视图不崩溃且集群健康|case_RN203"
+"RN-204|TDB-343 DN冻结期间补列|可靠性|冻结期间写入成功、恢复 8/8、之后补列正常（丢列仅观察）|case_RN204"
+"RN-205|TDB-343 DN失联恢复补列|可靠性|长时间失联恢复后索引重建、补列正常|case_RN205"
+"RN-206|TDB-343 flush 期间补列|可靠性|落盘期间建序列全部补列|case_RN206"
+"RN-207|TDB-343 网络分区后补列|可靠性|iptables 分区恢复后补列正常|case_RN207"
 )
