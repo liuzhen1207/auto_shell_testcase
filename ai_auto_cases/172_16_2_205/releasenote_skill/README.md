@@ -485,3 +485,19 @@ KEEP_CLUSTER=1 bash tools/upgrade_from_2.0.12.1.sh   # 验证后保留升级目�
 
 > 两个已知坑已在脚本里规避：传 tar **不能用 `ssh -n`**（stdin 被置空导致文件没解开）；
 > `activation` 必须用**目标版本**的（沿用旧版本会被判 `deactivated`）。
+
+#### OBJECT 类型补列：不适用（源码级限制）
+
+实测 RC2 `83183d0`：
+
+```
+create timeseries root.db.dev01.obj object;
+=> 701: Unsupported datatype: OBJECT        # 树模型拒绝
+create table db.t1(a string tag, b object field);   # 表模型 OK，可写 X'6970'
+```
+
+源码 `iotdb-core/datanode/.../parser/ASTVisitor.parseDataTypeAttribute` 明确把
+`UNKNOWN / VECTOR / OBJECT` 列入禁止类型，属于**树模型硬限制**，非配置或环境问题。
+
+树转表视图的列来源是树模型测点，因此「OBJECT 类型测点自动补列」这个测试点**不成立**；
+表模型原生 OBJECT 列与 TDB-343 自动扩列无关（手工 `ALTER VIEW ADD COLUMN ... OBJECT` 属另一路径）。

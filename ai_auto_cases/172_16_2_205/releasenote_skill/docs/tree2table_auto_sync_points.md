@@ -223,7 +223,7 @@
 159. 删除序列后重建同名列（类型变化）
 160. 序列 alias（别名）变更后视图列行为
 161. 测点数据类型改为不兼容类型（如 TEXT→INT）后视图列查询
-162. BLOB/OBJECT 类型测点补列
+162. ~~BLOB/OBJECT 类型测点补列~~ —— **BLOB 已覆盖（RN-161）；OBJECT 不适用**：源码 `ASTVisitor.parseDataTypeAttribute` 对树模型硬编码拒绝 `TSDataType.OBJECT`（701 Unsupported datatype: OBJECT），树模型无法创建 OBJECT 序列，故不存在可映射到视图的 OBJECT 测点
 163. 聚合查询（last/first/count）访问新补列
 164. 新补列的列参与 `GROUP BY` / `ORDER BY`
 165. 新补列在 `SELECT *` 中的出现顺序
