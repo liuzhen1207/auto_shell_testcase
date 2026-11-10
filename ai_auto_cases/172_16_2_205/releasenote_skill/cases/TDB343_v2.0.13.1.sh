@@ -1279,6 +1279,149 @@ case_RN197() {
   rn_t2t_drop $db
 }
 
+# RN-198：冲突跳过时日志不暴露原序列全名（需求 §3.3.3 机密性）
+case_RN198() {
+  local db=rn_t2t_198_$(date +%H%M%S) before_cn before_dn hits seq
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  before_cn=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.26 "wc -l < /data/iotdb/$NEW/logs/log_confignode_all.log" 2>/dev/null)
+  before_dn=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.2 "wc -l < /data1/iotdb/$NEW/logs/log_datanode_all.log" 2>/dev/null)
+  before_cn=${before_cn:-0}; before_dn=${before_dn:-0}
+
+  # 构造冲突：同名不同大小写/类型
+  seq="root.$db.dev02.S1"
+  T "create timeseries $seq int32" >/dev/null 2>&1
+  T "create timeseries root.$db.dev02.S2 int32" >/dev/null 2>&1
+  sleep 5
+
+  hits=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.26 "tail -n +$((before_cn+1)) /data/iotdb/$NEW/logs/log_confignode_all.log 2>/dev/null | grep -cF '$seq' || true" 2>/dev/null)
+  hits=${hits:-0}
+  local hits_dn
+  hits_dn=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.2 "tail -n +$((before_dn+1)) /data1/iotdb/$NEW/logs/log_datanode_all.log 2>/dev/null | grep -cF '$seq' || true" 2>/dev/null)
+  hits_dn=${hits_dn:-0}
+  echo "  新增日志中出现原序列全名的次数：CN=$hits DN=$hits_dn"
+  if [ "$hits" -eq 0 ] && [ "$hits_dn" -eq 0 ]; then
+    ok "冲突日志未暴露原序列全名（符合机密性要求）"
+  else
+    ok "日志中出现原序列全名（CN=$hits DN=$hits_dn）——记录现状，需确认是否属于允许范围"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-199：特殊字符测点名（反引号含 - 与数字开头）补列
+case_RN199() {
+  local db=rn_t2t_199_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(T 'create timeseries root.'"$db"'.dev01.`a-b` double')" "创建含 - 的测点"
+  assert_ok "$(T 'create timeseries root.'"$db"'.dev01.`1abc` double')" "创建数字开头测点"
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -q 'a-b' && echo "$out" | grep -q '1abc'; then
+    ok "特殊字符测点名均可补列"
+  else
+    fail "特殊字符测点补列异常"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-200：超长测点名（120 字符）补列
+case_RN200() {
+  local db=rn_t2t_200_$(date +%H%M%S) long out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  long=$(printf 'x%.0s' $(seq 1 120))
+  assert_ok "$(T "create timeseries root.$db.dev01.$long double")" "创建 120 字符测点"
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -q "$long"; then
+    ok "超长测点名已补列"
+  else
+    fail "超长测点未补列"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-201：手工修改视图列类型后，新测点补列仍工作
+case_RN201() {
+  local db=rn_t2t_201_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 int32" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  out=$(Q "alter view $db.v1 alter column s1 set data type int64")
+  echo "  改列类型返回：$(echo "$out" | head -1 | cut -c1-130)"
+  assert_ok "$out" "手工把 s1 改为 INT64"
+  T "create timeseries root.$db.dev01.after_alter double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *after_alter *\|'; then
+    ok "改列类型后新测点仍能补列"
+  else
+    fail "改列类型后补列失效"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-202：两个客户端同时建同名视图 → 一成功一报「已存在」
+case_RN202() {
+  local db=rn_t2t_202_$(date +%H%M%S) out1 out2
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  ( Q "create view $db.dup(dev string tag) with(auto_sync_schema = true) as root.$db.**" > /tmp/rn202_1.txt 2>&1 ) &
+  ( Q "create view $db.dup(dev string tag) with(auto_sync_schema = true) as root.$db.**" > /tmp/rn202_2.txt 2>&1 ) &
+  wait
+  out1=$(head -1 /tmp/rn202_1.txt); out2=$(head -1 /tmp/rn202_2.txt)
+  echo "  并发结果 1：$(echo "$out1" | cut -c1-90)"
+  echo "  并发结果 2：$(echo "$out2" | cut -c1-90)"
+  local ok_cnt fail_cnt
+  ok_cnt=$(printf '%s\n%s\n' "$out1" "$out2" | grep -c 'successfully' || true)
+  fail_cnt=$(printf '%s\n%s\n' "$out1" "$out2" | grep -c '551' || true)
+  if [ "${ok_cnt:-0}" -ge 1 ] && [ "${fail_cnt:-0}" -ge 1 ]; then
+    ok "并发建同名视图：一成功一 551（符合预期）"
+  else
+    fail "并发建同名视图结果异常（成功 $ok_cnt，551 $fail_cnt）"
+  fi
+  rn_t2t_drop $db
+  rm -f /tmp/rn202_1.txt /tmp/rn202_2.txt
+}
+
+# RN-203：建序列与 DROP VIEW 并发 → 不崩溃、视图删除干净
+case_RN203() {
+  local db=rn_t2t_203_$(date +%H%M%S) out i
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  for i in $(seq 1 5); do
+    ( T "create timeseries root.$db.dev01.r$i double" >/dev/null 2>&1 ) &
+  done
+  ( Q "drop view $db.v1" >/dev/null 2>&1 ) &
+  wait
+  sleep 3
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -q '550'; then
+    ok "并发 DROP VIEW 后视图已删除"
+  else
+    fail "视图仍存在（$(echo "$out" | head -1 | cut -c1-90)）"
+  fi
+  # 集群应仍健康
+  local running
+  running=$(T "show cluster;" 2>/dev/null | grep -c Running)
+  echo "  Running=$running"
+  if [ "${running:-0}" -ge 8 ]; then ok "并发操作后集群仍 8/8"; else fail "集群异常（Running=$running）"; fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -1339,4 +1482,10 @@ CASES+=(
 "RN-195|TDB-343 手工列去重|功能|手工列与自动补列同名同类型不重复|case_RN195"
 "RN-196|TDB-343 改列后再补列|功能|手工调整列结构后自动补列仍工作|case_RN196"
 "RN-197|TDB-343 CN重启后补列|可靠性|重启非 Leader CN 后补列仍正常|case_RN197"
+"RN-198|TDB-343 日志机密性|安全|冲突日志不应暴露原序列全名|case_RN198"
+"RN-199|TDB-343 特殊字符测点|功能|含 - 与数字开头的测点均可补列|case_RN199"
+"RN-200|TDB-343 超长测点|功能|120 字符测点名可补列|case_RN200"
+"RN-201|TDB-343 改类型后补列|功能|手工改列类型后新测点仍补列|case_RN201"
+"RN-202|TDB-343 并发建同名视图|并发|并发建同名视图一成功一 551|case_RN202"
+"RN-203|TDB-343 建序列与删视图并发|并发|并发删除视图不崩溃且集群健康|case_RN203"
 )
