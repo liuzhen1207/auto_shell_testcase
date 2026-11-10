@@ -447,8 +447,10 @@ LT 用户名 密码 "SQL"   # 以表方言、指定用户执行（用于权限�
 | `iptables -A OUTPUT/INPUT ... 10710 -j DROP` | 模拟 DN↔CN 网络分区 | `iptables -D` 删除规则 |
 | `flush` | 落盘与扩列并发 | 自动完成 |
 
-**缺陷候选（已写报告）**：DN 冻结期间新建的序列，其视图列会以约 **50%** 概率**永久丢失**，
-且 DN 日志中 `add view column / tree_to_tree` 相关记录为 **0**（完全静默）。
+**缺陷候选（已写报告，含日志证据）**：DN 冻结期间新建的序列，其视图列会以约 **40~50%** 概率**永久丢失**。
+根因：CN 的 `AddTableColumnProcedure` 在 pre-release 阶段需要「证明该 DN 已 fenced」，
+DN 不可达时 `UPDATE_TABLE` 5s×2 次超时 → pre-release 失败 → rollback 也因同样原因失败 → DN 侧 `ViewColumnAutoSyncTrigger` 收到 507 后放弃，不再重试。
+日志：DN 专门文件 `logs/log_datanode_view_column_auto_sync_error.log` + CN 的 `AbstractAlterOrDropTableProcedure:183/274` WARN + `AsyncRequestManager` 超时 ERROR。
 与设计文档 §4.2.3「集群模式（DN≥3）单个 DN 隔离不影响扩列」的表述不符。
 详见 [`docs/tree2table_frozen_dn_missing_column.md`](docs/tree2table_frozen_dn_missing_column.md)。
 
