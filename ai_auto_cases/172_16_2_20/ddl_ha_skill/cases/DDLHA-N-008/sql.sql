@@ -1,0 +1,2 @@
+SET SQL_DIALECT=TABLE;
+DROP TABLE ddlha_ddlha_n_008.t;

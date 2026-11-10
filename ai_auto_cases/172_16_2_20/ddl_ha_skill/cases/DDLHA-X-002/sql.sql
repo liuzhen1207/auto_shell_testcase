@@ -1,0 +1,2 @@
+SET SQL_DIALECT=TABLE;
+DELETE DEVICES FROM ddlha_ddlha_x_002.t WHERE dev='dev02';

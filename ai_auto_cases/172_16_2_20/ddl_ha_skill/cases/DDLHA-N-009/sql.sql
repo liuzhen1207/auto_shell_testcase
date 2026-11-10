@@ -1,0 +1,2 @@
+SET SQL_DIALECT=TABLE;
+DROP VIEW ddlha_ddlha_n_009.v;

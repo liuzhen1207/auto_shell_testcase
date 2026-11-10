@@ -1,0 +1,2 @@
+SET SQL_DIALECT=TABLE;
+ALTER VIEW ddlha_ddlha_n_005.v RENAME TO v2;

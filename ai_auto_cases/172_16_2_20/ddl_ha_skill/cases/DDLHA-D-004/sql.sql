@@ -1,0 +1,2 @@
+SET SQL_DIALECT=TABLE;
+CREATE WRITABLE VIEW ddlha_ddlha_d_004.v AS SELECT s1 AS temp FROM ddlha_ddlha_d_004.t;
