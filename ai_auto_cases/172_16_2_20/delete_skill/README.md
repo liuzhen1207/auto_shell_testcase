@@ -40,6 +40,8 @@ TimechoDB DELETE 语义、内存与落盘删除、mods 标记、OBJECT 清理、
 详细结论见 [`docs/RC10-DELETE-FINAL.md`](docs/RC10-DELETE-FINAL.md)，逐轮机读报告见
 [`docs/RC10-DELETE-REPORT.md`](docs/RC10-DELETE-REPORT.md)。
 
+> 新版本包部署与激活（含身份继承的坑）：见 [`../docs/package-deploy-activation.md`](../docs/package-deploy-activation.md)
+
 ## 目录
 
 | 目录/文件 | 说明 |

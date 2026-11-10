@@ -3,6 +3,8 @@
 按**版本 → RN** 两级组织，每个版本一个目录，每个 RN 一个用例目录，内含报告、脚本与关键证据。
 与同级 `delete_skill/` 并列：delete_skill 是功能专项回归，本目录是**发版 RN 逐条验证**。
 
+> 新版本包部署与激活（含身份继承的坑）：见 [`../docs/package-deploy-activation.md`](../docs/package-deploy-activation.md)
+
 ## 目录结构
 
 ```

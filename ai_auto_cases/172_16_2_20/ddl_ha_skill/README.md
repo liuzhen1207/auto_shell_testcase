@@ -64,6 +64,8 @@ bash /data2/iotdb/ddl_ha_skill/runner/run_case.sh DDLHA-P-002
 结果写入 `/data2/iotdb/ddl_ha_results/results.tsv`，每例证据在 `/data2/iotdb/ddl_ha_results/<CASE>/`：
 `setup.out`、`sql.out`、`fault.txt`、`meta-consistency.txt`、`data-consistency.txt`、`log-scan.txt`、`round.log`。
 
+> 新版本包部署与激活（含身份继承的坑）：见 [`../docs/package-deploy-activation.md`](../docs/package-deploy-activation.md)
+
 ## 环境
 
 | 项 | 值 |
