@@ -74,6 +74,16 @@ bash /data2/iotdb/ddl_ha_skill/runner/run_case.sh DDLHA-P-002
 | 协议 | IoTConsensus（V1） |
 | 隔离参数 | `metadata_lease_fence_ms` 默认 20000（未显式配置） |
 
-## 结果
+## 结果（2026-11-10，29 例）
 
-见 [`docs/REPORT.md`](docs/REPORT.md)（跑完后生成）。
+| 分组 | 用例 | PASS | 非 PASS |
+| --- | ---: | ---: | --- |
+| normal | 11 | 10 | 1（心跳异常） |
+| dn_down | 9 | 8 | 1（DN 重启竞态） |
+| partition | 4 | 2 | 2（隔离提示缺失 / 白名单） |
+| extreme | 2 | 0 | 2（优于预期，判定口径） |
+| ha_event | 3 | 1 | 2（重启竞态 / 整集群重启未恢复） |
+
+**核心结论：DN 宕机前置的 9 类 DDL 全部成功，元数据与数据在 5 台 DN 上始终一致。**
+
+详细结论、缺陷候选与证据索引见 [`docs/REPORT.md`](docs/REPORT.md)。

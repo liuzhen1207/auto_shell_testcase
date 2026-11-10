@@ -14,11 +14,24 @@ T0=$(date +%s)
 log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$A/round.log"; }
 CTL=/data2/iotdb/rc10_matrix/scripts/cluster_ctl.sh
 
+# 任何退出路径都先恢复故障，避免把分区/宕机状态留给下一轮
+heal_fault() {
+  case "${FAULT:-none}" in
+    dn_partition)   bash "$SKILL/tools/fault.sh" heal dn_partition "${TARGET:-21}" >> "${A}/fault.txt" 2>&1 || true ;;
+    dn_kill)        bash "$SKILL/tools/fault.sh" heal dn_kill "${TARGET:-21}" >> "${A}/fault.txt" 2>&1 || true ;;
+    dr_both_down)   bash "$SKILL/tools/fault.sh" heal dr_both_down "${TARGET:-21}" >> "${A}/fault.txt" 2>&1 || true ;;
+    cn_leader_kill) bash "$SKILL/tools/fault.sh" heal cn_leader_kill "" >> "${A}/fault.txt" 2>&1 || true ;;
+  esac
+}
+
 record() { # $1 verdict  $2 note
-  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$CASE" "$GROUP" "$1" "$(( $(date +%s) - T0 ))" "$2" "$TARGET" >> "$ART/results.tsv"
-  log "ROUND END $1 duration=$(( $(date +%s) - T0 ))s $2 target=$TARGET"
+  heal_fault
+  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$CASE" "$GROUP" "$1" "$(( $(date +%s) - T0 ))" "$2" "${TARGET:-auto}" >> "$ART/results.tsv"
+  log "ROUND END $1 duration=$(( $(date +%s) - T0 ))s $2 target=${TARGET:-auto}"
   exit 0
 }
+
+trap 'heal_fault' EXIT
 
 log "ROUND START case=$CASE group=$GROUP op=$OP fault=$FAULT expect=$EXPECT"
 
@@ -26,6 +39,15 @@ log "ROUND START case=$CASE group=$GROUP op=$OP fault=$FAULT expect=$EXPECT"
 for n in $DNS; do
   ssh -n -o BatchMode=yes root@"$(ip_of "$n")" "sed -i '/^data_region_consensus_protocol_class=/d' $NEW/conf/iotdb-system.properties; echo 'data_region_consensus_protocol_class=org.apache.iotdb.consensus.iot.IoTConsensus' >> $NEW/conf/iotdb-system.properties" 2>/dev/null
 done
+# 环境自清理：杀所有版本残留进程 + 清掉本 skill 的 iptables 规则（防止上一轮污染）
+for n in $DNS $CNS; do
+  ssh -n -o BatchMode=yes root@"$(ip_of "$n")" "pkill -9 -f 'com[.]timecho[.]iotdb' 2>/dev/null
+    for cn in 16 17 18; do
+      while iptables -D OUTPUT -d 172.16.2.\$cn -p tcp --dport 10710 -j DROP 2>/dev/null; do :; done
+      while iptables -D INPUT -s 172.16.2.\$cn -p tcp --sport 10710 -j DROP 2>/dev/null; do :; done
+    done" 2>/dev/null
+done
+sleep 5
 bash "$CTL" reset > "$A/reset.out" 2>&1
 wait_cluster 8 240 || record FAIL_RESET "cluster not ready"
 
@@ -40,7 +62,7 @@ case "$FAULT_TARGET" in
   auto_dr_replicas)       TARGET=$(data_replica_dns "$DB" | tr '\n' ' ' | sed 's/ $//') ;;
   *)                      TARGET=$FAULT_TARGET ;;
 esac
-[ -z "$TARGET" ] && TARGET=21
+[ -z "${TARGET:-}" ] && TARGET=21
 echo "FAULT=$FAULT TARGET=$TARGET" > "$A/fault.txt"
 
 SQL_DN=19
@@ -82,7 +104,7 @@ if [ "$EXPECT" = "fail_expected" ] && [ "$SQL_FAIL" -eq 0 ]; then
   record FAIL_NO_ERROR "expected failure but DDL succeeded"
 fi
 if [ "$EXPECT" = "fail_expected" ] && [ "$SQL_TARGET" = "partitioned_dn" ]; then
-  if ! grep -qiE '隔离|isolat|无法连接|cannot connect|lease|fence|not available' "$A/sql.out"; then
+  if ! grep -qiE '隔离|isolat|无法连接|cannot connect|Failed to connect|config node|lease|fence|not available' "$A/sql.out"; then
     record FAIL_ERROR_KIND "err not isolation-like: ${ERR_LINE:-unknown}"
   fi
 fi

@@ -43,7 +43,21 @@ done
 
 uniq_cnt=$(sort -u "$sig" | wc -l)
 rm -f "$sig"
-if [ "$uniq_cnt" -eq 1 ]; then echo "META_CONSISTENT=YES" >> "$OUT"; else echo "META_CONSISTENT=NO" >> "$OUT"; fi
+
+# 可读性门禁：全部 DN 都连不上时，"一致"没有意义
+READABLE=0
+for n in $DNS; do
+  qdn "$n" "SHOW DATABASES;" 2>&1 | grep -qE '^\||executed successfully' && READABLE=$((READABLE+1))
+done
+echo "READABLE_DNS=$READABLE/5" >> "$OUT"
+
+if [ "$READABLE" -lt 3 ]; then
+  echo "META_CONSISTENT=UNKNOWN" >> "$OUT"
+elif [ "$uniq_cnt" -eq 1 ]; then
+  echo "META_CONSISTENT=YES" >> "$OUT"
+else
+  echo "META_CONSISTENT=NO" >> "$OUT"
+fi
 
 case "$OBJ" in
   table_exists)
@@ -55,7 +69,14 @@ case "$OBJ" in
   view_absent)
     tables_of 19 | grep -qx "$VAL" && e=NO || e=YES ;;
   db_absent)
-    c=0; for n in $DNS; do qdn "$n" "SHOW TABLES FROM $DB;" 2>&1 | grep -qiE 'does not exist|not exist' && c=$((c+1)); done
+    # 库已删：要么报 does not exist，要么返回空结果（两种都算已删除）
+    c=0
+    for n in $DNS; do
+      out=$(qdn "$n" "SHOW TABLES FROM $DB;" 2>&1)
+      if printf '%s' "$out" | grep -qiE 'does not exist|not exist'; then c=$((c+1)); continue; fi
+      rows=$(printf '%s\n' "$out" | grep -E '^\|' | grep -viE '^\|[[:space:]]*(TableName|-)' | grep -c '[A-Za-z0-9]' || true)
+      [ "${rows:-0}" -eq 0 ] && c=$((c+1))
+    done
     [ "$c" -eq 5 ] && e=YES || e=NO ;;
   column_present)
     create_of 19 t | grep -q "\"$VAL\"" && e=YES || e=NO ;;
