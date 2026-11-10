@@ -466,3 +466,20 @@ tiered_storage_migrate_speed_limit_bytes_per_sec=10485760
 
 实测（RN-208）：两级配置下集群 8/8、新测点补列正常、`flush` 后仍正常、
 二级目录里出现真实数据文件（DN.2 有 5 个文件），恢复单级配置后 8/8。
+
+### 升级验证脚本（可重复执行）
+
+```bash
+cd /data2/auto_test/releasenote_skill
+bash tools/upgrade_from_2.0.12.1.sh          # 默认 RC12 → 当前 RC2，验证完自动恢复正式集群
+KEEP_CLUSTER=1 bash tools/upgrade_from_2.0.12.1.sh   # 验证后保留升级目录集群（便于人工检查）
+```
+
+可用环境变量覆盖：`RC12_PKG`（旧版本解包目录）、`RC2_BUILD`（目标构建名）、`WORK`（升级目录名）。
+
+脚本流程：部署 RC12 → 建库/视图/数据 → 停集群 → 原地换 `lib/sbin/tools`（保留 data/conf）→ 启动 →
+逐项断言（版本号、旧视图存在、旧数据可读、默认不补列、OR REPLACE 后可补列）→ 输出
+`results/upgrade_<ts>.md`。
+
+> 两个已知坑已在脚本里规避：传 tar **不能用 `ssh -n`**（stdin 被置空导致文件没解开）；
+> `activation` 必须用**目标版本**的（沿用旧版本会被判 `deactivated`）。
