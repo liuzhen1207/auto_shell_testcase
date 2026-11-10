@@ -1111,6 +1111,174 @@ case_RN190() {
   rn_t2t_drop $db
 }
 
+# RN-191：去重——同一测点只产生一列（leader/follower 重复上报不应多加列）
+case_RN191() {
+  local db=rn_t2t_191_$(date +%H%M%S) out n
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "create timeseries root.$db.dev01.dedup double" >/dev/null 2>&1
+  sleep 5
+  out=$(Q "desc $db.v1")
+  n=$(echo "$out" | grep -cE '\| *dedup *\|')
+  echo "  视图里 dedup 列出现次数：$n（应为 1）"
+  if [ "${n:-0}" -eq 1 ]; then
+    ok "同一测点只加一列（去重生效）"
+  else
+    fail "同一测点产生 $n 列（去重异常）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-192：重复触发——反复写入已存在测点，列数不变
+case_RN192() {
+  local db=rn_t2t_192_$(date +%H%M%S) out before after i
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "create timeseries root.$db.dev01.k1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  sleep 3
+  before=$(Q "desc $db.v1" | grep -cE '\| *[a-z0-9_]+ *\|')
+  for i in $(seq 1 5); do
+    T "insert into root.$db.dev01(time,s1) values($((1000 + i)),$i.0)" >/dev/null 2>&1
+    T "create timeseries root.$db.dev01.k1 double" >/dev/null 2>&1
+  done
+  sleep 3
+  after=$(Q "desc $db.v1" | grep -cE '\| *[a-z0-9_]+ *\|')
+  echo "  重复触发前后字段行数：$before -> $after"
+  if [ "${before:-0}" -eq "${after:-0}" ]; then
+    ok "重复触发不改变视图列（幂等）"
+  else
+    fail "重复触发导致列变化（$before -> $after）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-193：容量——一次新增 100 个测点全部补列
+case_RN193() {
+  local db=rn_t2t_193_$(date +%H%M%S) out n=0 i sql
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+
+  # 一次性建 100 个测点（拆成 10 批，每批 10 个，走多序列建序列路径）
+  for batch in $(seq 0 9); do
+    sql=""
+    for i in $(seq 1 10); do
+      idx=$((batch * 10 + i))
+      sql="$sql create timeseries root.$db.dev01.c$idx double;"
+    done
+    T "$sql" >/dev/null 2>&1
+  done
+  sleep 8
+  out=$(Q "desc $db.v1")
+  for i in $(seq 1 100); do
+    if echo "$out" | grep -qE "\| *c$i *\|"; then n=$((n + 1)); fi
+  done
+  echo "  100 个新测点补列数：$n/100"
+  if [ "$n" -eq 100 ]; then
+    ok "100 个测点全部补列"
+  else
+    fail "批量补列丢失（$n/100）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-194：低权限用户写入触发补列（补列不依赖用户的 READ_SCHEMA）
+case_RN194() {
+  local db=rn_t2t_194_$(date +%H%M%S) u=rn_u194_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  T "create user $u 'Rn194@123456'" >/dev/null 2>&1
+  # 只给写权限（WRITE_DATA + WRITE_SCHEMA），不给 READ_SCHEMA
+  T "grant write_data on root.$db.** to user $u" >/dev/null 2>&1
+  T "grant write_schema on root.$db.** to user $u" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "root 建视图"
+
+  out=$(L "$u" 'Rn194@123456' "insert into root.$db.dev01(low_priv) values(1.0)")
+  echo "  低权限用户写入：$(echo "$out" | head -1 | cut -c1-140)"
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *low_priv *\|'; then
+    ok "低权限用户写入也能触发补列（不依赖 READ_SCHEMA）"
+  else
+    fail "低权限用户写入未触发补列"
+  fi
+  T "drop user $u" >/dev/null 2>&1
+  rn_t2t_drop $db
+}
+
+# RN-195：手工 ADD COLUMN 与自动补列同名同类型 → 不重复加列
+case_RN195() {
+  local db=rn_t2t_195_$(date +%H%M%S) out n
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  assert_ok "$(Q "alter view $db.v1 add column manual_x double")" "手工加列 manual_x"
+  T "create timeseries root.$db.dev01.manual_x double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  n=$(echo "$out" | grep -cE '\| *manual_x *\|')
+  echo "  手工同名测点建序列后 manual_x 列数：$n（应为 1）"
+  if [ "${n:-0}" -eq 1 ]; then
+    ok "同名同类型不重复加列"
+  else
+    fail "出现重复列（$n 行）"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-196：手工修改视图列类型后，新测点补列仍工作
+case_RN196() {
+  local db=rn_t2t_196_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  # 删掉 s1 列（等价于用户手动调整结构），再建新测点
+  assert_ok "$(Q "alter view $db.v1 drop column s1")" "手工删除 s1 列"
+  T "create timeseries root.$db.dev01.after_col double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *after_col *\|'; then
+    ok "手工调整列结构后自动补列仍工作"
+  else
+    fail "手工调整后自动补列失效"
+  fi
+  rn_t2t_drop $db
+}
+
+# RN-197（慢）：重启 Group 内非 Leader 的 CN 后，补列仍正常
+SLOW_OF["RN-197"]="1"
+case_RN197() {
+  local db=rn_t2t_197_$(date +%H%M%S) out
+  rn_t2t_drop $db
+  assert_ok "$(Q "CREATE DATABASE $db")" "建库"
+  T "create timeseries root.$db.dev01.s1 double" >/dev/null 2>&1
+  assert_ok "$(Q "create view $db.v1(dev string tag) with(auto_sync_schema = true) as root.$db.**")" "建视图"
+  T "create timeseries root.$db.dev01.before double" >/dev/null 2>&1
+  sleep 3
+  if Q "desc $db.v1" | grep -qE '\| *before *\|'; then ok "重启前补列正常"; else fail "重启前补列异常"; fi
+
+  echo "  重启 CN 172.16.2.28 ..."
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.28 "bash /data/iotdb/$NEW/sbin/stop-confignode.sh" >/dev/null 2>&1
+  sleep 12
+  ssh -n -o StrictHostKeyChecking=no root@172.16.2.28 "bash /tmp/cn_restart.sh $NEW" >/dev/null 2>&1
+  wait_running 480 >/dev/null 2>&1 || true
+  echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
+
+  T "create timeseries root.$db.dev01.after_cn double" >/dev/null 2>&1
+  sleep 4
+  out=$(Q "desc $db.v1")
+  if echo "$out" | grep -qE '\| *after_cn *\|'; then ok "CN 重启后补列仍正常"; else fail "CN 重启后不再补列"; fi
+  rn_t2t_drop $db
+}
+
 CASES+=(
 "RN-139|TDB-343 建视图扫描|功能|建视图时扫描 prefixPath 已有测点成列，且属性可见|case_RN139"
 "RN-140|TDB-343 INSERT 补列|功能|INSERT 自动建序列后视图自动补列且可查|case_RN140"
@@ -1164,4 +1332,11 @@ CASES+=(
 "RN-188|TDB-343 restrict 不命中|功能|restrict 且 tag 数不等于层级时不补列|case_RN188"
 "RN-189|TDB-343 缺失 tag 补 null|功能|tag 数大于层级时缺失 tag 补 null|case_RN189"
 "RN-190|TDB-343 仅CREATE权限|安全|仅授予 CREATE 的普通用户建视图行为记录|case_RN190"
+"RN-191|TDB-343 列去重|功能|同一测点只加一列（多副本去重）|case_RN191"
+"RN-192|TDB-343 重复触发幂等|功能|反复写入已有测点列数不变|case_RN192"
+"RN-193|TDB-343 批量100列|功能|一次新增 100 个测点全部补列|case_RN193"
+"RN-194|TDB-343 低权限写入补列|安全|仅写权限用户写入也能触发补列|case_RN194"
+"RN-195|TDB-343 手工列去重|功能|手工列与自动补列同名同类型不重复|case_RN195"
+"RN-196|TDB-343 改列后再补列|功能|手工调整列结构后自动补列仍工作|case_RN196"
+"RN-197|TDB-343 CN重启后补列|可靠性|重启非 Leader CN 后补列仍正常|case_RN197"
 )

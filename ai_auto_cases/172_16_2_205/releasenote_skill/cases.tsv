@@ -127,3 +127,10 @@ RN-187	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 restrict 命中补列	功能	
 RN-188	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 restrict 不命中	功能	restrict 且 tag 数不等于层级时不补列	case_RN188
 RN-189	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 缺失 tag 补 null	功能	tag 数大于层级时缺失 tag 补 null	case_RN189
 RN-190	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 仅CREATE权限	安全	仅授予 CREATE 的用户建视图行为记录	case_RN190
+RN-191	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 列去重	功能	同一测点只加一列	case_RN191
+RN-192	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 重复触发幂等	功能	反复写入已有测点列数不变	case_RN192
+RN-193	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 批量100列	功能	一次新增 100 个测点全部补列	case_RN193
+RN-194	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 低权限写入补列	安全	仅写权限用户写入也能触发补列	case_RN194
+RN-195	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 手工列去重	功能	手工列与自动补列同名同类型不重复	case_RN195
+RN-196	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 改列后再补列	功能	手工调整列结构后自动补列仍工作	case_RN196
+RN-197	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 CN重启后补列	可靠性	重启非 Leader CN 后补列仍正常	case_RN197
