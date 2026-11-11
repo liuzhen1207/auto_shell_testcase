@@ -24,7 +24,19 @@ heal_fault() {
   esac
 }
 
+grab_logs() {
+  [ -d "$A" ] || return 0
+  mkdir -p "$A/logs"
+  for i in $DNS; do
+    ssh -n -o BatchMode=yes root@"$(ip_of "$i")" "cat $NEW/logs/log_datanode_all.log 2>/dev/null" > "$A/logs/dn$i.log" 2>/dev/null
+  done
+  for i in $CNS; do
+    ssh -n -o BatchMode=yes root@"$(ip_of "$i")" "cat $NEW/logs/log_confignode_all.log 2>/dev/null" > "$A/logs/cn$i.log" 2>/dev/null
+  done
+}
+
 record() { # $1 verdict  $2 note
+  grab_logs
   heal_fault
   printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$CASE" "$GROUP" "$1" "$(( $(date +%s) - T0 ))" "$2" "${TARGET:-auto}" >> "$ART/results.tsv"
   log "ROUND END $1 duration=$(( $(date +%s) - T0 ))s $2 target=${TARGET:-auto}"

@@ -76,7 +76,22 @@ bash /data2/iotdb/ddl_ha_skill/runner/run_case.sh DDLHA-P-002
 | 协议 | IoTConsensus（V1） |
 | 隔离参数 | `metadata_lease_fence_ms` 默认 20000（未显式配置） |
 
-## 结果（2026-11-10，29 例）
+## RC2 结果（2026-11-10，29 例）
+
+被测 2.0.13.1 RC2（`83183d0`），总耗时 **2.36h**（8500s，平均 293s/例）。
+
+| 结论 | 数量 |
+| --- | ---: |
+| PASS | 22 |
+| FAIL_LOG | 3（N-005/D-005 的 updateTable NPE；D-002 重启竞态） |
+| FAIL_ERROR_KIND | 1（P-002 隔离提示缺失） |
+| FAIL_EXPECT | 1（C-002 整集群重启未恢复） |
+| FAIL_NO_ERROR | 2（X-001/002 优于预期） |
+
+**TDB-929（预删除表心跳异常）已确认修复**：29 例日志全扫，心跳异常 0 命中（RC1 为 34 次）。
+详见 [`docs/REPORT-RC2.md`](docs/REPORT-RC2.md)。
+
+## 结果（RC1，2026-11-10，29 例）
 
 | 分组 | 用例 | PASS | 非 PASS |
 | --- | ---: | ---: | --- |
