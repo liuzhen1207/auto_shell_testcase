@@ -18,8 +18,9 @@
 3. **重启进程不会恢复**：kill -9 重启该 DN 后，弱口令依然被接受（说明值来自文件，而非内存）；
 4. 反复设置同一键，文件里会**累积多行**（历史行被 `#` 注释，但仍留在文件中）；
 5. 节点之间文件**行数不一致**（DN 66 行，CN 70~72 行），内容也不完全一致；
-6. **没有任何 SQL 可以查询当前生效值**：`SHOW CONFIGURATION` 在 RC2 直接报
-   `700: Error occurred while parsing SQL to physical plan: line 1:5 no viable alternative at input 'show configuration'`。
+6. **查询能力有限**：`SHOW CONFIGURATION` 不存在（解析报 700，语法文件里没有该规则）；
+   唯一相关的 `SHOW VARIABLES` 只返回 **18 项集群参数**，不含 `enforce_strong_password` 这类节点级热配置，
+   且不支持按 key 过滤（详见 2.5）。
 
 ## 二、证据
 
@@ -109,6 +110,44 @@ for (String key : newConfigItems.stringPropertyNames()) { writer.write(key + "="
 
 即**保留历史是刻意实现**（便于回溯），但没有任何条数上限或清理机制。
 
+### 2.5 查询能力核对：`SHOW VARIABLES` 只覆盖集群参数
+
+命令语法（`IoTDBSqlParser.g4:525`）：
+
+```
+showVariables : SHOW VARIABLES        // 无参数、无过滤子句
+```
+
+实测 RC2（`-sql_dialect table`）：
+
+```
++----------------------------------+-----------------------------------------------------------------+
+|                          Variable|                                                            Value|
++----------------------------------+-----------------------------------------------------------------+
+|                       ClusterName|                                                    TREEVIEW_1026|
+|             DataReplicationFactor|                                                                2|
+|           SchemaReplicationFactor|                                                                3|
+|  DataRegionConsensusProtocolClass|                      org.apache.iotdb.consensus.iot.IoTConsensus|
+|SchemaRegionConsensusProtocolClass|                  org.apache.iotdb.consensus.ratis.RatisConsensus|
+...
+```
+共 20 行（含表头），**没有 `enforce_strong_password`**；把该键改成 false 后再查，仍然看不到（说明它不展示热配置项）。
+
+不支持的写法（均报 `700`）：
+
+```
+show variables 'enforce_strong_password'   -> line 1:16: mismatched input ... Expecting: <EOF>
+show variables like '%password%'           -> line 1:16: mismatched input 'like'. Expecting: <EOF>
+show configuration                         -> line 1:5 no viable alternative at input 'show configuration'
+```
+
+源码依据：`ConfigManager#showVariables()` 直接返回 `getClusterParameters()`，即 `TClusterParameters` 的固定 18 项
+（ClusterName、共识协议类、分区数/执行器、时间分区参数、数据/schema 副本数、Region 数、磁盘告警阈值、
+一致性级别、时间戳精度、schema 引擎模式、tag 属性总长、数据库数量上限），与热配置无关。
+
+**结论**：想确认 `SET CONFIGURATION` 之后的当前值，无法用 SQL 直接查，只能 `grep` 节点配置文件，
+或通过行为验证间接判断 —— 这也是建议里第 5 条（扩展查询能力）的由来。
+
 ## 三、影响
 
 | 影响 | 说明 |
@@ -128,7 +167,7 @@ for (String key : newConfigItems.stringPropertyNames()) { writer.write(key + "="
 3. **提供临时语义**：建议支持 `SET CONFIGURATION ... TEMPORARY`（仅内存）或 `RESET CONFIGURATION`，
    避免测试/运维脚本污染环境。
 4. **写入去重**：对同一键只保留"1 条历史注释 + 1 条生效行"，或对历史注释加条数上限，避免无限膨胀。
-5. **增加查询能力**：提供 `SHOW CONFIGURATION [<key>]`，返回"当前生效值 + 是否被持久化修改"。
+5. **扩展查询能力**：`SHOW VARIABLES` 目前只返回 18 项集群参数，建议把 `SET CONFIGURATION` 涉及的键也纳入，并支持 `SHOW VARIABLES <key>` 过滤；同时在结果里标注"当前值来自文件默认 / 运行时修改"。
 
 ## 五、复现脚本
 
