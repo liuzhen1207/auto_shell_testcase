@@ -30,7 +30,7 @@ SHOW VARIABLES;   -- DataRegionConsensusProtocolClass = ...IoTConsensusV2
 
 | 技能 | 用例 | PASS | FAIL | KNOWN | SKIP |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| tree_view | 67 | **59** | 8（全部可解释） | 0 | 0 |
+| tree_view | 67 | **62**（归因后） | 5（4×TDB-888 + 1×瞬时） | 0 | 0 |
 | releasenote | 147 | **130** | 0 | 1 | 16 |
 | auth | 34 | **34** | 0 | 0 | 0 |
 
@@ -38,7 +38,7 @@ SHOW VARIABLES;   -- DataRegionConsensusProtocolClass = ...IoTConsensusV2
 
 | 技能 | IoTConsensus（2026-11-10 夜） | IoTConsensusV2（本次） | 差异 |
 | --- | --- | --- | --- |
-| tree_view | 59 PASS / 8 FAIL | 59 PASS / 8 FAIL | 无 |
+| tree_view | 59 PASS / 8 FAIL（归因后 62 PASS / 5 FAIL_ASSERT） | 59 PASS / 8 FAIL（归因后 62 PASS / 5 FAIL_ASSERT） | 无 |
 | releasenote | 130 PASS / 1 KNOWN / 16 SKIP | 130 PASS / 1 KNOWN / 16 SKIP | 无 |
 | auth | 34 PASS / 0 FAIL | **normal 27/27 + separation 34/34 全 PASS** | 无 |
 
@@ -49,7 +49,7 @@ SHOW VARIABLES;   -- DataRegionConsensusProtocolClass = ...IoTConsensusV2
 | 用例 | 现象 | 归因 |
 | --- | --- | --- |
 | TV-080 / TV-081 / TV-082 / TV-088 | 改名后视图 TAG 仍为旧名 / 跨库改名后 0 行 / 重启后仍旧名 | **TDB-888**（已知缺陷，未修复，与协议无关） |
-| TV-015 / TV-031 / TV-060 | `logERROR=N`（`ViewColumnAutoSyncTrigger` 552/305、隔离期间 `openSession` 失败） | **TDB-890**（已知，功能正确、日志异常）+ HA 噪声 |
+| TV-015 / TV-031 / TV-060 | `logERROR=N`：模板不存在 / 后台任务调度失败 / 隔离期 Pipe 心跳超时（**非 552/305**） | 与功能无关的噪声，归因规则已补全；**TDB-890 已修复**（`ViewColumnAutoSyncTrigger` 出现 0 次，见 `tree_view_skill/docs/TDB-890_verify_fixed.md`） |
 | TV-055 | kill -9 DN 后建序列返回 `503 Path already exist` | **瞬时**：单独复跑 **3/3 PASS**（96s/76s/76s），仅在全量连跑时受前一个 HA 用例残留影响 |
 
 ## 五、过程中的两个坑（已在脚本中修复）

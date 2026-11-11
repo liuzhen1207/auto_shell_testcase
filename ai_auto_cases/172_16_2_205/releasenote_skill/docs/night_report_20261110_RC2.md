@@ -51,6 +51,10 @@
 | TV-003 | `500: Unknown database tv003`（建视图失败） | 属于该轮首个执行组，集群刚从 hard_reset 恢复；手工同语句复现成功，单跑也 PASS | 判为**环境时序瞬态**，复跑 PASS |
 | TV-060 | `logERROR=5` | 日志实为 `Internal error processing openSession`（×4）+ `Failed to UPDATE_REGION_ROUTE_MAP`（×1），均发生在节点隔离场景，属 HA 噪声，非扩列功能 | 已把这两类加入 `classify_run.sh` 的 HA 噪声规则，重分类后 PASS |
 
+> 补充（2026-11-11）：TV-015/TV-031/TV-060 的日志 ERROR 与 **TDB-890 无关**（`ViewColumnAutoSyncTrigger` 计数为 0）。
+> TDB-890（列已存在时报 552/305）在 RC2 **已修复**，验证见 `tree_view_skill/docs/TDB-890_verify_fixed.md`；
+> tree_view 的 TDB-890 白名单已移除，若再出现将作为新回归处理。
+
 ---
 
 ## 三、auth（34 条，normal + separation）

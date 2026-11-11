@@ -4,7 +4,7 @@
 set -u
 R="${1:-/data2/auto_test/treeview_suite/results/run_20261027_180439}"
 OUT=$R/classified.tsv
-HA='processing openSession|UPDATE_REGION_ROUTE_MAP|RouteBalancer|CHANGE_REGION_LEADER|read-only|ShutdownHook|UPDATE_REGION_ROUTE_MAP|UPDATE_TABLE|INVALIDATE_LAST_CACHE|CREATE_SCHEMA_REGION|RaftServerImpl|GrpcLogAppender|requestVote|appendEntries|DataNodeAuthUtils|Cannot pull system configurations|Fail to start server|shutdown failed|leader may have been down|Timeout during|borrow ConfigNodeClient|Failed to sync logEntries|Template .* does not exist|PIPE_HEARTBEAT|PIPE_PUSH_ALL_META|PIPE_PUSH_META|Failed to FLUSH|PipeHeartbeatRPCHandler'
+HA='processing openSession|UPDATE_REGION_ROUTE_MAP|Schedule task failed|PIPE_HEARTBEAT|PIPE_PUSH_ALL_META|TOPIC_PUSH_ALL_META|dispatch write failed|TIMESERIES_ALREADY_EXIST|Template .* does not exist|RouteBalancer|CHANGE_REGION_LEADER|read-only|ShutdownHook|UPDATE_REGION_ROUTE_MAP|UPDATE_TABLE|INVALIDATE_LAST_CACHE|CREATE_SCHEMA_REGION|RaftServerImpl|GrpcLogAppender|requestVote|appendEntries|DataNodeAuthUtils|Cannot pull system configurations|Fail to start server|shutdown failed|leader may have been down|Timeout during|borrow ConfigNodeClient|Failed to sync logEntries|Template .* does not exist|PIPE_HEARTBEAT|PIPE_PUSH_ALL_META|PIPE_PUSH_META|Failed to FLUSH|PipeHeartbeatRPCHandler'
 
 printf 'id\tfeature\ttype\tverdict\tassert_fails\tfeat_err\tha_err\tother_err\tdur_s\tdetail\n' > "$OUT"
 tail -n +2 "$R/results.tsv" | while IFS=$'\t' read -r id feature ctype verdict fails errs dur detail; do
