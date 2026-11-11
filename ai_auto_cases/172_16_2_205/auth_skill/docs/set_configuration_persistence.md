@@ -18,9 +18,7 @@
 3. **重启进程不会恢复**：kill -9 重启该 DN 后，弱口令依然被接受（说明值来自文件，而非内存）；
 4. 反复设置同一键，文件里会**累积多行**（历史行被 `#` 注释，但仍留在文件中）；
 5. 节点之间文件**行数不一致**（DN 66 行，CN 70~72 行），内容也不完全一致；
-6. **查询能力有限**：`SHOW CONFIGURATION` 不存在（解析报 700，语法文件里没有该规则）；
-   唯一相关的 `SHOW VARIABLES` 只返回 **18 项集群参数**，不含 `enforce_strong_password` 这类节点级热配置，
-   且不支持按 key 过滤（详见 2.5）。
+6. **可自查，但要注意方言**：`SHOW CONFIGURATION`（**仅表方言**）能列出 78 项配置的 `name / value / default_value`，被改过的键会显示 `value` 与 `default_value` 不一致；树方言下该语句报 700（详见 2.5）。
 
 ## 二、证据
 
@@ -110,43 +108,39 @@ for (String key : newConfigItems.stringPropertyNames()) { writer.write(key + "="
 
 即**保留历史是刻意实现**（便于回溯），但没有任何条数上限或清理机制。
 
-### 2.5 查询能力核对：`SHOW VARIABLES` 只覆盖集群参数
+### 2.5 查询能力核对：`SHOW CONFIGURATION`（表方言）可自查
 
-命令语法（`IoTDBSqlParser.g4:525`）：
+| 命令 | 方言 | 结果 |
+| --- | --- | --- |
+| `SHOW CONFIGURATION` | **表** | ✅ 78 行，列 `name / value / default_value`，**包含 `enforce_strong_password`** |
+| `SHOW CONFIGURATION` | 树 | ❌ `700: ... no viable alternative at input 'show configuration'` |
+| `SHOW VARIABLES` | 表/树 | ✅ 但只有 18 项集群参数（ClusterName、副本数、共识协议、时间分区…），**不含热配置** |
+| `SHOW CONFIGURATION '<key>'` | 表 | ❌ `700: ... Expecting: 'ON', 'WITH', <EOF>`（不支持过滤） |
+| `SHOW CONFIGURATION LIKE '%password%'` | 表 | ❌ 同上 |
 
-```
-showVariables : SHOW VARIABLES        // 无参数、无过滤子句
-```
-
-实测 RC2（`-sql_dialect table`）：
-
-```
-+----------------------------------+-----------------------------------------------------------------+
-|                          Variable|                                                            Value|
-+----------------------------------+-----------------------------------------------------------------+
-|                       ClusterName|                                                    TREEVIEW_1026|
-|             DataReplicationFactor|                                                                2|
-|           SchemaReplicationFactor|                                                                3|
-|  DataRegionConsensusProtocolClass|                      org.apache.iotdb.consensus.iot.IoTConsensus|
-|SchemaRegionConsensusProtocolClass|                  org.apache.iotdb.consensus.ratis.RatisConsensus|
-...
-```
-共 20 行（含表头），**没有 `enforce_strong_password`**；把该键改成 false 后再查，仍然看不到（说明它不展示热配置项）。
-
-不支持的写法（均报 `700`）：
+实测（表方言，`before` 为默认状态）：
 
 ```
-show variables 'enforce_strong_password'   -> line 1:16: mismatched input ... Expecting: <EOF>
-show variables like '%password%'           -> line 1:16: mismatched input 'like'. Expecting: <EOF>
-show configuration                         -> line 1:5 no viable alternative at input 'show configuration'
+|                             enforce_strong_password|                                                             true|                                                             true|
 ```
 
-源码依据：`ConfigManager#showVariables()` 直接返回 `getClusterParameters()`，即 `TClusterParameters` 的固定 18 项
-（ClusterName、共识协议类、分区数/执行器、时间分区参数、数据/schema 副本数、Region 数、磁盘告警阈值、
-一致性级别、时间戳精度、schema 引擎模式、tag 属性总长、数据库数量上限），与热配置无关。
+执行 `SET CONFIGURATION 'enforce_strong_password'='false'` 后**立刻**变成：
 
-**结论**：想确认 `SET CONFIGURATION` 之后的当前值，无法用 SQL 直接查，只能 `grep` 节点配置文件，
-或通过行为验证间接判断 —— 这也是建议里第 5 条（扩展查询能力）的由来。
+```
+|                             enforce_strong_password|                                                            false|                                                             true|
+```
+
+再恢复 true：
+
+```
+|                             enforce_strong_password|                                                             true|                                                             true|
+```
+
+**这一点很关键**：`value != default_value` 就是"该键已被持久化修改"的直接判据，
+所以运维其实**可以自查**（前提是用表方言），只是命令没有过滤参数、78 项要自己筛。
+
+源码依据：`ConfigManager#showVariables()` 只返回 `TClusterParameters`（固定 18 项）；
+`SHOW CONFIGURATION` 走的是另一条配置项列举路径（反映内存中当前生效值 + 模板默认值）。
 
 ## 三、影响
 
@@ -155,8 +149,8 @@ show configuration                         -> line 1:5 no viable alternative at 
 | **跨轮次/跨套件污染** | 本次实测：上一轮把 `enforce_strong_password` 置 false 后，下一轮 auth 的 AUTH-007 直接假失败（弱口令被接受）。任何脚本中途退出都会留下这种残留 |
 | **环境不可预期** | 集群重启、换版本目录（若共用 conf）都不会恢复默认值，只会按文件生效，排障时容易误判"代码改了行为" |
 | **文件膨胀与可读性** | 同一键多行，注释行与生效行混杂；8 节点行数还不一致（DN 66 / CN 70~72） |
-| **无法自查** | 没有 `SHOW CONFIGURATION`，想确认当前值只能 `grep` 文件或做行为实验 |
-| **审计困惑** | 无法区分"默认值"与"被人改过的值"，除非人工比对模板 |
+| **自查要懂方言** | `SHOW CONFIGURATION` 只在**表方言**可用（树方言报 700），且无过滤参数、78 项要人工筛；`SHOW VARIABLES` 只给 18 项集群参数，容易误以为"看不到配置" |
+| **审计需人工比对** | `SHOW CONFIGURATION` 会同时给出 `value` 与 `default_value`，但**没有"何时被谁改"的信息**；要追时间只能看配置文件里的 `#<日期>` 注释 |
 
 ## 四、建议
 
@@ -167,7 +161,7 @@ show configuration                         -> line 1:5 no viable alternative at 
 3. **提供临时语义**：建议支持 `SET CONFIGURATION ... TEMPORARY`（仅内存）或 `RESET CONFIGURATION`，
    避免测试/运维脚本污染环境。
 4. **写入去重**：对同一键只保留"1 条历史注释 + 1 条生效行"，或对历史注释加条数上限，避免无限膨胀。
-5. **扩展查询能力**：`SHOW VARIABLES` 目前只返回 18 项集群参数，建议把 `SET CONFIGURATION` 涉及的键也纳入，并支持 `SHOW VARIABLES <key>` 过滤；同时在结果里标注"当前值来自文件默认 / 运行时修改"。
+5. **补齐查询细节**：`SHOW CONFIGURATION` 已能看 `value/default_value`，建议①支持 `SHOW CONFIGURATION <key>` / `LIKE` 过滤；②树方言也支持该语句；③文档中明确"`value != default_value` 表示被 `SET CONFIGURATION` 持久化改过"。
 
 ## 五、复现脚本
 
