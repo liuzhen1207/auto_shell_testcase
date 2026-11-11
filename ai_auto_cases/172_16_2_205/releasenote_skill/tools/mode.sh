@@ -29,7 +29,7 @@ case "$ACT" in
     for ip in $DN_LIST; do
       ssh -o StrictHostKeyChecking=no root@$ip "f=$DN_DIR/conf/iotdb-system.properties; touch \$f; sed -i '/^enable_separation_of_powers=/d' \$f; echo 'enable_separation_of_powers=false' >> \$f" 2>/dev/null
     done
-    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn_mode_off.log 2>&1 )
+    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash tools/hard_reset.sh > /tmp/rn_mode_off.log 2>&1 )
     wait_running 480 >/dev/null 2>&1 || true
     echo "  恢复后 Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
     ;;
@@ -41,7 +41,7 @@ case "$ACT" in
     for ip in $DN_LIST; do
       ssh -o StrictHostKeyChecking=no root@$ip "f=$DN_DIR/conf/iotdb-system.properties; touch \$f; sed -i '/^enable_audit_log=/d' \$f; echo 'enable_audit_log=true' >> \$f" 2>/dev/null
     done
-    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn_audit_on.log 2>&1 )
+    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash tools/hard_reset.sh > /tmp/rn_audit_on.log 2>&1 )
     wait_running 480 >/dev/null 2>&1 || true
     echo "  Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
     ;;
@@ -53,7 +53,7 @@ case "$ACT" in
     for ip in $DN_LIST; do
       ssh -o StrictHostKeyChecking=no root@$ip "f=$DN_DIR/conf/iotdb-system.properties; touch \$f; sed -i '/^enable_audit_log=/d' \$f; echo 'enable_audit_log=false' >> \$f" 2>/dev/null
     done
-    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn_audit_off.log 2>&1 )
+    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash tools/hard_reset.sh > /tmp/rn_audit_off.log 2>&1 )
     wait_running 480 >/dev/null 2>&1 || true
     echo "  Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
     ;;
@@ -61,10 +61,14 @@ case "$ACT" in
     cls=
     if [ "$ACT" = "proto-v2" ]; then cls=org.apache.iotdb.consensus.iot.IoTConsensusV2; else cls=org.apache.iotdb.consensus.iot.IoTConsensus; fi
     echo "[$(date +%T)] 切换数据面协议 -> $cls（需清数据重建）"
+    # 该配置项 CN 与 DN 都有（show variables 读的是 CN 的值），两边都要写
+    for ip in $CN_LIST; do
+      ssh -n -o StrictHostKeyChecking=no root@$ip "f=$CN_DIR/conf/iotdb-system.properties; touch \$f; sed -i '/^data_region_consensus_protocol_class=/d' \$f; echo 'data_region_consensus_protocol_class=$cls' >> \$f" 2>/dev/null
+    done
     for ip in $DN_LIST; do
       ssh -n -o StrictHostKeyChecking=no root@$ip "f=$DN_DIR/conf/iotdb-system.properties; touch \$f; sed -i '/^data_region_consensus_protocol_class=/d' \$f; echo 'data_region_consensus_protocol_class=$cls' >> \$f" 2>/dev/null
     done
-    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash hard_reset.sh > /tmp/rn_proto_switch.log 2>&1 )
+    ( cd /data2/auto_test/treeview_suite && NEW="$NEW" bash tools/hard_reset.sh > /tmp/rn_proto_switch.log 2>&1 )
     wait_running 480 >/dev/null 2>&1 || true
     echo "  Running=$(T "show cluster;" 2>/dev/null | grep -c Running)"
     ;;
