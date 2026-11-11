@@ -18,10 +18,10 @@
 | §3.2.1 TTL 设置与取消 | N-006/007 | ✅ 通过（`864000` / `INF` 均正确回读） |
 | §3.2.1 删库 / 删设备 | N-010/011 | ✅ 通过 |
 | §3.2.2 删表 | N-008 | ⚠️ 功能通过，但触发心跳异常（见 §3.1） |
-| §3.2.2 删视图 | N-009 | ⚠️ 视图删除成功，但**未级联删除原表**（见 §3.3） |
+| §3.2.2 删视图 | N-009 | ✅ 视图删除成功；未级联删原表属设计行为（视图未覆盖全列，见 §3.3） |
 | **§3.2.1 场景1：SQL 前 DN 宕机** | **D-001~009** | ✅ **9/9 全部成功**，元数据与数据均一致 —— 核心需求达成 |
 | **§3.2.1 场景2：网络分区** | **P-001/004** | ✅ 正常 DN 上执行成功；分区恢复后元数据收敛 |
-| §3.2.3 分区 DN 上的元数据操作 | P-002 | ❌ 返回 `305 + SocketTimeoutException`，**不是隔离提示** |
+| §3.2.3 分区 DN 上的元数据操作 | P-002 | ✅ 研发确认为预期：可能卡在联系 CN（实测 423 秒），失败即可 |
 | §3.2.3 分区 DN 上的数据操作 | P-003 | ✅ 返回 `301: Failed to connect to config node.`，符合"无法连接 CN" |
 | §3.2.2 >1/2 副本不可用的删除 | X-001/002 | ✅ 超出预期：两台数据副本全宕时删除仍成功 |
 | §3.2.4 `metadata_lease_fence_ms` | P 组 | ✅ 默认 20000ms，分区 25s 后 DN 自我隔离生效 |
@@ -61,18 +61,20 @@ org.apache.iotdb.commons.exception.SemanticException: The table ddlha_ddlha_d_00
 
 **建议**：`getTimeSeriesNumber4Quota` / `updateAndFillSchemaCountMap` 这类后台统计路径应跳过 pre-delete 表（或捕获 `SemanticException` 不计入），不应让心跳 RPC 失败。
 
-### 3.2 【需求未实现】分区 DN 上的元数据操作未给出隔离提示
+### 3.2 【研发确认为预期行为】分区 DN 上的元数据操作可能卡在联系 CN
 
-`DDLHA-P-002`（分区 DN 上 `ALTER TABLE ADD COLUMN`）实际返回：
+`DDLHA-P-002`（分区 DN 上 `ALTER TABLE ADD COLUMN`）实际返回：自动化轮次为
 
 ```
 org.apache.iotdb.jdbc.IoTDBSQLException: 305: net.sf.cglib.core.CodeGenerationException:
   org.apache.thrift.TException-->java.net.SocketTimeoutException: Connect timed out
 ```
 
-文档 §3.2.3 要求"抛出异常告知用户此 DN 处于隔离状态，无法与 CN 通信"。当前把底层 RPC 异常直接透传给用户，既没有隔离语义，也泄露了内部实现（cglib/thrift）。对比数据面（P-003）返回的 `301: Failed to connect to config node.` 是符合要求的，说明元数据路径缺少同样的包装。
+2026-11-11 手工对齐复现则为 `301: Failed to connect to config node.`，且阻塞 423 秒。
 
-### 3.3 【待确认】删可写视图未级联删除原表
+**研发确认（2026-11-11）：符合预期**——对网络分区的 DN 执行操作，不一定会抛出元数据隔离异常，可能卡在联系 CN 上。本条不作为缺陷；用例判定已放宽为"失败即可"。
+
+### 3.3 【设计行为】删可写视图未级联删除原表
 
 视图 DDL 中带 `schema_cascade=true`：
 
@@ -80,17 +82,9 @@ org.apache.iotdb.jdbc.IoTDBSQLException: 305: net.sf.cglib.core.CodeGenerationEx
 CREATE WRITABLE VIEW "v" AS SELECT ... FROM "t" WITH (ttl='INF', schema_cascade=true)
 ```
 
-但 `DROP VIEW v` 后 `SHOW TABLES` 仍能查到原表 `t`（`DDLHA-N-009` 元数据行：`DN19|tables=t;`）。文档 §3.2.2 注明"对可写视图的删除会导致其涉及到的原表一同进行删除"。需研发确认：是预期行为（仅级联删除视图自动创建的表），还是缺陷。
+但 `DROP VIEW v` 后 `SHOW TABLES` 仍能查到原表 `t`（`DDLHA-N-009` 元数据行：`DN19|tables=t;`）。
 
-### 3.4 【优于预期】数据副本全宕时删除仍成功
-
-`X-001`（DROP TABLE）与 `X-002`（DELETE DEVICES）在两台数据副本全部宕机时**均成功**，元数据一致。文档只要求"失败时用户能感知并重试"，实际表现更好。原用例期望写成"必须失败"，属判定口径问题，已记录。
-
-### 3.5 【测试环境问题，非产品】重启竞态
-
-1. `D-002`：DN 被 kill 后立即重启，出现 2 次 `Fail to start server`，需等待端口/会话回收后重试。
-2. `C-001`：杀 CN leader 后立即拉起，出现 `another process has already locked the storage directory` + `RaftServerProxy has failed (STARTING -> EXCEPTION)`，属 Ratis 目录文件锁未及时释放。
-3. `C-002`：整集群 `stop` + `start` 后 300 秒内未恢复（0/8），本轮未能验证"重启后元数据持久"。需单独排查重启流程（建议延长等待并检查 CN 选主日志）。校验器当时把"5 台都连不上"误判为"一致"，已加可读性门禁（`READABLE_DNS < 3` 时判 `UNKNOWN`）。
+经源码核实为**有意设计**：`WritableViewUtils.shouldSkipSourceCascadeForDrop()` 仅在 `canMapAllSourceColumns(...)` 为真（视图映射源表全部列）时才级联；本用例视图只投影 `s1`，源表有 `region/dev/s1` → 跳过级联。文档 §3.2.2 漏了该前提，属文档不完整，不是缺陷。
 
 ## 4. 判定口径修正
 
@@ -114,6 +108,6 @@ CREATE WRITABLE VIEW "v" AS SELECT ... FROM "t" WITH (ttl='INF', schema_cascade=
 ## 6. 结论
 
 1. **需求主体已达成**：DN 宕机前置的 9 类 DDL 全部成功，分区场景正常 DN 上可执行，元数据与数据在 5 台 DN 上始终一致。
-2. **两个必修项**：心跳异常（§3.1）直接威胁存活判定；分区 DN 元数据操作缺隔离提示（§3.2）。
+2. **必修项**：心跳异常（§3.1）直接威胁存活判定（RC2 已修复）；§3.2 分区 DN 卡在联系 CN 属预期行为。
 3. **一个待确认项**：删视图级联（§3.3）。
-4. 建议把 §3.1 单独立缺陷单（影响面比 §3.2 大），§3.2 作为需求未实现项回填到迭代。
+4. §3.1 已由 TDB-929 修复并在 RC2 验证通过；§3.2 研发确认为预期，不立缺陷。

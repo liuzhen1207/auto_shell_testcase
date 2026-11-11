@@ -57,4 +57,4 @@
 1. `ALTER VIEW <db>.v RENAME TO v2` —— 目标名**不能带库前缀**，否则语法错误。
 2. `DROP DATABASE` 紧跟在表级 DDL 后会返回 `304: Some other task is operating table under the database ... please retry`，属 procedure 串行，用例里要么等待、要么单独起一轮。
 3. `DROP VIEW` 的 `schema_cascade=true` 在"表先存在、后建视图"的场景下**不会**删掉原表（与文档表述不一致，`DDLHA-N-009` 专门记录实际行为）。
-4. 分区 DN 上的元数据操作当前返回 `305 + SocketTimeoutException`，不是文档要求的"隔离状态"提示（`DDLHA-P-002` 记录）。
+4. 分区 DN 上的元数据操作**不一定**抛"隔离"异常，可能长时间卡在联系 CN（实测 423 秒）后返回 301 或 305 —— 研发 2026-11-11 确认为符合预期，`DDLHA-P-002` 只断言"失败"，不再要求隔离文案。

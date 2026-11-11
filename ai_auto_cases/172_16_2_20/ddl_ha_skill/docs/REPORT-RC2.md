@@ -15,7 +15,7 @@
 1. **TDB-929（预删除表心跳异常）在 RC2 已修复**：29 例日志全量扫描，`getDataNodeHeartBeat` + `SemanticException` **0 命中**；RC1 上同一用例（D-007）曾出现 34 次心跳失败。
 2. 核心需求保持达成：**DN 宕机前置的 9 类 DDL 全部成功**（D-001~009 的 meta/data/exp 全 YES）。
 3. **RC2 新观察到一处 NPE**：改视图名触发 `updateTable` RPC 的 `NullPointerException`（`DataNodeTableCache.innerCommitUpdateTable:497`），功能结果仍正确（改名成功、元数据一致），属 RPC 层异常。
-4. 两处 RC1 遗留问题 **RC2 未变**：分区 DN 的元数据操作仍返回 `305 + SocketTimeoutException`（无隔离提示）；`DROP VIEW` 仍未级联删除原表。
+4. 两处 RC1"遗留"问题已定性：**分区 DN 元数据操作卡在联系 CN 属研发确认的预期行为**（不作为缺陷）；`DROP VIEW` 未级联是**设计行为**（视图未覆盖源表全部列，详见 §3.4）。
 5. `C-002`（DDL 后整集群重启）仍无法验证：重启后集群 `0/8`，`READABLE_DNS=0/5`，判 `META_CONSISTENT=UNKNOWN`（可读性门禁生效，未误判为一致）。
 
 ## 2. 逐例结果
@@ -28,7 +28,7 @@
 | D-002 | dn_down | FAIL_LOG | 830 | DN 重启竞态 `Fail to start server`（环境） |
 | D-005 | dn_down | FAIL_LOG | 293 | 同 §3.1 的 `updateTable` NPE |
 | P-001, P-003, P-004 | partition | PASS | 176~600 | 正常 DN 上执行成功；数据面返回 `301 Failed to connect to config node`；恢复后收敛 |
-| P-002 | partition | FAIL_ERROR_KIND | 596 | 元数据操作仍返回 `305 + SocketTimeoutException`（§3.2） |
+| P-002 | partition | PASS（放宽判定） | 596 | 分区 DN 上元数据操作失败即符合预期（§3.2，研发确认） |
 | X-001, X-002 | extreme | FAIL_NO_ERROR | 154 / 180 | 两台数据副本全宕时删除仍成功（优于文档要求） |
 | C-001, C-003 | ha_event | PASS | 238 / 191 | DDL 期间杀 CN leader 成功；并发两条 DDL 成功 |
 | C-002 | ha_event | FAIL_EXPECT | 1025 | 整集群重启后未恢复，未验证元数据持久（§3.3） |
@@ -68,16 +68,28 @@ innerCommitUpdateTable(unqualifiedDatabase2, tableName2, table2, null);   // tab
 
 **是否 RC2 引入**：RC1 的同用例（N-005）日志未见该 NPE，RC2 上稳定在 N-005/D-005 出现；两版本间 `DataNodeTableCache` 有提交 `1bbb4ff6db`（+2 行），但不是该 null-put 路径本身。需要研发确认是 RC2 变化触发还是时序问题。
 
-### 3.2 【RC1 遗留，RC2 未变】分区 DN 的元数据操作无隔离提示
+### 3.2 【研发确认为预期行为】分区 DN 的元数据操作可能卡在联系 CN
 
-`DDLHA-P-002` 返回：
+`DDLHA-P-002` 在 RC1/RC2 上返回的形态不同：
+
+| 场景 | 返回 | 耗时 |
+| --- | --- | --- |
+| RC1 / RC2 自动化轮次 | `305: cglib CodeGenerationException → thrift TException → SocketTimeoutException: Connect timed out` | 约 350~420 秒 |
+| 2026-11-11 手工对齐复现 | `Error: Can't execute sql because 301: Failed to connect to config node.` | **423 秒** |
+
+DN 侧日志（172.16.2.21）：
 
 ```
-IoTDBSQLException: 305: net.sf.cglib.core.CodeGenerationException:
-  org.apache.thrift.TException-->java.net.SocketTimeoutException: Connect timed out
+10:46:48 WARN  AbstractConfigNodeClient:449 - Failed to connect to ConfigNode 172.16.2.16:10710
+  org.apache.thrift.transport.TTransportException: java.net.SocketTimeoutException: Read timed out
+    at ...ClusterAuthorityFetcher.getUser(ClusterAuthorityFetcher.java:834)
+10:52:50 ERROR ClusterAuthorityFetcher:836 - Failed to connect to config node.
 ```
 
-与 RC1 完全一致。文档 §3.2.3 要求"告知用户此 DN 处于隔离状态，无法与 CN 通信"。数据面（P-003）返回 `301: Failed to connect to config node.` 是符合要求的，说明元数据路径缺同样的错误包装。
+**研发确认（2026-11-11）：符合预期** —— 对处于网络分区的 DN 执行操作，不一定会抛出元数据隔离异常，可能卡在联系 CN 上。因此本条 **不作为缺陷**；用例判定已放宽为"只要失败即可"（隔离提示、连接失败、thrift 超时均接受）。
+
+保留该现象作为特征记录：分区 DN 上的元数据 DDL 实测阻塞约 7 分钟后返回，返回码在 301/305 之间不稳定；若需更快的失败反馈，属体验优化提案而非缺陷。
+
 
 ### 3.3 【环境/流程】整集群重启后无法恢复，C-002 未验证
 
@@ -85,9 +97,13 @@ IoTDBSQLException: 305: net.sf.cglib.core.CodeGenerationException:
 
 该用例的目标是验证"重启后元数据持久"，当前卡在重启本身：需要单独排查重启流程（是否 CN 选举失败 / 端口未释放 / 启动过快），再重跑该用例。**不代表产品问题**，但也说明"重启后元数据持久"这条需求目前没有验证结论。
 
-### 3.4 【RC1 遗留，RC2 未变】`DROP VIEW` 未级联删除原表
+### 3.4 【设计行为】`DROP VIEW` 未级联删除原表
 
-`DDLHA-N-009` 删除视图后 `SHOW TABLES` 仍为 `t;`（原表还在），视图定义中带 `schema_cascade=true`。与 RC1 行为一致，需研发确认预期（是否只级联删除视图自动创建的表）。
+`DDLHA-N-009` 删除视图后 `SHOW TABLES` 仍为 `t;`（原表还在），视图定义中带 `schema_cascade=true`。
+
+经源码核实，这是**有意设计**：`WritableViewUtils.shouldSkipSourceCascadeForDrop()` 只在 `canMapAllSourceColumns(...)` 为真（视图映射了源表**全部**列）时才级联删除源表，否则打 WARN 并跳过。本用例视图只投影 `s1`，源表有 `region/dev/s1` 三列 → 跳过级联。需求文档 §3.2.2 的表述漏了"视图需覆盖源表全部列"这一前提，属文档不完整，不是缺陷。
+
+补充：已计划新增 `DDLHA-N-012`（视图覆盖全部列 + `schema_cascade=true`）作为正向级联用例，`N-009` 保留为"部分列不级联"的反向用例。
 
 ## 4. RC1 vs RC2 对比
 
@@ -115,6 +131,6 @@ IoTDBSQLException: 305: net.sf.cglib.core.CodeGenerationException:
 ## 6. 建议
 
 1. **§3.1 的 NPE** 单独提给研发（RC2 引入或暴露），优先级建议 P2：功能不受损，但每次改视图名都会打一次 NPE + RPC 失败重试。
-2. **§3.2 隔离提示**属需求未实现项，建议回填到迭代，与 TDB-929 同批排期。
+2. ~~§3.2 隔离提示~~：研发确认为预期行为，不立缺陷；如需缩短分区场景的失败反馈时间，可作为体验优化另议。
 3. **§3.3 重启流程**需要单独排一次（我可以先把重启步骤加固：等 CN 全部退出、端口释放后再起，并延长等待）。
-4. **§3.4 级联删除**待研发确认预期后，再决定是否算缺陷。
+4. **§3.4 级联删除**已核实为设计行为（视图需覆盖源表全部列），不立缺陷；建议补充文档说明并新增正向用例 `DDLHA-N-012`。
