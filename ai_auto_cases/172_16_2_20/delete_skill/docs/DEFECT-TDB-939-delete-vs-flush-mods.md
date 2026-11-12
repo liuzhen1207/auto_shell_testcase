@@ -256,3 +256,25 @@ SELECT time,device_id,sensor,region,v FROM del_rc10_pred008.t ORDER BY time,devi
 累计：`DEL-REPL-002` 在 IoTV2 共执行 9 次（11-04 RC10 1 次、11-07 全量 1 次、11-09 全量 2 次、11-09 定向 5 次），失败 **1 次**，复现率约 **1/9**。
 
 失败当轮（2026-11-07 14:08）现场日志已被后续轮次覆盖，仅保留当时记录：停机前 6 行正确、重启后 7 行、复活 `d3` 的 `.001` 行、两台副本一致。**结论：低概率间歇，未稳定复现，作为观察项**；建议研发在 V2 增补"删除后重启"定向单测。
+
+## 十一、RC2（83183d0）复现确认（2026-11-11）
+
+在 2.0.13.1 RC2 上重跑 `DEL-PRED-007`（表模型，OR 谓词 DELETE，DELETE 后紧跟 FLUSH）仍然复现：
+
+| 阶段 | 行数 |
+| --- | ---: |
+| 停机前快照（5 分钟零 lag 门禁之后） | 14 |
+| 五台 DataNode 重启后 | 8 |
+
+DataNode 日志（本轮完整备份，2.1 MB）显示删除执行两次并进入 memtable 删除路径：
+
+```
+18:56:30,740 [IoTDB-ClientRPC-Processor-1] [Deletion] Executing table deletion RelationalDeleteDataNode-1[...]
+18:56:30,743 [IoTDB-ClientRPC-Processor-1] Writing no-file-related deletion to WAL RelationalDeleteDataNode-1[...]
+18:56:38,007 [IoTConsensusRPC-Processor-4]  [Deletion] Executing table deletion RelationalDeleteDataNode-1[...]
+18:56:38,011 [IoTConsensusRPC-Processor-4]  TsFileProcessor:1719 - [Deletion] Deletion with TableDeletionEntry{...}
+```
+
+日志中无任何 mods 相关告警，与"删除标记静默丢失"一致。结论：**RC2 上未修复**（修复目标 V2.0.15.1），V1 协议下稳定复现。
+
+证据：`/data2/iotdb/rc10_matrix/artifacts/IoTConsensus/DEL-PRED-007/`（含 `logs/`、停机前后快照与 diff）。
