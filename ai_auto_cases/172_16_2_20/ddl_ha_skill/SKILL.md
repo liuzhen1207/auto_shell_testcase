@@ -58,3 +58,15 @@
 2. `DROP DATABASE` 紧跟在表级 DDL 后会返回 `304: Some other task is operating table under the database ... please retry`，属 procedure 串行，用例里要么等待、要么单独起一轮。
 3. `DROP VIEW` 的 `schema_cascade=true` 在"表先存在、后建视图"的场景下**不会**删掉原表（与文档表述不一致，`DDLHA-N-009` 专门记录实际行为）。
 4. 分区 DN 上的元数据操作**不一定**抛"隔离"异常，可能长时间卡在联系 CN（实测 423 秒）后返回 301 或 305 —— 研发 2026-11-11 确认为符合预期，`DDLHA-P-002` 只断言"失败"，不再要求隔离文案。
+
+## 7. 缺陷归因避坑（TDB-1050 复盘）
+
+详细清单见 [`../../docs/defect-attribution-playbook.md`](../../docs/defect-attribution-playbook.md)，核心五条：
+
+1. **不要用用例名当触发条件**：触发点从日志时间线读（哪一对 pre-update/commit 落在同一 RPC、对应哪一次 SQL）。
+2. **单表提交与成对提交是两条路径**：DN 侧按 `req.isSetOriginalInfo()` 分流（3 参 `commitUpdateTableWithView` vs 4 参 `commitUpdateTable`）；日志里"同一毫秒两次 Pre-update"即成对。
+3. **先查子类覆写**：`getSourceResolutionOverride()` 返回 `false` 的（改视图名/改视图列名）永不成对提交，不可能走 4 参路径；未覆写（`null`）且 `cascade=true` 的才可能。
+4. **"发生过" ≠ "可稳定复现"**：必须分三段写（生产发生 N 次 / 黑盒尝试 M 次结果 / 插桩是否 100%）。
+5. **不写无证据的"某提交引入"**：要么有 bisect 证据，要么只写触发条件。
+
+插桩证明的规范做法（单类替换 + `IOTDB_JMX_OPTS` 开关 + 事后必须回滚 jar/开关/重启/8-8 确认）也写在该文档里。
