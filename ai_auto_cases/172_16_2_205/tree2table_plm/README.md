@@ -48,6 +48,8 @@ python test_case_import.py rn-link verify --mapping rn_mapping.snapshot.json
 
 ## 两个执行注意点
 
+> 已于 2026-11-13 通过 `POST /api/pub/skills/timecho-plm-testcase-import/feedback`（type=dislike）向 SkillHub 反馈上述第 1、2 条问题，均返回 `{"code":0,"message":"OK"}`。
+
 1. **1.4.1 的 `convert_case_library.py` 缺 `import re`**，任何输入都会在 `build_feature_paths()` 抛 `NameError: name 're' is not defined`。本机已补 `import re`（仅本地修复，未改版本号）；重新安装 1.4.1 会覆盖，需要再补或等官方修复。
 2. **RN 关联是"期望全集"语义**：mapping 里没列出的该 RN 既有用例会被**移除**。首次 plan 显示"移除 46"（原 TDB-343 用例），因此已把原 46 条并入期望集合，最终 `新增 137 / 移除 0`。
 3. 导入途中出现过 1 次 `HTTP 502`（nginx 网关瞬断），工具幂等重跑后补齐；最终 137/137、0 失败。
