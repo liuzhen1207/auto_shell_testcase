@@ -1,0 +1,160 @@
+LB-001	cases/c1_component.sh	组件	正向	CREATE ARRAY 组件成功且系统表可见	case_LB001
+LB-002	cases/c1_component.sh	组件	正向	CREATE SET 组件成功	case_LB002
+LB-003	cases/c1_component.sh	组件	正向	CREATE TREE 组件成功（ROOT/UNDER 层级）	case_LB003
+LB-004	cases/c1_component.sh	组件	异常	组件重名报错	case_LB004
+LB-005	cases/c1_component.sh	组件	异常	ARRAY 元素重复报错	case_LB005
+LB-006	cases/c1_component.sh	组件	异常	SET 元素重复报错	case_LB006
+LB-007	cases/c1_component.sh	组件	异常	TREE 节点跨分支重复报错	case_LB007
+LB-008	cases/c1_component.sh	组件	边界	元素含保留字符 (,): 报错	case_LB008
+LB-009	cases/c1_component.sh	组件	边界	空元素/空白元素报错	case_LB009
+LB-010	cases/c1_component.sh	组件	边界	元素长度超 32 bytes 报错	case_LB010
+LB-011	cases/c1_component.sh	组件	正向	ALTER ARRAY ADD ELEMENT BEFORE/AFTER 位置正确	case_LB011
+LB-012	cases/c1_component.sh	组件	正向	ALTER SET ADD ELEMENT 无需位置	case_LB012
+LB-013	cases/c1_component.sh	组件	正向	ALTER TREE ADD ELEMENT UNDER 成功	case_LB013
+LB-014	cases/c1_component.sh	组件	边界	ALTER TREE ADD ROOT 后原 ROOT 不再是 ROOT	case_LB014
+LB-015	cases/c1_component.sh	组件	异常	ALTER ADD 已存在元素报错	case_LB015
+LB-016	cases/c1_component.sh	组件	异常	TREE OVER 列表元素重复报错	case_LB016
+LB-017	cases/c1_component.sh	组件	异常	TREE OVER 跨父节点报错	case_LB017
+LB-018	cases/c1_component.sh	组件	正向	DROP 未被引用的组件成功	case_LB018
+LB-019	cases/c1_component.sh	组件	异常	DROP 被 Policy 引用的组件报错	case_LB019
+LB-020	cases/c1_component.sh	组件	正向	COMMENT ON COMPONENT 添加与替换备注	case_LB020
+LB-021	cases/c2_policy.sh	策略	正向	CREATE POLICY 单组件成功	case_LB021
+LB-022	cases/c2_policy.sh	策略	正向	多组件策略的组件顺序决定标签值展示顺序	case_LB022
+LB-023	cases/c2_policy.sh	策略	异常	引用不存在的组件报错	case_LB023
+LB-024	cases/c2_policy.sh	策略	异常	策略重名报错	case_LB024
+LB-025	cases/c2_policy.sh	策略	正向	WITH LBACRULES 与省略等价（rule_set=LBACRULES）	case_LB025
+LB-026	cases/c2_policy.sh	策略	正向	ALTER ADD COMPONENT 追加到末尾且已有标签补空值	case_LB026
+LB-027	cases/c2_policy.sh	策略	异常	ALTER ADD 重复组件报错	case_LB027
+LB-028	cases/c2_policy.sh	策略	正向	ALTER ADD 多个组件（多条子句）	case_LB028
+LB-029	cases/c2_policy.sh	策略	异常	表已绑定策略时 ALTER ADD COMPONENT 报错	case_LB029
+LB-030	cases/c2_policy.sh	策略	正向	USE/IGNORE ROLE AUTHORIZATIONS 状态切换	case_LB030
+LB-031	cases/c2_policy.sh	策略	正向	DROP 无依赖策略成功	case_LB031
+LB-032	cases/c2_policy.sh	策略	异常	DROP 仍有标签的策略报错（2413）	case_LB032
+LB-033	cases/c2_policy.sh	策略	异常	DROP 被表绑定的策略报错	case_LB033
+LB-034	cases/c2_policy.sh	策略	异常	DROP 仍有标签授权/免除权的策略报错	case_LB034
+LB-035	cases/c2_policy.sh	策略	正向	COMMENT ON POLICY 添加与替换备注	case_LB035
+LB-036	cases/c3_label.sh	标签	正向	CREATE LABEL 单组件单值成功	case_LB036
+LB-037	cases/c3_label.sh	标签	正向	CREATE LABEL 多组件多值（SET 多值）	case_LB037
+LB-038	cases/c3_label.sh	标签	异常	所有组件均为空值时创建失败	case_LB038
+LB-039	cases/c3_label.sh	标签	异常	使用不属于该策略的组件报错	case_LB039
+LB-040	cases/c3_label.sh	标签	异常	同一策略下标签重名报错	case_LB040
+LB-041	cases/c3_label.sh	标签	正向	不同策略下同名标签允许创建	case_LB041
+LB-042	cases/c3_label.sh	标签	异常	SET 多值中出现重复元素报错	case_LB042
+LB-043	cases/c3_label.sh	标签	正向	DROP 未被引用的标签成功	case_LB043
+LB-044	cases/c3_label.sh	标签	异常	DROP 已授予用户的标签报错	case_LB044
+LB-045	cases/c3_label.sh	标签	异常	DROP 被列引用的标签报错	case_LB045
+LB-046	cases/c3_label.sh	标签	正向	COMMENT ON LABEL 与规范化 label_value 展示	case_LB046
+LB-047	cases/c4_grant.sh	授权	正向	GRANT READ ACCESS 成功且系统表可见	case_LB047
+LB-048	cases/c4_grant.sh	授权	正向	GRANT WRITE ACCESS 成功	case_LB048
+LB-049	cases/c4_grant.sh	授权	正向	GRANT ALL ACCESS 同时产生读写两条记录	case_LB049
+LB-050	cases/c4_grant.sh	授权	异常	重复授予同一标签同一访问类型报错	case_LB050
+LB-051	cases/c4_grant.sh	授权	异常	同策略下另一标签占用同一访问类型报错	case_LB051
+LB-052	cases/c4_grant.sh	授权	异常	已有 READ 后 GRANT ALL 报错	case_LB052
+LB-053	cases/c4_grant.sh	授权	异常	已有 ALL 后再 GRANT READ 报错	case_LB053
+LB-054	cases/c4_grant.sh	授权	异常	授予不存在的标签报错	case_LB054
+LB-055	cases/c4_grant.sh	授权	异常	授予不存在的用户报错	case_LB055
+LB-056	cases/c4_grant.sh	授权	正向	授予角色成功（grantee_type=ROLE）	case_LB056
+LB-057	cases/c4_grant.sh	授权	正向	REVOKE 一次性清除读写授权	case_LB057
+LB-058	cases/c4_grant.sh	授权	异常	撤销不存在的授权报错	case_LB058
+LB-059	cases/c4_grant.sh	授权	异常	无 SECURITY 权限的用户执行 LBAC DDL 被拒	case_LB059
+LB-060	cases/c4_grant.sh	授权	正向	USE/IGNORE ROLE AUTHORIZATIONS 决定角色标签是否参与判断	case_LB060
+LB-061	cases/c4_grant.sh	豁免	正向	GRANT EXEMPTION LBACREADARRAY 后读放行	case_LB061
+LB-062	cases/c4_grant.sh	豁免	正向	LBACWRITEARRAY WRITE_UP 只免上写，下写仍拒绝	case_LB062
+LB-063	cases/c4_grant.sh	豁免	正向	GRANT EXEMPTION ALL 展开为多条记录	case_LB063
+LB-064	cases/c4_grant.sh	豁免	边界	重复授予同一豁免静默成功且不刷新时间	case_LB064
+LB-065	cases/c4_grant.sh	豁免	正向	REVOKE 单条豁免生效	case_LB065
+LB-066	cases/c4_grant.sh	豁免	异常	撤销不存在的豁免报错	case_LB066
+LB-067	cases/c4_grant.sh	豁免	正向	REVOKE ALL 清空该策略下全部豁免	case_LB067
+LB-068	cases/c4_grant.sh	豁免	正向	角色豁免在 IGNORE 下不生效、USE 下生效	case_LB068
+LB-069	cases/c5_compare.sh	比较	正向	ARRAY READ：用户 SEC 读 INT 保护列允许	case_LB069
+LB-070	cases/c5_compare.sh	比较	正向	ARRAY READ：用户 SEC 读 SEC 保护列允许	case_LB070
+LB-071	cases/c5_compare.sh	比较	反向	ARRAY READ：用户 SEC 读 TOP 保护列拒绝	case_LB071
+LB-072	cases/c5_compare.sh	比较	边界	ARRAY READ：空用户标签读 PUB 保护列拒绝	case_LB072
+LB-073	cases/c5_compare.sh	比较	边界	ARRAY READ：空对象保护值不阻挡任何用户值	case_LB073
+LB-074	cases/c5_compare.sh	比较	边界	ARRAY READ：双方均为空值允许	case_LB074
+LB-075	cases/c5_compare.sh	比较	反向	ARRAY WRITE：SEC 写 INT 保护列拒绝（下写）	case_LB075
+LB-076	cases/c5_compare.sh	比较	正向	ARRAY WRITE：SEC 写 SEC 保护列允许	case_LB076
+LB-077	cases/c5_compare.sh	比较	反向	ARRAY WRITE：SEC 写 TOP 保护列拒绝（上写）	case_LB077
+LB-078	cases/c5_compare.sh	比较	边界	ARRAY WRITE：空用户标签写 PUB 保护列拒绝	case_LB078
+LB-079	cases/c5_compare.sh	比较	边界	ARRAY WRITE：用户 PUB 写空保护值允许（不算下写）	case_LB079
+LB-080	cases/c5_compare.sh	比较	边界	ARRAY WRITE：双方均为空值允许	case_LB080
+LB-081	cases/c5_compare.sh	比较	正向	SET READ：用户 (RD,QA) 读 RD 保护列允许	case_LB081
+LB-082	cases/c5_compare.sh	比较	反向	SET READ：用户 RD 读 (RD,QA) 保护列拒绝	case_LB082
+LB-083	cases/c5_compare.sh	比较	边界	SET READ：空用户标签读 RD 保护列拒绝	case_LB083
+LB-084	cases/c5_compare.sh	比较	边界	SET READ：用户 RD 读空保护值允许	case_LB084
+LB-085	cases/c5_compare.sh	比较	正向	SET WRITE：用户 (RD,QA) 写 RD 保护列允许	case_LB085
+LB-086	cases/c5_compare.sh	比较	反向	SET WRITE：用户 RD 写 (RD,QA) 保护列拒绝	case_LB086
+LB-087	cases/c5_compare.sh	比较	正向	TREE READ：用户 COMPANY 读 RND 保护列允许（祖先）	case_LB087
+LB-088	cases/c5_compare.sh	比较	正向	TREE READ：用户 RND 读 STORAGE 保护列允许（祖先）	case_LB088
+LB-089	cases/c5_compare.sh	比较	反向	TREE READ：用户 STORAGE 读 RND 保护列拒绝（后代）	case_LB089
+LB-090	cases/c5_compare.sh	比较	边界	TREE READ：空用户标签读 RND 保护列拒绝	case_LB090
+LB-091	cases/c5_compare.sh	比较	正向	TREE WRITE：用户 COMPANY 写 STORAGE 保护列允许	case_LB091
+LB-092	cases/c5_compare.sh	比较	反向	TREE WRITE：用户 STORAGE 写 RND 保护列拒绝	case_LB092
+LB-093	cases/c5_compare.sh	比较	边界	默认空标签：无任何授权的用户读 PUB 保护列被拒、读未保护列允许	case_LB093
+LB-094	cases/c5_compare.sh	比较	反向	多组件 AND：任一组件不满足即拒绝（dept 缺 QA）	case_LB094
+LB-095	cases/c5_compare.sh	比较	正向	多组件 AND：所有组件均满足时允许	case_LB095
+LB-096	cases/c5_compare.sh	比较	正向	ALL ACCESS 授权可读可写	case_LB096
+LB-097	cases/c6_object.sh	绑定	正向	CREATE TABLE 同时绑定策略与列保护生效	case_LB097
+LB-098	cases/c6_object.sh	绑定	异常	建表时 SECURED WITH 标签不属于该策略报错	case_LB098
+LB-099	cases/c6_object.sh	绑定	异常	建表时绑定不存在的策略报错	case_LB099
+LB-100	cases/c6_object.sh	绑定	正向	ALTER TABLE ADD SECURITY POLICY 成功	case_LB100
+LB-101	cases/c6_object.sh	绑定	异常	表已绑定策略后再次 ADD 报错	case_LB101
+LB-102	cases/c6_object.sh	绑定	反向	新增列保护需要新标签写凭证（无凭证拒绝）	case_LB102
+LB-103	cases/c6_object.sh	绑定	反向	修改列保护需要旧标签读写 + 新标签写（缺一即拒）	case_LB103
+LB-104	cases/c6_object.sh	绑定	边界	修改列保护为新标签且凭证齐全时成功	case_LB104
+LB-105	cases/c6_object.sh	绑定	边界	SECURED WITH 相同标签在凭证齐全时幂等成功	case_LB105
+LB-106	cases/c6_object.sh	绑定	反向	解除列保护需要旧标签读写凭证	case_LB106
+LB-107	cases/c6_object.sh	绑定	正向	DROP SECURITY POLICY 同时移除表策略与全部列标签	case_LB107
+LB-108	cases/c6_object.sh	绑定	异常	视图（可写视图/逻辑视图）不能设置 LBAC 保护	case_LB108
+LB-109	cases/c6_object.sh	视图	正向	可写视图 CRUD 走底层表的 LBAC 检查	case_LB109
+LB-110	cases/c6_object.sh	视图	正向	逻辑视图查询走底层表的 LBAC 检查	case_LB110
+LB-111	cases/c7_dml.sh	查询	反向	SELECT 受保护列无读凭证被拒（2400）	case_LB111
+LB-112	cases/c7_dml.sh	查询	反向	SELECT * 含无权受保护列被拒	case_LB112
+LB-113	cases/c7_dml.sh	查询	正向	仅查询有权限的列允许	case_LB113
+LB-114	cases/c7_dml.sh	查询	正向	COUNT(*) 不因存在无权列而失败	case_LB114
+LB-115	cases/c7_dml.sh	查询	正向	DESCRIBE / SHOW CREATE TABLE 不触发 LBAC 检查	case_LB115
+LB-116	cases/c7_dml.sh	写入	反向	INSERT 受保护列无写凭证被拒	case_LB116
+LB-117	cases/c7_dml.sh	写入	正向	INSERT 受保护列有写凭证成功	case_LB117
+LB-118	cases/c7_dml.sh	更新	边界	UPDATE ATTRIBUTE 需 SET 列写凭证与 WHERE 列读凭证	case_LB118
+LB-119	cases/c7_dml.sh	删除	反向	DELETE 行需要所有受保护列的写凭证	case_LB119
+LB-120	cases/c7_dml.sh	删除	边界	DELETE WHERE 引用受保护列时还需读凭证	case_LB120
+LB-121	cases/c7_dml.sh	删除	正向	DROP TABLE / DROP DATABASE 不额外触发 LBAC 检查	case_LB121
+LB-122	cases/c7_dml.sh	写入	正向	经可写视图 INSERT 时按底层表检查（有凭证成功）	case_LB122
+LB-123	cases/c8_systable_audit.sh	系统表	正向	普通用户可查询 security_policies	case_LB123
+LB-124	cases/c8_systable_audit.sh	系统表	正向	security_label_component_elements 的 ordinal/parent 正确	case_LB124
+LB-125	cases/c8_systable_audit.sh	系统表	正向	security_policy_component_rules 返回读写规则名与顺序	case_LB125
+LB-126	cases/c8_systable_audit.sh	系统表	正向	security_labels 的规范化 label_value 正确	case_LB126
+LB-127	cases/c8_systable_audit.sh	系统表	正向	security_label_access 普通用户只看自己、SECURITY 看全部	case_LB127
+LB-128	cases/c8_systable_audit.sh	系统表	正向	security_policy_exemptions 的可见范围	case_LB128
+LB-129	cases/c8_systable_audit.sh	系统表	正向	tables.security_policy / columns.security_label 字段正确	case_LB129
+LB-130	cases/c8_systable_audit.sh	审计	正向	LBAC 拒绝访问产生 LBAC_AUTHENTICATION 审计记录	case_LB130
+LB-131	cases/c8_systable_audit.sh	审计	正向	LBAC 元数据 DDL 需要 SECURITY 权限（无权限被拒）	case_LB131
+LB-132	cases/c9_ha.sh	高可用	可靠性	CN 重启后 LBAC 元数据与授权仍有效	case_LB132
+LB-133	cases/c9_ha.sh	高可用	可靠性	DN 重启后 LBAC 访问判断仍生效	case_LB133
+LB-134	cases/c9_ha.sh	高可用	可靠性	ALTER COMPONENT ADD ELEMENT 后新标签按新版本生效	case_LB134
+LB-135	cases/c9_ha.sh	缓存	可靠性	解除列保护后立即生效（不按旧缓存放行）	case_LB135
+LB-136	cases/c9_ha.sh	缓存	可靠性	ALTER POLICY USE ROLE AUTHORIZATIONS 后立即生效	case_LB136
+LB-137	cases/c9_ha.sh	一致性	可靠性	三个 CN 的 LBAC 元数据一致（schema 3 副本）	case_LB137
+LB-138	cases/c9_ha.sh	一致性	可靠性	数据 2 副本下写入后多次查询结果一致	case_LB138
+LB-139	cases/c9_ha.sh	持久化	可靠性	重启后 label grant / exemption 仍存在	case_LB139
+LB-140	cases/c9_ha.sh	日志	可靠性	正常授权访问路径无异常 ERROR	case_LB140
+LB-141	cases/c9_ha.sh	并发	并发	并发对同一用户授予同一标签同类型：一成功一失败	case_LB141
+LB-142	cases/c10_extra.sh	绑定	正向	表切换到另一策略：解绑旧策略后按新策略重新保护列	case_LB142
+LB-143	cases/c10_extra.sh	绑定	边界	保护 TAG 列 / TIME 列（待需求确认）	case_LB143
+LB-144	cases/c10_extra.sh	绑定	边界	RENAME TABLE 后策略与列标签保持（语法不支持）	case_LB144
+LB-145	cases/c10_extra.sh	绑定	正向	DROP COLUMN 删除受保护列后该标签可被删除	case_LB145
+LB-146	cases/c10_extra.sh	绑定	边界	CREATE TABLE AS SELECT / LIKE 不继承策略（语法不支持）	case_LB146
+LB-147	cases/c10_extra.sh	查询	反向	聚合函数 COUNT/SUM/AVG 引用受保护列触发读检查	case_LB147
+LB-148	cases/c10_extra.sh	查询	反向	GROUP BY / HAVING / ORDER BY 引用受保护列触发读检查	case_LB148
+LB-149	cases/c10_extra.sh	查询	反向	WHERE 过滤条件引用受保护列触发读检查	case_LB149
+LB-150	cases/c10_extra.sh	查询	反向	SELECT 别名不能绕过受保护列读检查	case_LB150
+LB-151	cases/c10_extra.sh	查询	反向	JOIN 两张不同标签的表按 AND 语义判定	case_LB151
+LB-152	cases/c10_extra.sh	查询	反向	UNION / 子查询引用受保护列触发读检查	case_LB152
+LB-153	cases/c10_extra.sh	权限	反向	仅有 LBAC 凭证、无 RBAC 权限仍被拒（803）	case_LB153
+LB-154	cases/c10_extra.sh	权限	边界	同一策略 READ 与 WRITE 授予不同标签（待需求确认）	case_LB154
+LB-155	cases/c10_extra.sh	权限	正向	DROP USER 后 label 授权与豁免级联清理	case_LB155
+LB-156	cases/c10_extra.sh	授权	正向	GRANT EXEMPTION TO ROLE 生效且受 IGNORE 影响	case_LB156
+LB-157	cases/c10_extra.sh	权限	正向	三权分立：security_admin 授 label 给 sys_admin 后仍无数据权限	case_LB157
+LB-158	cases/c10_extra.sh	旁路	边界	EXPORT / SELECT INTO 导出受保护列是否受检（待需求确认）	case_LB158
+LB-159	cases/c10_extra.sh	旁路	边界	pipe / subscription 写入受保护列是否受检（待需求确认）	case_LB159
+LB-160	cases/c10_extra.sh	旁路	边界	LOAD / 批量导入受保护列是否受检（待需求确认）	case_LB160
