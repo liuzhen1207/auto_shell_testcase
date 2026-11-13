@@ -35,38 +35,15 @@
 
 ## 3. 发现
 
-### 3.1 【RC2 新观察】改视图名触发 `updateTable` NPE
+### 3.1 【已提交 TDB-1050】updateTable 提交与表 fetch 竞争，commit 以 null 写缓存抛 NPE
 
-**现象**（`DDLHA-N-005`、`DDLHA-D-005`）：
+**现象**：`DDLHA-N-005`、`DDLHA-D-005` 两轮中 DataNode 日志出现 `Internal error processing updateTable` + NPE（栈顶 `ConcurrentHashMap.put` → `innerCommitUpdateTable:497` → `commitUpdateTable:483`）。DDL 最终成功、元数据一致。
 
-```
-ERROR o.a.t.ProcessFunction:49 - Internal error processing updateTable
-java.lang.NullPointerException
-    at java.util.concurrent.ConcurrentHashMap.putVal(ConcurrentHashMap.java:1011)
-    at java.util.concurrent.ConcurrentHashMap.put(ConcurrentHashMap.java:1006)
-    at o.a.i.db.schemaengine.table.DataNodeTableCache.innerCommitUpdateTable(DataNodeTableCache.java:497)
-    at o.a.i.db.schemaengine.table.DataNodeTableCache.commitUpdateTable(DataNodeTableCache.java:483)
-    at o.a.i.db.protocol.thrift.impl.DataNodeInternalRPCServiceImpl.updateTable(DataNodeInternalRPCServiceImpl.java:3076)
-```
+**根因**（RC2 `83183d0`）：`preUpdateTable`（:232-247）把视图与源表放入 `specialStatusMap`；`updateTableByFetch`（:940）执行 `existingPair.setLeft(null)` 消费该条目；随后 `commitUpdateTable` 在 :456 取 `table2` 得到 null，而 :472 只判断了 `table1`，于是 :483 把 null 传入 `innerCommitUpdateTable`，:497 的 `ConcurrentHashMap.put` 抛 NPE。
 
-**代码分析**：`innerCommitUpdateTable` 直接执行
+**复现**：黑盒 15 次（干净环境）0 复现；插桩（模拟 :940 的消费动作）后 100% 复现，栈与方法链与生产一致。详见 [`proof/README.md`](proof/README.md)。
 
-```java
-databaseTableMap.computeIfAbsent(database, k -> new ConcurrentHashMap<>()).put(tableName, newTable);
-```
-
-而 `commitUpdateTable` 在 `table2` 为 null 时仍调用：
-
-```java
-innerCommitUpdateTable(unqualifiedDatabase1, tableName1, table1, null);
-innerCommitUpdateTable(unqualifiedDatabase2, tableName2, table2, null);   // table2 可能为 null
-```
-
-上游只做了 `table1 == null` 的保护（注释写明 "table2 could be null"），但没有阻止把 null 值 put 进 `ConcurrentHashMap` → NPE。
-
-**影响**：该次 `updateTable` RPC 失败，CN 侧重试后改名仍成功（`SHOW TABLES` 得到 `v2`，元数据 5 台一致），所以**功能面未受损**；但会失败一次 RPC 并打出 NPE，属实现缺陷，建议修（null 保护或跳过 put）。
-
-**是否 RC2 引入**：RC1 的同用例（N-005）日志未见该 NPE，RC2 上稳定在 N-005/D-005 出现；两版本间 `DataNodeTableCache` 有提交 `1bbb4ff6db`（+2 行），但不是该 null-put 路径本身。需要研发确认是 RC2 变化触发还是时序问题。
+**结论**：低概率竞态缺陷，已提交 PLM TDB-1050（P2），建议修复为 null 显式跳过或 :472 同时判断 `table2`。
 
 ### 3.2 【研发确认为预期行为】分区 DN 的元数据操作可能卡在联系 CN
 

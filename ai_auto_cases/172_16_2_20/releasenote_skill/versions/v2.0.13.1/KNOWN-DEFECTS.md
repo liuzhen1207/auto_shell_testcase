@@ -52,3 +52,7 @@
 ## TDB-939 在 RC2（83183d0）上的复现（2026-11-11）
 
 RC2 上重跑 `DEL-PRED-007`（V1 / IoTConsensus）仍复现：停机前快照 14 行、重启后 8 行，日志显示删除执行两次且无 mods 相关告警。结论：RC2 未修复，修复目标 V2.0.15.1。
+
+## TDB-1050（RC2）updateTable 提交与表 fetch 竞争，commit 以 null 写缓存抛 NPE
+
+低概率竞态：`updateTableByFetch:940` 在 commit 前消费源表 pre-update 条目 → `commitUpdateTable:483` 传 null → `:497` NPE。黑盒 15 次 0 复现，插桩 100% 复现。负责人以 PLM 为准。
