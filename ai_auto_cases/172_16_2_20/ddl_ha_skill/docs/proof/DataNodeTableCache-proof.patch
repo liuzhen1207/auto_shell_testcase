@@ -1,0 +1,50 @@
+﻿diff --git "a/D:\\IDEA\\timechodb_src\\v20131\\timechodb\\iotdb-core\\datanode\\src\\main\\java\\org\\apache\\iotdb\\db\\schemaengine\\table\\DataNodeTableCache.java" "b/D:\\IDEA\\deepseek\\cloud1_ip20\\rc10\\patch\\DataNodeTableCache.java"
+index 6c8927b0c9..526979a90a 100644
+--- "a/D:\\IDEA\\timechodb_src\\v20131\\timechodb\\iotdb-core\\datanode\\src\\main\\java\\org\\apache\\iotdb\\db\\schemaengine\\table\\DataNodeTableCache.java"
++++ "b/D:\\IDEA\\deepseek\\cloud1_ip20\\rc10\\patch\\DataNodeTableCache.java"
+@@ -309,6 +309,22 @@ public class DataNodeTableCache implements ITableCache {
+       final String database2,
+       final String tableName1,
+       final String tableName2) {
++    // [DDLHA-PROOF] 测试用开关：模拟 updateTableByFetch 在 commit 之前消费掉 table2 的
++    // specialStatusMap 条目（真实路径见 DataNodeTableCache:940 existingPair.setLeft(null)），
++    // 用于确定性地验证 :472 判空缺失会走到 :483/:497 的 NPE。
++    final String proveConsume = System.getProperty("iotdb.test.consumeTable2BeforeCommit");
++    if (proveConsume != null && proveConsume.equals(tableName2)) {
++      final String db2 = PathUtils.unQualifyDatabaseName(database2);
++      final java.util.Map<String, Pair<TsTable, Long>> m =
++          specialStatusMap.get(PathUtils.unQualifyDatabaseName(database2));
++      if (m != null) {
++        final Pair<TsTable, Long> p = m.get(tableName2);
++        if (p != null) {
++          p.setLeft(null);
++          LOGGER.info("[DDLHA-PROOF] consumed specialStatus entry for {}.{}", db2, tableName2);
++        }
++      }
++    }
+     readWriteLock.writeLock().lock();
+     try {
+       failIfMetadataLeaseFenced(LeaseFencedRetryPolicy.RETRY_UNTIL_SUCCESS);
+@@ -447,6 +463,22 @@ public class DataNodeTableCache implements ITableCache {
+       final String database2,
+       final String tableName1,
+       final String tableName2) {
++    // [DDLHA-PROOF] 测试用开关：模拟 updateTableByFetch 在 commit 之前消费掉 table2 的
++    // specialStatusMap 条目（真实路径见 DataNodeTableCache:940 existingPair.setLeft(null)），
++    // 用于确定性地验证 :472 判空缺失会走到 :483/:497 的 NPE。
++    final String proveConsume = System.getProperty("iotdb.test.consumeTable2BeforeCommit");
++    if (proveConsume != null && proveConsume.equals(tableName2)) {
++      final String db2 = PathUtils.unQualifyDatabaseName(database2);
++      final java.util.Map<String, Pair<TsTable, Long>> m =
++          specialStatusMap.get(PathUtils.unQualifyDatabaseName(database2));
++      if (m != null) {
++        final Pair<TsTable, Long> p = m.get(tableName2);
++        if (p != null) {
++          p.setLeft(null);
++          LOGGER.info("[DDLHA-PROOF] consumed specialStatus entry for {}.{}", db2, tableName2);
++        }
++      }
++    }
+     readWriteLock.writeLock().lock();
+     try {
+       failIfMetadataLeaseFenced(LeaseFencedRetryPolicy.RETRY_UNTIL_SUCCESS);
