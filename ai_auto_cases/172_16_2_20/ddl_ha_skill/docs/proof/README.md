@@ -72,3 +72,25 @@ java.lang.NullPointerException
 1. **修复**：`innerCommitUpdateTable` 对 `newTable == null` 显式跳过（打日志即可），或 `:472` 同时判断 `table2` 是否已被消费；
 2. **单测**：可复用本插桩思路——先消费 `specialStatusMap` 条目，再调用 `commitUpdateTable`，断言不抛 NPE；
 3. **优先级**：P2 或 P3 由研发定；功能结果不受影响（CN 重试后改名成功），但每次触发都会失败一次 RPC。
+
+## 七、补充：为什么会走到 4 参 commitUpdateTable（回应研发疑问）
+
+1. **入口与 cascade 无关**：`DataNodeInternalRPCServiceImpl` 的 `COMMIT_UPDATE_TABLE` 分支（:3060-3076）按 `req.isSetOriginalInfo()` 分流，带 `originalInfo`（改名形态）→ 4 参 `commitUpdateTable(...)`；不带 → `commitUpdateTableWithView(...)`。`DataNodeTableCache` 里该方法上的注释 "only for the writable view procedure and schema cascade" **已过时**。
+2. **cascade 默认 true**：RC2 实测，创建可写视图不写 `WITH` 时 `SHOW CREATE TABLE` 返回 `WITH (ttl='INF', schema_cascade=true)`；显式写 `WITH (schema_cascade=false)` 才为 false。
+3. **源表因此被一起提交**：`isSchemaCascade()==true` 时 `CreateWritableViewProcedure`（:196/:207）调用 `initOriginalTableForCascade(source)`，把源表纳入同一批 pre-update / commit，于是 commit 里 `tableName2 = t`（源表），NPE 落在这一路。
+4. **若视图为 `schema_cascade=false`**，源表不会进 commit，就绕开该路径——这可能是"不复现"的原因之一。复现前请先 `SHOW CREATE TABLE <视图>` 确认。
+
+复现用的完整 SQL（与用例 `DDLHA-N-005` 一致，创建视图未写 WITH）：
+
+```sql
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE proof_npe;
+CREATE TABLE proof_npe.t (region STRING TAG, dev STRING TAG, s1 INT64 FIELD);
+INSERT INTO proof_npe.t(time,region,dev,s1) VALUES (1,'r1','dev01',10);
+INSERT INTO proof_npe.t(time,region,dev,s1) VALUES (2,'r1','dev01',20);
+INSERT INTO proof_npe.t(time,region,dev,s1) VALUES (3,'r1','dev02',30);
+INSERT INTO proof_npe.t(time,region,dev,s1) VALUES (4,'r1','dev03',40);
+CREATE WRITABLE VIEW proof_npe.v AS SELECT s1 AS temp FROM proof_npe.t;
+SHOW CREATE TABLE proof_npe.v;   -- WITH (ttl='INF', schema_cascade=true)
+ALTER VIEW proof_npe.v RENAME TO v2;
+```
