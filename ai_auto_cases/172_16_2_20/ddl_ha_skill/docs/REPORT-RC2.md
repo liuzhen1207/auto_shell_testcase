@@ -35,15 +35,23 @@
 
 ## 3. 发现
 
-### 3.1 【已提交 TDB-1050】updateTable 提交与表 fetch 竞争，commit 以 null 写缓存抛 NPE
+### 3.1 【已提交 TDB-1050】创建可写视图（cascade=true）提交阶段与源表 fetch 竞争，commit 以 null 写缓存抛 NPE
 
-**现象**：`DDLHA-N-005`、`DDLHA-D-005` 两轮中 DataNode 日志出现 `Internal error processing updateTable` + NPE（栈顶 `ConcurrentHashMap.put` → `innerCommitUpdateTable:497` → `commitUpdateTable:483`）。DDL 最终成功、元数据一致。
+**现象**：`DDLHA-N-005` 轮 DataNode 日志出现 `Internal error processing updateTable` + NPE（栈顶 `ConcurrentHashMap.put` → `innerCommitUpdateTable:497` → `commitUpdateTable:483`）。DDL 最终成功、元数据一致。
 
-**根因**（RC2 `83183d0`）：`preUpdateTable`（:232-247）把视图与源表放入 `specialStatusMap`；`updateTableByFetch`（:940）执行 `existingPair.setLeft(null)` 消费该条目；随后 `commitUpdateTable` 在 :456 取 `table2` 得到 null，而 :472 只判断了 `table1`，于是 :483 把 null 传入 `innerCommitUpdateTable`，:497 的 `ConcurrentHashMap.put` 抛 NPE。
+**触发点（日志已确认）**：发生在 `CREATE WRITABLE VIEW`（schema_cascade 默认 true）的成对提交阶段，不是后续的改名：
 
-**复现**：黑盒 15 次（干净环境）0 复现；插桩（模拟 :940 的消费动作）后 100% 复现，栈与方法链与生产一致。详见 [`proof/README.md`](proof/README.md)。
+```
+22,321 Pre-update ...v     22,322 Pre-update ...t     22,485 Update ...t by table fetch
+22,556 Commit ...v OK      22,557 NPE（第二半，源表 t 为 null）
+25,925 Pre-update ...v2    25,944 Commit ...v2 OK     ← 改名，单表提交，无 NPE
+```
 
-**结论**：低概率竞态缺陷，已提交 PLM TDB-1050（P2），建议修复为 null 显式跳过或 :472 同时判断 `table2`。
+**根因**：`CreateWritableViewProcedure`（:196/:207）在 cascade=true 时把源表写入 `originalTable` → commit 请求带 `originalInfo` → DataNode 走 4 参 `commitUpdateTable`；而 `updateTableByFetch`（:940）可能已先消费源表在 `specialStatusMap` 的条目 → `:456` 取到 null → `:472` 只判 `table1` → `:483` 传 null → `:497` NPE。改名因 `RenameWritableViewProcedure.getSourceResolutionOverride()=false` 不走该路径。
+
+**复现**：黑盒 15 次 0 复现；插桩（模拟 :940 消费）后 100% 复现。详见 [`proof/README.md`](proof/README.md)。
+
+**结论**：低概率竞态缺陷，PLM TDB-1050（P2）。
 
 ### 3.2 【研发确认为预期行为】分区 DN 的元数据操作可能卡在联系 CN
 

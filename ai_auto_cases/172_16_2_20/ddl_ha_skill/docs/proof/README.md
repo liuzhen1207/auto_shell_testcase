@@ -1,5 +1,7 @@
 # TDB-1050 确定性复现证明（插桩构建）
 
+> **触发点修正（2026-11-13）**：NPE 发生在**创建可写视图（schema_cascade=true）的提交阶段**，不是改名。改名由 `RenameWritableViewProcedure` 处理，其 `getSourceResolutionOverride()` 返回 false，不会设置 originalInfo，因此走 3 参 `commitUpdateTableWithView`，不经过本文讨论的 4 参路径。
+
 > 目的：证明 `updateTable` NPE 的机制是"**commit 之前 source table 的 specialStatus 条目被 fetch 路径消费**"，而不是"改视图名必现"。
 > 结论：**100% 稳定复现**，栈与生产一致。
 
