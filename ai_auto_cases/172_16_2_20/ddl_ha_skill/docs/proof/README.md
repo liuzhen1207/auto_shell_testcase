@@ -96,3 +96,24 @@ CREATE WRITABLE VIEW proof_npe.v AS SELECT s1 AS temp FROM proof_npe.t;
 SHOW CREATE TABLE proof_npe.v;   -- WITH (ttl='INF', schema_cascade=true)
 ALTER VIEW proof_npe.v RENAME TO v2;
 ```
+
+## 八、触发面梳理（getSourceResolutionOverride 的全部实现）
+
+| 类 | 返回值 | 解析源表 | 可能触发 NPE |
+| --- | --- | --- | --- |
+| `AbstractAlterOrDropTableProcedure`（基类） | `null` | 取 `isSchemaCascade()` | cascade=true 时可能 |
+| `RenameWritableViewProcedure` | `false` | 永不 | **不会** |
+| `RenameWritableViewColumnProcedure` | `false` | 永不 | **不会** |
+| `SetWritableViewPropertiesProcedure` | `shouldRunSourceProcedure` | 动态 | 改 cascade 属性时可能 |
+| `CreateWritableViewProcedure` | 未覆写（null） | cascade=true 时 | **已实测** |
+| `AddWritableViewColumnProcedure` | 未覆写（null） | cascade=true 时 | 可能（未实测） |
+
+判定链（`WritableViewUtils.getSourceDatabaseAndTable:102-103`）：
+
+```java
+shouldResolveSource = (override == TRUE)
+    || (override == null && ((WritableView) table).isSchemaCascade());
+if (!shouldResolveSource) return null;   // 不设 originalTable -> 提交无 originalInfo -> 3 参路径
+```
+
+结论：改名（视图名/视图列名）与本 NPE 无关；凡"不覆写 + cascade=true"的 procedure 都可能命中，修复应在 DataNode 侧统一兜底。
