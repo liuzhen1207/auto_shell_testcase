@@ -1,0 +1,11 @@
+# sec_skill 用例矩阵（tab 分隔；# 与空行忽略）
+# id	script	dialect	group	need_restart	params	notes
+SEC-01	cases/password/sec_password_length.sh	tree	password	no	-	密码长度 12~32 边界（11/12/32/33、空）；关闭强密码时长度仍生效（需求 a）
+SEC-02	cases/password/sec_password_complexity.sh	tree	password	no	-	复杂度四要素（缺大写/小写/数字/特殊字符逐项点名）+ 空格/中文/非法字符/13 个合法特殊字符（需求 b/c/d）
+SEC-03	cases/password/sec_password_username.sh	tree	password	no	-	密码不得等于用户名（820 文案）；同密码换用户名放行；ALTER 走同一套校验（需求 e）
+SEC-04	cases/password/sec_enforce_switch.sh	tree	password	no	-	enforce_strong_password 开关语义：b~e 可关、a 不可关、不追溯老密码、热加载（需求 a + 配置语义）
+SEC-05	cases/password/sec_password_reuse.sh	tree	password	no	-	历史口令重用：默认 0、reuse=1 窗口内拒绝+文案、多条历史、回 0 即时生效（需求 g 负向）
+SEC-06	cases/password/sec_password_expire.sh	tree	password	yes	时钟前移 +3 天	有效期：过期拒绝登录+文案、已登录会话、改密恢复、窗口外可重用、3 天提示、int64 越界不提示（需求 f + g 正向）
+SEC-07	cases/config/sec_config_privilege.sh	tree	config	no	-	三个配置项默认值/热加载/SECURITY 权限；三权分立职责边界（root 803、sys_admin 越界被拒）；普通用户被拒
+SEC-08	cases/audit/sec_audit_logs.sh	tree	audit	no	-	审计与日志：关键操作留痕、错误信息不泄露密码、日志无明文密码、CN/DN 日志门禁
+SEC-09	cases/replica/sec_replica_consistency.sh	tree	replica	yes	逐停 1 DN	SR3/DR3：三 DN 策略一致、三 DN 校验一致、元数据指纹一致、停 DN 期间策略不降级
