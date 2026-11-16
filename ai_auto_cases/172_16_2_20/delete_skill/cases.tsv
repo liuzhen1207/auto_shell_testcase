@@ -90,3 +90,10 @@ DEL-DEV-002	table	BOTH	devices	删除后紧跟 FLUSH（TDB-939 触发形态）	F
 DEL-DEV-003	table	BOTH	devices	删除后重建同名设备	旧数据不得复活；仅新写入的 1 行可见
 DEL-DEV-004	table	BOTH	devices	多设备谓词删除（dev01 OR dev02）	仅 dev03 保留；计数正确
 DEL-DEV-005	table	BOTH	devices	负向：删除不存在的设备	删除 0 个设备；原有数据不受影响
+DEL-DEV-006	table	BOTH	devices	DELETE DEVICES 全表（无 WHERE）	所有设备删除、表仍存在；重建同名设备可用
+DEL-DEV-007	table	BOTH	devices	负向：DELETE DEVICES 带时间条件（文档不支持）	报错且数据不变
+DEL-DEV-008	table	BOTH	devices	负向：DELETE DEVICES 表不存在	报错（表必须存在）
+DEL-DEV-009	table	BOTH	devices	DELETE DEVICES 多条件 AND（region AND dev）	仅命中设备被删，其余保留
+DEL-NEG-004	table	BOTH	negative	负向：DELETE FROM 带 measurement 条件（文档不支持）	报错且数据不变
+DEL-NEG-005	table	BOTH	negative	负向：标识条件非 = 运算符（文档仅支持 =）	报错且数据不变
+DEL-TIME-010	table	BOTH	time	多时间段 OR 删除（time<=a OR time>b）	仅两段内数据被删，区间外保留

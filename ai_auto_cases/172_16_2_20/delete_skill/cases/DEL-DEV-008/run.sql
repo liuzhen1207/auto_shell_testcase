@@ -1,0 +1,6 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_dev008;
+CREATE TABLE del_dev008.t (dev STRING TAG, sensor STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_dev008.t(time,dev,sensor,region,v) VALUES (1796510000000,'dev01','s1','r1',10);
+FLUSH;
+SELECT count(*) FROM del_dev008.t;

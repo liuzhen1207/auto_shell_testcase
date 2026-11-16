@@ -1,0 +1,11 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_time010;
+CREATE TABLE del_time010.t (dev STRING TAG, sensor STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_time010.t(time,dev,sensor,region,v) VALUES (1796500000000,'dev01','s1','r1',10);
+INSERT INTO del_time010.t(time,dev,sensor,region,v) VALUES (1796500000100,'dev01','s1','r1',11);
+INSERT INTO del_time010.t(time,dev,sensor,region,v) VALUES (1796500000200,'dev01','s1','r1',12);
+INSERT INTO del_time010.t(time,dev,sensor,region,v) VALUES (1796500000300,'dev01','s1','r1',13);
+INSERT INTO del_time010.t(time,dev,sensor,region,v) VALUES (1796500000500,'dev01','s1','r1',15);
+FLUSH;
+DELETE FROM del_time010.t WHERE time <= 1796500000200 OR time > 1796500000300;
+SELECT time, v FROM del_time010.t ORDER BY time;
