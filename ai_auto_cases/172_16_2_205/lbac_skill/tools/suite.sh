@@ -40,6 +40,39 @@ for ip in $DN_LIST; do
   LOGSTART["DN$ip"]=$(ssh -n -o StrictHostKeyChecking=no root@$ip "wc -l < $DN_DIR/logs/log_datanode_all.log" 2>/dev/null)
 done
 
+# ---------- 每个用例的 CN/DN 日志窗口扫描 ----------
+declare -A LOGPOS=()
+NOISE_RE='Ratis|GrpcLogAppender|HEARTBEAT|UPDATE_REGION_ROUTE_MAP|RouteBalancer|ScheduledExecutorUtil|openSession|Fail to start server|already exist|AppendEntries|appendEntries|INCONSISTENCY|Follower failed|leader|borrow|Pipe|Template .* does not exist|ConsensusPipe|Cannot find IOTDB_HOME|Couldn.t load the configuration|License has not been set|password expiration'
+
+init_logpos() {
+  local ip
+  for ip in $CN_LIST; do LOGPOS["CN$ip"]=${LOGSTART["CN$ip"]:-0}; done
+  for ip in $DN_LIST; do LOGPOS["DN$ip"]=${LOGSTART["DN$ip"]:-0}; done
+}
+
+scan_case_logs() {  # $1=用例 id；输出 "err=N warn=N unexp=N"
+  local id=$1 f="$RESULTS/$1.logwin.txt" ip role dir prev resp total lines unexp=0 err=0 warn=0
+  : > "$f"
+  for ip in $CN_LIST $DN_LIST; do
+    case "$ip" in
+      172.16.2.26|172.16.2.27|172.16.2.28) role=CN; dir=$CN_DIR ;;
+      *) role=DN; dir=$DN_DIR ;;
+    esac
+    prev=${LOGPOS["$role$ip"]:-0}
+    resp=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((prev + 1)) $dir/logs/log_$(echo $role | tr 'A-Z' 'a-z')_all.log 2>/dev/null | grep -E ' (ERROR|WARN) '; echo __TOTAL__\$(wc -l < $dir/logs/log_$(echo $role | tr 'A-Z' 'a-z')_all.log 2>/dev/null)" 2>/dev/null)
+    total=$(echo "$resp" | sed -n 's/^__TOTAL__//p' | tail -1)
+    lines=$(echo "$resp" | grep -v '^__TOTAL__')
+    if [ -n "$lines" ]; then
+      echo "$lines" | sed "s/^/[$role $ip] /" >> "$f"
+      err=$((err + $(echo "$lines" | grep -c ' ERROR ')))
+      warn=$((warn + $(echo "$lines" | grep -c ' WARN ')))
+      unexp=$((unexp + $(echo "$lines" | grep -vEi "$NOISE_RE" | grep -c .)))
+    fi
+    if [ -n "$total" ]; then LOGPOS["$role$ip"]=$total; fi
+  done
+  echo "err=$err warn=$warn unexp=$unexp"
+}
+
 run_one() {
   local id=$1 feature=$2 type=$3 desc=$4 fn=$5
   local t0 t1 dur out verdict detail
@@ -48,7 +81,10 @@ run_one() {
   out="$RESULTS/$id.out"
   { echo "===== $id | $desc"; "$fn"; } > "$out" 2>&1
   t1=$(date +%s); dur=$((t1 - t0))
+  local logstat=""
+  logstat=$(scan_case_logs "$id" 2>/dev/null || true)
   detail=$(grep -E '^\s+\[FAIL\]' "$out" | head -3 | tr '\n' ' ' | cut -c1-300)
+  case "$logstat" in *"unexp=0"*) ;; *) [ -n "$logstat" ] && detail="$detail LOG{$logstat}" ;; esac
   if grep -qE '^\s+\[FAIL\]' "$out"; then
     if [ -n "${KNOWN_MAP[$id]:-}" ]; then verdict=KNOWN; else verdict=FAIL; fi
   else
@@ -59,6 +95,7 @@ run_one() {
   grep -E '^\s+\[FAIL\]' "$out" | head -3 | sed 's/^/        /'
 }
 
+init_logpos
 for c in "${CASES[@]}"; do
   IFS='|' read -r id feature type desc fn <<< "$c"
   if [ -n "$FILTER" ]; then

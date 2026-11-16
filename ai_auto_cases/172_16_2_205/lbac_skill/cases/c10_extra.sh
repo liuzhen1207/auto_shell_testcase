@@ -28,7 +28,7 @@ CASES+=(
 SKIP_OF["LB-143"]="待需求确认：TAG / TIME 列是否允许 SECURED WITH（需求未写，暂不判定）"
 SKIP_OF["LB-144"]="表模型不支持 RENAME TABLE（RENAME 语法报 700），无法验证"
 SKIP_OF["LB-146"]="表模型不支持 CREATE TABLE ... AS SELECT / LIKE（语法报 700），无继承路径"
-SKIP_OF["LB-154"]="待需求确认：同一策略下 READ 与 WRITE 能否授予不同标签"
+SKIP_OF["LB-154"]="由 LB-177 覆盖：同一主体 READ=高标签、WRITE=低标签的读写组合"
 SKIP_OF["LB-158"]="待需求确认：导出链路（EXPORT / SELECT INTO）是否在 LBAC 检查范围"
 SKIP_OF["LB-159"]="待需求确认：pipe / subscription 写入是否在 LBAC 检查范围"
 SKIP_OF["LB-160"]="待需求确认：LOAD / 批量导入是否在 LBAC 检查范围"

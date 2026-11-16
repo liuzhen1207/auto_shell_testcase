@@ -159,3 +159,23 @@ LB-157	cases/c10_extra.sh	权限	正向	三权分立：security_admin 授 label 
 LB-158	cases/c10_extra.sh	旁路	边界	EXPORT / SELECT INTO 导出受保护列是否受检（待需求确认）	case_LB158	跳过	待需求确认：导出链路（EXPORT / SELECT INTO）是否在 LBAC 检查范围	SKIP	SKIP	SKIP	SKIP
 LB-159	cases/c10_extra.sh	旁路	边界	pipe / subscription 写入受保护列是否受检（待需求确认）	case_LB159	跳过	待需求确认：pipe / subscription 写入是否在 LBAC 检查范围	SKIP	SKIP	SKIP	SKIP
 LB-160	cases/c10_extra.sh	旁路	边界	LOAD / 批量导入受保护列是否受检（待需求确认）	case_LB160	跳过	待需求确认：LOAD / 批量导入是否在 LBAC 检查范围	SKIP	SKIP	SKIP	SKIP
+LB-161	cases/c11_selftest_ext.sh	组件	边界	单元素组件可用；200 元素 ARRAY 的 ordinal 连续	case_LB161	未运行		-	-	-	-
+LB-162	cases/c11_selftest_ext.sh	组件	异常	零元素/缺类型参数的组件创建被拒	case_LB162	未运行		-	-	-	-
+LB-163	cases/c11_selftest_ext.sh	组件	异常	非法类型 LIST、TREE 无 ROOT、UNDER 不存在父被拒	case_LB163	未运行		-	-	-	-
+LB-164	cases/c11_selftest_ext.sh	组件	边界	ARRAY 省略位置子句默认追加；SET 拒绝位置子句	case_LB164	未运行		-	-	-	-
+LB-165	cases/c11_selftest_ext.sh	组件	边界	TREE OVER 重挂接成功、跨父/重复 OVER 被拒	case_LB165	未运行		-	-	-	-
+LB-166	cases/c11_selftest_ext.sh	组件	异常	TREE 多个 ROOT 创建被拒、ADD ROOT 提升新根	case_LB166	未运行		-	-	-	-
+LB-167	cases/c11_selftest_ext.sh	组件	正向	新增元素后比较语义按新顺序生效	case_LB167	未运行		-	-	-	-
+LB-168	cases/c11_selftest_ext.sh	组件	异常	组件类型不可变更（ALTER ... SET）	case_LB168	未运行		-	-	-	-
+LB-169	cases/c11_selftest_ext.sh	策略	异常	策略重复引用同一组件被拒	case_LB169	未运行		-	-	-	-
+LB-170	cases/c11_selftest_ext.sh	策略	异常	空组件列表/省略 COMPONENTS 被拒	case_LB170	未运行		-	-	-	-
+LB-171	cases/c11_selftest_ext.sh	策略	异常	非法规则集名称被拒（OTHER_RULES/拼写错误）	case_LB171	未运行		-	-	-	-
+LB-172	cases/c11_selftest_ext.sh	标签	异常	SET 拒绝 packed string 形式的多值	case_LB172	未运行		-	-	-	-
+LB-173	cases/c11_selftest_ext.sh	标签	异常	ARRAY 拒绝多值及 packed string	case_LB173	未运行		-	-	-	-
+LB-174	cases/c11_selftest_ext.sh	标签	异常	标签重复指定同一组件被拒	case_LB174	未运行		-	-	-	-
+LB-175	cases/c11_selftest_ext.sh	标签	异常	标签名必须带策略前缀（裸名 COMMENT/DROP 失败）	case_LB175	未运行		-	-	-	-
+LB-176	cases/c11_selftest_ext.sh	标签	异常	ALTER LABEL 修改标签值不被支持	case_LB176	未运行		-	-	-	-
+LB-177	cases/c11_selftest_ext.sh	比较	正向	同一主体 READ=高标签、WRITE=低标签：读放行/写本级放行/写上级拒绝	case_LB177	未运行		-	-	-	-
+LB-178	cases/c11_selftest_ext.sh	豁免	正向	仅授 READARRAY 豁免：ARRAY 维度放行、SET 维度仍拒	case_LB178	未运行		-	-	-	-
+LB-179	cases/c11_selftest_ext.sh	豁免	边界	ALL 豁免展开后撤销单规则，剩余规则仍生效	case_LB179	未运行		-	-	-	-
+LB-180	cases/c11_selftest_ext.sh	豁免	正向	角色 READTREE 豁免受 IGNORE/USE 控制	case_LB180	未运行		-	-	-	-
