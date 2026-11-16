@@ -100,3 +100,42 @@ cd diskusage_skill && bash tools/run_all.sh --set all
 `CR-03`（load 表模型无值列文件被误判 tree-model、0 点仍返回成功，已登记 **TDB-873**）、
 `CO-06`（V2 pipe 子任务 NPE，**TDB-836**）、`DT-09`（停机窗口内改类型 CN procedure 越界，**TDB-837**）、
 `W-21`（非法 WAL 参数静默保留，架构问题、暂不提单）。
+
+## 六、模块清单（2026-11-16 更新：新增 treeview_skill）
+
+| 模块目录 | 内容 | 用例数 |
+| --- | --- | --- |
+| `compaction_skill/` | 合并（compaction）专项：内部/跨空间/插入式合并、参数门控、恢复、官方 CO-35~CO-43 | 52 |
+| `crud_skill/` | 存储 CRUD / LOAD / LastCache / 对象类型 / 时间精度 | 15 |
+| `diskusage_skill/` | `show disk_usage` 统计正确性 + TDB-629 门禁 + 权限 | 5 |
+| `metadata_skill/` | 元数据 DDL / 视图 / 模板 / UDF&Trigger / **权限矩阵（MD-C02/MD-C03）** | 14 |
+| `ttl_skill/` | TTL 过期清理、参数语义、TDB-444/TDB-452/TDB-610/TDB-611 门禁 | 15 |
+| `wal_skill/` | WAL 写前日志：模式矩阵、落盘/参数、压缩、指标 | 27 |
+| **`treeview_skill/`（新增）** | **树转表视图**：建/改/删/查、权限、对齐、自动补列、真实数据、日志门禁、**多客户端接口（JDBC/Python/Go）** | **18** |
+
+合计 **146 条**用例。
+
+### 6.1 全量清单与覆盖率工具（新增）
+
+| 文件 | 说明 |
+| --- | --- |
+| `manifest/SKILL_CASES_MANIFEST.md` | 146 条用例主清单（编号/文件/方言/分组/需重启/目标构建结果） |
+| `manifest/skill_cases_manifest.tsv` | 机器可读版 |
+| `tools/gen_case_manifest.sh --build <sha>` | 重新生成清单（扫各 skill 的 `cases.tsv` + `results/test_result.csv`） |
+| `tools/check_case_coverage.sh <sha>` | 按构建实时对账；有未跑用例 **退出码 2**，全覆盖退出码 0 |
+
+**回归约定**：跑前、出报告前各执行一次 `check_case_coverage.sh <版本构建号>`，退出码非 0 不允许写"全量通过"。
+
+> 注意"集合陷阱"：`compaction_skill/tools/run_all.sh --set all` 走的是**冻结回归清单**，
+> 新增的 `CO-35~CO-43` 属 `--set official`，不在 `all` 里；以本清单 + checker 为准，不要只看 `--set all`。
+
+### 6.2 treeview_skill 在 2.0.13.1 RC2（83183d0）的结果
+
+18 条：**16 PASS / 2 FAIL**，两条 FAIL 均非产品问题：
+
+| 用例 | 结论 |
+| --- | --- |
+| `tv_log_noise`（TV-LOG-01 门禁） | 预期门禁：DN 仍对 614/552 类预期内错误打 WARN + 整栈，研发确认随后续 commit 修 |
+| `tv_realdata` | 已知限制：依赖 425MB 真实 TsFile 数据集，`load` 异步且各用例 prologue 会清 data；数据就绪时 **PASS 496s（视图 650 行）** |
+
+多客户端接口 `tv_client_iface`：**JDBC / Python / Go 三接口全覆盖 PASS**（视图自动补列 `jspm`/`pym`/`gom`，count=1，sum=11/22/33）。
