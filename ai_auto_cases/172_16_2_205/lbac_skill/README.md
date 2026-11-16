@@ -153,3 +153,50 @@ bash tools/suite_sep.sh            # 生成映射 + 运行全量
 
 逐条判决与 IoTConsensus 完全一致。V2 下日志量约为 IoTConsensus 的 2 倍（`[ConsensusPipeGuard]`、`PIPE_PUSH_*`、`PIPE_HEARTBEAT` 等协议内部管道噪音），无 LBAC 相关 ERROR/WARN。
 详见 `docs/results_20261114_v2/`。
+
+## 十、用例总账与回归前自检（防遗漏）
+
+维护两个「单一事实来源」：
+
+| 文件 | 作用 | 生成方式 |
+| --- | --- | --- |
+| `cases.tsv` | 用例清单（ID/文件/模块/类型/描述/函数），**执行时以它为准** | 手工维护，新增用例必须同步 |
+| `docs/CASE_REGISTRY.md` | 人读的用例总账：按模块分组，含状态与四轮判决 | `python3 tools/gen_registry.py` |
+| `registry.tsv` | 机器读的总账，用于比对与统计 | 同上 |
+
+### 每次回归的标准流程
+
+```bash
+cd /data2/auto_test/lbac_skill
+
+# 1) 自检：cases.tsv / cases/*.sh / registry.tsv 三者对齐（纯 bash，服务器可跑）
+bash tools/preflight.sh          # 返回 0 才继续
+
+# 2) 全量回归（160 条；不带参数即全量，避免漏跑）
+SEP=0 RESULT_BASE=/data2/auto_test/lbac_results_normal_$(date +%Y%m%d_%H%M%S) \
+  nohup setsid bash tools/suite.sh > /tmp/lbac_normal.log 2>&1 &
+
+# 3) 三权分立
+bash tools/mode_sep.sh on
+SEP=1 RESULT_BASE=/data2/auto_test/lbac_results_sep_$(date +%Y%m%d_%H%M%S) \
+  nohup setsid bash tools/suite.sh > /tmp/lbac_sep.log 2>&1 &
+```
+
+新增/删改用例后的动作（缺一不可）：
+
+1. 在 `cases/cX_*.sh` 的 `CASES+=(...)` 里加声明 + 实现 `case_LBxxx()`；
+2. 在 `cases.tsv` 补一行（ID 连续，不能跳号）；
+3. 本地跑 `python3 tools/gen_registry.py` 重新生成总账；
+4. 提交前跑 `bash tools/preflight.sh`（或 `python3 tools/check_cases.py`）确认为 0。
+
+### 当前总账基线（2026-11-14）
+
+| 项 | 数量 |
+| --- | ---: |
+| 用例总数 | **160** |
+| 常规执行 | 150 |
+| 条件执行（仅三权分立 LB-157） | 1 |
+| 跳过（不适用/待确认） | 9 |
+
+跳过 9 条：LB-109/122（可写视图不适用）、LB-143/154/158/159/160（待需求确认）、LB-144/146（语法不支持）。
+`preflight.sh` 会校验 ID 连续性，因此**新增用例只能追加在末尾**；如需插入中间 ID，必须整体重排并重新生成总账。

@@ -273,7 +273,9 @@ cluster_clean(){
   else
     local h
     for h in $(printf '%s\n' "${CN[@]}" "${DN[@]}" | sort -u); do
-      sshx "$h" "rm -rf $DB_DIR/data $DB_DIR/logs; if [ -d $DB_DIR/conf_orig ]; then rm -rf $DB_DIR/conf; cp -rp $DB_DIR/conf_orig $DB_DIR/conf; fi" || warn "清理 $h 失败"
+      # 受管键复位：conf_orig 可能被历史用例写入非默认值（如 enable_*_space_compaction=false 会让 TTL 永不清理），
+      # 还原 conf 后把这些键删掉（删除即走安装包默认值）；用例需要非默认值时由自己的 cluster_write_conf 写入。
+      sshx "$h" "rm -rf $DB_DIR/data $DB_DIR/logs; if [ -d $DB_DIR/conf_orig ]; then rm -rf $DB_DIR/conf; cp -rp $DB_DIR/conf_orig $DB_DIR/conf; fi; F=$DB_DIR/conf/iotdb-system.properties; [ -f \$F ] && sed -i -E '/^(enable_seq_space_compaction|enable_unseq_space_compaction|enable_cross_space_compaction|max_expired_time|expired_data_ratio|ttl_check_interval|wal_mode|enable_wal_compression|inner_compaction_candidate_file_num|compaction_schedule_interval_in_ms)=/d' \$F" || warn "清理 $h 失败"
     done
   fi
 }

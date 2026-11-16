@@ -14,9 +14,20 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 V="${V_TESTDB:?build_gen.sh 需要 V_TESTDB}"
-JAR="${GEN_JAR:-/data/iotdb/testdb/$V/lib/timechodb-server-2.0.12.1.jar}"
-[ -f "$JAR" ] || JAR="/data/iotdb/$V/lib/timechodb-server-2.0.12.1.jar"
-[ -f "$JAR" ] || { echo "[build_gen] 找不到服务端 jar（试过 $JAR）" >&2; exit 1; }
+# 服务端 jar 名与版本相关（2.0.12.1 / 2.0.13.1 …），这里按版本目录 glob，不再硬编码版本号
+JAR="${GEN_JAR:-}"
+if [ -z "$JAR" ]; then
+  for d in "/data/iotdb/testdb/$V/lib" "/data/iotdb/$V/lib"; do
+    [ -d "$d" ] || continue
+    j=$(ls "$d"/timechodb-server-*.jar 2>/dev/null | head -1)
+    [ -n "$j" ] && { JAR="$j"; break; }
+  done
+fi
+if [ -z "${JAR:-}" ] || [ ! -f "$JAR" ]; then
+  echo "[build_gen] 找不到服务端 jar（在 /data/iotdb/testdb/$V/lib 与 /data/iotdb/$V/lib 下都没匹配到 timechodb-server-*.jar）" >&2
+  exit 1
+fi
+echo "[build_gen] 使用 jar: $JAR" >&2
 BUILD="$HERE/build"
 mkdir -p "$BUILD"
 

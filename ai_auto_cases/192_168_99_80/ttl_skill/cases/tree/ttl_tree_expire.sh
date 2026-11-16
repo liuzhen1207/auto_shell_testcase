@@ -71,19 +71,33 @@ ck=$(scalar "$(sq "select count(*) from $DBK.keep;")")
 assert_scalar "未设 TTL 库数据仍在" "$ck" "1"
 
 log "--- 5) 物理清理：等 TTL 检查 + Settle 删除全过期 TsFile ---"
+# 断言加强（2026-11-13 三次修正，以实测为准）：
+#   · 环境前提守卫：enable_seq/unseq_space_compaction 都 false 时 settle 任务根本不会提交，
+#     此时"未清理"属配置问题，直接判 FAIL 并指明原因（这是 11-13 排查中踩过的坑）。
+#   · 清理证据用**绝对计数**（同一用例前面阶段可能已经启动过 settle 任务，用增量会漏判）：
+#       `SettleCompaction task starts with N fully_dirty files` ≥1  且  `Totally select N all-outdated`（N>0）行数 ≥1
+#   · 不再统计 `Settle task deletes fully_dirty tsfile`（2.0.13 不打印该行，恒 0）；
+#     TsFile 总数仅作信息输出（flush/合并会新增文件，不适合硬判）。
+comp_flags=$(sshx "${DN[0]}" "grep -E '^enable_(seq|unseq)_space_compaction=' $DB_DIR/conf/iotdb-system.properties 2>/dev/null" | tr '\n' ' ')
+log "  compaction 开关（conf 显式值）：${comp_flags:-（未显式配置 ⇒ 走安装包默认 true）}"
+# 键缺失 = 默认 true，只有"两个都显式 false"才是不满足前提
+seq_v=$(printf '%s' "$comp_flags" | grep -o 'enable_seq_space_compaction=[a-z]*' | cut -d= -f2)
+unseq_v=$(printf '%s' "$comp_flags" | grep -o 'enable_unseq_space_compaction=[a-z]*' | cut -d= -f2)
+[ "${seq_v:-true}" != "true" ] && [ "${unseq_v:-true}" != "true" ] && \
+  fail "环境前提不满足：enable_seq_space_compaction / enable_unseq_space_compaction 均显式 false（settle 任务不会提交，TTL 不会物理清理）：$comp_flags"
 deadline=$(( $(date +%s) + CLEANUP_WAIT_SEC )); cleaned=0
 while (( $(date +%s) < deadline )); do
-  cur_settle=$(sum_over settle_line_cnt); cur_ttl=$(sum_over ttl_log_line_cnt); cur_sel=$(sum_over ttl_selected_positive_cnt); cur=$(tsfile_counts_all "$DB")
-  log "  等清理: ttlCheckLines=$cur_ttl(+$((cur_ttl-base_ttl))) selectedAllOutdated=$cur_sel(+$((cur_sel-base_sel))) settleDeleted=$cur_settle(+$((cur_settle-base_settle))) tsFiles=$cur"
-  if [ "$cur_settle" -gt "$base_settle" ] || [ "$cur_sel" -gt "$base_sel" ] || [ "$cur" != "$after_files" ]; then cleaned=1; break; fi
+  cur_fd=$(sum_over_db settle_fully_dirty_cnt "$DB"); cur_sel=$(sum_over ttl_selected_positive_cnt)
+  cur_ttl=$(sum_over ttl_log_line_cnt); cur=$(tsfile_counts_all "$DB")
+  log "  等清理: ttlCheckLines=$cur_ttl FULLY_DIRTY settle 任务=$cur_fd 选中过期文件行=$cur_sel tsFiles=$cur"
+  if [ "$cur_fd" -ge 1 ] && [ "$cur_sel" -ge 1 ]; then cleaned=1; break; fi
   sleep 5
 done
 if [ "$cleaned" = "1" ]; then
-  pass "过期清理已发生：settleDeleted +$((cur_settle-base_settle))，tsFiles $after_files -> $cur"
+  pass "过期清理已发生：FULLY_DIRTY settle 任务 ${cur_fd:-0} 个、选中过期文件 ${cur_sel:-0} 行（tsFiles=$cur）"
 else
-  fail "等 ${CLEANUP_WAIT_SEC}s 未见清理动作（settleDeleted +$((cur_settle-base_settle))，tsFiles=$cur）"
+  fail "等 ${CLEANUP_WAIT_SEC}s 未见清理证据：FULLY_DIRTY settle 任务 ${cur_fd:-0}（期望 ≥1）、选中过期文件行 ${cur_sel:-0}（期望 ≥1）"
 fi
-log "  DN 日志摘录:"; for h in "${DN[@]}"; do ttl_log_tail "$h" | sed 's/^/    | /' >>"$OUT"; done
 
 log "--- 6) 边界：TTL=$TTL_BIG 时，未过期时间戳可写可见，已过期时间戳被拒(607) ---"
 NOW=$(now_ms)

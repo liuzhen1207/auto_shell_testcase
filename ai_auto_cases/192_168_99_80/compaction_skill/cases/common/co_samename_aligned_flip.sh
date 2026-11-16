@@ -29,6 +29,12 @@
 # 用法： bash co_samename_aligned_flip.sh [--consensus IoTConsensus]
 # ============================================================================
 set -uo pipefail
+
+# 本用例会主动停 DataNode 做副本一致性校验，停机瞬间合并线程被中断属**预期噪声**：
+#   WARN CompactionWorker:67 - CompactionThread-N terminates because interruption
+#   WARN LocalTsFileInput:78 - Error happened while changing <tsfile> position to N
+# 这两条只在本用例的停机窗口出现（实测 CO-43 唯一失败项），加入本用例的 benign 白名单。
+export CMP_LOG_BENIGN_EXTRA='CompactionThread-[0-9]+ terminates because interruption|LocalTsFileInput:78 - Error happened while changing .* position to'
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/../../lib/common.sh"
 . "$HERE/../../lib/cmp.sh"

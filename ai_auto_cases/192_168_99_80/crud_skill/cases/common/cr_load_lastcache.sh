@@ -265,8 +265,9 @@ cr13_mk_table(){ local tbl=$1 out
 cr13_mk_tree(){ local PH=$1 out d n
   CR13_HAS_BLOB_T=1
   if [ "$PH" = 1 ]; then sq "create database $DBR;" >/dev/null 2>&1; fi
-  for d in "$TAG" "$TAG2"; do
-    if [ "$PH" = 1 ]; then
+  # 相位独立设备：每相都要建自己的序列（同名已存在时 create 失败无副作用）
+  for d in "${TAG}_p${PH}" "${TAG2}_p${PH}"; do
+    if true; then
       sq "create timeseries $DBR.$d.s1 with datatype=INT64, encoding=PLAIN, compression=SNAPPY;" >/dev/null 2>&1
       out=$(sq "create timeseries $DBR.$d.b1 with datatype=BLOB, encoding=PLAIN, compression=SNAPPY;" 2>&1)
       printf '%s' "$out" | grep -qiE 'Exception|error' && { CR13_HAS_BLOB_T=0; warn "  W4：树模型 BLOB 序列不可建（$DBR.$d.b1）⇒ 本相跳过树 BLOB 判据"; }
@@ -332,6 +333,9 @@ log "  还原 SET last_cache_operation_on_load=UPDATE_NO_BLOB → $(printf '%s' 
 # 表模型单相：cr13_tbl_phase <PH> <ST> <CCL>
 # ---------------------------------------------------------------------------
 cr13_tbl_phase(){ local PH=$1 ST=$2 CCL=$3 TBL="t_p$PH" HAS_BLOB=1 rc NOW B_LO N_LO CUT
+  # 相位独立设备（2026-11-13）：同一设备跨相位会累积历史相位 load 回来的值，
+  # 而各相位时间窗互相重叠 ⇒ load 前 LAST 可能取到上一相位的值，S4 基线断言误判。
+  local TAGT="${TAG}_p${PH}" TAGT2="${TAG2}_p${PH}"
   local T1_BEFORE T1_AFTER N_AFTER PRE PRE2 POST POST2 CLEAR PB CB NB h pv bad=0
   log "  ---- 表模型（$ST / ccl=$CCL）----"
   cr13_mk_table "$TBL"; rc=$?
@@ -339,14 +343,14 @@ cr13_tbl_phase(){ local PH=$1 ST=$2 CCL=$3 TBL="t_p$PH" HAS_BLOB=1 rc NOW B_LO N
   [ "$rc" = 1 ] && HAS_BLOB=0
   NOW=$(now_ms); B_LO=$(( NOW - 900000 )); N_LO=$(( B_LO + GAP_MS )); CUT=$(( N_LO - 1 ))
   T1_BEFORE=$(cr13_tsfiles_node "$QDN" "$DBT")
-  cr13_w_tbl "$TBL" "$TAG"  "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && HAS_BLOB=0
-  cr13_w_tbl "$TBL" "$TAG2" "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && HAS_BLOB=0
+  cr13_w_tbl "$TBL" "$TAGT"  "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && HAS_BLOB=0
+  cr13_w_tbl "$TBL" "$TAGT2" "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && HAS_BLOB=0
   sqt "flush;" >/dev/null
   if ! cr13_wait_new_tsfile "$QDN" "$DBT" "$T1_BEFORE" "$WAIT_FILE_SEC"; then
     fail "  场景无效 S5（相 $PH 表）：基线批未产出「非空且 .resource 已落」的 TsFile ⇒ 本相表模型跳过（flush 未完成或产物为空）"; return 1
   fi
   T1_BEFORE=$(cr13_tsfiles_node "$QDN" "$DBT")
-  cr13_w_tbl "$TBL" "$TAG" "$N_LO" "$ROWS" "$NEW_VAL" 6364; [ $? = 1 ] && HAS_BLOB=0
+  cr13_w_tbl "$TBL" "$TAGT" "$N_LO" "$ROWS" "$NEW_VAL" 6364; [ $? = 1 ] && HAS_BLOB=0
   sqt "flush;" >/dev/null
   if ! cr13_wait_new_tsfile "$QDN" "$DBT" "$T1_BEFORE" "$WAIT_FILE_SEC"; then
     fail "  场景无效 S5（相 $PH 表）：更新批未产出「非空且 .resource 已落」的 TsFile ⇒ 本相表模型跳过（flush 未完成或产物为空）"; return 1
@@ -359,7 +363,7 @@ cr13_tbl_phase(){ local PH=$1 ST=$2 CCL=$3 TBL="t_p$PH" HAS_BLOB=1 rc NOW B_LO N
   wait_scalar_table "select count(*) from $DBT.$TBL;" "$(( ROWS * 2 ))" 90 "  相 $PH 表：更新段已删（剩基线 $(( ROWS * 2 )) 行）"
   T1_AFTER=$(cr13_tbl_rows "$DBT" "$TBL")
   PRE=$(cr13_last table "select last(s1) from $DBT.$TBL;")
-  PRE2=$(cr13_last table "select last(s1) from $DBT.$TBL where dev='$TAG2';")
+  PRE2=$(cr13_last table "select last(s1) from $DBT.$TBL where dev='$TAGT2';")
   assert_contains "  相 $PH S4：load 前 LAST 是基线值" "$PRE" "$BASE_VAL"
   assert_not_contains "  相 $PH S4：load 前 LAST 不得含更新值" "$PRE" "$NEW_VAL"
   log "  相 $PH 表：R_pre=[$(printf '%s' "$PRE" | tr '\n' ' ')]"
@@ -400,7 +404,7 @@ cr13_tbl_phase(){ local PH=$1 ST=$2 CCL=$3 TBL="t_p$PH" HAS_BLOB=1 rc NOW B_LO N
     [ "$pv" = "$POST" ] || { bad=1; log "    $h R_post=[$(printf '%s' "$pv" | tr '\n' ' ')] != 基准"; }
   done
   [ "$bad" = 0 ] && pass "  相 $PH S7：三副本 load 后立即 LAST 完全一致" || fail "  相 $PH S7：三副本 load 后立即 LAST 不一致（见上）"
-  POST2=$(cr13_last table "select last(s1) from $DBT.$TBL where dev='$TAG2';")
+  POST2=$(cr13_last table "select last(s1) from $DBT.$TBL where dev='$TAGT2';")
   assert_eq "  相 $PH S9：未包含在 load 文件里的对照设备可见值不变" "$POST2" "$PRE2"
   assert_contains "  相 $PH S9：对照设备仍是基线值" "$POST2" "$BASE_VAL"
   NB=$(scalar "$(sqt "select count(b) from $DBT.$TBL;")")
@@ -437,66 +441,69 @@ cr13_tbl_phase(){ local PH=$1 ST=$2 CCL=$3 TBL="t_p$PH" HAS_BLOB=1 rc NOW B_LO N
 # 树模型单相：cr13_tree_phase <PH> <ST> <CCL>
 # ---------------------------------------------------------------------------
 cr13_tree_phase(){ local PH=$1 ST=$2 CCL=$3 NOW B_LO N_LO TR_BEFORE T_BASE T_EXP TPRE TPOST TCLEAR ok j=0
+  # 相位独立设备（2026-11-13）：同一设备跨相位会累积历史相位 load 回来的值，
+  # 而各相位时间窗互相重叠 ⇒ load 前 LAST 可能取到上一相位的值，S4 基线断言误判。
+  local TAGT="${TAG}_p${PH}" TAGT2="${TAG2}_p${PH}"
   log "  ---- 树模型（$ST / ccl=$CCL）----"
   cr13_mk_tree "$PH"
   NOW=$(now_ms); B_LO=$(( NOW - 900000 )); N_LO=$(( B_LO + GAP_MS ))
   TR_BEFORE=$(cr13_tsfiles_node "$QDN" "$DBR")
   if [ "$CR13_HAS_BLOB_T" = 1 ]; then
-    cr13_w_tree "$TAG"  "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && CR13_HAS_BLOB_T=0
-    cr13_w_tree "$TAG2" "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && CR13_HAS_BLOB_T=0
+    cr13_w_tree "$TAGT"  "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && CR13_HAS_BLOB_T=0
+    cr13_w_tree "$TAGT2" "$B_LO" "$ROWS" "$BASE_VAL" 6162; [ $? = 1 ] && CR13_HAS_BLOB_T=0
   else
-    cr13_w_tree "$TAG"  "$B_LO" "$ROWS" "$BASE_VAL"
-    cr13_w_tree "$TAG2" "$B_LO" "$ROWS" "$BASE_VAL"
+    cr13_w_tree "$TAGT"  "$B_LO" "$ROWS" "$BASE_VAL"
+    cr13_w_tree "$TAGT2" "$B_LO" "$ROWS" "$BASE_VAL"
   fi
   sq "flush;" >/dev/null
   if ! cr13_wait_new_tsfile "$QDN" "$DBR" "$TR_BEFORE" "$WAIT_FILE_SEC"; then
     warn "  W：相 $PH 树模型未识别出基线批的 TsFile ⇒ 跳过树模型相"; return 1
   fi
-  # ★ RC8 首轮：树模型的设备**跨相位共用**（`$DBR.$TAG`），第 2 相起设备上还留着前几相 load 回来的行
+  # ★ RC8 首轮：树模型的设备**跨相位共用**（`$DBR.$TAGT`），第 2 相起设备上还留着前几相 load 回来的行
   #   ⇒ "更新段已删后行数 == $ROWS" 从第 2 相起必然不成立（实测 8/12/16 vs 4），
   #   而"load 后 >= ROWS*2"又会因为历史行而**假通过**。现改为**本相基线**口径：
   #   写基线批后记 $T_BASE，删更新段后要求回到 $T_BASE，load 后要求到 $T_BASE+ROWS。
-  T_BASE=$(cr13_tree_rows "$TAG")
-  log "  相 $PH 树：本相基线行数=$T_BASE（设备 $TAG 含历史相位累计；期望 ≥ $ROWS）"
+  T_BASE=$(cr13_tree_rows "$TAGT")
+  log "  相 $PH 树：本相基线行数=$T_BASE（设备 $TAGT 含历史相位累计；期望 ≥ $ROWS）"
   [ "${T_BASE:-0}" -ge "$ROWS" ] && pass "  相 $PH 树 S4：基线批写入后可见行数=$T_BASE（≥$ROWS）" \
     || { fail "  相 $PH 树场景未成立：基线批写入后行数=${T_BASE:-?}（<$ROWS）"; return 1; }
   TR_BEFORE=$(cr13_tsfiles_node "$QDN" "$DBR")
-  if [ "$CR13_HAS_BLOB_T" = 1 ]; then cr13_w_tree "$TAG" "$N_LO" "$ROWS" "$NEW_VAL" 6364
-  else cr13_w_tree "$TAG" "$N_LO" "$ROWS" "$NEW_VAL"; fi
+  if [ "$CR13_HAS_BLOB_T" = 1 ]; then cr13_w_tree "$TAGT" "$N_LO" "$ROWS" "$NEW_VAL" 6364
+  else cr13_w_tree "$TAGT" "$N_LO" "$ROWS" "$NEW_VAL"; fi
   sq "flush;" >/dev/null
   if ! cr13_wait_new_tsfile "$QDN" "$DBR" "$TR_BEFORE" "$WAIT_FILE_SEC"; then
     warn "  W：相 $PH 树模型未识别出更新批的 TsFile ⇒ 跳过树模型相"; return 1
   fi
   cr13_stage_load_src "$CR13_NEWFILES" "/tmp/cr13src_p${PH}_${RUN_ID}_tree"
   [ -n "${CR13_SRCPATH:-}" ] || { fail "  场景无效 S5：树模型 load 源文件未能落到各 DN（相 $PH）"; return 1; }
-  sq "delete from $DBR.$TAG.** where time >= $N_LO;" >/dev/null
+  sq "delete from $DBR.$TAGT.** where time >= $N_LO;" >/dev/null
   j=0
   while [ "$j" -lt 60 ]; do
-    [ "$(cr13_tree_rows "$TAG")" = "$T_BASE" ] && break
+    [ "$(cr13_tree_rows "$TAGT")" = "$T_BASE" ] && break
     sleep 3; j=$(( j + 3 ))
   done
-  assert_eq "  相 $PH 树 S4：更新段已删（$TAG 行数回到本相基线 $T_BASE）" "$(cr13_tree_rows "$TAG")" "$T_BASE"
-  TPRE=$(cr13_last tree "select last s1 from $DBR.$TAG;")
+  assert_eq "  相 $PH 树 S4：更新段已删（$TAGT 行数回到本相基线 $T_BASE）" "$(cr13_tree_rows "$TAGT")" "$T_BASE"
+  TPRE=$(cr13_last tree "select last s1 from $DBR.$TAGT;")
   assert_contains "  相 $PH 树 S4：load 前 LAST 是基线值" "$TPRE" "$BASE_VAL"
   local OUTL2; OUTL2=$(cr13_load tree "$DBR" "$(dirname "$CR13_SRCPATH")")
   log "  相 $PH 树 load 响应：$(printf '%s' "$OUTL2" | tr '\n' ' ' | cut -c1-200)"
   T_EXP=$(( T_BASE + ROWS ))
   ok=0; j=0
   while [ "$j" -lt "$LOAD_SEC" ]; do
-    [ "$(cr13_tree_rows "$TAG")" -ge "$T_EXP" ] && { ok=1; break; }
+    [ "$(cr13_tree_rows "$TAGT")" -ge "$T_EXP" ] && { ok=1; break; }
     sleep 5; j=$(( j + 5 ))
   done
   if [ "$ok" != 1 ]; then
-    fail "  相 $PH 场景未成立 S6（树）：load 后行数未增加（$T_BASE → $(cr13_tree_rows "$TAG")，期望 >= $T_EXP）⇒ 跳过树模型结论"; return 1
+    fail "  相 $PH 场景未成立 S6（树）：load 后行数未增加（$T_BASE → $(cr13_tree_rows "$TAGT")，期望 >= $T_EXP）⇒ 跳过树模型结论"; return 1
   fi
-  pass "  相 $PH S6（树）：load 生效（$TAG 行数 $T_BASE → $(cr13_tree_rows "$TAG")，期望 >= $T_EXP）"
-  TPOST=$(cr13_last tree "select last s1 from $DBR.$TAG;")
+  pass "  相 $PH S6（树）：load 生效（$TAGT 行数 $T_BASE → $(cr13_tree_rows "$TAGT")，期望 >= $T_EXP）"
+  TPOST=$(cr13_last tree "select last s1 from $DBR.$TAGT;")
   cr13_clear_cache
-  TCLEAR=$(cr13_last tree "select last s1 from $DBR.$TAG;")
+  TCLEAR=$(cr13_last tree "select last s1 from $DBR.$TAGT;")
   log "  相 $PH 树：R_post=[$(printf '%s' "$TPOST" | tr '\n' ' ')] R_clear=[$(printf '%s' "$TCLEAR" | tr '\n' ' ')]"
   assert_contains "  相 $PH 树 S7：CLEAR CACHE 后含更新值" "$TCLEAR" "$NEW_VAL"
   assert_eq "  相 $PH 树 S8（$ST）：load 后立即 LAST == CLEAR CACHE 真值" "$TPOST" "$TCLEAR"
-  assert_contains "  相 $PH 树 S9：对照设备仍是基线值" "$(cr13_last tree "select last s1 from $DBR.$TAG2;")" "$BASE_VAL"
+  assert_contains "  相 $PH 树 S9：对照设备仍是基线值" "$(cr13_last tree "select last s1 from $DBR.$TAGT2;")" "$BASE_VAL"
   return 0; }
 
 # ---------------------------------------------------------------------------

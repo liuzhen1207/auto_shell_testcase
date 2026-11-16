@@ -1,0 +1,147 @@
+skill	id	file	dialect	group	need_restart	notes	result_83183d0	last_build	last_result
+compaction_skill	CO-01	cases/tree/co_tree_inner_smoke.sh	tree	tree	yes	**冒烟**：树模型 seq 内部合并——多批 flush 造多个 TsFile → 合并 → 文件数下降、合并前后数据指纹完全一致、无卡死线程	PASS 448s	83183d0	PASS 448s
+compaction_skill	CO-02	cases/table/co_table_inner_smoke.sh	table	table	yes	**冒烟**：表模型 seq 内部合并（同 CO-01 判据，表模型接口）	PASS 442s	83183d0	PASS 442s
+compaction_skill	CO-03	cases/tree/co_unseq_inner.sh	tree	tree	yes	**冒烟**：unseq 内部合并——乱序时间戳造 unsequence 文件（关 seq/关 cross 隔离观测）→ unseq 文件数下降、数据指纹不变	PASS 468s	83183d0	PASS 468s
+compaction_skill	CO-04	cases/common/co_cross_space.sh	tree	tree	yes	**冒烟**：跨空间合并——seq 区间 + 重叠的 unseq 区间 → unseq 归零、数据指纹不变、日志无 overlap 异常	PASS 716s	83183d0	PASS 716s
+compaction_skill	CO-05	cases/common/co_delete_data.sh			yes	**冒烟**：DELETE 数据后合并——删除过的行合并后不得复活；树/表各跑一遍（带 mods 文件参与合并）	PASS 648s	83183d0	PASS 648s
+compaction_skill	CO-06	cases/common/co_metadata.sh			yes	**冒烟**：元数据变更后合并——DELETE TIMESERIES / DROP DATABASE 重建 / DROP TABLE / DELETE DEVICES 后合并正常，被删元数据不得复活，无 CompactionTableSch	PASS 844s	83183d0	PASS 844s
+compaction_skill	CO-07	cases/tree/co_data_types_encoding.sh	tree	tree	yes	**冒烟**：多数据类型 × 多编码（int32/int64/float/double/boolean/text/string/timestamp × plain/rle/ts_2diff/gorilla/dictionary/zigzag	PASS 606s	83183d0	PASS 606s
+compaction_skill	CO-08	cases/tree/co_aligned_null.sh	tree	tree	yes	**冒烟**：对齐序列（aligned）+ 空值（null）在合并前后完全一致，null 个数不变	PASS 470s	83183d0	PASS 470s
+compaction_skill	CO-09	cases/common/co_conf_params.sh	tree	tree	yes	**参数功能**：conf 模板 35 个 compaction 键齐全；`enable_seq_space_compaction=false` + `inner_compaction_candidate_file_num=100` 时**	PASS 857s	83183d0	PASS 857s
+compaction_skill	CO-10	cases/common/co_hot_reload.sh	tree	tree	yes	**热加载**：热关 seq 合并→写入不合并；热开→不重启立即合并；对 10 个参数逐项校验「CLI 是否要求重启 ⇔ 生效值是否立即变化」并还原	PASS 568s	83183d0	PASS 568s
+compaction_skill	CO-11	cases/common/co_perf_baseline.sh	tree	tree	yes	**性能基准**：固定规模（默认 10 设备 × 10000 点 × 6 批）单会话写入 → 计时合并 → 记录输入/输出文件数与字节数、合并耗时、吞吐、写放大到 `results/perf_baseline.csv`（跨版本回归对比；同 	PASS 1726s	83183d0	PASS 1726s
+compaction_skill	CO-12	cases/common/co_remove_nodes.sh	tree	tree	yes	**缩容场景**：REMOVE DATANODE 后剩 2 DN 仍可读/可写/可合并、副本一致；REMOVE CONFIGNODE 后集群仍可用；收尾按**剩余节点**做 sync lag/一致性/日志扫描（跑完集群为 2C2D，本用例排	PASS 774s	83183d0	PASS 774s
+compaction_skill	CO-13	cases/tree/co_ttl_settle.sh	tree	tree	yes	**TTL 场景**：48h 前的批次在 TTL=24h 下过期（查询过滤）→ settle 合并物理清理（日志 + TsFile 数下降）→ TTL 生效期间在线合并正常且数据指纹不变、过期数据不复活 → TTL 调到 30s 后**合并	PASS 666s	83183d0	PASS 666s
+compaction_skill	CO-14	cases/table/co_ttl_table_settle.sh	table	table	yes	**TTL 场景（表模型）**：与 CO-13 同构，TTL 挂在表上（`ALTER TABLE … SET PROPERTIES ttl=`），计数/指纹/收尾走表方言	PASS 613s	83183d0	PASS 613s
+compaction_skill	CO-15	cases/common/co_param_gate_matrix.sh	tree	tree	yes	**参数组合①**：`enable_seq/unseq/cross` **8 种开闭组合矩阵**（热改，逐组合断言"该跑的跑/不该跑的不跑"，按 Sequence/Unsequence InnerSpaceCompaction 与 Cros	PASS 2929s	83183d0	PASS 2929s
+compaction_skill	CO-16	cases/common/co_param_selector.sh	tree	tree	yes	**参数组合②**：`inner_seq_selector`×`inner_seq_performer`（4 组合）、`inner_unseq_selector`×`inner_unseq_performer`（4 组合）、`cross_p	PASS 1013s	83183d0	PASS 1013s
+compaction_skill	CO-17	cases/common/co_param_level_boundary.sh	tree	tree	yes	**参数组合③（边界）**：① `max_level_gap_in_inner_compaction` 层级边界（各副本造 [L1(旧), L0(新)]：gap=0 **不合并**、gap=1 产出 **L2**；再造 [L2(旧), L0	PASS 809s	83183d0	PASS 809s
+compaction_skill	CO-18	cases/common/co_param_priority.sh	tree	tree	yes	**参数功能（优先级确定性）**：`compaction_thread_count=1` 去掉并发竞态，INNER_CROSS / CROSS_INNER / BALANCE 三种取值分别验证『第一个完成的类型』（I=Sequence In	PASS 1493s	83183d0	PASS 1493s
+compaction_skill	CO-19	cases/common/co_unseq_select.sh	tree	tree	yes	**乱序空间选择参数**：`inner_unseq_selector=size_tiered_multi_target` × `inner_compaction_total_file_num_threshold=2`（单任务最多 2 文件）	PASS 356s	83183d0	PASS 356s
+compaction_skill	CO-20	cases/common/co_target_file_size.sh	tree	tree	yes	**目标文件大小**：6 设备 × 2 批同一场景，`target_compaction_file_size=1KB` 与默认 2GB 对照 ⇒ 产物文件数应变多（`requiredPositionNum = selectedSize/ta	PASS 414s	83183d0	PASS 414s
+compaction_skill	CO-21	cases/common/co_inner_total_size.sh	tree	tree	yes	**单任务总大小上限**：4 个 L0（单文件约 1.3KB）时阈值=2000 ⇒ 装不下两个文件 ⇒ 不合并；热改 10000 ⇒ 一个任务全收 ⇒ 4→1（源码 `NewSizeTieredCompactionSelector:281-	PASS 394s	83183d0	PASS 394s
+compaction_skill	CO-22	cases/common/co_task_queue.sh	tree	tree	yes	**候选队列容量**：队列=1 的高压场景（4 seq + 2 重叠 unseq、1 个合并线程）必须最终全部合并完、无写锁卡死、指纹不变；再重启成 64 对照（源码 `CompactionTaskManager:76-78/247-253	PASS 620s	83183d0	PASS 620s
+compaction_skill	CO-23	cases/common/co_threads.sh	tree	tree	yes	**线程族**：`compaction_thread_count`（1 → 热改 3，用 jstack 数 `IoTDB-Compaction-Worker` 线程）+ `sub_compaction_thread_count` + `co	PASS 728s	83183d0	PASS 728s
+compaction_skill	CO-24	cases/common/co_aligned_batch.sh	tree	tree	yes	**对齐序列批量**：1 个对齐设备 8 条序列 × 3 批，该键取 1 / 8 / 0（不分批）三种值合并，8 条序列指纹与合并前完全一致（源码 `BatchedFastAlignedSeriesCompactionExecutor:80	PASS 435s	83183d0	PASS 435s
+compaction_skill	CO-25	cases/common/co_rate_limit.sh	tree	tree	yes	**限流三件套**：TEXT 每行 1KB × 3000 行 × 2 批（约 6MB），默认限流与 写=1MB/s、读=1MB/s、读操作=50/s 对照 ⇒ 合并都完成、耗时明显变长（限流真的作用在合并路径）	PASS 762s	83183d0	PASS 762s
+compaction_skill	CO-26	cases/common/co_settle_select.sh	tree	tree	yes	**settle 选择门控**（带删除标记的文件何时被重写）：mods 阈值默认 128KB + 磁盘充足 ⇒ 不重写；热改阈值=1B ⇒ 重写并清理 `.mods`；`inner_compaction_task_selection_dis	PASS 550s	83183d0	PASS 550s
+compaction_skill	CO-27	cases/common/co_basic_shapes.sh	tree	tree	yes	**最基础形态**：① 单文件 no-op 不合并 ② 空库不报错 ③ 数据全被 DELETE 后合并仍执行且删除行不复活 ④ **一个 region 跨两个时间分区**（相隔两周）各自独立合并	PASS 741s	83183d0	PASS 741s
+compaction_skill	CO-28	cases/common/co_table_unseq_cross.sh	table	table	yes	**表模型 unseq 内部合并 + 跨空间合并**（补齐表模型只测过 seq 内部合并的缺口）：2 批顺序水位 + 2 批重叠乱序 ⇒ unseq 内部合并推进 ⇒ 关 unseq 开 cross ⇒ unseq 归零，指纹与行数不变	PASS 508s	83183d0	PASS 508s
+compaction_skill	CO-29	cases/common/co_restart_recovery.sh	tree	tree	yes	**合并与进程生命周期**：合并**进行中** kill -9 一个 DataNode → 其余副本照常完成 → 重启该 DN 等恢复 ⇒ 三副本一致、无残留 `*.compaction.log`/`*.tmp`、之后仍能继续合并；再做一次	PASS 836s	83183d0	PASS 836s
+compaction_skill	CO-30	cases/common/co_insertion_cross.sh	tree	tree	yes	**插入式跨空间合并**（`InsertionCrossSpaceCompaction`，不重写数据、直接把 unseq 文件挪进 seq 空间）：1 个 seq 水位 + 3 个**互不重叠**的更早 unseq ⇒ 插入任务出现、uns	PASS 351s	83183d0	PASS 351s
+compaction_skill	CO-31	cases/common/co_concurrent_io.sh	tree	tree	yes	**合并与读写并发**：限流把合并拖到秒级，合并期间后台持续写 6 小批 + 查询 ⇒ 无任何错误输出、合并仍推进、写入数据都在、收尾三件套全绿	PASS 604s	83183d0	PASS 604s
+compaction_skill	CO-32	cases/common/co_auto_repair.sh	tree	tree	yes	**乱序文件自动修复开关**：开/关两相下正常场景合并都完成、指纹一致，且都**不得**误报 `RepairUnsortedFileCompactionTask`（真造未排序文件需要 load 路径，属超范围、已如实记录）	PASS 416s	83183d0	PASS 416s
+compaction_skill	DT-01	cases/common/dt_tree_basic.sh	tree	tree	yes	**改数据类型（树）基础 + 兼容矩阵正向**：10 种原始类型各建 1 条序列 → 按手册兼容表逐条 `ALTER TIMESERIES ... SET DATA TYPE` ⇒ 断言全部成功、`show timeseries` 类型=目	PASS 757s	83183d0	PASS 757s
+compaction_skill	DT-02	cases/common/dt_tree_negative.sh	tree	tree	yes	**改数据类型（树）负向 + 链式 + 改后写入**：不兼容转换必须被拒（507）、失败后类型/数据不变；不存在路径 508；链式 INT32→INT64→DOUBLE→STRING→TEXT；改后按新类型写入成功	PASS 381s	83183d0	PASS 381s
+compaction_skill	DT-03	cases/common/dt_tree_compaction.sh	tree	tree	yes	**改类型 × 合并（核心）**：A 改类型前后文件混合后合并（旧值可读、新值在、无 DataType/schema 异常）；B 合并进行中改类型；C 同库混合数据类型文件一起合并	PASS 795s	83183d0	PASS 795s
+compaction_skill	DT-04	cases/common/dt_tree_concurrent.sh	tree	tree	yes	**并发删除序列 × 改类型**：先删后改必须明确报错；N 轮 `ALTER ∥ DELETE TIMESERIES` 竞争（每轮必须一方明确成功、无损坏/卡死）；改类型 ∥ 并发写入	PASS 358s	83183d0	PASS 358s
+compaction_skill	DT-05	cases/common/dt_table_basic.sh	table	table	yes	**改数据类型（表模型）基础**：`ALTER TABLE ... ALTER COLUMN ... SET DATA TYPE`（仅 FIELD 列：TAG/时间列报 701）；兼容性正向 + 不兼容 701 + `desc` 反映新类型	PASS 318s	83183d0	PASS 318s
+compaction_skill	DT-06	cases/common/dt_table_compaction.sh	table	table	yes	**改类型（表模型）× 合并**：顺序空间内部合并 / 跨空间合并（unseq 归零）/ 并发 `DROP TABLE` ∥ `ALTER COLUMN`	PASS 491s	83183d0	PASS 491s
+compaction_skill	DT-07	cases/common/dt_view.sh	table	table	yes	**树转表视图改列类型**：正确建视图语法（`CREATE VIEW db.v (col TYPE FIELD FROM m) AS root.path.**`）+ `ALTER VIEW ... ALTER COLUMN ... SET 	FAIL 4136s	83183d0	FAIL 4136s
+compaction_skill	DT-08	cases/common/dt_ha_disk_ro.sh	tree	tree	yes	**高可用·磁盘只读**：合并进行中把一个 DN 的**数据目录挂成只读**（整盘 `mount -o remount,ro /data` 在本环境因有可写 fd 必 EBUSY ⇒ 用"自绑定挂载 + `remount,ro,bind`"	PASS 1166s	83183d0	PASS 1166s
+compaction_skill	DT-09	cases/common/dt_ha_stop_nodes.sh	tree	tree	yes	**高可用·节点下线**：A 合并中**优雅 stop 1 DN**（不带 `-f` = `kill -s TERM`）→ 恢复一致；B 停 1 个 CN 集群仍可读写且合并推进；C 停 2 个 CN（无 CN 多数派）⇒ **DDL 必须	PASS 1129s	83183d0	PASS 1129s
+compaction_skill	CO-33	cases/common/co_repair_unsorted_load.sh	tree	tree	no	**未排序 TsFile 的真实修复链路（load 导入路径）**：按官方 IT `IoTDBRepairDataIT` 的方式用底层 `TsFileIOWriter` 造**内部时间乱序**的 TsFile（时间 2,3,5,4 → 值 	PASS 534s	83183d0	PASS 534s
+compaction_skill	CO-34	cases/common/co_scale_cascade.sh	tree	tree	no	**千级 TsFile 大规模级联合并压力**：三类合并全关下单会话连续 `INSERT 1 行 + FLUSH` × N（默认 1000）⇒ 每副本 N 个 level-0 seq TsFile；记基线（文件数/层级分布/指纹）→ 热开 	PASS 311s	83183d0	PASS 311s
+compaction_skill	CO-35	cases/common/co_target_split_formula.sh	tree	tree	no	**目标文件拆分量化**（D1-1/1-2/1-3，官方 MG-10/MG-P20）：A/B/C 三相（小 target / 默认 2GB / 多设备）逐相独立库，写入期关合并、写完记基线再热开，一检测到首个 `Sequence Inner	PASS 1248s	83183d0	PASS 1248s
+compaction_skill	CO-37	cases/common/co_aligned_grouping.sh	tree	tree	no	**对齐序列分组合并分组规则 + 全 null 列 timestamp 保留**（D4-1/4-2/4-3/4-5，官方 MG-02-4/MG-11 的模板形态）：d1 显式 12 列对齐（PLAIN/RLE/TS_2DIFF + SNAP	PASS 430s	83183d0	PASS 430s
+compaction_skill	CO-40	cases/common/co_recovery_branches.sh	tree	tree	yes	**合并临时态与恢复四分支 + 残留文件/句柄**（D3-1/3-2/3-3/3-4/3-5/3-7/3-9，官方 MG-P10/P15/P16/P21、FC-08）：相1 预批→DELETE 造 `.mods`（`MODS>0` 硬断言）	PASS 1268s	83183d0	PASS 1268s
+compaction_skill	CO-42	cases/common/co_fast_vs_default_perf.sh	tree	tree	no	**fast vs 默认的产物规格与耗时对照**（FC-01、FC-02-1/02-4、FC-03/07 产物规格列、D5-1）：4 个同构库 root.cofp1..4（单设备 3 序列 TEXT 1KB + INT64 + DOUBLE	PASS 1569s	83183d0	PASS 1569s
+compaction_skill	CO-36	cases/common/co_fast_fake_overlap.sh	tree	tree	no	**FastCompaction 直搬路径：「假 overlap」page 直刷与 ALL_DELETED 跳过**（D5-1/5-2/5-3）：构造"统计上重叠但 page 级不重叠"的文件形态，验证 fast performer 走 p	PASS 760s	83183d0	PASS 760s
+compaction_skill	CO-38	cases/common/co_level_search_gate.sh	tree	tree	no	**空间内选择的逐层策略与提交通道门槛**（D1-4/D2-1/D2-2）：断言提交通槛 =「≥10 个文件 **或** ≥2GB」两类触发条件各自的边界（低于门槛不提交、达到任一即提交）；并断言"某层已有任务时不向更高层搜索"的逐层策略 	PASS 1068s	83183d0	PASS 1068s
+compaction_skill	CO-39	cases/common/co_priority_rules.sh	tree	tree	yes	**任务优先级排序规则与线程族数量关系**（D2-9/2-10/2-11 + 官方 MG-T01/T02/T03）：同类型 5 级排序（低层 → 新 version → 文件数多 → serialID 小 → 总大小小）、时间分区倒序、跨类	PASS 833s	83183d0	PASS 833s
+compaction_skill	CO-41	cases/common/co_object_ttl.sh	table	table	no	**表模型 OBJECT 类型合并与 TTL/deletion 清理语义**（D7-1/7-2/7-3/7-4）：OBJECT 列（`to_object(true,0,X'62')`）参与合并后取值不变；对照「只清理 TTL 过期 obje	PASS 481s	83183d0	PASS 481s
+compaction_skill	CO-43	cases/common/co_samename_aligned_flip.sh	tree	tree	yes	**同名序列重建 + 对齐属性翻转后的合并**（官方 MG-P18/MG-P19，缺陷 **IOTDB-5686**：官方首测 select s_0 只有 80 个点、数据不一致，经两轮复测才通过）：d1/d2 先以**非对齐**写入（批1	PASS 903s	83183d0	PASS 903s
+crud_skill	CR-00	cases/common/cr_smoke.sh	tree	tree	yes	**冒烟（骨架 fallback）**：树模型 seq 内部合并——多批 flush 造多个 TsFile → 热开合并 → 文件数下降 + 合并前后数据指纹完全一致 + 无卡死线程 + 收尾三件套；库名 root.crsmoke，保证 h	PASS 408s	83183d0	PASS 408s
+crud_skill	CR-01	cases/common/cr_timestamp_precision.sh	tree	tree	no	**时间戳精度检查门禁**（R-01~R-05）：开关 + ms/us 位数阈值 + ns 放行 + 文案/错误码逐字匹配；含兼容性与"10 个时间分区"膨胀对照	PASS 703s	83183d0	PASS 703s
+crud_skill	CR-02	cases/common/cr_ts_partition_balance.sh	tree	tree	yes	**精度检查 × 时间分区**（R-06~R-08）：改 time_partition_interval 后精度门禁行为与文件分布不变/符合预期	PASS 456s	83183d0	PASS 456s
+crud_skill	CR-03	cases/common/cr_table_time_only.sh	table	table	no	**表模型"只有 Time 列"门禁**（R-12/R-13）：写入必须拒绝（码 ∈ {1100,507} 且文案逐字）、DROP COLUMN 后与全 null 列两条产文件路径、以及 load 侧同语义	PASS 515s	83183d0	PASS 515s
+crud_skill	CR-04	cases/common/cr_mod_shape.sh	tree	tree	no	**`.mods2` 基础形态**（R-16~R-20,R-22）：删除前无 Mod；被删除覆盖的 TsFile 各 1 个独占 `<tsfile>.mods2`（三副本计数轮询）、未被覆盖者没有；首字节 0x01(树)/0x00(表)；重	PASS 395s	83183d0	PASS 395s
+crud_skill	CR-05	cases/common/cr_mod_alloc_threshold.sh	tree	tree	no	**Mod 分配阈值边界**（R-21）：时间不重叠不分配、被覆盖者 1:1 独占、重复删除只追加、批量追加把 `.mods2` 顶过 16KB 后行为不变；文档"可配置"实为 private final 30/16KB（模板键 0 命中）	PASS 460s	83183d0	PASS 460s
+crud_skill	CR-06	cases/common/cr_delete_concurrent_compaction.sh	tree	tree	no	**删除 × 合并并发**（R-23~R-25）：合并窗口内删除不得丢（N_Mod/C_Mod/cascade），双信号 + 数据面指纹 + 场景有效性（必须先拿到 task starts 且文件数未下降）	PASS 1057s	83183d0	PASS 1057s
+crud_skill	CR-07	cases/common/cr_delete_midstate.sh	tree	tree	no	**删除中间态**（R-26~R-27）：memtable 中 / 正在 flush 的文件也被删除覆盖，且不破坏其它设备数据	PASS 1621s	83183d0	PASS 1621s
+crud_skill	CR-08	cases/common/cr_delete_pipe.sh	tree	tree	no	**Pipe 传输带删除的 TsFile**（R-33~R-34）：单集群内可构造部分（带 `.mods2` 的 TsFile 经 load/本地传输后删除语义保持）；需 pipe 对端的部分如实列为不可构造	PASS 352s	83183d0	PASS 352s
+crud_skill	CR-09	cases/common/cr_mod_lifecycle.sh	tree	tree	yes	**Mod 生命周期 + 旧格式兼容 + 重启恢复**（R-28~R-32）：注入 V1 文本 `.mods` → 完整重启后升级为 `.mods2` 且删除生效；已存在 `.mods2` 重启字节不变；合并移除源 TsFile 后其 `.	PASS 975s	83183d0	PASS 975s
+crud_skill	CR-10	cases/common/cr_delete_block_write.sh	tree	tree	no	**DELETE 阻塞写入量化**（R-38~R-41）：固定规模关/开机制对照，耗时随 TsFile 数变化（**耗时只 WARN**）；硬判=结果正确（删的不可见、未删不丢、删除可见、无异常日志）	PASS 4875s	83183d0	PASS 4875s
+crud_skill	CR-11	cases/common/cr_object_manual_delete.sh	table	table	no	**OBJECT 手动删除**（R-46~R-50）：整表/部分/整库删除后 object 真实文件被**异步 GC** 物理清理（轮询等待、逐点按 `{pointTime}_{version}.bin` 判定），未删点的 object 必	PASS 501s	83183d0	PASS 501s
+crud_skill	CR-12	cases/common/cr_object_delete_negative.sh	table	table	no	**OBJECT 删除异常路径与开销对照**（R-51~R-53）：无权限/不存在/并发 DROP 的明确结果与错误码；异常路径不得留下不一致元数据或泄漏 object	PASS 988s	83183d0	PASS 988s
+crud_skill	CR-13	cases/common/cr_load_lastcache.sh	tree	tree	no	**Load 时 LastCache 四策略正确性**（R-54~R-60）：`UPDATE`/`UPDATE_NO_BLOB`/`CLEAN_DEVICE`(含回退)/`CLEAN_ALL` 的效果区分（更新/不更新/清理范围），数据面指	PASS 1177s	83183d0	PASS 1177s
+crud_skill	CR-14	cases/common/cr_load_pipe_last.sh	tree	tree	yes	**Load × Pipe + Last：配置 restart-only 语义 + 性能与内存预算**（R-58/R-59/R-60/R-69/R-70/R-71，配合 R-55~R-57）：5 相位（UPDATE_NO_BLOB × cc	PASS 2014s	83183d0	PASS 2014s
+diskusage_skill	DU-01	cases/tree/du_tree_merge_after_stats.sh	tree	tree	yes	**TDB-629 门禁（树模型接口）**：`show disk_usage from <db>.**` 统计后，被扫过的 TsFile 必须仍能被合并。阶段 A 正向对照（合并开启连写→必须出现合并完成）+ 阶段 B（关合并造 2 个未合	PASS 419s	83183d0	PASS 419s
+diskusage_skill	DU-02	cases/table/du_table_merge_after_stats.sh	table	table	yes	**TDB-629 门禁（表模型接口）**：`select * from information_schema.table_disk_usage` 统计后合并必须仍能推进。库内**两张表**（否则走"库内只有一张表"的免打开快路径不泄漏），	PASS 368s	83183d0	PASS 368s
+diskusage_skill	DU-03	cases/tree/du_tree_stats.sh	tree	tree	yes	树模型统计正确性（有数据）：`SHOW DISK_USAGE FROM root.db.**` 的列序与含义、SizeInBytes 与磁盘上该库 TsFile 实际字节数一致、`*`/`**`/精确路径三种 pattern 的作用域、多库	PASS 399s	83183d0	PASS 399s
+diskusage_skill	DU-04	cases/table/du_table_stats.sh	table	table	yes	表模型统计正确性（有数据）：information_schema.table_disk_usage 列序与含义、按 table/database 求和与实际 TsFile 大小一致、where 过滤（database/table_name/	PASS 433s	83183d0	PASS 433s
+diskusage_skill	DU-05	cases/common/du_privilege.sh	both		yes	权限与错误路径：仅 SYSTEM 权限用户可执行（普通用户应报错/无权），树模型非法 pattern（不以 root 开头等）报错，表模型对不存在表的过滤返回空结果集，恢复权限后查询正常	PASS 301s	83183d0	PASS 301s
+metadata_skill	MD-T01	tree/md_tree_database.sh	tree	tree	reuse	树模型 DATABASE 元数据闭环（建/查/计数/详情/改/删 + 失败路径）	PASS 80s	83183d0	PASS 80s
+metadata_skill	MD-T02	tree/md_tree_timeseries.sh	tree	tree	reuse	树模型 TIMESERIES 元数据闭环（建/SHOW 过滤/COUNT 各级/ALTER 系列/RENAME/死路径）	PASS 91s	83183d0	PASS 91s
+metadata_skill	MD-T03	tree/md_tree_template.sh	tree	tree	reuse	树模型 SCHEMA TEMPLATE 元数据闭环（建/ALIGNED/SHOW NODES/SET/UNSET/SHOW PATHS/USING）	PASS 85s	83183d0	PASS 85s
+metadata_skill	MD-T04	tree/md_tree_observe.sh	tree	tree	reuse	树模型元数据观测面（集群/区域/时隙/会话/版本 + DataRegion 懒创建）	PASS 95s	83183d0	PASS 95s
+metadata_skill	MD-T05	tree/md_tree_ddl_negative.sh	tree	tree	reuse	树模型 DDL 失败路径与错误码（不被静默接受 + 失败后元数据不被改脏）	PASS 86s	83183d0	PASS 86s
+metadata_skill	MD-T06	tree/md_tree_view_ttl.sh	tree	tree	reuse	树模型 VIEW 与 TTL 元数据闭环	PASS 93s	83183d0	PASS 93s
+metadata_skill	MD-B01	table/md_table_ddl.sh	table	table	reuse	表模型 DATABASE/TABLE/COLUMN 元数据闭环（DESC/SHOW CREATE/加删列/改类型/属性/注释）	PASS 88s	83183d0	PASS 88s
+metadata_skill	MD-B02	table/md_table_view_schema.sh	table	table	reuse	表模型 VIEW + information_schema 交叉校验与能力边界	PASS 83s	83183d0	PASS 83s
+metadata_skill	MD-C01	common/md_meta_consistency.sh	common	tree	reuse	元数据副本一致性 + 重启持久化 + 跨模型命名空间隔离	PASS 342s	83183d0	PASS 342s
+metadata_skill	MD-C02	common/md_dcl_user_role.sh	common	tree	reuse	权限元数据（USER/ROLE/PRIVILEGE）闭环	PASS 98s	83183d0	PASS 98s
+metadata_skill	MD-C03	common/md_privilege_matrix.sh	common	tree	reuse	权限矩阵（权限值 × 路径粒度 × 用户/角色 + LIST PRIVILEGES + 越权 803）	PASS 147s	83183d0	PASS 147s
+metadata_skill	MD-U01	common/md_udf_trigger.sh	common	tree	reuse	真实 jar 的 UDF/Trigger 全链路（注册/SHOW/执行/触发/重启恢复/DROP）	PASS 325s	83183d0	PASS 325s
+metadata_skill	MD-S01	common/md_scale_bulk.sh	tree	scale	reuse	元数据规模（2000 时序 / 200 表下的 SHOW/COUNT/DESC/information_schema 正确性与耗时）	PASS 85s	83183d0	PASS 85s
+metadata_skill	MD-B05	table/md_writable_view.sh	table	table	reuse	表模型可写视图（WRITABLE VIEW）元数据闭环 + 并发 ALTER 缓存一致性（TDB-615）	PASS 75s	83183d0	PASS 75s
+treeview_skill	tv_align	cases/treeview/tv_align.sh				TV-16 对齐 / 非对齐设备的 null 行语义（树转表视图）	PASS 170s	83183d0	PASS 170s
+treeview_skill	tv_alter	cases/treeview/tv_alter.sh				TV-04 ALTER / COMMENT / DROP 视图（需求 §2.2；含 tree view add column / drop column）	PASS 189s	83183d0	PASS 189s
+treeview_skill	tv_autosync_1000	cases/treeview/tv_autosync_1000.sh				TV-13 单设备新增 1000 个测点 → 树转表视图（auto_sync_schema=true）补列成功	PASS 229s	83183d0	PASS 229s
+treeview_skill	tv_autosync_fail	cases/treeview/tv_autosync_fail.sh				TV-12 树侧"新增测点失败"时，树转表视图（auto_sync_schema=true）不得补列	PASS 198s	83183d0	PASS 198s
+treeview_skill	tv_client_iface	cases/treeview/tv_client_iface.sh				TV-CLI-01 不同客户端接口建序列 → 树转表视图自动补列一致性	PASS 342s	83183d0	PASS 342s
+treeview_skill	tv_create_basic	cases/treeview/tv_create_basic.sh				TV-01 CREATE 基本信息面：显式列定义 / 类型 / TAG-FIELD 映射 / FROM 改名 / 无 FIELD 扫描 / time 列	PASS 328s	83183d0	PASS 328s
+treeview_skill	tv_create_negative	cases/treeview/tv_create_negative.sh				TV-02 CREATE 负向与 OR REPLACE 语义（需求 §2.1.1.1、§2.1.1.4）	PASS 326s	83183d0	PASS 326s
+treeview_skill	tv_create_restrict	cases/treeview/tv_create_restrict.sh				TV-03 RESTRICT 与设备层级匹配（需求 §2.1.1.3）	PASS 323s	83183d0	PASS 323s
+treeview_skill	tv_log_noise	cases/treeview/tv_log_noise.sh				TV-LOG-01 预期内失败不得产生 ERROR/WARN 噪声（可观测性门禁）	FAIL 331s	83183d0	FAIL 331s
+treeview_skill	tv_perf	cases/treeview/tv_perf.sh				TV-15 性能：树转表视图 vs 普通表（同数据量）	PASS 352s	83183d0	PASS 352s
+treeview_skill	tv_real_alter	cases/treeview/tv_real_alter.sh				TV-09 真实数据：ALTER VIEW（重点：tree view add column）+ 元数据展示	PASS 167s	83183d0	PASS 167s
+treeview_skill	tv_real_ha	cases/treeview/tv_real_ha.sh				TV-10 真实数据：高可用（停 1 DN / 停 1 CN 后视图 DDL 与查询可用）	PASS 220s	83183d0	PASS 220s
+treeview_skill	tv_real_query	cases/treeview/tv_real_query.sh				TV-08 真实数据：查询能力与树模型对照（需求 §2.4 / §3）	PASS 172s	83183d0	PASS 172s
+treeview_skill	tv_real_ttl	cases/treeview/tv_real_ttl.sh				TV-11 真实数据：WITH TTL（视图 TTL 与树 TTL 取更小值；只影响查询不物理删除）	PASS 160s	83183d0	PASS 160s
+treeview_skill	tv_real_views	cases/treeview/tv_real_views.sh				TV-07 真实数据：同一前缀建多个视图（AA5 / AA6）+ 视图间一致性	PASS 161s	83183d0	PASS 161s
+treeview_skill	tv_realdata	cases/treeview/tv_realdata.sh				TV-06 真实数据集（树模型 TsFile → 树转表视图）	FAIL 2164s	83183d0	FAIL 2164s
+treeview_skill	tv_security	cases/treeview/tv_security.sh				TV-14 树转表视图的权限（§2.7）	PASS 330s	83183d0	PASS 330s
+treeview_skill	tv_show	cases/treeview/tv_show.sh				TV-05 视图展示面（需求 §2.3）	PASS 332s	83183d0	PASS 332s
+ttl_skill	TT-01	cases/tree/ttl_tree_basic.sh	tree	tree	yes	SET/UNSET/SHOW 基本功能、前缀路径与 303、INF 与默认值、规则继承与优先级、SHOW DEVICES TTL、删库/删序列后规则保留	PASS 304s	83183d0	PASS 304s
+ttl_skill	TT-02	cases/tree/ttl_tree_expire.sh	tree	tree	yes	过期可见性过滤、TTL 内外边界、写入过期时间戳被拒 607、FLUSH 后物理删除、取消 TTL 后新数据不再被清	PASS 544s	83183d0	PASS 544s
+ttl_skill	TT-03	cases/tree/ttl_tree_dml.sh	tree	tree	yes	大数据量(默认 2000 点) + DELETE 数据/元数据 + DROP 重建后规则保留并生效	PASS 383s	83183d0	PASS 383s
+ttl_skill	TT-04	cases/tree/ttl_tree_scope.sh	tree	tree	yes	作用域语义：三级继承与覆盖、规则热更新对已写数据立即生效、UNSET 后未被物理删除的过期数据重新可见、预置规则作用于后创建设备、TTL=0/负数 700/非法 pattern 700/无规则 UNSET 508	PASS 515s	83183d0	PASS 515s
+ttl_skill	TB-01	cases/table/ttl_table_basic.sh	table	table	yes	建库/建表/改表 TTL、ttl='INF'/default、继承与解耦、SHOW TABLES/SHOW DATABASES DETAILS/information_schema、非法值 701/700、视图 TTL	PASS 255s	83183d0	PASS 255s
+ttl_skill	TB-02	cases/table/ttl_table_expire.sh	table	table	yes	过期行过滤、TTL 内外边界、FLUSH 后物理删除、改小/取消 TTL 行为、视图读过期数据	PASS 392s	83183d0	PASS 392s
+ttl_skill	TB-03	cases/table/ttl_table_object.sh	table	table	yes	OBJECT 列 + TTL：to_object 写入、查询、过期不可见、object 文件随 TTL 清理（60s 缓冲）、树模型不支持 OBJECT 负向验证	PASS 409s	83183d0	PASS 409s
+ttl_skill	TB-04	cases/table/ttl_table_dml.sh	table	table	yes	大数据量(默认 2000 行) + DELETE 数据/DELETE DEVICES + DROP 重建后 TTL 继承与生效	PASS 385s	83183d0	PASS 385s
+ttl_skill	TB-05	cases/table/ttl_table_cleanup.sh	table	table	yes	表模型清理阈值：过期表被清理、同库 ttl='INF' 表数据完好、零脏数据文件不得被反复 settle（ratio=1e-6）、ratio=0.0 写放大复现（缺陷门禁）	PASS 1107s	83183d0	PASS 1107s
+ttl_skill	TT-05	cases/tree/ttl_show_ttl_scope.sh	tree	tree	yes	TDB-444 回归门禁：`SHOW TTL ON <db>.<dev>.**` 不得返回不相干库规则或 `root.**` 全局规则（缺陷版本会把所有规则都吐出来，所以判据必须是"不得出现不相干路径"，包含类断言抓不到）；含库级 `.**	PASS 252s	83183d0	PASS 252s
+ttl_skill	TP-01	cases/common/ttl_param_effect.sh	both		yes	参数值/热加载/重启生效：ttl_check_interval 实测周期（按 region 相邻时间差取中位数）与 restart 提示、compaction 开关热加载门控清理、Part C 三相隔离 expired_data_ratio	PASS 1654s	83183d0	PASS 1654s
+ttl_skill	TP-02	cases/common/ttl_cleanup_threshold.sh	tree	tree	yes	文件级清理阈值：全过期→FULLY_DIRTY 整文件删除、部分过期+max_expired_time=INF+极小 ratio→按比例清理、零脏数据文件不得被反复 settle、ratio=0.0 写放大复现（缺陷门禁）	PASS 1209s	83183d0	PASS 1209s
+ttl_skill	TP-03	cases/common/ttl_param_effect_mode.sh	tree	tree	yes	expired_data_ratio 生效方式与数值语义：A M=INF+ratio=1e-6 → 部分过期文件被清理（基线，10 设备保证"部分过期"可观测）；B 不重启热改 ratio=0.99 → 仍按旧值清理 + 断言返回 rest	PASS 665s	83183d0	PASS 665s
+ttl_skill	TP-04	cases/common/ttl_dup_region_register.sh	tree	tree	yes	**TDB-610 门禁**：同一个 DataRegion 被注册两次到压缩/TTL 调度列表 ⇒ 该 region 每周期被检查两遍。判据=该库每个 region 的 `Start ttl` 行数 ÷ 不同秒数（取最大），1.00 正常 	PASS 485s	83183d0	PASS 485s
+ttl_skill	TP-05	cases/common/ttl_tier_warn_key.sh	tree	tree	yes	**TDB-611 门禁**：写入 `tier_ttl_in_ms=1000;2000`（与默认 1 层 dn_data_dirs 不匹配）后重启，tier 校验 WARN 必须提示 `tier_ttl_in_ms`、**不得**出现已移除	PASS 580s	83183d0	PASS 580s
+wal_skill	W-00	cases/common/wal_smoke.sh	tree	tree	yes	**冒烟（骨架门禁）**：写多批 → 记 WAL 目录基线（目录口径 + `file_count{name="wal"}` 指标口径，并把**真实目录结构与文件清单**打印出来做现场标定）→ flush → 确认 WAL 目录确有文件（场景	PASS 585s	83183d0	PASS 585s
+wal_skill	W-01	cases/common/wal_mode_matrix.sh	tree	tree	yes	**wal_mode 模式矩阵**：ASYNC 与 SYNC 各自写入正确性 + WAL 目录确有文件 + 耗时/文件数/字节数对照（**耗时只 WARN**）；两模式都必须重启后数据不丢；`wal_mode` 是 **restart-on	PASS 990s	83183d0	PASS 990s
+wal_skill	W-02	cases/common/wal_mode_disable_rejected.sh	tree	tree	yes	**集群下 DISABLE 必须被拒绝**（负向门禁）：校验在 `IoTDBStartCheck.java:150-163`（经 `DataNode.java:530 checkSystemConfig()`），条件=`IoTConsens	PASS 525s	83183d0	PASS 525s
+wal_skill	W-03	cases/common/wal_mode_restart_only.sh	tree	tree	yes	**wal_mode 的 restart-only 语义**：`SET CONFIGURATION 'wal_mode'` 返回文案 + properties 落盘（`wal_props_get`）→ 不重启时运行期值（`cmp_eff`）	PASS 734s	83183d0	PASS 734s
+wal_skill	W-04	cases/common/wal_recovery_kill9.sh	tree	tree	yes	**掉电恢复（WAL 重放）**：写入后（不 flush）`kill -9` **全部 DN**（只杀 1 个只验证共识补齐，不是掉电语义）→ 重启 → **已确认写入的数据一条不少**（count/sum/min/max + 单设备全序列	PASS 591s	83183d0	PASS 591s
+wal_skill	W-05	cases/common/wal_recovery_flush_boundary.sh	tree	tree	yes	**flush 边界对照**：A 相"写入后立刻 kill -9 全部 DN"（必须靠 WAL 重放）vs B 相"写入 + flush + Async close 后 kill -9"（数据已在 TsFile、对应 WAL 记录已失效）→	PASS 934s	83183d0	PASS 934s
+wal_skill	W-06	cases/common/wal_recovery_dn_down.sh	tree	tree	yes	**DN 正常下线期写入 + 恢复**：`wal_stop_dn` 停 1 个 DN（**正常 stop**，对照 kill -9）→ 期间继续写入（RF=3 应成功）→ `wal_start_dn` 拉起 → 数据补齐、三副本一致（`co	PASS 387s	83183d0	PASS 387s
+wal_skill	W-07	cases/common/wal_recovery_metadata.sh	tree	tree	yes	**元数据变更后的 WAL 恢复**：建库/建序列 → 写数据 → `DELETE TIMESERIES` / `DROP` 相关操作（不 flush）→ kill -9 全部 DN → 重启 → schema（`SHOW TIMESERI	PASS 492s	83183d0	PASS 492s
+wal_skill	W-08	cases/common/wal_file_rotate.sh	tree	tree	yes	**WAL 文件轮转阈值**：`wal_file_size_threshold_in_byte`（hot_reload；文档间 30M/10M 矛盾 ⇒ 先 `cmp_eff` 读实际生效值）调小到 1MB → 同写入量下文件数明显增加、单	PASS 927s	83183d0	PASS 927s
+wal_skill	W-09	cases/common/wal_buffer_size.sh	tree	tree	yes	**`wal_buffer_size_in_byte`**（**restart-only**；文档间 16M/32M 矛盾 ⇒ 先读生效值）：调小（256KB）后写入正确性 + 轮转/性能表现如实记录；与默认值对照；**耗时只 WARN**	PASS 767s	83183d0	PASS 767s
+wal_skill	W-10	cases/common/wal_node_alloc.sh	tree	tree	yes	**WALNode 分配（本环境走 FirstCreateStrategy）**：源码 `WALManager.java:76-85` —— IoTConsensus/IoTConsensusV2 一律 `FirstCreateStrate	PASS 629s	83183d0	PASS 629s
+wal_skill	W-11	cases/common/wal_compress_toggle.sh	tree	tree	yes	**WAL 压缩开关对照**（`enable_wal_compression` 默认 true、hot_reload）：同一数据量同阈值下 true vs false → 压缩态 WAL 总字节更小（比率低于阈值只 WARN）；**压缩=段	PASS 991s	83183d0	PASS 991s
+wal_skill	W-12	cases/common/wal_compress_recovery.sh	tree	tree	yes	**压缩态掉电恢复**：压缩开启 + 未 flush 写入 → kill -9 全部 DN → 重启 → 数据完整（走段解压路径，`WALInputStream.java:487-504`）；场景有效性：WAL 文件存在且体积小于未压缩基线	PASS 1109s	83183d0	PASS 1109s
+wal_skill	W-13	cases/common/wal_compress_mixed.sh	tree	tree	yes	**压缩开关切换后的共存恢复**：压缩是**段级**的（段头 1 字节标 compressionType），**文件级**兼容靠 `WALFileVersion` 的 V1/V2/V3 magic ⇒ "老段未压缩 + 新段压缩"是**设计	PASS 752s	83183d0	PASS 752s
+wal_skill	W-14	cases/common/wal_cleanup_period.sh	tree	tree	yes	**无效 WAL 清理**：写入 → `flush`（数据落盘后对应 WAL 记录即无效）→ `delete_wal_files_period_in_ms`（hot_reload）调小 → 窗口内文件数/字节下降（三口径交叉：目录 + `f	PASS 1191s	83183d0	PASS 1191s
+wal_skill	W-15	cases/common/wal_min_effective_ratio.sh	tree	tree	yes	**`wal_min_effective_info_ratio`**（hot_reload）：调大/调小后 MemTable 快照 vs flush 的选择变化（判据=指标方向性：`wal_node_info{name="effective	PASS 1109s	83183d0	PASS 1109s
+wal_skill	W-16	cases/common/wal_memtable_snapshot.sh	tree	tree	yes	**MemTable 快照**：`wal_memtable_snapshot_threshold_in_byte` 调小 + `max_wal_memtable_snapshot_num` 边界 → 指标 `oldest_mem_table	PASS 579s	83183d0	PASS 579s
+wal_skill	W-17	cases/common/wal_throttle.sh	tree	tree	yes	**WAL 阻写（throttle/背压）**：真实键 **`wal_throttle_threshold_in_byte`**（**hot_reload**，可热改；`iot_consensus_throttle_threshold_in	PASS 744s	83183d0	PASS 744s
+wal_skill	W-18	cases/common/wal_queue_memory.sh	tree	tree	yes	**大压力下 WAL 队列内存受控**：高并发大写入期间采集 `wal_queue_mem_cost{name="wal_queue_current_mem_cost"|"wal_queue_max_mem_cost"}` + `wal_h	PASS 696s	83183d0	PASS 696s
+wal_skill	W-19	cases/common/wal_object_recovery.sh	table	table	yes	**OBJECT 写入的 WAL 恢复**：`to_object(isEOF,offset,content)` 分段写入（如 100 字节分 40/40/20）→ 不 flush → kill -9 全部 DN → 重启 → OBJECT 	PASS 412s	83183d0	PASS 412s
+wal_skill	W-20	cases/common/wal_object_load_restart.sh	table	table	yes	**导入 OBJECT 数据后重启一致性**：LOAD/导入路径写 OBJECT → 完整重启（`wal_restart_all`）→ 数据与元数据一致（count/LENGTH/内容）；文档写"导入导出一期在二期评审补充" ⇒ 若本环境*	PASS 758s	83183d0	PASS 758s
+wal_skill	W-21	cases/common/wal_param_invalid.sh	tree	tree	yes	**参数合法性（负向）**：非法取值（`wal_mode=XXX`、负数字节、0 阈值、超范围 ratio、`max_wal_nodes_num=-1`）→ 启动失败或回退默认值并给出明确文案，不得静默接受；只有 `wal_mode=DIS	FAIL 1615s	83183d0	FAIL 1615s
+wal_skill	W-22	cases/common/wal_param_hotload.sh	tree	tree	yes	**参数热加载语义**：逐个 `SET CONFIGURATION` 19 个 WAL 键 → 记录返回文案（哪些 restart required）→ 与源码 **restart-only 清单**核对（`wal_mode`/`max_w	PASS 1052s	83183d0	PASS 1052s
+wal_skill	W-23	cases/common/wal_metrics.sh	tree	tree	yes	**WAL 可观测性**：**指标名已在源码确认**（`Metric.java:80-85,156-157`）：`file_count{name="wal"}`、`file_size{name="wal"}`、`wal_queue_mem_	FAIL 870s	83183d0	FAIL 870s
+wal_skill	W-24	cases/common/wal_dir_config.sh	tree	tree	yes	**WAL 目录配置**：`dn_wal_dirs`（**restart-only**；`wal_dir` 单数键不存在）指向自定义目录 → 重启后 WAL 文件**确实落到该目录**（且默认目录不再新增）、数据可恢复；多目录（逗号分隔）时	PASS 1512s	83183d0	PASS 1512s
+wal_skill	W-25	cases/common/wal_disk_readonly.sh	tree	tree	yes	**WAL 盘只读/写不进去（高可用）**：让 WAL 目录不可写（DN 以 root 运行 ⇒ `chmod` 无效；按序尝试 `chattr +i` / 独立小文件系统写满造 ENOSPC）→ 写入表现（阻塞/报错/降级）如实记录 → 	PASS 758s	83183d0	PASS 758s
+wal_skill	W-26	cases/common/wal_consensus_matrix.sh	tree	tree	yes	**双协议对照**：同一 WAL 场景（写入 → 不 flush → kill -9 全部 DN → 重启 → 数据完整 + 压缩对照）在 IoTConsensus 与 IoTConsensusV2 下各跑一遍（相位间用 `DATA_CON	PASS 930s	83183d0	PASS 930s

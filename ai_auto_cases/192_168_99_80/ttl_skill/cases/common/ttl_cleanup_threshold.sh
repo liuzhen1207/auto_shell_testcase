@@ -28,6 +28,7 @@ WAIT=$(( TTL_MS/1000 + 25 ))               # 等过期（+25s 抵消节点间时
 GUARD_INTERVALS=4                          # 写放大守卫观察的检查周期数
 GUARD_WAIT=$(( TTL_CHECK_INTERVAL_MS/1000 * GUARD_INTERVALS + 15 ))
 INF=9223372036854775807
+
 TINY=0.000001
 
 DBF=root.th_full      # A: 全过期
