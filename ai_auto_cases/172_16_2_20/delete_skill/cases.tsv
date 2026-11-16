@@ -85,3 +85,8 @@ DEL-MEMLEAK-TREE-003	tree	IoTConsensus	memleak	删除timeseries元数据并重�
 DEL-MEMLEAK-TABLE-001	table	BOTH	memleak	按WHERE删除数据并重复写入/删除	记录堆与进程内存基线、循环曲线及GC后稳态；查询验证目标已删且范围外保留
 DEL-MEMLEAK-TABLE-002	table	BOTH	memleak	无WHERE全量删除数据并重复重建/删除	全量删除后表仍存在且查询为空；记录GC后堆与进程内存稳态及增量
 DEL-MEMLEAK-TABLE-003	table	BOTH	memleak	DROP TABLE及重建并重复删除元数据	表元数据不可见；记录SchemaRegion/堆内存和进程内存稳态
+DEL-DEV-001	table	BOTH	devices	基线：3 设备 DELETE DEVICES 删 dev02	dev02 设备删除；dev01/dev03 数据完整；元数据一致
+DEL-DEV-002	table	BOTH	devices	删除后紧跟 FLUSH（TDB-939 触发形态）	FLUSH 后 5 分钟内不得出现设备复活；计数正确
+DEL-DEV-003	table	BOTH	devices	删除后重建同名设备	旧数据不得复活；仅新写入的 1 行可见
+DEL-DEV-004	table	BOTH	devices	多设备谓词删除（dev01 OR dev02）	仅 dev03 保留；计数正确
+DEL-DEV-005	table	BOTH	devices	负向：删除不存在的设备	删除 0 个设备；原有数据不受影响

@@ -1,0 +1,14 @@
+SET SQL_DIALECT=TABLE;
+CREATE DATABASE del_dev002;
+CREATE TABLE del_dev002.t (dev STRING TAG, sensor STRING TAG, region STRING ATTRIBUTE, v INT32 FIELD);
+INSERT INTO del_dev002.t(time,dev,sensor,region,v) VALUES (1796410000000,'dev01','s1','r1',10);
+INSERT INTO del_dev002.t(time,dev,sensor,region,v) VALUES (1796410000001,'dev01','s1','r1',11);
+INSERT INTO del_dev002.t(time,dev,sensor,region,v) VALUES (1796410000000,'dev02','s1','r1',20);
+INSERT INTO del_dev002.t(time,dev,sensor,region,v) VALUES (1796410000001,'dev02','s1','r1',21);
+INSERT INTO del_dev002.t(time,dev,sensor,region,v) VALUES (1796410000000,'dev03','s1','r2',30);
+INSERT INTO del_dev002.t(time,dev,sensor,region,v) VALUES (1796410000001,'dev03','s1','r2',31);
+FLUSH;
+DELETE DEVICES FROM del_dev002.t WHERE dev='dev02';
+FLUSH;
+SELECT dev, count(*) FROM del_dev002.t GROUP BY dev ORDER BY dev;
+SELECT count(*) FROM del_dev002.t;

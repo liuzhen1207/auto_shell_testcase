@@ -84,3 +84,8 @@ b206a78077ad07eb288d1134a5689fbc  cases/DEL-TIME-004/run.sql
 fd28d76764226952be42849ae6c86e75  cases/DEL-TREE-002/run.sql
 48c3e73c87aed1aee87e55d7d37dc981  cases/DEL-TREE-003/run.sql
 654aec29b32078f0fc92f47c376646ba  cases/DEL-TREE-004/run.sql
+c73c9b5db1aa51dd39c5014281124a7c  cases/DEL-DEV-001/run.sql
+02e58b42574b33f5a19fdb7f5791c9bc  cases/DEL-DEV-002/run.sql
+de08fd1a1db49a808d763cd1ab3746cf  cases/DEL-DEV-003/run.sql
+b1b4059b9d124135320a59b43853246d  cases/DEL-DEV-004/run.sql
+c30b40cb2e59209c81fdcc99f9f54e6b  cases/DEL-DEV-005/run.sql
