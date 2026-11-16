@@ -143,3 +143,13 @@ bash tools/suite_sep.sh            # 生成映射 + 运行全量
 - 同一策略下同一用户只能持有一个 READ 标签 → 双表 JOIN 正向场景需两个策略；
 - 表模型不支持 `RENAME TABLE` / `CREATE TABLE ... AS SELECT` / `LIKE`（均报 700）；
 - 三权分立下 `ALTER TABLE ... DROP SECURITY POLICY` 需 security_admin 自授 `ALTER ON DATABASE` 后执行（LB-142/LB-107 已按此实现）。
+
+## 九、IoTConsensusV2 协议结果（2026-11-14）
+
+| 协议 | 模式 | 用例 | PASS | FAIL | SKIP |
+| --- | --- | ---: | ---: | ---: | ---: |
+| IoTConsensus | 普通 / 三权分立 | 160 | 150 / 151 | 0 / 0 | 10 / 9 |
+| **IoTConsensusV2** | 普通 / 三权分立 | 160 | **150 / 151** | **0 / 0** | **10 / 9** |
+
+逐条判决与 IoTConsensus 完全一致。V2 下日志量约为 IoTConsensus 的 2 倍（`[ConsensusPipeGuard]`、`PIPE_PUSH_*`、`PIPE_HEARTBEAT` 等协议内部管道噪音），无 LBAC 相关 ERROR/WARN。
+详见 `docs/results_20261114_v2/`。
