@@ -148,3 +148,16 @@ if (password == null || passwordReuseIntervalDays <= 0) {
 - `iotdb-core/datanode/src/main/java/org/apache/iotdb/db/utils/DataNodeAuthUtils.java:186-206`（消费侧，`<=0` 即禁用）
 - `iotdb-core/datanode/src/main/java/org/apache/iotdb/db/conf/IoTDBDescriptor.java:1196、2880`（启动/热加载都经 setter）
 - `iotdb-core/node-commons/src/assembly/resources/conf/iotdb-system.properties.template:2290-2297`（默认值 0 与注释）
+
+## 九、用例侧处理标准（已落地，2026-11-16）
+
+为避免误报，`sec_skill` 的 SEC-05 按两级判定：
+
+| 场景 | 判定 |
+| --- | --- |
+| 默认（conf 无该键）/ `= -1` / `= 1` | **硬门禁**：禁用必须无限制、=1 必须在窗口内拒绝 |
+| **显式 `= 0`** | **柔性检查**：只记录 WARN（需求 0=无约束 vs 实现 0→1 天），不判 FAIL |
+
+- `sec_conf_restore` 统一恢复 `password_reuse_interval_days=-1`（不再写 0，避免把"禁用"变成 1 天并污染环境）
+- 实测：`SEC-05` 在 sep 模式 **PASS（20 断言，2 WARN）**
+- 若研发确认"0 按 1 天"是刻意设计 → 只需改模板/文档；若认同"0=无约束" → 改 `CommonConfig.java:3428` 一行，SEC-05 的 WARN 会自动转 PASS

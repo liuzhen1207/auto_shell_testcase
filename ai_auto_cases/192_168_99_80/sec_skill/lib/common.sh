@@ -86,7 +86,9 @@ sec_conf_set(){ st "set configuration '$1'='$2';" | msg_of; }
 sec_conf_restore(){
   sec_conf_set enforce_strong_password true >/dev/null 2>&1
   sec_conf_set password_expiration_days 0 >/dev/null 2>&1
-  sec_conf_set password_reuse_interval_days 0 >/dev/null 2>&1
+  # 注意：password_reuse_interval_days 的 setter 会把 0 改写成 1（CommonConfig.java:3428），
+  # 写 0 会让"禁用"变成"1 天限制"并污染后续用例 —— 统一用 -1（代码默认值，等于禁用）。
+  sec_conf_set password_reuse_interval_days -1 >/dev/null 2>&1
 }
 
 # ---------- 用户 ----------
