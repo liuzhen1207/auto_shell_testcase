@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================================
 # sec_skill 运行入口
-#   bash tools/run_all.sh [--set quick|all|password|config|audit|replica|length|complexity|username|enforce|reuse|expire]
+#   bash tools/run_all.sh [--set quick|all|password|config|audit|replica|auth|stale|cli|identity|lock|exempt|lockparam|authlog|length|complexity|username|enforce|reuse|expire]
 #                         [--only SEC-01,SEC-05] [--mode auto|normal|sep]
 #   结果：results/test_result.csv（build/mode/case/result/elapsed/failCount/...）
 # ============================================================================
@@ -34,12 +34,27 @@ declare -A CASES=(
   ["SEC-07"]="cases/config/sec_config_privilege.sh|默认值/热加载/权限"
   ["SEC-08"]="cases/audit/sec_audit_logs.sh|审计与日志"
   ["SEC-09"]="cases/replica/sec_replica_consistency.sh|SR3/DR3 一致性"
+  ["SEC-10"]="cases/password/sec_password_stale_warning.sh|密码定期更改提示"
+  ["SEC-11"]="cases/auth/sec_auth_cli_password.sh|客户端隐式密码输入"
+  ["SEC-12"]="cases/auth/sec_auth_identity_basic.sh|身份鉴别基础"
+  ["SEC-13"]="cases/auth/sec_auth_login_lock.sh|防爆破锁定+手动解锁"
+  ["SEC-14"]="cases/auth/sec_auth_lock_exempt.sh|锁定豁免/自动解锁/DROP清锁"
+  ["SEC-15"]="cases/auth/sec_auth_lock_params.sh|防爆破参数边界与权限"
+  ["SEC-16"]="cases/audit/sec_auth_audit_logs.sh|鉴别/锁定审计日志"
 )
-ORDER=(SEC-01 SEC-02 SEC-03 SEC-04 SEC-05 SEC-06 SEC-07 SEC-08 SEC-09)
+ORDER=(SEC-01 SEC-02 SEC-03 SEC-04 SEC-05 SEC-06 SEC-07 SEC-08 SEC-09 SEC-10 SEC-11 SEC-12 SEC-13 SEC-14 SEC-15 SEC-16)
 
 select_ids(){
   case "$SET" in
     quick) echo "SEC-01 SEC-02 SEC-03 SEC-07" ;;
+    auth) echo "SEC-11 SEC-12 SEC-13 SEC-14 SEC-15 SEC-16" ;;
+    stale) echo "SEC-10" ;;
+    cli) echo "SEC-11" ;;
+    identity) echo "SEC-12" ;;
+    lock) echo "SEC-13" ;;
+    exempt) echo "SEC-14" ;;
+    lockparam) echo "SEC-15" ;;
+    authlog) echo "SEC-16" ;;
     password) echo "SEC-01 SEC-02 SEC-03 SEC-04 SEC-05" ;;
     config) echo "SEC-04 SEC-07" ;;
     audit) echo "SEC-08" ;;

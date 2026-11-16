@@ -13,6 +13,8 @@ set -uo pipefail
 SEC_SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export SEC_SKILL_DIR
 . "$SEC_SKILL_DIR/conf/env.conf"
+# 节点本机上的 CLI（与 .80 的 testdb 路径不同），用于"本机登录"类验证
+CLI_NODE="${DB_DIR}/sbin/start-cli.sh"
 
 SEC_CASE=""; SEC_RUN_ID="$(date '+%Y%m%d_%H%M%S')"; SEC_FAILS=0; SEC_PASSES=0; SEC_WARNS=0
 SEC_OUT="$SEC_SKILL_DIR/results/$SEC_RUN_ID.out"
@@ -116,6 +118,36 @@ sec_login_ok_via(){ local h=$1 u=$2 pw=$3 out
 sec_login_msg_via(){ sec_sql_via "$1" "$2" "$3" tree "show databases;" | grep -aE 'Error:|Msg:' | tail -1; }
 sec_user_alter_via(){ sec_sql_via "$1" "$SEC_USER" "$SEC_PW" tree "alter user $2 set password '$3';" | grep -aE 'Msg:|Error:' | tail -1; }
 
+
+# ---------- 登录/锁定相关（防止口令暴力破解、身份鉴别基础）----------
+# 一次登录尝试，返回最后一条 Error/Msg（含错误码）
+try_login(){ local u=$1 pw=$2 h=${3:-$PRIMARY} out
+  out=$(sec_sql_via "$h" "$u" "$pw" tree "list user;")
+  printf '%s' "$out" | grep -aE 'Error:|Msg:' | tail -1; }
+try_login_ok(){ printf '%s' "$(try_login "$1" "$2" "${3:-$PRIMARY}")" | grep -q 'Msg:'; }
+# 直接读错误码（801/822/804/803/...），无错误码时输出空
+login_code(){ try_login "$1" "$2" "${3:-$PRIMARY}" | grep -aoE '[0-9]{3}:' | head -1 | tr -d ':'; }
+# 连续错误登录 n 次，打印每次的错误码
+repeat_bad_login(){ local u=$1 n=$2 i c codes=""
+  for i in $(seq 1 "$n"); do c=$(login_code "$u" 'DefinitelyWrong123!'); codes="$codes ${c:-OK}"; done
+  echo "$codes"; }
+# 带 restart 提示的配置设置（返回原始最后一条消息，含 restart is required）
+conf_set_raw(){ st "set configuration '$1'='$2';" | grep -aE 'Msg:|Error:' | tail -1; }
+# 读取生效值（配置可能不在 show configuration 中，返回值或空）
+conf_eff(){ local u="$SEC_USER" pw="$SEC_PW"
+  # sep 模式下 security_admin 无 SYSTEM 权限，show configuration 需用 sys_admin
+  [ "${SEC_MODE:-normal}" = "sep" ] && { u="$DDL_USER"; pw="$ADMIN_PW"; }
+  sec_sql_as "$u" "$pw" table "show configuration;" | grep -aE "^\|[[:space:]]*$1[[:space:]]*\|" | head -1 | awk -F'|' '{gsub(/ /,"",$3); print $3}'; }
+conf_set_raw_as(){ local u=$1 pw=$2
+  sec_sql_as "$u" "$pw" tree "set configuration '$3'='$4';" | grep -aE 'Msg:|Error:' | tail -1; }
+
+# 连续错误登录，直到出现 822 或达到 max 次；返回 "次数:最后的错误码"
+lock_until_code(){ local u=$1 max=$2 i c
+  for i in $(seq 1 "$max"); do
+    c=$(login_code "$u" 'DefinitelyWrong123!')
+    if [ "$c" = "822" ]; then echo "$i:822"; return 0; fi
+  done
+  echo "$max:${c:-none}"; }
 # ---------- 断言 ----------
 assert_contains(){ if printf '%s' "$2" | grep -aqF "$3"; then pass "$1: 命中 /$3/"; else fail "$1: 未命中 /$3/（实际=${2:0:170}）"; fi; }
 assert_not_contains(){ if printf '%s' "$2" | grep -aqF "$3"; then fail "$1: 不应出现 /$3/"; else pass "$1: 未出现 /$3/"; fi; }
