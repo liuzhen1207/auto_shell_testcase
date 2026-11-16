@@ -178,3 +178,20 @@ LB-177	cases/c11_selftest_ext.sh	比较	正向	同一主体 READ=高标签、WRI
 LB-178	cases/c11_selftest_ext.sh	豁免	正向	仅授 READARRAY 豁免：ARRAY 维度放行、SET 维度仍拒	case_LB178
 LB-179	cases/c11_selftest_ext.sh	豁免	边界	ALL 豁免展开后撤销单规则，剩余规则仍生效	case_LB179
 LB-180	cases/c11_selftest_ext.sh	豁免	正向	角色 READTREE 豁免受 IGNORE/USE 控制	case_LB180
+LB-181	cases/c12_gaps.sh	组件	反向	无 SECURITY 用户与不存在对象的 COMMENT 被拒	case_LB181
+LB-182	cases/c12_gaps.sh	标签	异常	歧义/非法标签值（括号不配对、嵌套、冒号、越界元素）被拒	case_LB182
+LB-183	cases/c12_gaps.sh	比较	边界	SET 维度空值三态（空用户/空对象/双方空）	case_LB183
+LB-184	cases/c12_gaps.sh	比较	边界	TREE 维度空值三态（空用户/空对象/双方空）	case_LB184
+LB-185	cases/c12_gaps.sh	比较	正向	多角色多策略：USED/IGNORED 混合下角色标签生效范围	case_LB185
+LB-186	cases/c12_gaps.sh	豁免	正向	六条内置规则逐一 GRANT/REVOKE 与记录核对	case_LB186
+LB-187	cases/c12_gaps.sh	豁免	正向	LBACWRITEARRAY 的 WRITE_UP / WRITE_DOWN 方向语义	case_LB187
+LB-188	cases/c12_gaps.sh	豁免	正向	SET 维度豁免：READSET / WRITESET 放行集合不满足的读写	case_LB188
+LB-189	cases/c12_gaps.sh	豁免	正向	TREE 维度豁免：READTREE / WRITETREE 放行后代访问	case_LB189
+LB-190	cases/c12_gaps.sh	豁免	反向	策略级豁免不跨策略生效	case_LB190
+LB-191	cases/c12_gaps.sh	豁免	边界	多规则叠加后逐步撤销；非法规则/方向组合被拒	case_LB191
+LB-192	cases/c12_gaps.sh	并发	并发	8 个并发会话创建同名组件：仅 1 个成功	case_LB192
+LB-193	cases/c12_gaps.sh	并发	边界	活跃访问期间执行必失败操作后，原访问与元数据不受影响	case_LB193
+LB-194	cases/c12_gaps.sh	系统表	正向	SECURITY 主体与普通用户对 security_label_access 的可见范围	case_LB194
+LB-195	cases/c12_gaps.sh	绑定	正向	两个策略下的同名标签互不串用	case_LB195
+LB-196	cases/c12_gaps.sh	比较	边界	TREE 多值标签读写（语法不支持，待确认）	case_LB196
+LB-197	cases/c12_gaps.sh	标签	边界	SET/TREE 多值标签创建（语法不支持，待确认）	case_LB197

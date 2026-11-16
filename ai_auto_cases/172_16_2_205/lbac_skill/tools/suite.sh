@@ -45,30 +45,38 @@ declare -A LOGPOS=()
 NOISE_RE='Ratis|GrpcLogAppender|HEARTBEAT|UPDATE_REGION_ROUTE_MAP|RouteBalancer|ScheduledExecutorUtil|openSession|Fail to start server|already exist|AppendEntries|appendEntries|INCONSISTENCY|Follower failed|leader|borrow|Pipe|Template .* does not exist|ConsensusPipe|Cannot find IOTDB_HOME|Couldn.t load the configuration|License has not been set|password expiration'
 
 init_logpos() {
-  local ip
-  for ip in $CN_LIST; do LOGPOS["CN$ip"]=${LOGSTART["CN$ip"]:-0}; done
-  for ip in $DN_LIST; do LOGPOS["DN$ip"]=${LOGSTART["DN$ip"]:-0}; done
+  local ip t
+  for ip in $CN_LIST $DN_LIST; do
+    for t in error warn; do LOGPOS["CN$ip.$t"]=0; LOGPOS["DN$ip.$t"]=0; done
+  done
 }
 
-scan_case_logs() {  # $1=用例 id；输出 "err=N warn=N unexp=N"
-  local id=$1 f="$RESULTS/$1.logwin.txt" ip role dir prev resp total lines unexp=0 err=0 warn=0
+scan_case_logs() {  # $1=用例 id；只读 error/warn 小日志，增量统计
+  local id=$1 f="$RESULTS/$1.logwin.txt" ip role dir low t prev resp total lines
+  local unexp=0 err=0 warn=0
   : > "$f"
   for ip in $CN_LIST $DN_LIST; do
     case "$ip" in
       172.16.2.26|172.16.2.27|172.16.2.28) role=CN; dir=$CN_DIR ;;
       *) role=DN; dir=$DN_DIR ;;
     esac
-    prev=${LOGPOS["$role$ip"]:-0}
-    resp=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((prev + 1)) $dir/logs/log_$(echo $role | tr 'A-Z' 'a-z')_all.log 2>/dev/null | grep -E ' (ERROR|WARN) '; echo __TOTAL__\$(wc -l < $dir/logs/log_$(echo $role | tr 'A-Z' 'a-z')_all.log 2>/dev/null)" 2>/dev/null)
-    total=$(echo "$resp" | sed -n 's/^__TOTAL__//p' | tail -1)
-    lines=$(echo "$resp" | grep -v '^__TOTAL__')
-    if [ -n "$lines" ]; then
-      echo "$lines" | sed "s/^/[$role $ip] /" >> "$f"
-      err=$((err + $(echo "$lines" | grep -c ' ERROR ')))
-      warn=$((warn + $(echo "$lines" | grep -c ' WARN ')))
-      unexp=$((unexp + $(echo "$lines" | grep -vEi "$NOISE_RE" | grep -c .)))
-    fi
-    if [ -n "$total" ]; then LOGPOS["$role$ip"]=$total; fi
+    low=$(echo "$role" | tr 'A-Z' 'a-z')
+    for t in error warn; do
+      prev=${LOGPOS["$role$ip.$t"]:-0}
+      resp=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((prev + 1)) $dir/logs/log_${low}_${t}.log 2>/dev/null | grep -E ' (ERROR|WARN) ' ; echo __TOTAL__\$(tail -n +$((prev + 1)) $dir/logs/log_${low}_${t}.log 2>/dev/null | wc -l)" 2>/dev/null)
+      total=$(echo "$resp" | sed -n 's/^__TOTAL__//p' | tail -1)
+      lines=$(echo "$resp" | grep -v '^__TOTAL__')
+      if [ -n "$lines" ]; then
+        echo "$lines" | sed "s/^/[$role $ip $t] /" >> "$f"
+        if [ "$t" = "error" ]; then
+          err=$((err + $(echo "$lines" | grep -c .)))
+        else
+          warn=$((warn + $(echo "$lines" | grep -c .)))
+        fi
+        unexp=$((unexp + $(echo "$lines" | grep -vEi "$NOISE_RE" | grep -c .)))
+      fi
+      [ -n "$total" ] && LOGPOS["$role$ip.$t"]=$((prev + total))
+    done
   done
   echo "err=$err warn=$warn unexp=$unexp"
 }

@@ -13,7 +13,7 @@
 | 副本 | Schema 3 副本、Data 2 副本 |
 | 数据面协议 | IoTConsensus |
 
-## 二、用例构成（180 条）
+## 二、用例构成（197 条）
 
 | 文件 | 覆盖范围 | 条数 |
 | --- | --- | ---: |
@@ -193,8 +193,8 @@ SEP=1 RESULT_BASE=/data2/auto_test/lbac_results_sep_$(date +%Y%m%d_%H%M%S) \
 
 | 项 | 数量 |
 | --- | ---: |
-| 用例总数 | **180** |
-| 常规执行 | 170 |
+| 用例总数 | **197** |
+| 常规执行 | 185 |
 | 条件执行（仅三权分立 LB-157） | 1 |
 | 跳过（不适用/待确认） | 9 |
 
@@ -218,3 +218,33 @@ SEP=1 RESULT_BASE=/data2/auto_test/lbac_results_sep_$(date +%Y%m%d_%H%M%S) \
 每个用例执行后自动抓取 3 CN + 5 DN 在该用例时间窗内的 `ERROR`/`WARN`，写入 `<CASE>.logwin.txt`；
 噪声白名单过滤后仍有非噪声行时，`results.tsv` 的 detail 列会带 `LOG{err=N warn=N unexp=N}`，
 可直接定位产生异常日志的用例。
+
+## 十二、第二批自测缺口用例（LB-181 ~ LB-197）
+
+补齐自测文档剩余细粒度场景（17 条，其中 2 条因语法不支持 SKIP）：
+
+| 用例 | 对应自测 | 内容 |
+| --- | --- | --- |
+| LB-181 | C-24 | 无 SECURITY 用户 / 不存在对象的 COMMENT 被拒 |
+| LB-182 | L-21 | 括号不配对、嵌套、冒号跨组件、越界元素、同组件重复 |
+| LB-183 / LB-184 | R-12 / R-13 | SET / TREE 维度空值三态 |
+| LB-185 | R-21 / R-22 | 多角色 + 两个策略的 USE/IGNORE 混合生效范围 |
+| LB-186 | E-01 | 六条内置规则 + WRITEARRAY 两个方向逐一 GRANT/REVOKE |
+| LB-187 | E-03~E-05 | WRITE_UP / WRITE_DOWN 方向语义 |
+| LB-188 / LB-189 | E-09~E-12 | SET / TREE 维度读写豁免 |
+| LB-190 | E-14 | 策略级豁免不跨策略 |
+| LB-191 | E-16 / E-17 | 多规则叠加后逐步撤销；非法规则+方向组合 |
+| LB-192 | M-07 | 8 并发创建同名组件，仅 1 个成功 |
+| LB-193 | M-08 | 必失败操作后原访问与元数据不受影响 |
+| LB-194 | G-17 | SECURITY 主体与普通用户对 access 表的可见范围 |
+| LB-195 | G-18 | 两个策略下同名标签互不串用 |
+| LB-196 / LB-197 | L-03 / L-05 / R-09 / R-10 | **SKIP**：当前版本不支持 SET/TREE 多值标签语法 |
+
+### 语法差异发现（待研发确认）
+
+实测 2.0.13.1 RC2 **不支持 SET/TREE 组件的多值标签**：
+- `COMPONENT c 'A' 'B'` → 700 语法错误
+- `COMPONENT c ('A','B')` → 700 语法错误
+- `COMPONENT c 'A', COMPONENT c 'B'` → 701 Duplicate component
+
+而自测文档 L-03/L-05 期望 "SET 使用多个独立字面量 'RD','QA'"、TREE 多值，需确认是文档超前还是实现缺失。
