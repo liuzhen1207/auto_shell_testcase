@@ -45,3 +45,9 @@ releasenote_skill/
 - 报告与 PLM 文档内容必须一致；PLM 文档链接记进 `cases.tsv`。
 - 不提交大体积运行产物（`*.log`、完整 `evidence/` 全量、jar/zip）；关键输出按上面示例保留。
 - 每个 RN 目录的 `README.md` 要写清：环境、版本身份核对结果、**本轮未覆盖的接口及原因**，便于下轮补测。
+## v2.0.13.1 已验 RN
+
+| RN | 类型 | 验证版本 | 结果 | 报告 |
+| --- | --- | --- | --- | --- |
+| TDB-65 | 新功能（集群节点 ReadOnly 可观测性） | RC1 b6d3de | 通过 | [TDB-65](versions/v2.0.13.1/TDB-65/README.md) |
+| TDB-1104 | 代码优化（空 DataRegion 缩容 Adding 时 load snapshot 空指针） | RC2 83183d0 | 通过 | [TDB-1104](versions/v2.0.13.1/TDB-1104/README.md) |
