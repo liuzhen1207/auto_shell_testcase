@@ -12,7 +12,7 @@
 | 3 | 缺陷（待验证关闭） | **TDB-899** | 三权分立下 `ALTER USER … ACCOUNT UNLOCK` 返回 701 Unsupported author type，账号锁定后无解锁入口（RC2 实测已修复，**按用户决定保持打开，待 V2.0.14.1 验证后再关闭**） | P1 | V2.0.14.1 / V2.0.12.1 | 舒文炜 | 刘珍 | `SEC-13` / 专项 5 项检查（见 `PLM_TDB-1607.md` 第 5 节） |
 | 4 | **已知问题（不修复）** | —（研发确认改不了） | `CREATE USER` / `ALTER USER SET PASSWORD` 的**明文口令写入 ConfigNode 共识（Raft）日志** `data/confignode/consensus/*/current/log_inprogress_*`，三副本可读 | P2（原建议） | V2.0.13.1 RC2 `83183d0` 复现 | 研发：改不了 | 刘珍 | `SEC-12`（共识日志明文 → 已知行为 WARN 基线） |
 | 5 | 待确认缺陷（未提单） | — | **仅三权分立模式**：`security_admin` 无法修改锁定类配置（`failed_login_attempts` / `_per_user` / `password_lock_time_minutes` → 803 缺 SYSTEM），由 `sys_admin` 承担，需求写“root 或安全管理员可改”；**普通模式 root 四键全部可改（清库实测，无问题）** | P2 | V2.0.13.1 RC2 | 待定 | 刘珍 | `SEC-15`（普通模式 root 可改=硬门禁；sep 角色矩阵=按设计/待研发确认） |
-| 6 | **已确认可接受（不修）** | — | 防爆破参数非法值处理：`failed_login_attempts=abc` → DataNode 拒绝启动（fail-fast + ERROR + NumberFormatException）；`-5` 按“禁用”处理（仅 INFO）；`password_lock_time_minutes=0` 回退 10 生效但 `show configuration` 仍显示 0 | — | V2.0.13.1 RC2 | — | 刘珍 | `SEC-15`（-5 视为禁用=符合现状；非数字不在用例里跑，避免把集群重启挂掉） |
+| 6 | **已确认可接受（不修）** | — | 防爆破参数非法值处理：`failed_login_attempts=abc` → DataNode 拒绝启动（fail-fast + ERROR + NumberFormatException）；`-5` 按“禁用”处理（仅 INFO）；`password_lock_time_minutes=0` 回退 10 生效、`show configuration` 显示原值 0（**按用户确认：显式原值符合预期**） | — | V2.0.13.1 RC2 | — | 刘珍 | `SEC-15`（-5 视为禁用=符合现状；非数字不在用例里跑，避免把集群重启挂掉） |
 
 ## 已知问题 #4 详情与处置
 
@@ -40,3 +40,7 @@
 > 注意：**不要**把《防止口令暴力破解-需求分析》（飞书 FwHWdCDKmoSxJAxr8aWc96XnnYf）里的 3 处 effectiveMode: restart 一起改——
 > ailed_login_attempts / ailed_login_attempts_per_user / password_lock_time_minutes 实测确实需要重启才生效（已验证）。
 | D2 | 《V2.0.7.1-安全模块-身份鉴别-防止口令暴力破解-需求分析》（飞书 `FwHWdCDKmoSxJAxr8aWc96XnnYf`） | "安全性要求 → 权限要求"：`新增配置只可由 root 或安全管理员修改` | 三权分立下实际为 **root（禁登）→ 系统管理员 sys_admin**；安全管理员 `security_admin` 无 SYSTEM、修改锁定类键返回 803 | 建议改为"root 或系统管理员（三权分立下由 sys_admin 承担）" | 实测：普通模式 root 四个键均可改；sep 下 security_admin 三个锁定键 803 缺 SYSTEM、sys_admin 成功；`password_stale_warning_days` 反之（需 SECURITY）。**用户确认：不算缺陷** |
+
+## 附：配置语义对照表
+
+见 `docs/CONFIG_SEMANTICS.md`（"配置文件原值 → 实际生效语义"的共识表，回归时按此判读，不再把 `show` 原值当缺陷）。

@@ -1,3 +1,10 @@
+> **🟢 结论（2026-11-17 15:2x，用户确认）：不改进。**
+>
+> 产品语义应当是：**`show configuration` 显式回显配置文件里的原值**，
+> "原值 → 实际生效值"的映射由**文档/共识**定义（例如 `password_lock_time_minutes < 1 → 10`、`failed_login_attempts ≤ 0 → 禁用`）。
+> 因此 `lock_time=0` 时 `show` 显示 0 属**符合预期**，不需要回写生效值。
+> 本文保留为"配置语义对照"的推导过程；映射表见 `docs/CONFIG_SEMANTICS.md`。
+
 # 待改进描述（给研发）：`password_lock_time_minutes` 回退生效但 `show configuration` 仍显示原值
 
 > 性质：**小问题 / 展示不一致**（用户确认：保留为观察项，单独提给研发改一下，不占缺陷单）
