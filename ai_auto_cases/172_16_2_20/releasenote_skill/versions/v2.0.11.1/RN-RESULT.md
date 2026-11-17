@@ -8,9 +8,9 @@
 
 | 结论 | 数量 |
 | --- | ---: |
-| 通过 | 56 |
+| 通过 | 58 |
 | 部分验证 | 9 |
-| 可测未验 | 14 |
+| 可测未验 | 12 |
 | 环境不满足 | 68 |
 | **合计** | **147** |
 
@@ -22,6 +22,7 @@
 | TDB-687 | COPY TO TsFile | 缺陷 | P1 | 通过 | COPY-1 TAGS 重复列被拒绝（701） |
 | TDB-688 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | DDL-5 DN 重启期间 CN 无 restartDataNode NPE |
 | TDB-691 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | DDL-6 连续 DROP DATABASE 无 Procedure 超时/SemanticException |
+| TDB-693 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | EXPLAIN ANALYZE 输出独立 Analyze Cost（1.228ms），未混入 Tree Plan Cost |
 | TDB-694 | 数据订阅 | 功能迭代 | P0 | 通过 | V1 下 mode=consensus topic 创建成功，SHOW TOPICS 显示 mode=consensus |
 | TDB-696 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-6 wal_throttle=-1 已落盘 |
 | TDB-698 | 审计日志 | 代码优化 | P0 | 通过 | AUDIT-1 root.__audit TTL 品牌显示 TimechoDB |
@@ -39,6 +40,7 @@
 | TDB-718 | CLI/客户端 | 缺陷 | P0 | 通过 | CLI-1 三个 DN 查询结果一致 |
 | TDB-719 | 查询引擎 | 缺陷 | P1 | 通过 | CLI-3 DATE 空值写入/查询无异常 |
 | TDB-721 | Region 迁移/取消 | 缺陷 | P2 | 通过 | REGION-5 取消迁移后无新增 snapshot 残余目录 |
+| TDB-728 | CLI/客户端 | 缺陷 | P2 | 通过 | JDBC 查询循环中重启 DN：3 次重连失败后自动恢复（34 OK / 3 FAIL） |
 | TDB-731 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 数据库管理高可用（RC2 29 例回归） |
 | TDB-732 | 存储/TsFile | 新功能 | P0 | 通过 | STOR-4 TTL 在 DN 宕机/恢复后保持一致（3600000） |
 | TDB-733 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 可写视图高可用 |
@@ -85,11 +87,9 @@
 | TDB-819 | 集群/节点 | 缺陷 | P2 | 部分验证 | 同上，Adding 状态下的 ratio 未单独验证 |
 | TDB-689 | CLI/客户端 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-CLI），待逐条执行 |
 | TDB-692 | 数据订阅 | 缺陷 | P0 | 可测未验 | 需要订阅客户端持续消费（PullConsumer）验证积压 |
-| TDB-693 | 表模型 DDL/Procedure | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-DDL），待逐条执行 |
 | TDB-713 | 审计日志 | 功能迭代 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
 | TDB-714 | 数据订阅 | 缺陷 | P0 | 可测未验 | 需要 PullConsumer 客户端验证 DATE FIELD 订阅 |
 | TDB-720 | Region 迁移/取消 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
-| TDB-728 | CLI/客户端 | 缺陷 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-CLI），待逐条执行 |
 | TDB-729 | 表模型 DDL/Procedure | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-DDL），待逐条执行 |
 | TDB-775 | 审计日志 | 功能迭代 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
 | TDB-782 | 审计日志 | 功能迭代 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |

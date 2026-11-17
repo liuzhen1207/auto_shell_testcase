@@ -13,8 +13,8 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（十五批） | **79** |
-| 通过 | **70** |
+| 执行检查项（十六批） | **81** |
+| 通过 | **72** |
 | 失败 | 0 |
 | 跳过 | 9 |
 
@@ -238,3 +238,12 @@
 | REGION-5 取消迁移后快照残余 | **PASS** | 目标 DN 近 5 分钟无新增 snapshot 目录（TDB-721） |
 | CLUSTER-11 分区表修复参数 + 停 DN | **PASS** | CN 无 TSStatus 转换异常，恢复 8/8（TDB-771） |
 | STOR-4 TTL 在 DN 宕机/恢复后一致 | **PASS** | TTL=3600000 保持一致（TDB-732） |
+
+## 十六、第十六批（成本归属 + JDBC 重连，2 PASS）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| QUERY-13 EXPLAIN ANALYZE 成本归属 | **PASS** | 输出含独立的 `Analyze Cost: 1.228 ms`、`Logical Plan Cost`、`Dispatch Cost` 等分项，Analyzer 耗时未混入 Tree Plan Cost（TDB-693） |
+| CLI-6 JDBC 查询中断连重连 | **PASS** | 查询循环中重启 DN：3 次 `Fail to reconnect` 后自动恢复，最终 34 OK / 3 FAIL，statement 可复用（TDB-728） |
+
+> 复现方式：Java 程序 `JdbcReconnect`（classpath = server jar + common-dependency），循环查询期间 `kill -9` 目标 DN 并重启。
