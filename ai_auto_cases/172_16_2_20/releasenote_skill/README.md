@@ -60,3 +60,4 @@ releasenote_skill/
 | 覆盖主题 | 配置热加载、CLI、查询引擎、COPY TO TsFile、迁移取消 |
 | 结果 | 14 项检查全部 PASS（RC2 83183d0） |
 | 目录 | [RN-CATALOG.md](versions/v2.0.11.1/RN-CATALOG.md) |
+| 逐条结论 | [RN-RESULT.md](versions/v2.0.11.1/RN-RESULT.md) |
