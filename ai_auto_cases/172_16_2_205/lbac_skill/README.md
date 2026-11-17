@@ -238,13 +238,10 @@ SEP=1 RESULT_BASE=/data2/auto_test/lbac_results_sep_$(date +%Y%m%d_%H%M%S) \
 | LB-193 | M-08 | 必失败操作后原访问与元数据不受影响 |
 | LB-194 | G-17 | SECURITY 主体与普通用户对 access 表的可见范围 |
 | LB-195 | G-18 | 两个策略下同名标签互不串用 |
-| LB-196 / LB-197 | L-03 / L-05 / R-09 / R-10 | **SKIP**：当前版本不支持 SET/TREE 多值标签语法 |
+| LB-196 / LB-197 | L-03 / L-05 / R-09 / R-10 | SET / TREE 多值标签（写法 `COMPONENT c 'A', 'B'`，实测支持） |
 
-### 语法差异发现（待研发确认）
+### 语法差异更正（2026-11-17）
 
-实测 2.0.13.1 RC2 **不支持 SET/TREE 组件的多值标签**：
-- `COMPONENT c 'A' 'B'` → 700 语法错误
-- `COMPONENT c ('A','B')` → 700 语法错误
-- `COMPONENT c 'A', COMPONENT c 'B'` → 701 Duplicate component
-
-而自测文档 L-03/L-05 期望 "SET 使用多个独立字面量 'RD','QA'"、TREE 多值，需确认是文档超前还是实现缺失。
+先前判定“不支持多值”有误：上述三种写法均非需求语法。需求 L634 的正确写法是
+`COMPONENT c 'A', 'B'`（逗号后直接跟值），实测 SET/TREE 多值均创建成功，`label_value` 形如 `(QA,RD)`、`(RND,STORAGE)`。
+易混淆点：组件之间与组件内多值都用逗号，区别在逗号后是否出现 `COMPONENT` 关键字。

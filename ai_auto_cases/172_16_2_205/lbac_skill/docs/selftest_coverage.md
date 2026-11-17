@@ -75,3 +75,17 @@
 已把第四节清单实现为 LB-181 ~ LB-197（17 条），覆盖：备注权限、歧义值、SET/TREE 空值三态、多角色多策略、六规则豁免、WRITE_UP/DOWN、SET/TREE 豁免、策略级豁免、多规则撤销与非法方向、并发 DDL、活跃会话、access 表可见性、跨策略同名标签。
 
 其中 **LB-196/197 SKIP**：实测当前版本不支持 SET/TREE 多值标签（`'A' 'B'`、`('A','B')` 均 700，`COMPONENT c 'A', COMPONENT c 'B'` 报 701 Duplicate component），与自测文档 L-03/L-05 的期望不一致，需研发确认是文档超前还是实现缺口。
+
+## 六、更正（2026-11-17）：SET/TREE 多值标签实际支持
+
+此前结论“多值语法不支持”**有误**：当时尝试的三种写法（空格分隔、括号包裹、重复 COMPONENT）都不是需求规定的语法。
+需求文档 L634 示例为 **`COMPONENT department 'RD', 'QA'`**（同一 COMPONENT 后逗号分隔多个值），实测成功：
+
+```
+l_multi  →  ():(QA,RD):()
+l_mix    →  ():(QA,RD):RND
+l_tree   →  ():():(RND,STORAGE)
+```
+
+因此 LB-196（SET 多值集合覆盖）、LB-197（TREE 多值多分支）已从 SKIP 改为真实用例。
+遗留的易混淆点（建议文档改进，不构成缺陷）：多值与组件分隔都用逗号；多值 `label_value` 展示被重排为字典序（输入 RD,QA → 显示 QA,RD）。

@@ -1,88 +1,65 @@
-# 缺陷草稿 2：SET / TREE 组件不支持多值安全标签（无任何可用语法），与自测文档期望不一致
+# 缺陷草稿 2（已撤回）：SET / TREE 多值标签——实际支持，此前探针写法错误
 
-> 状态：**草稿，待确认后再提 PLM**（未提交）
+> 状态：**已撤回，不提 PLM**（2026-11-17 复核后作废）
+> 结论：多值语法**是支持的**，正确写法为需求文档 L634 示例：`COMPONENT dept 'RD', 'QA'`。
+> 保留本文仅作为“语法易混淆”的记录，供文档/手册改进参考。
 
-## 基本信息
+## 撤回原因
 
-| 项 | 值 |
-|---|---|
-| 产品 | TimechoDB |
-| 版本 | V2.0.13.1 RC2，BuildInfo `83183d0` |
-| 环境 | 3C5D（3 CN + 5 DN），Schema 3 副本 / Data 2 副本，IoTConsensus V1 |
-| 模块 | 安全 - LBAC - 安全标签（Label） |
-| 严重程度（建议） | 中（能力缺失：SET/TREE 的多值标签无法创建，相关比较语义无法表达） |
-| 类型 | 功能缺陷 or 文档缺陷（需研发判定） |
-| 关联用例 | LB-196 / LB-197（自测文档 L-03、L-05、R-09、R-10） |
+初版草稿依据以下三种写法失败，判定“不支持多值”：
 
-## 背景
-
-研发自测文档要求：
-
-- L-03：*“SET 使用多个独立字面量 `'RD'`、`'QA'` 创建 p_set.l_set_multi”*；
-- L-05：*“TREE 标签使用多值 Development、Software 创建 p_tree.l_tree_multi”*；
-- R-09 / R-10：基于上述多值标签做读/写判定（如列由 TREE 多值 `Publishing、Sales` 保护）。
-
-## 复现步骤与实测（三种可能写法全部失败）
-
-准备：
-
-```sql
-CREATE SECURITY LABEL COMPONENT pr_dept SET ('RD','QA','FIN');
-CREATE SECURITY LABEL COMPONENT pr_org  TREE ('COMPANY' ROOT, 'RND' UNDER 'COMPANY', 'STORAGE' UNDER 'RND');
-CREATE SECURITY POLICY pr_p COMPONENTS pr_dept, pr_org;
-```
-
-| # | 写法 | 结果 |
+| # | 当初尝试的写法 | 结果 |
 |---|---|---|
-| 1 | `CREATE SECURITY LABEL pr_p.l1 COMPONENT pr_dept 'RD' 'QA'` | `700: line 1:55: mismatched input ''QA''. Expecting: ',', <EOF>` |
-| 2 | `CREATE SECURITY LABEL pr_p.l1 COMPONENT pr_dept ('RD','QA')` | `700: line 1:49: mismatched input '('. Expecting: <string>` |
-| 3 | `CREATE SECURITY LABEL pr_p.l1 COMPONENT pr_dept 'RD', COMPONENT pr_dept 'QA'` | `701: Duplicate component 'pr_dept' in security label` |
-| 4 | 同样的三种写法换成 TREE 组件 `pr_org` | 与上表一致（700 / 700 / 701） |
+| 1 | `COMPONENT pr_dept 'RD' 'QA'`（空格分隔） | 700 语法错误 |
+| 2 | `COMPONENT pr_dept ('RD','QA')`（括号包裹） | 700 语法错误 |
+| 3 | `COMPONENT pr_dept 'RD', COMPONENT pr_dept 'QA'`（重复 COMPONENT） | 701 Duplicate component |
 
-单值 + 其余组件留空是可行的（空值语义正常）：
+**但这三种都不是需求规定的写法。** 需求文档 L634-638 的示例是：
 
 ```sql
-CREATE SECURITY LABEL pr_p.l4 COMPONENT pr_dept 'RD';    -- 成功，label_value = RD:()
+-- 一个 component 指定多个值用 ',' 衔接
+CREATE SECURITY LABEL data_policy.public_rd_qa
+  COMPONENT level 'PUBLIC',
+  COMPONENT department 'RD', 'QA',
+  COMPONENT org 'RND';
 ```
 
-## 预期结果
+即：**同一个 COMPONENT 关键字后，用逗号分隔多个值**（逗号后直接跟字符串，不再写 COMPONENT）。
 
-按自测文档，SET / TREE 组件应支持一次给多个元素值（多值标签），并能参与比较语义（SET 覆盖、TREE 多分支）。
+## 实测（RC2 `83183d0`，2026-11-17 复核）
 
-## 实际结果
+```sql
+CREATE SECURITY LABEL COMPONENT mv_dept SET ('RD','QA','FIN');
+CREATE SECURITY LABEL COMPONENT mv_org  TREE ('COMPANY' ROOT, 'RND' UNDER 'COMPANY', 'STORAGE' UNDER 'RND');
+CREATE SECURITY POLICY mv_p COMPONENTS mv_lvl, mv_dept, mv_org;
 
-**不存在任何可用语法**创建 SET/TREE 多值标签：空格分隔、括号、重复 COMPONENT 三种写法分别被 700/700/701 拒绝。
-
-## 影响
-
-1. **能力缺失**：SET 的“集合覆盖”和 TREE 的“多分支”语义在标签层无法完整表达（只能用单值标签做部分覆盖）；
-2. 自测文档 L-03 / L-05 / R-09 / R-10 四条用例无法执行，已在我方套件中标为 SKIP（LB-196 / LB-197）；
-3. 若产品设计确实只支持单值，则**用户手册与自测文档需要同步修正**，否则测试与交付都会按“应支持”来验收。
-
-## 建议
-
-| 方案 | 说明 |
-|---|---|
-| A（若设计支持） | 补齐 SET/TREE 多值标签语法（例如 `COMPONENT c 'A','B'` 需与组件分隔符消歧，可考虑 `COMPONENT c ('A','B')`），并补对应解析与校验 |
-| B（若设计不支持） | 更新用户手册 + 自测文档，明确“多值仅 ARRAY 不支持 / SET、TREE 仅单值”，并把 L-03/L-05/R-09/R-10 改为负向用例（断言被拒绝） |
-
-## 证据
-
-- 探针：`/tmp/gap_syntax_probe.sh`、`/tmp/gap_syntax_probe2.sh`（2026-11-17 上午），输出如上表；
-- 我方用例：`LB-196`（TREE 多值读写）、`LB-197`（SET/TREE 多值创建）当前 SKIP，原因已写入 `cases/c12_gaps.sh` 的 `SKIP_OF`；
-- 全量回归：2026-11-17 普通模式 197 条中 185 PASS / 0 FAIL / 12 SKIP（含上述 2 条）。
-
----
-
-## 附：顺带发现的一个小问题（建议一并确认，不单独提缺陷）
-
-`GRANT EXEMPTION ON RULE ALL` 在 **只含 ARRAY 组件**的策略上展开为 **3 行**：
-
-```
-grantee |     rule_name |access_type|ordinal
-  ex_u1 |LBACWRITEARRAY |      WRITE|      1
-  ex_u1 |LBACWRITEARRAY |      WRITE|      1     ← 两条完全相同
-  ex_u1 | LBACREADARRAY |       READ|      1
+-- A) 需求示例写法
+CREATE SECURITY LABEL mv_p.l_multi COMPONENT mv_dept 'RD', 'QA';            -- 成功
+-- B) 多值 + 其它组件
+CREATE SECURITY LABEL mv_p.l_mix   COMPONENT mv_dept 'RD', 'QA', COMPONENT mv_org 'RND';   -- 成功
+-- C) TREE 多值
+CREATE SECURITY LABEL mv_p.l_tree  COMPONENT mv_org 'RND', 'STORAGE';      -- 成功
 ```
 
-两条 `LBACWRITEARRAY` 的 rule_name / access_type / ordinal 完全一致（推测是 WRITE_UP 与 WRITE_DOWN 共用一行、未落方向字段）。请研发确认：是设计上不区分方向，还是漏了方向字段/去重。
+查询 `information_schema.security_labels`：
+
+```
+| policy | label_name |      label_value |
+|   mv_p |    l_multi |  ():(QA,RD):()    |
+|   mv_p |      l_mix |  ():(QA,RD):RND   |
+|   mv_p |    l_tree  |  ():():(RND,STORAGE) |
+```
+
+## 遗留的文档/易用性问题（建议改进，不构成缺陷）
+
+1. **多值与组件分隔符都用逗号**，极易混淆：
+   - 组件之间：`COMPONENT c1 'A', COMPONENT c2 'B'`
+   - 组件内多值：`COMPONENT c1 'A', 'B'`
+   - 建议在用户手册/自测文档里并排给出两组示例，并明确“逗号后是否出现 COMPONENT 关键字”是区别点。
+2. **多值 `label_value` 的展示顺序被规范化**：输入 `'RD','QA'`，展示为 `(QA,RD)`（看起来按字典序重排）。需求 L1855 只规定“同一 Component 多个值写作 `(v1,v2)`”，未说明是否保序/排序规则，建议明确。
+3. 括号写法 `('RD','QA')` 会被报语法错误，与需求 L776“使用括号包裹，并用逗号分隔，例如 `(RD,QA)`”的表述**容易让人误以为是 SQL 写法**（实际那是 `label_value` 的展示格式）。建议在需求/手册中区分“SQL 输入写法”与“展示格式”。
+
+## 我方用例的调整
+
+- LB-196（SET 多值读写语义）、LB-197（TREE 多值读写语义）已从 SKIP 改为**真实用例**，使用需求规定写法；
+- 原 `docs/selftest_coverage.md` 中“语法不支持”的结论已更正。

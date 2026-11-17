@@ -20,12 +20,10 @@ CASES+=(
 "LB-193|并发|边界|活跃访问期间执行必失败操作后，原访问与元数据不受影响|case_LB193"
 "LB-194|系统表|正向|SECURITY 主体与普通用户对 security_label_access 的可见范围|case_LB194"
 "LB-195|绑定|正向|两个策略下的同名标签互不串用|case_LB195"
-"LB-196|比较|边界|TREE 多值标签读写（语法不支持，待确认）|case_LB196"
-"LB-197|标签|边界|SET/TREE 多值标签创建（语法不支持，待确认）|case_LB197"
+"LB-196|比较|正向|SET 多值标签：集合覆盖语义（对象 (RD,QA)、用户 RD 拒 / 用户 (RD,QA) 允）|case_LB196"
+"LB-197|比较|正向|TREE 多值标签：多分支覆盖语义（对象 (RND,STORAGE)、COMPANY 允 / RND 拒）|case_LB197"
 )
 
-SKIP_OF["LB-196"]="2.0.13.1 RC2 不支持 TREE 多值标签语法（自测 L-05/R-09/R-10 期望支持），待研发确认"
-SKIP_OF["LB-197"]="2.0.13.1 RC2 不支持 SET 多值标签语法（自测 L-03 期望支持），待研发确认"
 
 # 三组件环境 + 一条 t1 表（不预置列保护，按用例自行保护）
 mv3_env() {
@@ -305,4 +303,43 @@ case_LB195() {
   assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t2")" "2400" "同名标签 lb_p3.sec 未被授予，读 lb_p3 的表被拒"
   Q "GRANT SECURITY LABEL lb_p3.sec TO USER $u FOR READ ACCESS" >/dev/null 2>&1
   assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t2")" "补授 lb_p3.sec 后可读"
+}
+
+case_LB196() {
+  lbac_reset
+  Q "CREATE SECURITY LABEL COMPONENT lb_dept SET ('RD','QA','FIN')" >/dev/null 2>&1
+  Q "CREATE SECURITY POLICY lb_p COMPONENTS lb_dept" >/dev/null 2>&1
+  # 对象标签：多值 (RD,QA)
+  assert_ok "$(Q "CREATE SECURITY LABEL lb_p.l_obj COMPONENT lb_dept 'RD', 'QA'")" "SET 多值标签 (RD,QA) 创建成功"
+  Q "CREATE SECURITY LABEL lb_p.l_rd COMPONENT lb_dept 'RD'" >/dev/null 2>&1
+  Q "CREATE SECURITY LABEL lb_p.l_qa_fin COMPONENT lb_dept 'QA', 'FIN'" >/dev/null 2>&1
+  mk_table
+  bind_policy t1 lb_p
+  protect t1 s1 l_obj
+  with_label l_obj "INSERT INTO $DB.t1(time,dev,s1) VALUES(1,'d1',1.5)" >/dev/null 2>&1
+  local u; u=$(mk_user c196)
+  Q "GRANT SECURITY LABEL lb_p.l_rd TO USER $u FOR READ ACCESS" >/dev/null 2>&1
+  assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "2400" "用户 (RD) 不覆盖对象 (RD,QA)，读被拒"
+  Q "REVOKE SECURITY LABEL lb_p.l_rd FROM USER $u" >/dev/null 2>&1
+  Q "GRANT SECURITY LABEL lb_p.l_obj TO USER $u FOR READ ACCESS" >/dev/null 2>&1
+  assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "用户 (RD,QA) 覆盖对象 (RD,QA)，读放行"
+}
+
+case_LB197() {
+  lbac_reset
+  Q "CREATE SECURITY LABEL COMPONENT lb_org TREE ('COMPANY' ROOT, 'RND' UNDER 'COMPANY', 'STORAGE' UNDER 'RND')" >/dev/null 2>&1
+  Q "CREATE SECURITY POLICY lb_p COMPONENTS lb_org" >/dev/null 2>&1
+  assert_ok "$(Q "CREATE SECURITY LABEL lb_p.l_obj COMPONENT lb_org 'RND', 'STORAGE'")" "TREE 多值标签 (RND,STORAGE) 创建成功"
+  Q "CREATE SECURITY LABEL lb_p.l_comp COMPONENT lb_org 'COMPANY'" >/dev/null 2>&1
+  Q "CREATE SECURITY LABEL lb_p.l_rnd COMPONENT lb_org 'RND'" >/dev/null 2>&1
+  mk_table
+  bind_policy t1 lb_p
+  protect t1 s1 l_obj
+  with_label l_obj "INSERT INTO $DB.t1(time,dev,s1) VALUES(1,'d1',1.5)" >/dev/null 2>&1
+  local u; u=$(mk_user c197)
+  Q "GRANT SECURITY LABEL lb_p.l_rnd TO USER $u FOR READ ACCESS" >/dev/null 2>&1
+  assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "2400" "用户 RND 不能覆盖对象 (RND,STORAGE)，读被拒"
+  Q "REVOKE SECURITY LABEL lb_p.l_rnd FROM USER $u" >/dev/null 2>&1
+  Q "GRANT SECURITY LABEL lb_p.l_comp TO USER $u FOR READ ACCESS" >/dev/null 2>&1
+  assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "用户 COMPANY 为两者共同祖先，读放行"
 }
