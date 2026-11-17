@@ -51,3 +51,12 @@ releasenote_skill/
 | --- | --- | --- | --- | --- |
 | TDB-65 | 新功能（集群节点 ReadOnly 可观测性） | RC1 b6d3de | 通过 | [TDB-65](versions/v2.0.13.1/TDB-65/README.md) |
 | TDB-1104 | 代码优化（空 DataRegion 缩容 Adding 时 load snapshot 空指针） | RC2 83183d0 | 通过 | [TDB-1104](versions/v2.0.13.1/TDB-1104/README.md) |
+## v2.0.11.1 已验 RN（批量）
+
+| 项 | 内容 |
+| --- | --- |
+| RN 总数 | 147（可测 117 / 环境不满足 30） |
+| 用例 | [RN-2.0.11.1-SMOKE](versions/v2.0.11.1/RN-SMOKE.md) |
+| 覆盖主题 | 配置热加载、CLI、查询引擎、COPY TO TsFile、迁移取消 |
+| 结果 | 14 项检查全部 PASS（RC2 83183d0） |
+| 目录 | [RN-CATALOG.md](versions/v2.0.11.1/RN-CATALOG.md) |
