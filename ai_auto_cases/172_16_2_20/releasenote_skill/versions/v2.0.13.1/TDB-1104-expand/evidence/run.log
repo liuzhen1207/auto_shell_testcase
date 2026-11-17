@@ -1,0 +1,93 @@
+=== 1) 启动 3C4D ===
+[11:35:18] cluster=7
+ConfigNode Running
+ConfigNode Running
+ConfigNode Running
+  DataNode Running
+  DataNode Running
+  DataNode Running
+  DataNode Running
+=== 2) CUSTOM 策略 + 10 组空 region ===
+Msg: The statement is executed successfully.
+--- 4D 时 region（组数 / 空组） ---
+      10       11       12        3        4        5        6        7        8        9 
+      10       11       12        3        4        6        7        8        9 
+=== 3) 扩容第 5 台 DN（24） ===
+cluster=8
+--- 扩容后 region ---
+      10             0          3
+      10             0          4
+      11             0          5
+      11             0          6
+      12             0          3
+      12             0          4
+       3             0          5
+       3             0          6
+       4             0          3
+       4             0          4
+       5             1          5
+       5             1          6
+       6             0          3
+       6             0          4
+       7             0          5
+       7             0          6
+       8             0          3
+       8             0          4
+       9             0          5
+       9             0          6
+--- DN24 的 nodeId ---
+|     7|Running|172.16.2.24|   6667|            0|              0|
+=== 4) 空 region 迁移到新 DN ===
+DN24 id=7
+mark=TDB1104X-migrate-1794886597
+--- region 10 -> extend 到 7 ---
+successfully
+successfully
+--- region 11 -> extend 到 7 ---
+successfully
+successfully
+--- region 12 -> extend 到 7 ---
+successfully
+successfully
+--- region 3 -> extend 到 7 ---
+successfully
+successfully
+--- region 4 -> extend 到 7 ---
+successfully
+successfully
+  dn19=0
+  dn21=0
+  dn22=0
+  dn23=0
+  dn24=0
+  合计=0
+=== 5) LOAD BALANCE TO DATANODE 7 ===
+mark=TDB1104X-balance-1794886709
+Msg: The statement is executed successfully.
+Msg: The statement is executed successfully.
+  dn19=0
+  dn21=0
+  dn22=0
+  dn23=0
+  dn24=0
+  合计=0
+      10             0          3
+      10             0          4
+      11             0          5
+      11             0          6
+      12             0          3
+      12             0          4
+       3             0          6
+       3             0          7
+       4             0          3
+       4             0          7
+       5             1          5
+       5             1          6
+       6             0          4
+       6             0          7
+       7             0          5
+       7             0          6
+       8             0          3
+       8             0          4
+       9             0          5
+       9             0          7

@@ -13,7 +13,7 @@
 | --- | ---: | ---: | --- | --- | --- | --- |
 | `delete_skill` | **97** | **187**（V1 97 + V2 90） | 2.0.13.1 RC2 `83183d0` | 2026-11-17 | ✅ 已跑完 | [README](172_16_2_20/delete_skill/README.md) |
 | `ddl_ha_skill` | **29** | 29（V1） | 2.0.13.1 RC2 `83183d0` | 2026-11-11 | ✅ 已跑完 | [报告](172_16_2_20/ddl_ha_skill/docs/REPORT-RC2.md) |
-| `releasenote_skill` | **2 RN**（TDB-65、TDB-1104） | — | 2.0.13.1 RC2 `83183d0` | 2026-11-17 | ✅ 均已验 | [README](172_16_2_20/releasenote_skill/README.md) |
+| `releasenote_skill` | **2 RN**（TDB-65、TDB-1104）+ 1 变体（真实扩容 3C4D→5D） | — | 2.0.13.1 RC2 `83183d0` | 2026-11-17 | ✅ 均已验 | [README](172_16_2_20/releasenote_skill/README.md) |
 
 ### delete_skill 最近一次全量（2.0.13.1 RC2，163 轮 → 现 187 轮）
 

@@ -1,3 +1,4 @@
 version	rn	title	type	result	verification_rc	doc_url	evidence_dir	date
 v2.0.13.1	TDB-65	集群节点 ReadOnly 可观测性提升	新功能	通过	RC1	https://plm.infra.timecho.com/docs/1370	versions/v2.0.13.1/TDB-65/evidence	2026-11-02
 v2.0.13.1	TDB-1104	【load snapshot】空 DataRegion 缩容(Adding)时 load snapshot 空指针	代码优化	通过	RC2	https://plm.infra.timecho.com/iterations?productId=1&itemId=1732	versions/v2.0.13.1/TDB-1104/evidence	2026-11-17
+v2.0.13.1	TDB-1104	空 DataRegion 真实扩容(3C4D→5D)后迁移/缩容	代码优化	通过	RC2	https://plm.infra.timecho.com/iterations?productId=1&itemId=1732	versions/v2.0.13.1/TDB-1104-expand/evidence	2026-11-17
