@@ -12,6 +12,7 @@
 | 3 | 缺陷（待验证关闭） | **TDB-899** | 三权分立下 `ALTER USER … ACCOUNT UNLOCK` 返回 701 Unsupported author type，账号锁定后无解锁入口（RC2 实测已修复，**按用户决定保持打开，待 V2.0.14.1 验证后再关闭**） | P1 | V2.0.14.1 / V2.0.12.1 | 舒文炜 | 刘珍 | `SEC-13` / 专项 5 项检查（见 `PLM_TDB-1607.md` 第 5 节） |
 | 4 | **已知问题（不修复）** | —（研发确认改不了） | `CREATE USER` / `ALTER USER SET PASSWORD` 的**明文口令写入 ConfigNode 共识（Raft）日志** `data/confignode/consensus/*/current/log_inprogress_*`，三副本可读 | P2（原建议） | V2.0.13.1 RC2 `83183d0` 复现 | 研发：改不了 | 刘珍 | `SEC-12`（共识日志明文 → 已知行为 WARN 基线） |
 | 5 | 待确认缺陷（未提单） | — | **仅三权分立模式**：`security_admin` 无法修改锁定类配置（`failed_login_attempts` / `_per_user` / `password_lock_time_minutes` → 803 缺 SYSTEM），由 `sys_admin` 承担，需求写“root 或安全管理员可改”；**普通模式 root 四键全部可改（清库实测，无问题）** | P2 | V2.0.13.1 RC2 | 待定 | 刘珍 | `SEC-15`（普通模式 root 可改=硬门禁；sep 角色矩阵=按设计/待研发确认） |
+| 6 | 待确认缺陷（未提单） | — | 防爆破参数非法值处理与需求不一致：`failed_login_attempts=abc` 导致 **DataNode 拒绝启动**（`ERROR IoTDBDescriptor:319` + NumberFormatException，无回退、错误信息不含键名）；`-5` 静默按“禁用”处理（仅 INFO）；`password_lock_time_minutes=0` 回退 10 生效但 `show configuration` 仍显示 0 | P2 | V2.0.13.1 RC2 | 待定 | 刘珍 | `SEC-15` 第 4 步（当前 WARN，修复后可断言“回退默认+ERROR 含键名”） |
 
 ## 已知问题 #4 详情与处置
 
@@ -28,7 +29,7 @@
 
 | 日期 | 变更 |
 | --- | --- |
-| 2026-11-17 | 建台账：TDB-1606 / TDB-1607 / TDB-899（待验证关闭）/ 明文口令入 Raft 日志（研发确认不修复，转已知问题）；新增第 5 条「锁定配置权限映射」待确认缺陷 |
+| 2026-11-17 | 新增第 6 条「非法配置处理」待确认缺陷；建台账：TDB-1606 / TDB-1607 / TDB-899（待验证关闭）/ 明文口令入 Raft 日志（研发确认不修复，转已知问题）；新增第 5 条「锁定配置权限映射」待确认缺陷 |
 
 ## 文档修订项（非缺陷，需研发改文档）
 
