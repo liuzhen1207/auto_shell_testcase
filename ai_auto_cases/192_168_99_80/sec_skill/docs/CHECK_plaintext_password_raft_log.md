@@ -1,3 +1,7 @@
+﻿> **⚠️ 本报告结论已作废（2026-11-17 10:5x 更正）**：
+> 当时的"未复现"是**检索命令写错**导致（grep -a -l 少了 -r，对目录搜索恒为 0 命中；节点上也没有 strings 命令）。
+> 用 grep -ra + 本地字节级复核后**已稳定复现**：明文口令确实落在 data/confignode/consensus/*/current/log_inprogress_*（三节点同偏移）。
+> 结论与证据见 **[DEFECT_plaintext_password_raft_log.md](DEFECT_plaintext_password_raft_log.md)**；本文件仅保留排查过程，勿再引用其结论。
 # 核查报告：明文口令是否落入 ConfigNode 共识（Raft）日志（V2.0.13.1 RC2）
 
 > **结论先行：在清库重建的干净环境上，多次尝试均**未能**复现"明文口令出现在 ConfigNode 共识日志"；
