@@ -1,13 +1,3 @@
-> **🟢 结论更新（2026-11-17 11:40，用户确认）：本条不算缺陷，已撤回。**
->
-> - **普通模式（未开三权分立）**：`root` 修改四个键（`failed_login_attempts` / `failed_login_attempts_per_user` /
->   `password_lock_time_minutes` / `password_stale_warning_days`）**全部成功**——今天 11:09 的 `check_stale_mode.sh`
->   就是 root 身份执行并拿到 `The statement is executed successfully.`（含 `restart is required` 提示）。
-> - **三权分立模式**：`security_admin` 无 SYSTEM、由 `sys_admin` 承担系统级配置，属**职责分离的预期设计**；
->   用户确认"没这个问题"。
-> - 因此下面记录的现象**不是缺陷**，仅作为"角色-配置权限矩阵"的**行为记录**保留；
->   若后续要对齐文档措辞（需求写"root 或安全管理员"，实际 sep 下为"root 或系统管理员"），按文档修订项处理，不建缺陷单。
-
 # 缺陷报告：三权分立下"安全管理员"无法修改防爆破锁定配置（返回 803 缺 SYSTEM）
 
 | 项 | 内容 |
@@ -16,7 +6,7 @@
 | 被测版本 | TimechoDB **2.0.13.1 RC2**，BuildInfo **`83183d0`**（企业版） |
 | 环境 | 干净集群（3 节点，192.168.99.77/78/79，SR=3/DR=3）；**三权分立**（`enable_separation_of_powers=true`，root 已禁登 803） |
 | 复现概率 | **必现**（三个键全部命中） |
-| 优先级建议 | ~~P2~~ → **非缺陷（撤回）**：普通模式 root 可改；sep 下由 sys_admin 承担属分权设计 |
+| 优先级建议 | **P2**：三权分立下安全管理员无法修改防爆破策略（普通模式 root 无此问题，见第五节「适用范围确认」） |
 
 ## 一、复现步骤（1 分钟）
 
@@ -125,10 +115,48 @@ password_stale_warning_days=30
 
 ## 四、影响
 
-1. **三权分立设计目标落空**：安全管理员本应负责"安全策略管控"（账号锁定属安全策略），却无权修改，只能让 sys_admin 代劳 → 职责分离被打破。
+1. **仅三权分立模式受影响**（普通模式 root 四键全可改，干净环境实测见 5.0-A）；**三权分立设计目标落空**：安全管理员本应负责"安全策略管控"（账号锁定属安全策略），却无权修改，只能让 sys_admin 代劳 → 职责分离被打破。
 2. **安全策略不可运维**：客户启用三权分立后，锁定阈值/锁定时长无法由安全管理员调整，遇到"账号被大量锁定"等场景处置链变长。
 3. **审计与合规**：安全类配置由系统管理员修改，不符合"最小权限/职责分离"的审计预期。
 4. 不涉及越权（实际是权限偏严，失败即拒绝）。
+
+
+
+## 五.0 适用范围确认（2026-11-17，清库重建的干净环境实测）
+
+### A. 普通模式（`enable_separation_of_powers=false`）—— **无此问题**
+
+`root` 修改四个键**全部成功**（CLI 原始返回）：
+
+```
+root> set configuration 'failed_login_attempts'='5';
+Msg: The statement is executed successfully. Configuration has been set successfully,
+     but restart is required for the following parameters to take effect: failed_login_attempts.
+
+root> set configuration 'failed_login_attempts_per_user'='5';
+Msg: ... restart is required ... failed_login_attempts_per_user.
+
+root> set configuration 'password_lock_time_minutes'='5';
+Msg: ... restart is required ... password_lock_time_minutes.
+
+root> set configuration 'password_stale_warning_days'='5';
+Msg: The statement is executed successfully.        ← 热加载，无 restart 提示
+```
+
+补充：普通模式下三个分权内置账号**不存在**（`804: The user security_admin/sys_admin/audit_admin does not exist`），
+所以"安全管理员改不了"这一现象**只可能出现在三权分立模式**。
+
+### B. 三权分立模式 —— 现象所在
+
+| 执行者 | 锁定类三键 | `password_stale_warning_days` |
+| --- | --- | --- |
+| `security_admin` | ❌ **803 缺 SYSTEM** | ✅ 成功 |
+| `sys_admin` | ✅ 成功（restart 提示） | ❌ 803 缺 SECURITY |
+| `audit_admin` | ❌ 803 缺 SYSTEM | — |
+| `root` | ❌ 803（禁止 SUPER USER 登录，需求行为） | — |
+
+⇒ **结论：普通模式没有问题（root 全可改）；本缺陷仅限三权分立模式**——root 被禁登、
+`security_admin` 又无 SYSTEM，导致"安全管理员无法调整防爆破策略"，只能由 `sys_admin` 代劳。
 
 ## 五、修复建议
 
@@ -161,7 +189,7 @@ password_stale_warning_days=30
 | `/data/iotdb/autotest/sec_skill/results/artifact_lockpriv_20261117_113357/` | 产物目录（CLI 原始输出 `cli_matrix.txt`、模板注解 `template_annot.txt`、日志命中 `logs_hits.txt`、bundle） |
 | `sec_skill/tools/repro_lockpriv.sh` | 一键复现脚本（开 sep → 矩阵 → 取证） |
 
-复现时间：2026-11-17 11:34，三权分立（root 803），`security_admin` 三个键全部 803 缺 SYSTEM。
+复现时间：2026-11-17 11:34（三权分立，三个键 803 缺 SYSTEM）；普通模式对照：2026-11-17 11:58 清库重建后 root 四键全部成功。
 
 ## 八、备注
 
