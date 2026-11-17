@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（十六批） | **81** |
+| 执行检查项（十七批） | **82** |
 | 通过 | **72** |
 | 失败 | 0 |
-| 跳过 | 9 |
+| 跳过 | 10 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -247,3 +247,20 @@
 | CLI-6 JDBC 查询中断连重连 | **PASS** | 查询循环中重启 DN：3 次 `Fail to reconnect` 后自动恢复，最终 34 OK / 3 FAIL，statement 可复用（TDB-728） |
 
 > 复现方式：Java 程序 `JdbcReconnect`（classpath = server jar + common-dependency），循环查询期间 `kill -9` 目标 DN 并重启。
+
+## 十七、第十七批（export 工具，0 PASS + 1 SKIP/待确认）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| TOOL-1 `export-tsfile.sh`（table 模型） | **待确认** | 工具可启动，但执行时报 `SubscriptionIncompatibleHandlerException: SubscriptionRecordHandler do not support getTsFile()`，未生成导出文件；可能与本环境订阅模式/协议（V2）或 TDB-787 的脚本回退有关，需研发确认预期行为 |
+
+> 复现命令：`tools/export-tsfile.sh -sql_dialect table -h 172.16.2.19 -p 6667 -u root -pw *** -db rnexp -table t -t /tmp/rnexp_out`
+> 注意：该工具在无 `</dev/null` 时会阻塞等待输入，脚本化调用需加 `timeout` 与 `</dev/null`。
+
+### 剩余待验证（3 条）
+
+| RN | 待验证点 |
+| --- | --- |
+| TDB-689 | CLI 本地 jar 路径校验导致导出失败 |
+| TDB-713 | TTL 删除失败时审计日志 |
+| TDB-783 | 审计存储失效时的处理动作审计 |
