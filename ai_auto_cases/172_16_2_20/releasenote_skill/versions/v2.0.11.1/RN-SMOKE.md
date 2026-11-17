@@ -13,8 +13,8 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（十一批） | **66** |
-| 通过 | **59** |
+| 执行检查项（十三批） | **72** |
+| 通过 | **65** |
 | 失败 | 0 |
 | 跳过 | 7 |
 
@@ -207,3 +207,14 @@
 | SUB-4 订阅消费（PullConsumer） | SKIP | 需订阅客户端运行时（TDB-692/714/790/787/803） |
 
 > 协议说明：订阅 `mode=consensus`（内部名 incremental）依赖 **IoTConsensus V1**；本环境默认 V2，验证时临时切 V1，完成后已恢复 V2。
+
+## 十三、第十二~十三批（集群/节点 + 查询，4 PASS）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| CLUSTER-6 DN 重启期间建库/写入 | **PASS** | 恢复后数据与 region 完整（TDB-760） |
+| CLUSTER-7 删除仅作用于目标表 | **PASS** | A=1 行、B=3 行，跨 region 无连带删除（TDB-761） |
+| CLUSTER-8 三 DN schema cache 一致 | **PASS** | 表数均为 2（TDB-748） |
+| QUERY-9 `date_bin_gapfill(1 SECOND, time)` | **PASS** | 标量/`CAST`/嵌套子查询均可用（TDB-752） |
+
+> 说明：`date_bin_gapfill` 的正确签名是「数值 + 时间单位关键字 + 时间戳表达式」，如 `date_bin_gapfill(1 SECOND, time)`；用 `1s`/裸整数会分别报语法错和「Unknown function」。
