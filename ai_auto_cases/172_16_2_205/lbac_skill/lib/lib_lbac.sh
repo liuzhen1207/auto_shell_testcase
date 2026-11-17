@@ -217,17 +217,21 @@ with_label() {  # $1=label $2=SQL；用一个持有该 label ALL 的临时用户
   L "$u" "$UPW" "$sql"
 }
 
-verify_col_label() {  # $1=列 $2=标签（按字段精确匹配，避免 CLI 竖线格式差异）
-  Q "SELECT column_name, security_label FROM information_schema.columns" 2>/dev/null \
-    | awk -F'|' -v c="$1" -v l="$2" '{a=$2; b=$3; gsub(/^[ \t]+|[ \t]+$/,"",a); gsub(/^[ \t]+|[ \t]+$/,"",b); if (a==c && b==l) f=1} END{exit(f?0:1)}'
+verify_col_label() {  # $1=列 $2=标签 [$3=表]（按字段精确匹配）
+  Q "SELECT table_name, column_name, security_label FROM information_schema.columns" 2>/dev/null \
+    | awk -F'|' -v t="${3:-}" -v c="$1" -v l="$2" '{
+        a=$2; b=$3; d=$4;
+        gsub(/^[ \t]+|[ \t]+$/,"",a); gsub(/^[ \t]+|[ \t]+$/,"",b); gsub(/^[ \t]+|[ \t]+$/,"",d);
+        if ((t=="" || a==t) && b==c && d==l) f=1
+      } END{exit(f?0:1)}'
 }
 
 protect() {  # $1=表 $2=列 $3=label（必要时补绑定策略，最多 3 轮；失败时打印真实报错）
   local t=$1 c=$2 l=$3 i=0 out=""
   bind_policy "$t" "${4:-lb_p}" >/dev/null 2>&1
   while [ $i -lt 3 ]; do
-    out=$(with_label "$l" "ALTER TABLE $DB.$t ALTER COLUMN $c SECURED WITH $l" 2>&1)
-    verify_col_label "$c" "$l" && return 0
+    out=$(with_label "$l" "ALTER TABLE $DB.$t ALTER COLUMN $c SECURED WITH $l" "${4:-lb_p}" 2>&1)
+    verify_col_label "$c" "$l" "$t" && return 0
     bind_policy "$t" "${4:-lb_p}" >/dev/null 2>&1
     sleep 2; i=$((i + 1))
   done

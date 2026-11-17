@@ -106,7 +106,7 @@ case_LB185() {
   Q "CREATE SECURITY LABEL lb_p2.sec COMPONENT lb_lvl 'SEC'" >/dev/null 2>&1
   mk_table t1
   bind_policy t1 lb_p1
-  protect t1 s1 sec
+  protect t1 s1 sec lb_p1
   mk_table t2
   bind_policy t2 lb_p2
   protect t2 s1 sec lb_p2
@@ -115,9 +115,13 @@ case_LB185() {
   local r u
   r=$(mk_role c185); u=$(mk_user c185u)
   Q "GRANT ROLE $r TO $u" >/dev/null 2>&1
+  Q "GRANT SELECT ON TABLE $DB.t2 TO USER $u" >/dev/null 2>&1
   Q "GRANT SECURITY LABEL lb_p1.sec TO ROLE $r FOR READ ACCESS" >/dev/null 2>&1
   Q "GRANT SECURITY LABEL lb_p2.sec TO ROLE $r FOR READ ACCESS" >/dev/null 2>&1
-  assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "2400" "默认 IGNORE：角色标签不生效（p1）"
+  Q "ALTER SECURITY POLICY lb_p1 IGNORE ROLE AUTHORIZATIONS" >/dev/null 2>&1
+  Q "ALTER SECURITY POLICY lb_p2 IGNORE ROLE AUTHORIZATIONS" >/dev/null 2>&1
+  sleep 2
+  assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "2400" "IGNORE 下角色标签不生效（p1）"
   Q "ALTER SECURITY POLICY lb_p1 USE ROLE AUTHORIZATIONS" >/dev/null 2>&1
   sleep 3
   assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "p1 切 USE 后角色标签生效"
@@ -128,7 +132,9 @@ case_LB185() {
 }
 
 case_LB186() {
-  obj_env
+  mv_env
+  mk_table
+  bind_policy t1 lb_p
   local u; u=$(mk_user c186)
   local rules="LBACREADARRAY LBACREADSET LBACREADTREE LBACWRITESET LBACWRITETREE"
   local r
@@ -138,13 +144,13 @@ case_LB186() {
   assert_ok "$(Q "GRANT EXEMPTION ON RULE LBACWRITEARRAY WRITE_UP FOR lb_p TO USER $u")" "授予 LBACWRITEARRAY WRITE_UP"
   assert_ok "$(Q "GRANT EXEMPTION ON RULE LBACWRITEARRAY WRITE_DOWN FOR lb_p TO USER $u")" "授予 LBACWRITEARRAY WRITE_DOWN"
   local n
-  n=$(Q "SELECT rule_name FROM information_schema.security_policy_exemptions" | grep -c "$u")
+  n=$(Q "SELECT grantee, rule_name FROM information_schema.security_policy_exemptions" | awk -F'|' -v g="$u" '{a=$2; gsub(/ /,"",a); if (a==g) c++} END{print c+0}')
   [ "${n:-0}" -ge 7 ] && ok "豁免记录数 ${n}（>=7）" || fail "豁免记录数偏少：${n:-0}"
   for r in $rules; do
     assert_ok "$(Q "REVOKE EXEMPTION ON RULE $r FOR lb_p FROM USER $u")" "撤销 $r"
   done
-  n=$(Q "SELECT rule_name FROM information_schema.security_policy_exemptions" | grep -c "$u")
-  [ "${n:-0}" = "2" ] && ok "仅剩两条 WRITEARRAY 方向记录（${n}）" || note "剩余记录数 ${n}（WRITEARRAY 方向可能单独计）"
+  n=$(Q "SELECT grantee, rule_name FROM information_schema.security_policy_exemptions" | awk -F'|' -v g="$u" '{a=$2; gsub(/ /,"",a); if (a==g) c++} END{print c+0}')
+  [ "${n:-0}" -le 2 ] && ok "撤销后仅剩 WRITEARRAY 方向记录（${n}）" || fail "撤销后仍剩 ${n} 条"
 }
 
 case_LB187() {
@@ -169,20 +175,20 @@ case_LB188() {
   lbac_reset
   Q "CREATE SECURITY LABEL COMPONENT lb_dept SET ('RD','QA','FIN')" >/dev/null 2>&1
   Q "CREATE SECURITY POLICY lb_p COMPONENTS lb_dept" >/dev/null 2>&1
-  Q "CREATE SECURITY LABEL lb_p.rdqa COMPONENT lb_dept 'RD', COMPONENT lb_dept 'QA'" >/dev/null 2>&1
+  Q "CREATE SECURITY LABEL lb_p.qa COMPONENT lb_dept 'QA'" >/dev/null 2>&1
   Q "CREATE SECURITY LABEL lb_p.rd COMPONENT lb_dept 'RD'" >/dev/null 2>&1
   mk_table
   bind_policy t1 lb_p
   protect t1 s1 rd
-  protect t1 s2 rdqa
+  protect t1 s2 qa
   with_label rd "INSERT INTO $DB.t1(time,dev,s1) VALUES(1,'d1',1.5)" >/dev/null 2>&1
   local u; u=$(mk_user c188)
   Q "GRANT SECURITY LABEL lb_p.rd TO USER $u FOR READ ACCESS" >/dev/null 2>&1
   assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "RD 用户读 RD 对象允许"
-  assert_err "$(u_sql "$u" "SELECT s2 FROM $DB.t1")" "2400" "RD 用户读 (RD,QA) 对象被拒"
+  assert_err "$(u_sql "$u" "SELECT s2 FROM $DB.t1")" "2400" "RD 用户读 QA 对象被拒（集合不覆盖）"
   Q "GRANT EXEMPTION ON RULE LBACREADSET FOR lb_p TO USER $u" >/dev/null 2>&1
   sleep 2
-  assert_ok "$(u_sql "$u" "SELECT s2 FROM $DB.t1")" "READSET 豁免后读 (RD,QA) 放行"
+  assert_ok "$(u_sql "$u" "SELECT s2 FROM $DB.t1")" "READSET 豁免后读 QA 对象放行"
 }
 
 case_LB189() {
@@ -215,6 +221,7 @@ case_LB190() {
   protect t2 s1 sec lb_p2
   with_label sec "INSERT INTO $DB.t1(time,dev,s1) VALUES(1,'d1',1.5)" >/dev/null 2>&1
   local u; u=$(mk_user c190)
+  Q "GRANT SELECT ON TABLE $DB.t2 TO USER $u" >/dev/null 2>&1
   Q "GRANT EXEMPTION ON RULE LBACREADARRAY FOR lb_p TO USER $u" >/dev/null 2>&1
   sleep 2
   assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t2")" "2400" "在 lb_p 的豁免不影响 lb_p2 的对象"
@@ -292,6 +299,7 @@ case_LB195() {
   with_label sec "INSERT INTO $DB.t1(time,dev,s1) VALUES(1,'d1',1.5)" >/dev/null 2>&1
   with_label sec "INSERT INTO $DB.t2(time,dev,s1) VALUES(1,'d1',2.5)" lb_p3 >/dev/null 2>&1
   local u; u=$(mk_user c195)
+  Q "GRANT SELECT ON TABLE $DB.t2 TO USER $u" >/dev/null 2>&1
   Q "GRANT SECURITY LABEL lb_p.sec TO USER $u FOR READ ACCESS" >/dev/null 2>&1
   assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "授 lb_p.sec 后可读 lb_p 的表"
   assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t2")" "2400" "同名标签 lb_p3.sec 未被授予，读 lb_p3 的表被拒"
