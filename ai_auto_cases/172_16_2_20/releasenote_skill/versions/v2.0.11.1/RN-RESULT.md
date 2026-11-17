@@ -8,9 +8,9 @@
 
 | 结论 | 数量 |
 | --- | ---: |
-| 通过 | 38 |
+| 通过 | 42 |
 | 部分验证 | 8 |
-| 可测未验 | 71 |
+| 可测未验 | 67 |
 | 环境不满足 | 30 |
 | **合计** | **147** |
 
@@ -25,15 +25,19 @@
 | TDB-699 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-7 非法 wal 值未写入配置文件 |
 | TDB-700 | CLI/客户端 | 缺陷 | P0 | 通过 | CLI-4 CLI 直接可用，无远程 jar 校验失败 |
 | TDB-701 | 配置热加载 | 缺陷 | P1 | 通过 | CFG-2 disk_space_warning_threshold=NaN 被拒绝且无 ReadOnly |
+| TDB-704 | Region 迁移/取消 | 缺陷 | P0 | 通过 | REG-2 REMOVE Peer 期间取消，数据完整（5 行） |
+| TDB-707 | Region 迁移/取消 | 缺陷 | P1 | 通过 | REG-3 add-peer 期间取消无 TreeSet/NPE |
 | TDB-708 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-3 region_migration_concurrency_limit 0→1 |
 | TDB-710 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-4 data_region_per_data_node 3→2 |
 | TDB-712 | 配置热加载 | 缺陷 | P1 | 通过 | CFG-8 迁移限速设置无 IndexOutOfBounds |
 | TDB-716 | 查询引擎 | 缺陷 | P0 | 通过 | QUERY-1 对齐序列 LAST+时间过滤 1s 返回 |
+| TDB-717 | Region 迁移/取消 | 缺陷 | P3 | 通过 | REG-3 无 unexpected consensusGroupId |
 | TDB-718 | CLI/客户端 | 缺陷 | P0 | 通过 | CLI-1 三个 DN 查询结果一致 |
 | TDB-719 | 查询引擎 | 缺陷 | P1 | 通过 | CLI-3 DATE 空值写入/查询无异常 |
 | TDB-731 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 数据库管理高可用（RC2 29 例回归） |
 | TDB-733 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 可写视图高可用 |
 | TDB-734 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 设备管理高可用 |
+| TDB-737 | Region 迁移/取消 | 功能迭代 | P00 | 通过 | REG-1 CANCEL ALL MIGRATIONS 可执行 |
 | TDB-738 | 配置热加载 | 功能迭代 | P00 | 通过 | CFG-9 运行时配置热改成功 |
 | TDB-739 | 查询引擎 | 功能迭代 | P2 | 通过 | QUERY-6 GROUP BY/ORDER BY 支持别名 |
 | TDB-742 | 其它 | 功能迭代 | P1 | 通过 | QUERY-5 FILL(PREVIOUS) 可执行 |
@@ -74,12 +78,9 @@
 | TDB-695 | 配置热加载 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-CFG），待逐条执行 |
 | TDB-702 | 审计日志 | 缺陷 | P3 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
 | TDB-703 | 审计日志 | 缺陷 | P3 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
-| TDB-704 | Region 迁移/取消 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
-| TDB-707 | Region 迁移/取消 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-711 | 数据订阅 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
 | TDB-713 | 审计日志 | 功能迭代 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
 | TDB-714 | 数据订阅 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
-| TDB-717 | Region 迁移/取消 | 缺陷 | P3 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-720 | Region 迁移/取消 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-721 | Region 迁移/取消 | 缺陷 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-727 | 激活/打包 | 新功能 | P00 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |
@@ -87,7 +88,6 @@
 | TDB-729 | 表模型 DDL/Procedure | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-DDL），待逐条执行 |
 | TDB-732 | 存储/TsFile | 新功能 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-STORAGE），待逐条执行 |
 | TDB-735 | Region 迁移/取消 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
-| TDB-737 | Region 迁移/取消 | 功能迭代 | P00 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-740 | CLI/客户端 | 新功能 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-CLI），待逐条执行 |
 | TDB-743 | CLI/客户端 | 安全相关 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-CLI），待逐条执行 |
 | TDB-744 | 安全/权限 | 安全相关 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-SEC），待逐条执行 |

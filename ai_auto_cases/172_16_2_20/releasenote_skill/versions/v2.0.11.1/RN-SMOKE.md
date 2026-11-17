@@ -13,8 +13,8 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（八批） | **54** |
-| 通过 | **48** |
+| 执行检查项（九批） | **58** |
+| 通过 | **52** |
 | 失败 | 0 |
 | 跳过 | 6 |
 
@@ -177,3 +177,12 @@
 | QUERY-6 GROUP BY/ORDER BY 别名 | **PASS** | TDB-739 |
 | QUERY-7 SELECT 子句子查询 | **PASS** | TDB-807 |
 | QUERY-8 `date_bin_gap_fill` | SKIP | 语法不匹配（700），需按函数签名重测（TDB-752） |
+
+## 十一、第九批（Region 迁移/取消，4 PASS）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| REG-1 `CANCEL ALL MIGRATIONS` 可执行 | **PASS** | TDB-737 |
+| REG-2 `REMOVE REGION` 期间取消迁移 | **PASS** | 5 行数据完整、无缺失（TDB-704） |
+| REG-3 add-peer 期间取消迁移 | **PASS** | 5 台 DN 日志无 `TreeSet`/`NullPointerException`/`unexpected consensusGroupId`（TDB-707/717） |
+| REG-4 取消后三个 DN 数据一致 | **PASS** | 均为 5 行 |
