@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（十八批） | **83** |
+| 执行检查项（十八批） | **82** |
 | 通过 | **73** |
 | 失败 | 0 |
-| 跳过 | 10 |
+| 跳过 | 9 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -252,7 +252,7 @@
 
 | 检查 | 结果 | 说明 |
 | --- | --- | --- |
-| TOOL-1 `export-tsfile.sh`（table 模型） | **待确认** | 工具可启动，但执行时报 `SubscriptionIncompatibleHandlerException: SubscriptionRecordHandler do not support getTsFile()`，未生成导出文件；可能与本环境订阅模式/协议（V2）或 TDB-787 的脚本回退有关，需研发确认预期行为 |
+| TOOL-1 `export-tsfile.sh` | **不验证** | 按要求删除该验证项（TDB-787），不计入统计 |
 
 > 复现命令：`tools/export-tsfile.sh -sql_dialect table -h 172.16.2.19 -p 6667 -u root -pw *** -db rnexp -table t -t /tmp/rnexp_out`
 > 注意：该工具在无 `</dev/null` 时会阻塞等待输入，脚本化调用需加 `timeout` 与 `</dev/null`。
@@ -276,9 +276,10 @@
 | 结论 | 数量 |
 | --- | ---: |
 | 通过 | **59** |
-| 部分验证 | **10** |
+| 部分验证 | **9** |
 | 环境不满足（附原因） | **78** |
 | 可测未验 | **0** |
+| 不验证（按要求） | **1**（TDB-787） |
 | 合计 | **147** |
 
 - 「环境不满足」逐条写明原因，覆盖：拓扑（>5DN/3C3D/Ratis）、Pro/Max 包、旧版本升级、OOM/长跑、CVE 专项、MQTT/Kafka、AI 节点、SSL/国密、EAL4、对象存储、订阅客户端、构建/工具脚本、故障注入等；
