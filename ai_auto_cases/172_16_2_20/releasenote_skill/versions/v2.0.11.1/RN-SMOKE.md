@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（五批） | **39** |
-| 通过 | **34** |
+| 执行检查项（八批） | **54** |
+| 通过 | **48** |
 | 失败 | 0 |
-| 跳过 | 5 |
+| 跳过 | 6 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -145,3 +145,35 @@
 | CLUSTER-5 CN 重启后恢复 | **PASS** | 重启 CN17 后 8/8 恢复，CN 日志 `NullPointerException` = 0（TDB-756/TDB-715） |
 
 > 调试说明：`SHOW REGIONS`/`SHOW DEVICES` 这类多行输出不能用带 `tail -n` 的包装函数取，否则会被截断——本轮前两次 CLUSTER-3/4 的 SKIP 均由此造成，已改用原始输出。
+
+## 十、第六~八批（审计埋点 / CLI / COPY / 配置 / 查询，17 PASS + 1 SKIP）
+
+### 第六批：审计埋点
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| AUDIT-11 连续失败登录 → 锁定 + 审计 | **PASS** | 审计行数 4164→4418（TDB-781/777） |
+| AUDIT-12 审计事件含登录失败/锁定类 | **PASS** | 命中 `LOGIN_FAIL`/`LOGIN_EXCEED` 事件（TDB-776/777） |
+| AUDIT-13 DN 重启后审计增长 | **PASS** | 4891→5067，8/8 恢复（TDB-780） |
+| AUDIT-14 CN 重启/选举后审计增长 | **PASS** | 5136→5207，8/8 恢复（TDB-779） |
+
+### 第七批：CLI / COPY
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| CLI-4 CLI 直接可用（无远程 jar 校验） | **PASS** | TDB-700 |
+| CLI-5 删用户后重连被拒且 DN 无 NPE | **PASS** | TDB-811 |
+| COPY-3 未指定 TABLE 的 COPY (query) TO | **PASS** | TDB-686 |
+| COPY-4 导出文件生成 | **PASS** | TDB-685（路径字段断言部分） |
+
+### 第八批：配置热加载 / 查询语法
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| CFG-6 `wal_throttle=-1` 落盘 | **PASS** | TDB-696 |
+| CFG-7 非法 wal 值不落盘 | **PASS** | TDB-699 |
+| CFG-8 迁移限速设置无 IndexOutOfBounds | **PASS** | TDB-712 |
+| CFG-9 运行时配置热改 | **PASS** | TDB-738 |
+| QUERY-6 GROUP BY/ORDER BY 别名 | **PASS** | TDB-739 |
+| QUERY-7 SELECT 子句子查询 | **PASS** | TDB-807 |
+| QUERY-8 `date_bin_gap_fill` | SKIP | 语法不匹配（700），需按函数签名重测（TDB-752） |
