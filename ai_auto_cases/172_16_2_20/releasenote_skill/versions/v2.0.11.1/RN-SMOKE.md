@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（十四批） | **74** |
-| 通过 | **66** |
+| 执行检查项（十五批） | **79** |
+| 通过 | **70** |
 | 失败 | 0 |
-| 跳过 | 8 |
+| 跳过 | 9 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -228,3 +228,13 @@
 | CLUSTER-9 整集群重启稳定性 | **PASS** | 当日 10+ 次 reset 均 8/8 Running，无节点长期 Unknown（TDB-823） |
 
 > 语法提示：表模型 JSON 计划用 `EXPLAIN (FORMAT JSON) SELECT ...`；`FORMAT='JSON'` 或 `ANALYZE, FORMAT JSON` 都会报 700。
+
+## 十五、第十五批（成本归属 / 指标 / 快照清理 / 分区修复 / TTL 高可用，4 PASS + 1 SKIP）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| QUERY-12 EXPLAIN ANALYZE 成本分项 | SKIP | 输出含 11 处 Cost，但无 `Analyzer` 字样，断言口径待研发确认（TDB-693） |
+| CLUSTER-10 `SHOW REGIONS` 无负值指标 | **PASS** | 无负值（TDB-735） |
+| REGION-5 取消迁移后快照残余 | **PASS** | 目标 DN 近 5 分钟无新增 snapshot 目录（TDB-721） |
+| CLUSTER-11 分区表修复参数 + 停 DN | **PASS** | CN 无 TSStatus 转换异常，恢复 8/8（TDB-771） |
+| STOR-4 TTL 在 DN 宕机/恢复后一致 | **PASS** | TTL=3600000 保持一致（TDB-732） |
