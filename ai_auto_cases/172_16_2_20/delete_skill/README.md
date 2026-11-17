@@ -50,6 +50,37 @@ TimechoDB DELETE 语义、内存与落盘删除、mods 标记、OBJECT 清理、
 | 失败 | 2（`DEL-TREE-002` / `DEL-TREE-004`，同一可复现的 1 秒级 syncLag 尖峰） |
 | 累计执行时长 | 108h34m（去重后）；含重跑 122h19m / 184 次执行 |
 
+
+## DELETE DEVICES 与文档一致性（2026-11-16，RC2 新增 12 例）
+
+依据《Delete Statement》设计文档（飞书 `IbcNddRwUoRlPMx2vzqcYhW0n3z`）补齐，两协议共 **24 轮全部 PASS**（V1 12 轮 + V2 12 轮，约 16 小时）。
+
+| 用例 | 场景 | 结果 |
+| --- | --- | --- |
+| `DEL-DEV-001` | 基线：3 设备删 1 个 | PASS |
+| `DEL-DEV-002` | 删除后紧跟 FLUSH（TDB-939 触发形态） | **PASS（无复活）** |
+| `DEL-DEV-003` | 删除后重建同名设备 | **PASS（旧数据未复活）** |
+| `DEL-DEV-004` | 多设备 OR 删除 | PASS |
+| `DEL-DEV-005` | 负向：删不存在的设备 | PASS（0 删除、数据不变） |
+| `DEL-DEV-006` | 全表删设备（无 WHERE） | PASS |
+| `DEL-DEV-007` | 负向：带时间条件 | PASS（见下表报错） |
+| `DEL-DEV-008` | 负向：表不存在 | PASS |
+| `DEL-DEV-009` | 多条件 AND（region AND dev） | PASS |
+| `DEL-NEG-004` | 负向：measurement 条件 | PASS |
+| `DEL-NEG-005` | 负向：标识条件非 `=` | PASS |
+| `DEL-TIME-010` | 多时间段 OR 删除 | PASS |
+
+负向用例的实际报错（与文档一致，两协议相同）：
+
+| 用例 | 实际报错 |
+| --- | --- |
+| `DEL-DEV-007` | `701: Column 'time' is not an attribute or tag column` |
+| `DEL-DEV-008` | `550: Table 'del_dev_not_exist.t' does not exist.` |
+| `DEL-NEG-004` | `701: The column 'v' does not exist or is not a tag column` |
+| `DEL-NEG-005` | `701: The operator of tag predicate must be '=' for 'dev00'` |
+
+**重要对照**：同一集群、同一协议、同样"删除 + FLUSH"时序下，`DELETE FROM ... WHERE` 触发 TDB-939（删除标记丢失、数据复活），而 `DELETE DEVICES`（`DEL-DEV-002`）与"删后重建同名设备"（`DEL-DEV-003`）均不复活。说明**设备级删除走的是不同的落盘路径**（整设备删除，不依赖行级 mods 标记），可将 TDB-939 的范围收窄到行级 mods 写入路径。
+
 ## 已知缺陷
 
 | 缺陷 | 版本 | 影响用例 | 状态 |
