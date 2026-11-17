@@ -9,3 +9,10 @@ SEC-06	cases/password/sec_password_expire.sh	tree	password	yes	时钟前移 +3 �
 SEC-07	cases/config/sec_config_privilege.sh	tree	config	no	-	三个配置项默认值/热加载/SECURITY 权限；三权分立职责边界（root 803、sys_admin 越界被拒）；普通用户被拒
 SEC-08	cases/audit/sec_audit_logs.sh	tree	audit	no	-	审计与日志：关键操作留痕、错误信息不泄露密码、日志无明文密码、CN/DN 日志门禁
 SEC-09	cases/replica/sec_replica_consistency.sh	tree	replica	yes	逐停 1 DN	SR3/DR3：三 DN 策略一致、三 DN 校验一致、元数据指纹一致、停 DN 期间策略不降级
+SEC-10	cases/password/sec_password_stale_warning.sh	tree	password	yes	单 DN 时钟前移 +31 天	密码定期更改提示：超期提示文案、重复触发、改密后消失、<=0 禁用（热加载）
+SEC-11	cases/auth/sec_auth_cli_password.sh	tree	auth	no	-	客户端隐式密码：-pw 不带值交互输入、保留 -pw value、错误密码 801、PTY 回显记录
+SEC-12	cases/auth/sec_auth_identity_basic.sh	tree	auth	no	-	身份鉴别基础：root 不可删、用户 CRUD、新用户无权限、用户名/密码大小写敏感、804/801、profile 哈希存储
+SEC-13	cases/auth/sec_auth_login_lock.sh	tree	auth	no	-	防爆破锁定：阈值边界（N 次 801、N+1 次 822）、锁定期拒绝、手动解锁、计数清零、非授权解锁
+SEC-14	cases/auth/sec_auth_lock_exempt.sh	tree	auth	no	-	锁定豁免：本机管理员豁免、锁定到期自动解锁、DROP USER 清锁
+SEC-15	cases/auth/sec_auth_lock_params.sh	tree	auth	no	-	防爆破参数边界：三个键默认值/restart 语义/-1/0/负数语义、双模式角色权限矩阵
+SEC-16	cases/audit/sec_auth_audit_logs.sh	tree	audit	no	-	鉴别/锁定审计日志：锁定/解锁 INFO 留痕、错误不泄露密码、非法配置提示、CN/DN 日志门禁
