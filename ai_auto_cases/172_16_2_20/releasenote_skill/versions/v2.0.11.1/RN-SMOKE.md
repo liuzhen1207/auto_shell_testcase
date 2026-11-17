@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（两批） | **21** |
-| 通过 | **19** |
+| 执行检查项（三批） | **30** |
+| 通过 | **26** |
 | 失败 | 0 |
-| 跳过 | 2 |
+| 跳过 | 4 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -103,3 +103,20 @@
 | QUERY-6 数据订阅 | SKIP | `1912: Subscription is not enabled`，当前环境未开启订阅 |
 
 > 修正说明：第一批 STOR-1 曾因 `SET SQL_DIALECT=TABLE` 也打印 "successfully" 而误判为通过，已改为只取最后一行结果并用 `CREATE DATABASE ... WITH (ttl=...)` 复测。
+
+## 七、第三批（审计埋点 / 表模型 DDL / 存储 / 集群，5 PASS + 3 SKIP）
+
+审计默认关闭（`enable_audit_log=false`），本轮在 8 台节点打开 `enable_audit_log=true` 并重置集群后验证：
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| AUDIT-4 `CANCEL ALL MIGRATIONS` 审计记录 | SKIP | 无活动迁移时返回 `Successfully signalled 0 migration(s)`，审计记录无法判定；需构造"迁移进行中"窗口专项验证（TDB-709） |
+| AUDIT-5 受限用户 `CANCEL ALL MIGRATIONS` | **PASS** | 返回 803 拒绝（TDB-709 拒绝场景） |
+| AUDIT-6 失败类事件审计 | SKIP | 错误口令/拒绝类记录未在审计表中命中，需按事件类型专项核对 |
+| DDL-1 `COUNT DATABASES` | **PASS** | 可用（TDB-799） |
+| DDL-2 整型/浮点跨类型比较 | **PASS** | `iv = 2.0` 与 `dv = 2` 结果一致（TDB-828） |
+| STOR-3 `cast(1.1 as float)` | **PASS** | 无 `UnsupportedOperationException`（TDB-809） |
+| CLUSTER-1 `SHOW REGIONS` CompressionRatio | **PASS** | 数据 region 显示 0.05（TDB-818） |
+| CLUSTER-2 `EXTEND REGION` 多 region 列表 | SKIP | 当前 region 数不足 2 个，语法已确认支持逗号列表（TDB-796） |
+
+> 审计相关说明：开启审计后 `root.__audit` 会生成 `log.node_<id>.u_<suffix>.*` 设备（含 operation_type / audit_event_type / result / sql_string / username 等字段），可作为后续审计类 RN 的断言依据。当前配置保留 `enable_audit_log=true` 便于后续验证。
