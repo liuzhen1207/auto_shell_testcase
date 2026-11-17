@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 本轮执行检查项 | **14** |
-| 通过 | **14** |
+| 执行检查项（两批） | **21** |
+| 通过 | **19** |
 | 失败 | 0 |
-| 跳过 | 0 |
+| 跳过 | 2 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -87,3 +87,19 @@
 
 - `copy_to_allowed_export_dirs` 已清空，测试库/时间序列已清理；
 - 集群保持 8/8 Running，配置项恢复默认。
+
+## 六、第二批（审计 / 权限 / 存储 / 语法，7 PASS + 2 SKIP）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| AUDIT-1 `root.__audit` 设置 TTL 的品牌校验 | **PASS** | 报错信息显示 **TimechoDB**（不是 Apache IoTDB），TDB-698 验证通过 |
+| AUDIT-2 审计库存在 | PASS | `root.__audit` 在 `SHOW DATABASES` 中 |
+| AUDIT-3 审计功能启用 | PASS | 审计库内含时序序列（password_history 等） |
+| SEC-1 并发 create/list/drop user | PASS | 8 并发，DN 日志 `NullPointerException` = 0（TDB-791/TDB-810 场景） |
+| STOR-1 TTL 创建 | PASS | `CREATE DATABASE ... WITH (ttl=3600000)` → `SHOW DATABASES` 显示 3600000 |
+| STOR-2 修改 TTL | SKIP | table 方言不支持 `ALTER DATABASE ... SET TTL`（报 700，需 `PROPERTIES`），语法待确认 |
+| QUERY-4 `EXPLAIN ANALYZE VERBOSE` | PASS | 可执行 |
+| QUERY-5 `FILL(PREVIOUS)` | PASS | 可执行（TDB-742 后值填充） |
+| QUERY-6 数据订阅 | SKIP | `1912: Subscription is not enabled`，当前环境未开启订阅 |
+
+> 修正说明：第一批 STOR-1 曾因 `SET SQL_DIALECT=TABLE` 也打印 "successfully" 而误判为通过，已改为只取最后一行结果并用 `CREATE DATABASE ... WITH (ttl=...)` 复测。
