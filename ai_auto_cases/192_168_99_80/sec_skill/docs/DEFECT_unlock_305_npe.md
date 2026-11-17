@@ -240,4 +240,4 @@ java.lang.NullPointerException: Cannot read the array length because "array" is 
 ## 十、备注
 
 - 本次复现为**清库后的干净集群**、默认配置（`failed_login_attempts=5`、`password_lock_time_minutes=10`），与锁定阈值无关，纯属授权检查路径的空指针。
-- TDB-899 建议按 RC2 验证关闭（证据见第九节 `tdb899_fixed_check.log`）；本缺陷建议**单独建单**，并在描述中关联 TDB-899（同一功能族、不同路径）。
+- TDB-899：RC2 上实测已修复（证据见第九节 `tdb899_fixed_check.log`），但**按用户决定保持打开，待 V2.0.14.1 验证后再关闭**；本缺陷已单独建单 **TDB-1607**，并在描述中关联 TDB-899（同一功能族、不同路径）。

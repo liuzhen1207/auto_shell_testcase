@@ -54,7 +54,7 @@ plm-cli rn create --product-id 1 `
 9. 修复建议（标准 visitor 加独立分支、防御式 null、单测、勿动严格 visitor）
 10. 验证方法（含三权分立回归，避免回退 TDB-899）
 11. 证据归档（artifact 目录 + 日志 tgz + 复现/对照脚本）
-12. 关联与备注（TDB-899 已修复建议关闭；root 锁定返回 822 的附带观察）
+12. 关联与备注（TDB-899 保持打开、待 V2.0.14.1 验证关闭；root 锁定返回 822 的附带观察）
 
 ## 4. 与 TDB-899 的关系（已在描述中写明）
 
@@ -63,5 +63,12 @@ plm-cli rn create --product-id 1 `
 | 模式 | 三权分立 | **普通模式** |
 | 执行者 | `security_admin`（有 SECURITY） | **无 SECURITY 权限的普通用户** |
 | 现象 | 701 Unsupported author type（执行路径） | **305 INTERNAL_SERVER_ERROR + NPE**（鉴权路径） |
-| 现状 | **RC2 实测已修复**（真锁定→解锁→登录成功，DN 日志 0 条 701） | 待修复 |
+| 现状 | RC2 实测已修复；**按用户决定：保持打开，在 V2.0.14.1 上验证后再关闭** | 待修复（本单） |
 | 修复点 | 严格 visitor / 执行路径 | **标准 `TreeAccessCheckVisitor`** |
+
+
+## 5. TDB-899 的处理决定（2026-11-17 用户确认）
+
+- RC2 上已实测修复（证据：`tdb899_fixed_check.log`，真锁定 → 822 → `security_admin` 解锁 → 登录成功，DN 日志 `Unsupported author type` = 0）。
+- **但不在 RC2 上关闭**：按用户要求，**保持打开，待 V2.0.14.1 版本上验证通过后再关闭**。
+- 回归时（V2.0.14.1）需验证：①`security_admin` 全局解锁成功；②`@ 'ip'` IP 级解锁成功；③锁定(822)后解锁可登录；④DN 日志无 `Unsupported author type`；⑤普通用户仍 803、不退化为 305（防止 TDB-1607 的修复引入回退）。
