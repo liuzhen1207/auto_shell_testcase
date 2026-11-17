@@ -269,3 +269,14 @@
 - 「部分验证」保留的 9 条均为「主路径通过、边界分支未覆盖」，已在 `RN-RESULT.md` 写明缺口；
 - 全部结论与 18 批执行脚本（`scripts/rn_smoke_2011_b1..b15.sh`、`java/JdbcReconnect.java`）已随仓库提交。
 
+## 二十一、TDB-709 补充验证（限速制造活动迁移）
+
+| 步骤 | 结果 |
+| --- | --- |
+| `SET CONFIGURATION "region_migration_speed_limit_bytes_per_second"="1024"` | 成功 |
+| 建 `rn709` 并写入 1000 行、FLUSH | 成功 |
+| `EXTEND REGION 47 TO 6` 后在活动窗口内 `CANCEL ALL MIGRATIONS` | 返回 `Successfully signalled 1 migration(s) to cancel`（此前无活动迁移时为 0） |
+| 审计表检查 | 对应时段出现 `LOGIN`/`LOGOUT`/`OBJECT_AUTHENTICATION(DDL)`/`ENTITY_STATUS_CHANGED` 记录，但**没有 CANCEL 专属事件类型** |
+| 恢复 | 限速恢复 -1、`rn709` 已删、集群 8/8 |
+
+结论：TDB-709 维持**部分验证**——803 拒绝与"有活动迁移时取消"均可执行，审计表有对应时段的 DDL/鉴权记录，但无法确认存在独立的 `CANCEL ALL MIGRATIONS` 操作审计记录。

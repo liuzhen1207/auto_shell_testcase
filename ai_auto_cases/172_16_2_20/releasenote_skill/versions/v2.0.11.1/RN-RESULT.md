@@ -78,7 +78,7 @@
 | TDB-823 | 存储/TsFile | 缺陷 | P2 | 刘珍 | 通过 | 今日 10+ 次整集群 reset 均 8/8 Running，无节点长期 Unknown |
 | TDB-828 | 表模型 DDL/Procedure | 缺陷 | P2 | 杜添源 | 通过 | DDL-2 整型/浮点跨类型比较一致 |
 | TDB-685 | COPY TO TsFile | 缺陷 | P1 | 杜添源 | 部分验证 | COPY-4 导出文件生成；结果集 path 字段类型未单独断言 |
-| TDB-709 | 审计日志 | 缺陷 | P1 | 刘珍 | 部分验证 | AUDIT-5 803 拒绝通过；成功场景审计记录因无活动迁移未判定 |
+| TDB-709 | 审计日志 | 缺陷 | P1 | 刘珍 | 部分验证 | AUDIT-5 803 拒绝通过；限速制造活动迁移后 CANCEL 成功（signalled 1）且有对应时段 DDL/鉴权审计记录，但无独立 CANCEL 事件类型 |
 | TDB-715 | 审计日志 | 缺陷 | P2 | 刘珍 | 部分验证 | CLUSTER-5 CN 重启无 NPE；顺序停 3CN 退主未构造 |
 | TDB-730 | 集群/节点 | 缺陷 | P1 | 刘珍 | 部分验证 | CLUSTER-1 CompressionRatio 可见；object size 分子未单独验证 |
 | TDB-769 | 其它 | 功能迭代 | P2 | 肖志红 | 部分验证 | EXPLAIN (FORMAT JSON) 输出 JSON；EXPLAIN (ANALYZE, FORMAT JSON) 语法不支持 |
