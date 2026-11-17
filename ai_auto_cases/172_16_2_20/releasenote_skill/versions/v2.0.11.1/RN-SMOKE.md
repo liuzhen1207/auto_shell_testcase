@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（十三批） | **72** |
-| 通过 | **65** |
+| 执行检查项（十四批） | **74** |
+| 通过 | **66** |
 | 失败 | 0 |
-| 跳过 | 7 |
+| 跳过 | 8 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -218,3 +218,13 @@
 | QUERY-9 `date_bin_gapfill(1 SECOND, time)` | **PASS** | 标量/`CAST`/嵌套子查询均可用（TDB-752） |
 
 > 说明：`date_bin_gapfill` 的正确签名是「数值 + 时间单位关键字 + 时间戳表达式」，如 `date_bin_gapfill(1 SECOND, time)`；用 `1s`/裸整数会分别报语法错和「Unknown function」。
+
+## 十四、第十四批（EXPLAIN JSON + 集群重启稳定性）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| QUERY-10 `EXPLAIN (FORMAT JSON)` | **PASS** | 输出 JSON 计划（TDB-769） |
+| QUERY-11 `EXPLAIN (ANALYZE, FORMAT JSON)` | SKIP | 语法不支持（ANALYZE 与 FORMAT 不能组合），TDB-769 仅部分覆盖 |
+| CLUSTER-9 整集群重启稳定性 | **PASS** | 当日 10+ 次 reset 均 8/8 Running，无节点长期 Unknown（TDB-823） |
+
+> 语法提示：表模型 JSON 计划用 `EXPLAIN (FORMAT JSON) SELECT ...`；`FORMAT='JSON'` 或 `ANALYZE, FORMAT JSON` 都会报 700。
