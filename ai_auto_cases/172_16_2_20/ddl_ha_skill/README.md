@@ -1,3 +1,5 @@
+> 全部 skill 用例清单（回归前先看）：[`ai_auto_cases/SKILL-INDEX.md`](../../SKILL-INDEX.md)
+
 # ddl_ha_skill — DDL 高可用回归（3C5D / SR3 / DR2）
 
 面向需求《DDL 高可用》（PingCode `RD/T79TdX5O`）：**表模型元数据操作在 DN 宕机或网络分区时仍能成功**，并对分区 DN 给出明确的隔离提示。

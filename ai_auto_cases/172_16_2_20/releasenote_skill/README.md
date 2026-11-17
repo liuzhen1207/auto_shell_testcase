@@ -1,3 +1,5 @@
+> 全部 skill 用例清单（回归前先看）：[`ai_auto_cases/SKILL-INDEX.md`](../../SKILL-INDEX.md)
+
 # releasenote_skill — 各版本 Release Note（RN）验证回归
 
 按**版本 → RN** 两级组织，每个版本一个目录，每个 RN 一个用例目录，内含报告、脚本与关键证据。

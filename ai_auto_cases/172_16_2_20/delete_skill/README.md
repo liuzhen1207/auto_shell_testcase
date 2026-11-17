@@ -1,3 +1,5 @@
+> 全部 skill 用例清单（回归前先看）：[`ai_auto_cases/SKILL-INDEX.md`](../../SKILL-INDEX.md)
+
 # delete_skill — DELETE 语义全量回归（3C5D）
 
 TimechoDB DELETE 语义、内存与落盘删除、mods 标记、OBJECT 清理、副本一致性的自动化回归包。
