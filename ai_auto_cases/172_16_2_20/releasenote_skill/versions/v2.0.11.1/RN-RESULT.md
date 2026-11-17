@@ -8,9 +8,9 @@
 
 | 结论 | 数量 |
 | --- | ---: |
-| 通过 | 42 |
+| 通过 | 46 |
 | 部分验证 | 8 |
-| 可测未验 | 67 |
+| 可测未验 | 63 |
 | 环境不满足 | 30 |
 | **合计** | **147** |
 
@@ -20,6 +20,9 @@
 | --- | --- | --- | --- | --- | --- |
 | TDB-686 | COPY TO TsFile | 缺陷 | P1 | 通过 | COPY-3 未指定 TABLE 的 COPY (query) TO 成功 |
 | TDB-687 | COPY TO TsFile | 缺陷 | P1 | 通过 | COPY-1 TAGS 重复列被拒绝（701） |
+| TDB-688 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | DDL-5 DN 重启期间 CN 无 restartDataNode NPE |
+| TDB-691 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | DDL-6 连续 DROP DATABASE 无 Procedure 超时/SemanticException |
+| TDB-694 | 数据订阅 | 功能迭代 | P0 | 通过 | V1 下 mode=consensus topic 创建成功，SHOW TOPICS 显示 mode=consensus |
 | TDB-696 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-6 wal_throttle=-1 已落盘 |
 | TDB-698 | 审计日志 | 代码优化 | P0 | 通过 | AUDIT-1 root.__audit TTL 品牌显示 TimechoDB |
 | TDB-699 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-7 非法 wal 值未写入配置文件 |
@@ -29,6 +32,7 @@
 | TDB-707 | Region 迁移/取消 | 缺陷 | P1 | 通过 | REG-3 add-peer 期间取消无 TreeSet/NPE |
 | TDB-708 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-3 region_migration_concurrency_limit 0→1 |
 | TDB-710 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-4 data_region_per_data_node 3→2 |
+| TDB-711 | 数据订阅 | 缺陷 | P1 | 通过 | consensus 模式带 start_time 被拒绝（明确报错） |
 | TDB-712 | 配置热加载 | 缺陷 | P1 | 通过 | CFG-8 迁移限速设置无 IndexOutOfBounds |
 | TDB-716 | 查询引擎 | 缺陷 | P0 | 通过 | QUERY-1 对齐序列 LAST+时间过滤 1s 返回 |
 | TDB-717 | Region 迁移/取消 | 缺陷 | P3 | 通过 | REG-3 无 unexpected consensusGroupId |
@@ -69,18 +73,14 @@
 | TDB-817 | 集群/节点 | 缺陷 | P2 | 部分验证 | 缩容后 CompressionRatio 未构造 |
 | TDB-819 | 集群/节点 | 缺陷 | P2 | 部分验证 | 同上，Adding 状态下的 ratio 未单独验证 |
 | TDB-684 | COPY TO TsFile | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-COPY），待逐条执行 |
-| TDB-688 | 表模型 DDL/Procedure | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-DDL），待逐条执行 |
 | TDB-689 | CLI/客户端 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-CLI），待逐条执行 |
-| TDB-691 | 表模型 DDL/Procedure | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-DDL），待逐条执行 |
-| TDB-692 | 数据订阅 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
+| TDB-692 | 数据订阅 | 缺陷 | P0 | 可测未验 | 需要订阅客户端持续消费（PullConsumer）验证积压 |
 | TDB-693 | 表模型 DDL/Procedure | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-DDL），待逐条执行 |
-| TDB-694 | 数据订阅 | 功能迭代 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
 | TDB-695 | 配置热加载 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-CFG），待逐条执行 |
 | TDB-702 | 审计日志 | 缺陷 | P3 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
 | TDB-703 | 审计日志 | 缺陷 | P3 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
-| TDB-711 | 数据订阅 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
 | TDB-713 | 审计日志 | 功能迭代 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-AUDIT），待逐条执行 |
-| TDB-714 | 数据订阅 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
+| TDB-714 | 数据订阅 | 缺陷 | P0 | 可测未验 | 需要 PullConsumer 客户端验证 DATE FIELD 订阅 |
 | TDB-720 | Region 迁移/取消 | 缺陷 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-721 | Region 迁移/取消 | 缺陷 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-727 | 激活/打包 | 新功能 | P00 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |
@@ -117,13 +117,13 @@
 | TDB-784 | Region 迁移/取消 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-785 | COPY TO TsFile | 新功能 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-COPY），待逐条执行 |
 | TDB-786 | 激活/打包 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |
-| TDB-787 | 数据订阅 | 功能迭代 | P3 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
-| TDB-790 | 存储/TsFile | 功能迭代 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-STORAGE），待逐条执行 |
+| TDB-787 | 数据订阅 | 功能迭代 | P3 | 可测未验 | 需 export-tsfile 脚本回归 |
+| TDB-790 | 存储/TsFile | 功能迭代 | P0 | 可测未验 | 需 export-tsfile 脚本与订阅端环境 |
 | TDB-795 | Region 迁移/取消 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-MIGRATE），待逐条执行 |
 | TDB-797 | 集群/节点 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |
 | TDB-801 | 查询引擎 | 缺陷 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-QUERY），待逐条执行 |
 | TDB-802 | 激活/打包 | 缺陷 | P2 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |
-| TDB-803 | 数据订阅 | 功能迭代 | P0 | 可测未验 | 已入目录（RN-2.0.11.1-SUB），待逐条执行 |
+| TDB-803 | 数据订阅 | 功能迭代 | P0 | 可测未验 | 需 Java Session 订阅接口用例 |
 | TDB-804 | 存储/TsFile | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-STORAGE），待逐条执行 |
 | TDB-813 | 集群/节点 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |
 | TDB-814 | 集群/节点 | 缺陷 | P1 | 可测未验 | 已入目录（RN-2.0.11.1-CLUSTER），待逐条执行 |

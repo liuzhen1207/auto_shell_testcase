@@ -13,10 +13,10 @@
 | 迭代内 RN 总数 | 147 |
 | 可在本环境验证（已入目录） | **117** |
 | 当前环境不满足（附原因） | **30** |
-| 执行检查项（九批） | **58** |
-| 通过 | **52** |
+| 执行检查项（十一批） | **66** |
+| 通过 | **59** |
 | 失败 | 0 |
-| 跳过 | 6 |
+| 跳过 | 7 |
 
 ## 二、执行明细（14 项，全部 PASS）
 
@@ -186,3 +186,24 @@
 | REG-2 `REMOVE REGION` 期间取消迁移 | **PASS** | 5 行数据完整、无缺失（TDB-704） |
 | REG-3 add-peer 期间取消迁移 | **PASS** | 5 台 DN 日志无 `TreeSet`/`NullPointerException`/`unexpected consensusGroupId`（TDB-707/717） |
 | REG-4 取消后三个 DN 数据一致 | **PASS** | 均为 5 行 |
+
+## 十二、第十~十一批（表模型 DDL / 数据订阅，7 PASS + 1 SKIP）
+
+### 第十批：表模型 DDL（DN 异常期间 DROP DATABASE）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| DDL-5 DN 重启期间 CN 无 `restartDataNode` NPE | **PASS** | TDB-688 |
+| DDL-6 DN Unknown 期间连续 DROP DATABASE | **PASS** | 无 Procedure 超时/SemanticException（TDB-691） |
+| DDL-7 集群 8/8 且三个库删除、元数据一致 | **PASS** | — |
+
+### 第十一批：数据订阅（需先开 `subscription_enabled=true`）
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| SUB-1 `SHOW TOPICS` 可用 | **PASS** | 订阅功能开启后不再报 1912 |
+| SUB-2 `mode=consensus` 建 Topic | **PASS**（V1） | V2 下报 "incremental 仅支持 IoTConsensus"；切 V1 后创建成功，`SHOW TOPICS` 显示 `mode=consensus`（TDB-694） |
+| SUB-3 consensus Topic 带 `start_time` | **PASS** | 明确报 `mode=incremental does not support topic attributes [start_time]`（TDB-711） |
+| SUB-4 订阅消费（PullConsumer） | SKIP | 需订阅客户端运行时（TDB-692/714/790/787/803） |
+
+> 协议说明：订阅 `mode=consensus`（内部名 incremental）依赖 **IoTConsensus V1**；本环境默认 V2，验证时临时切 V1，完成后已恢复 V2。
