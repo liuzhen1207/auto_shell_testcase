@@ -67,6 +67,9 @@ case_LB164() {
   Q "CREATE SECURITY LABEL COMPONENT lb_st SET ('A','B')" >/dev/null 2>&1
   assert_err "$(Q "ALTER SECURITY LABEL COMPONENT lb_st ADD ELEMENT 'E' BEFORE 'A'")" "" "SET 拒绝 BEFORE 位置子句"
   assert_err "$(Q "ALTER SECURITY LABEL COMPONENT lb_st ADD ELEMENT 'E' UNDER 'A'")" "" "SET 拒绝 UNDER 位置子句"
+  Q "CREATE SECURITY LABEL COMPONENT lb_tr2 TREE ('ROOT' ROOT, 'A' UNDER 'ROOT')" >/dev/null 2>&1
+  assert_err "$(Q "ALTER SECURITY LABEL COMPONENT lb_tr2 ADD ELEMENT 'B'")" "2410" "TREE 省略位置子句被拒（2410）"
+  assert_ok "$(Q "ALTER SECURITY LABEL COMPONENT lb_tr2 ADD ELEMENT 'B' UNDER 'A'")" "TREE 带 UNDER 可追加"
 }
 
 case_LB165() {
