@@ -1,3 +1,12 @@
+> **🟡 结论更新（2026-11-17 15:12，用户确认）：场景 C 的 fail-fast 行为可接受，暂不修改。**
+>
+> - `failed_login_attempts=abc` → 拒绝启动 + `ERROR ... Incorrect format in config file, reject DataNode startup.` + `NumberFormatException`
+>   **按"已确认行为"处理**：配置格式错误时显式失败、不静默降级，是可解释的设计选择。
+> - 因此本报告不再把 C 当作缺陷；保留证据与根因分析，供后续若决定改进（回退默认/错误带键名）时参考。
+> - 仍保留两条**观察项**（不单独提单）：
+>   1. `password_lock_time_minutes=0` 回退为 10 生效，但 `show configuration` 仍显示 0（展示与生效值不一致）；
+>   2. `failed_login_attempts=-5` 按"禁用"处理（仅 INFO），与需求"不合理配置转默认值"措辞不一致 → 建议文档澄清。
+
 # 缺陷/核查报告：非法或越界配置的处理与日志留痕（防爆破三参数）
 
 | 项 | 内容 |
@@ -7,6 +16,7 @@
 | 环境 | 干净集群（3 节点 192.168.99.77/78/79，SR=3/DR=3，普通模式），仅改 `conf/iotdb-system.properties` 后重启 |
 | 需求依据 | 《V2.0.7.1-安全模块-身份鉴别-防止口令暴力破解-需求分析》自查表：**"对超出预期的输入是否直接拒绝，而非仅做警告处理？ → 否，不合理的配置项会转用默认值"**；技术设计 §4.1.3："支持非法配置回退到默认值，并写入错误日志" |
 | 复现概率 | **必现** |
+| 当前状态 | 🟡 C：已确认可接受（不修）；B/A：观察项（不单独提单） |
 
 ## 一、三组实测（干净集群，逐组改 conf + 重启）
 
@@ -14,7 +24,7 @@
 | --- | --- | --- | --- | --- |
 | **A** | `failed_login_attempts=-5` | **被接受**，按"禁用"处理；`show configuration` 显示 **-5** | `INFO LoginLockManager:80 - IP-level login attempts disabled (set to -5)`；**无 WARN/ERROR** | ❌ 未回退默认、无错误日志 |
 | **B** | `password_lock_time_minutes=0` | **回退生效**（内部按 10 分钟），但 `show configuration` 仍显示 **0** | `WARN LoginLockManager:105 - Invalid lock time value (0), reset to default (10 minutes)` | ⚠️ 回退有 WARN，但**展示值未回写** |
-| **C** | `failed_login_attempts=abc`（非数字） | **DataNode 拒绝启动**（`System.exit(-1)`），每节点只剩 ConfigNode 进程 | `ERROR IoTDBDescriptor:319 - Incorrect format in config file, reject DataNode startup.` + `java.lang.NumberFormatException: For input string: "abc"` | ❌ 未回退默认，直接拒绝启动；错误信息**不含键名** |
+| **C**（已确认可接受） | `failed_login_attempts=abc`（非数字） | **DataNode 拒绝启动**（`System.exit(-1)`），每节点只剩 ConfigNode 进程 | `ERROR IoTDBDescriptor:319 - Incorrect format in config file, reject DataNode startup.` + `java.lang.NumberFormatException: For input string: "abc"` | ❌ 未回退默认，直接拒绝启动；错误信息**不含键名** |
 
 ### 场景 C 的日志与堆栈（192.168.99.78 / .79）
 
