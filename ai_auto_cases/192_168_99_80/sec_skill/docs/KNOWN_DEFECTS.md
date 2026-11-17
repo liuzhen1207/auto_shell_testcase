@@ -11,6 +11,7 @@
 | 2 | 缺陷 | **TDB-1607** | 普通模式下无 SECURITY 权限用户执行 `ALTER USER … ACCOUNT UNLOCK` 触发 NPE，返回 305（应 803） | P2 | V2.0.14.1 / V2.0.13.1 | 高宏志 | 刘珍 | `SEC-13` 第 7 步（当前 WARN，修复后转 PASS） |
 | 3 | 缺陷（待验证关闭） | **TDB-899** | 三权分立下 `ALTER USER … ACCOUNT UNLOCK` 返回 701 Unsupported author type，账号锁定后无解锁入口（RC2 实测已修复，**按用户决定保持打开，待 V2.0.14.1 验证后再关闭**） | P1 | V2.0.14.1 / V2.0.12.1 | 舒文炜 | 刘珍 | `SEC-13` / 专项 5 项检查（见 `PLM_TDB-1607.md` 第 5 节） |
 | 4 | **已知问题（不修复）** | —（研发确认改不了） | `CREATE USER` / `ALTER USER SET PASSWORD` 的**明文口令写入 ConfigNode 共识（Raft）日志** `data/confignode/consensus/*/current/log_inprogress_*`，三副本可读 | P2（原建议） | V2.0.13.1 RC2 `83183d0` 复现 | 研发：改不了 | 刘珍 | `SEC-12`（共识日志明文 → 已知行为 WARN 基线） |
+| 5 | 待确认缺陷（未提单） | — | 三权分立下 `security_admin` 无法修改锁定配置 （`failed_login_attempts` / `failed_login_attempts_per_user` / `password_lock_time_minutes` → 803 缺 SYSTEM），需求要求“root 或安全管理员可改” | P2 | V2.0.13.1 RC2 复现 | 待定 | 刘珍 | `SEC-15` 第 5 步（当前 WARN 观察） |
 
 ## 已知问题 #4 详情与处置
 
@@ -27,7 +28,7 @@
 
 | 日期 | 变更 |
 | --- | --- |
-| 2026-11-17 | 建台账：TDB-1606 / TDB-1607 / TDB-899（待验证关闭）/ 明文口令入 Raft 日志（研发确认不修复，转已知问题） |
+| 2026-11-17 | 建台账：TDB-1606 / TDB-1607 / TDB-899（待验证关闭）/ 明文口令入 Raft 日志（研发确认不修复，转已知问题）；新增第 5 条「锁定配置权限映射」待确认缺陷 |
 
 ## 文档修订项（非缺陷，需研发改文档）
 
