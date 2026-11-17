@@ -1,3 +1,13 @@
+> **🟢 结论更新（2026-11-17 11:40，用户确认）：本条不算缺陷，已撤回。**
+>
+> - **普通模式（未开三权分立）**：`root` 修改四个键（`failed_login_attempts` / `failed_login_attempts_per_user` /
+>   `password_lock_time_minutes` / `password_stale_warning_days`）**全部成功**——今天 11:09 的 `check_stale_mode.sh`
+>   就是 root 身份执行并拿到 `The statement is executed successfully.`（含 `restart is required` 提示）。
+> - **三权分立模式**：`security_admin` 无 SYSTEM、由 `sys_admin` 承担系统级配置，属**职责分离的预期设计**；
+>   用户确认"没这个问题"。
+> - 因此下面记录的现象**不是缺陷**，仅作为"角色-配置权限矩阵"的**行为记录**保留；
+>   若后续要对齐文档措辞（需求写"root 或安全管理员"，实际 sep 下为"root 或系统管理员"），按文档修订项处理，不建缺陷单。
+
 # 缺陷报告：三权分立下"安全管理员"无法修改防爆破锁定配置（返回 803 缺 SYSTEM）
 
 | 项 | 内容 |
@@ -6,7 +16,7 @@
 | 被测版本 | TimechoDB **2.0.13.1 RC2**，BuildInfo **`83183d0`**（企业版） |
 | 环境 | 干净集群（3 节点，192.168.99.77/78/79，SR=3/DR=3）；**三权分立**（`enable_separation_of_powers=true`，root 已禁登 803） |
 | 复现概率 | **必现**（三个键全部命中） |
-| 优先级建议 | **P2**：功能被阻断（安全管理员无法履行"安全策略管控"职责），有 `sys_admin` 绕行手段，但违反分权设计目标与需求原文 |
+| 优先级建议 | ~~P2~~ → **非缺陷（撤回）**：普通模式 root 可改；sep 下由 sys_admin 承担属分权设计 |
 
 ## 一、复现步骤（1 分钟）
 

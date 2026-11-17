@@ -57,16 +57,31 @@ else
   warn "未在 DN 日志看到非法配置回退记录（需求：写入错误日志），可能需特定非法值才触发"
 fi
 
-sec_log "--- 5) 修改权限（分离职责下的实际边界）---"
-# 锁定类配置需要 SYSTEM；stale 需要 SECURITY —— 记录实际权限模型
-cls=$(sec_sql_as "$SEC_USER" "$SEC_PW" table "set configuration 'failed_login_attempts'='5';" | grep -aE 'Msg:|Error:' | tail -1)
-if printf '%s' "$cls" | grep -q '803'; then
-  warn "当前驱动账号($SEC_USER)无法修改锁定配置（803 SYSTEM）：需求要求'仅 root 或安全管理员可改' —— 记录为待研发确认的权限边界"
+sec_log "--- 5) 修改权限：普通模式 root 全可改；三权分立下按角色分工（非缺陷）---"
+if [ "${SEC_MODE:-normal}" = "normal" ]; then
+  for k in failed_login_attempts failed_login_attempts_per_user password_lock_time_minutes; do
+    m=$(conf_set_raw "$k" 5)
+    assert_contains "普通模式 root 可修改 $k" "$m" "successfully"
+  done
 else
-  pass "当前驱动账号可修改锁定配置"
+  # 三权分立：锁定类配置需 SYSTEM（sys_admin）；安全类配置需 SECURITY（security_admin）—— 职责分离设计
+  for k in failed_login_attempts failed_login_attempts_per_user password_lock_time_minutes; do
+    c1=$(sec_sql_as "$SEC_USER" "$SEC_PW" tree "set configuration '$k'='5';" | grep -aoE '803' | head -1)
+    c2=$(sec_sql_as "$DDL_USER" "$ADMIN_PW" tree "set configuration '$k'='5';" | grep -aoE 'successfully' | head -1)
+    if [ "$c1" = "803" ] && [ -n "$c2" ]; then
+      pass "三权分立按设计：$k 由 sys_admin 修改（security_admin 无 SYSTEM，返回 803）"
+    else
+      fail "三权分立下 $k 的角色权限与设计不符（security_admin=${c1:-非803} sys_admin=${c2:-未成功}）"
+    fi
+  done
+  c3=$(sec_sql_as "$SEC_USER" "$SEC_PW" tree "set configuration 'password_stale_warning_days'='30';" | grep -aoE 'successfully' | head -1)
+  c4=$(sec_sql_as "$DDL_USER" "$ADMIN_PW" tree "set configuration 'password_stale_warning_days'='30';" | grep -aoE '803' | head -1)
+  if [ -n "$c3" ] && [ "$c4" = "803" ]; then
+    pass "三权分立按设计：password_stale_warning_days 由 security_admin 修改（sys_admin 返回 803 SECURITY）"
+  else
+    fail "password_stale_warning_days 的角色权限与设计不符（security_admin=${c3:-未成功} sys_admin=${c4:-非803}）"
+  fi
 fi
-m=$(sec_sql_as "$SEC_USER" "$SEC_PW" table "set configuration 'password_stale_warning_days'='30';" | grep -aE 'Msg:|Error:' | tail -1)
-sec_log "  stale 配置设置结果：$(printf '%s' "$m" | cut -c1-120)"
 
 sec_log "--- 6) 恢复默认值（restart 生效，本用例只回写不重启）---"
 setcfg failed_login_attempts 5 >/dev/null

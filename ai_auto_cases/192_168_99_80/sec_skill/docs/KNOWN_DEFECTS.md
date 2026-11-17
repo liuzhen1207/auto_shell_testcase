@@ -11,7 +11,7 @@
 | 2 | 缺陷 | **TDB-1607** | 普通模式下无 SECURITY 权限用户执行 `ALTER USER … ACCOUNT UNLOCK` 触发 NPE，返回 305（应 803） | P2 | V2.0.14.1 / V2.0.13.1 | 高宏志 | 刘珍 | `SEC-13` 第 7 步（当前 WARN，修复后转 PASS） |
 | 3 | 缺陷（待验证关闭） | **TDB-899** | 三权分立下 `ALTER USER … ACCOUNT UNLOCK` 返回 701 Unsupported author type，账号锁定后无解锁入口（RC2 实测已修复，**按用户决定保持打开，待 V2.0.14.1 验证后再关闭**） | P1 | V2.0.14.1 / V2.0.12.1 | 舒文炜 | 刘珍 | `SEC-13` / 专项 5 项检查（见 `PLM_TDB-1607.md` 第 5 节） |
 | 4 | **已知问题（不修复）** | —（研发确认改不了） | `CREATE USER` / `ALTER USER SET PASSWORD` 的**明文口令写入 ConfigNode 共识（Raft）日志** `data/confignode/consensus/*/current/log_inprogress_*`，三副本可读 | P2（原建议） | V2.0.13.1 RC2 `83183d0` 复现 | 研发：改不了 | 刘珍 | `SEC-12`（共识日志明文 → 已知行为 WARN 基线） |
-| 5 | 待确认缺陷（未提单） | — | 三权分立下 `security_admin` 无法修改锁定配置 （`failed_login_attempts` / `failed_login_attempts_per_user` / `password_lock_time_minutes` → 803 缺 SYSTEM），需求要求“root 或安全管理员可改” | P2 | V2.0.13.1 RC2 复现 | 待定 | 刘珍 | `SEC-15` 第 5 步（当前 WARN 观察） |
+| 5 | **非缺陷（行为记录）** | — | 配置修改权限按角色划分：普通模式 root 四个键均可改（实测成功）；三权分立下 `security_admin` 改锁定类键 803 缺 SYSTEM、由 `sys_admin` 承担（职责分离设计），`password_stale_warning_days` 则相反（需 SECURITY） | — | V2.0.13.1 RC2 实测 | — | 刘珍 | `SEC-15`（普通模式 root 可改=硬门禁；sep 权限矩阵=按设计） |
 
 ## 已知问题 #4 详情与处置
 
@@ -38,3 +38,4 @@
 
 > 注意：**不要**把《防止口令暴力破解-需求分析》（飞书 FwHWdCDKmoSxJAxr8aWc96XnnYf）里的 3 处 effectiveMode: restart 一起改——
 > ailed_login_attempts / ailed_login_attempts_per_user / password_lock_time_minutes 实测确实需要重启才生效（已验证）。
+| D2 | 《V2.0.7.1-安全模块-身份鉴别-防止口令暴力破解-需求分析》（飞书 `FwHWdCDKmoSxJAxr8aWc96XnnYf`） | "安全性要求 → 权限要求"：`新增配置只可由 root 或安全管理员修改` | 三权分立下实际为 **root（禁登）→ 系统管理员 sys_admin**；安全管理员 `security_admin` 无 SYSTEM、修改锁定类键返回 803 | 建议改为"root 或系统管理员（三权分立下由 sys_admin 承担）" | 实测：普通模式 root 四个键均可改；sep 下 security_admin 三个锁定键 803 缺 SYSTEM、sys_admin 成功；`password_stale_warning_days` 反之（需 SECURITY）。**用户确认：不算缺陷** |
