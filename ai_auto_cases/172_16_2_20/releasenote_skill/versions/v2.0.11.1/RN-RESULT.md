@@ -16,152 +16,152 @@
 
 ## 二、逐条结论
 
-| 编号 | 主题 | 类型 | 优先级 | 结论 | 依据 / 原因 |
+| 编号 | 主题 | 类型 | 优先级 | 验证人员 | 结论 | 依据 / 原因 |
 | --- | --- | --- | --- | --- | --- |
-| TDB-686 | COPY TO TsFile | 缺陷 | P1 | 通过 | COPY-3 未指定 TABLE 的 COPY (query) TO 成功 |
-| TDB-687 | COPY TO TsFile | 缺陷 | P1 | 通过 | COPY-1 TAGS 重复列被拒绝（701） |
-| TDB-688 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | DDL-5 DN 重启期间 CN 无 restartDataNode NPE |
-| TDB-689 | CLI/客户端 | 缺陷 | P0 | 通过 | export-data.sh 导出成功（3 行、1 个 dump0.tsfile），无本地 jar 路径校验失败 |
-| TDB-691 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | DDL-6 连续 DROP DATABASE 无 Procedure 超时/SemanticException |
-| TDB-693 | 表模型 DDL/Procedure | 缺陷 | P1 | 通过 | EXPLAIN ANALYZE 输出独立 Analyze Cost（1.228ms），未混入 Tree Plan Cost |
-| TDB-694 | 数据订阅 | 功能迭代 | P0 | 通过 | V1 下 mode=consensus topic 创建成功，SHOW TOPICS 显示 mode=consensus |
-| TDB-696 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-6 wal_throttle=-1 已落盘 |
-| TDB-698 | 审计日志 | 代码优化 | P0 | 通过 | AUDIT-1 root.__audit TTL 品牌显示 TimechoDB |
-| TDB-699 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-7 非法 wal 值未写入配置文件 |
-| TDB-700 | CLI/客户端 | 缺陷 | P0 | 通过 | CLI-4 CLI 直接可用，无远程 jar 校验失败 |
-| TDB-701 | 配置热加载 | 缺陷 | P1 | 通过 | CFG-2 disk_space_warning_threshold=NaN 被拒绝且无 ReadOnly |
-| TDB-704 | Region 迁移/取消 | 缺陷 | P0 | 通过 | REG-2 REMOVE Peer 期间取消，数据完整（5 行） |
-| TDB-707 | Region 迁移/取消 | 缺陷 | P1 | 通过 | REG-3 add-peer 期间取消无 TreeSet/NPE |
-| TDB-708 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-3 region_migration_concurrency_limit 0→1 |
-| TDB-710 | 配置热加载 | 缺陷 | P0 | 通过 | CFG-4 data_region_per_data_node 3→2 |
-| TDB-711 | 数据订阅 | 缺陷 | P1 | 通过 | consensus 模式带 start_time 被拒绝（明确报错） |
-| TDB-712 | 配置热加载 | 缺陷 | P1 | 通过 | CFG-8 迁移限速设置无 IndexOutOfBounds |
-| TDB-716 | 查询引擎 | 缺陷 | P0 | 通过 | QUERY-1 对齐序列 LAST+时间过滤 1s 返回 |
-| TDB-717 | Region 迁移/取消 | 缺陷 | P3 | 通过 | REG-3 无 unexpected consensusGroupId |
-| TDB-718 | CLI/客户端 | 缺陷 | P0 | 通过 | CLI-1 三个 DN 查询结果一致 |
-| TDB-719 | 查询引擎 | 缺陷 | P1 | 通过 | CLI-3 DATE 空值写入/查询无异常 |
-| TDB-721 | Region 迁移/取消 | 缺陷 | P2 | 通过 | REGION-5 取消迁移后无新增 snapshot 残余目录 |
-| TDB-728 | CLI/客户端 | 缺陷 | P2 | 通过 | JDBC 查询循环中重启 DN：3 次重连失败后自动恢复（34 OK / 3 FAIL） |
-| TDB-731 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 数据库管理高可用（RC2 29 例回归） |
-| TDB-732 | 存储/TsFile | 新功能 | P0 | 通过 | STOR-4 TTL 在 DN 宕机/恢复后保持一致（3600000） |
-| TDB-733 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 可写视图高可用 |
-| TDB-734 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 设备管理高可用 |
-| TDB-735 | Region 迁移/取消 | 缺陷 | P1 | 通过 | CLUSTER-10 SHOW REGIONS 无负值指标 |
-| TDB-737 | Region 迁移/取消 | 功能迭代 | P00 | 通过 | REG-1 CANCEL ALL MIGRATIONS 可执行 |
-| TDB-738 | 配置热加载 | 功能迭代 | P00 | 通过 | CFG-9 运行时配置热改成功 |
-| TDB-739 | 查询引擎 | 功能迭代 | P2 | 通过 | QUERY-6 GROUP BY/ORDER BY 支持别名 |
-| TDB-742 | 其它 | 功能迭代 | P1 | 通过 | QUERY-5 FILL(PREVIOUS) 可执行 |
-| TDB-745 | 表模型 DDL/Procedure | 新功能 | P0 | 通过 | ddl_ha_skill 表管理高可用 |
-| TDB-748 | 集群/节点 | 缺陷 | P0 | 通过 | CLUSTER-8 三个 DN schema cache 一致 |
-| TDB-752 | 查询引擎 | 缺陷 | P0 | 通过 | date_bin_gapfill(1 SECOND, time) 含嵌套子查询可用 |
-| TDB-756 | 集群/节点 | 代码优化 | P1 | 通过 | CLUSTER-5 CN 重启后 8/8 且无 NPE |
-| TDB-760 | 集群/节点 | 缺陷 | P0 | 通过 | CLUSTER-6 DN 重启期间建库/写入，恢复后数据与 region 完整 |
-| TDB-761 | 集群/节点 | 功能迭代 | P0 | 通过 | CLUSTER-7 删除仅作用于目标表（A=1/B=3 行） |
-| TDB-766 | 其它 | 缺陷 | P0 | 通过 | CFG-5 partition_table_recover_worker_num=0 无 ERROR 刷屏 |
-| TDB-771 | 集群/节点 | 缺陷 | P0 | 通过 | CLUSTER-11 分区表修复参数开启+停 DN，CN 无 TSStatus 转换异常，恢复 8/8 |
-| TDB-777 | 审计日志 | 功能迭代 | P2 | 通过 | AUDIT-11/12 锁定与登录拒绝事件 |
-| TDB-778 | 审计日志 | 功能迭代 | P2 | 通过 | AUDIT-7 登录/会话审计行数增长（2343→2558） |
-| TDB-779 | 审计日志 | 功能迭代 | P2 | 通过 | AUDIT-14 CN 重启/选举后审计增长 |
-| TDB-780 | 审计日志 | 功能迭代 | P2 | 通过 | AUDIT-13 DN 重启后审计增长 |
-| TDB-781 | 审计日志 | 功能迭代 | P2 | 通过 | AUDIT-9 用户管理审计行数增长（3178→3408） |
-| TDB-785 | COPY TO TsFile | 新功能 | P0 | 通过 | COPY-1~4 覆盖 COPY TO TsFile 主路径与 TAGS 校验 |
-| TDB-791 | 其它 | 缺陷 | P3 | 通过 | SEC-1 并发 create/list/drop user 无 NPE |
-| TDB-796 | 集群/节点 | 功能迭代 | P00 | 通过 | CLUSTER-4 EXTEND REGION 17,19 TO 6 成功 |
-| TDB-799 | 表模型 DDL/Procedure | 功能迭代 | P3 | 通过 | DDL-1 COUNT DATABASES 可用 |
-| TDB-807 | 查询引擎 | 功能迭代 | P2 | 通过 | QUERY-7 SELECT 子句子查询可用 |
-| TDB-808 | 其它 | 功能迭代 | P2 | 通过 | CLI-2 SHOW TIMESERIES ORDER BY timeseries |
-| TDB-809 | 存储/TsFile | 缺陷 | P2 | 通过 | STOR-3 cast(1.1 as float) 无异常 |
-| TDB-810 | 其它 | 缺陷 | P1 | 通过 | SEC-1 并发 create/list/drop user 无 NPE |
-| TDB-811 | CLI/客户端 | 缺陷 | P1 | 通过 | CLI-5 删用户后重连被拒绝且 DN 无 NPE |
-| TDB-815 | 其它 | 缺陷 | P3 | 通过 | QUERY-2 DELETE 区间 min>max 返回 701（非 305） |
-| TDB-818 | 集群/节点 | 缺陷 | P2 | 通过 | CLUSTER-3 CompressionRatio 两位小数（0.04） |
-| TDB-823 | 存储/TsFile | 缺陷 | P2 | 通过 | 今日 10+ 次整集群 reset 均 8/8 Running，无节点长期 Unknown |
-| TDB-828 | 表模型 DDL/Procedure | 缺陷 | P2 | 通过 | DDL-2 整型/浮点跨类型比较一致 |
-| TDB-685 | COPY TO TsFile | 缺陷 | P1 | 部分验证 | COPY-4 导出文件生成；结果集 path 字段类型未单独断言 |
-| TDB-709 | 审计日志 | 缺陷 | P1 | 部分验证 | AUDIT-5 803 拒绝通过；成功场景审计记录因无活动迁移未判定 |
-| TDB-715 | 审计日志 | 缺陷 | P2 | 部分验证 | CLUSTER-5 CN 重启无 NPE；顺序停 3CN 退主未构造 |
-| TDB-730 | 集群/节点 | 缺陷 | P1 | 部分验证 | CLUSTER-1 CompressionRatio 可见；object size 分子未单独验证 |
-| TDB-769 | 其它 | 功能迭代 | P2 | 部分验证 | EXPLAIN (FORMAT JSON) 输出 JSON；EXPLAIN (ANALYZE, FORMAT JSON) 语法不支持 |
-| TDB-776 | 审计日志 | 功能迭代 | P2 | 部分验证 | AUDIT-12 命中登录失败/锁定事件；会话超时单独事件未构造 |
-| TDB-794 | 审计日志 | 安全相关 | P1 | 部分验证 | AUDIT-10 无权限用户未被拒绝，权限模型待确认 |
-| TDB-817 | 集群/节点 | 缺陷 | P2 | 部分验证 | 缩容后 CompressionRatio 未构造 |
-| TDB-819 | 集群/节点 | 缺陷 | P2 | 部分验证 | 同上，Adding 状态下的 ratio 未单独验证 |
-| TDB-684 | COPY TO TsFile | 缺陷 | P0 | 环境不满足 | 需自定义返回 STRING 的 UDF（无 UDF 编译/注册环境） |
-| TDB-690 | 安全/权限 | 缺陷 | P1 | 环境不满足 | 需要 Pro/Max 商业包 |
-| TDB-692 | 数据订阅 | 缺陷 | P0 | 环境不满足 | 需订阅客户端持续消费（本环境无订阅客户端包） |
-| TDB-695 | 配置热加载 | 缺陷 | P1 | 环境不满足 | 需 Ratis 协议 + 慢速网络传输大 snapshot |
-| TDB-697 | 集群/节点 | 缺陷 | P0 | 环境不满足 | 需要指定旧版本升级路径 |
-| TDB-702 | 审计日志 | 缺陷 | P3 | 环境不满足 | 需开源版安装包（当前为 TimechoDB 企业版） |
-| TDB-703 | 审计日志 | 缺陷 | P3 | 环境不满足 | 需开源版安装包 |
-| TDB-705 | 数据订阅 | 缺陷 | P0 | 环境不满足 | 需要构造大数据量/长时间运行 |
-| TDB-706 | 激活/打包 | 缺陷 | P1 | 环境不满足 | 需要 Pro/Max 商业包 |
-| TDB-714 | 数据订阅 | 缺陷 | P0 | 环境不满足 | 需 PullConsumer 客户端（本环境无订阅客户端包） |
-| TDB-720 | Region 迁移/取消 | 缺陷 | P0 | 环境不满足 | 需远端对象存储（多级存储冷热分层） |
-| TDB-722 | 激活/打包 | 缺陷 | P1 | 环境不满足 | 需要特定硬件/激活环境 |
-| TDB-723 | 安全/权限 | 漏洞相关 | P0 | 环境不满足 | 安全漏洞（需专项环境） |
-| TDB-724 | CLI/客户端 | 漏洞相关 | P0 | 环境不满足 | 需专项安全测试（CVE 构造） |
-| TDB-725 | 安全/权限 | 漏洞相关 | P0 | 环境不满足 | 安全漏洞（需专项环境） |
-| TDB-726 | 安全/权限 | 漏洞相关 | P0 | 环境不满足 | 安全漏洞（需专项环境） |
-| TDB-727 | 激活/打包 | 新功能 | P00 | 环境不满足 | 打包脚本/控制台展示，属构建流水线 |
-| TDB-729 | 表模型 DDL/Procedure | 缺陷 | P1 | 环境不满足 | OBJECT 数据需 API/pipe 写入，SQL 仅支持 NULL |
-| TDB-736 | 其它 | 性能调优 | P0 | 环境不满足 | 需要高负载 + 监控压测环境 |
-| TDB-740 | CLI/客户端 | 新功能 | P0 | 环境不满足 | 需 Node.js 客户端包与运行时 |
-| TDB-741 | 其它 | 新功能 | P0 | 环境不满足 | 需要指定旧版本升级路径 |
-| TDB-743 | CLI/客户端 | 安全相关 | P0 | 环境不满足 | 需 SSL 双向认证服务端配置 |
-| TDB-744 | 安全/权限 | 安全相关 | P0 | 环境不满足 | 需国密加密环境 |
-| TDB-746 | 其它 | 代码优化 | 其他 | 环境不满足 | 日常维护类，无可验证功能点 |
-| TDB-747 | 其它 | 功能迭代 | P0 | 环境不满足 | 需求口径不明确（实时数据定义逻辑），无黑盒验收点 |
-| TDB-749 | 其它 | 缺陷 | P1 | 环境不满足 | 需要 AI/AINode 环境 |
-| TDB-750 | 查询引擎 | 代码优化 | P1 | 环境不满足 | 需构造查询超时/内存压力 |
-| TDB-751 | CLI/客户端 | 功能迭代 | P1 | 环境不满足 | 需 UDF 编译与 InternalSession 用例 |
-| TDB-753 | CLI/客户端 | 代码优化 | P2 | 环境不满足 | 需对象存储环境（远程备份） |
-| TDB-754 | 激活/打包 | 缺陷 | P3 | 环境不满足 | 备份脚本参数校验，脚本不在安装包内 |
-| TDB-755 | Pipe/同步 | 缺陷 | P1 | 环境不满足 | 需并发写+删除+压缩的同步异常构造 |
-| TDB-757 | 其它 | 功能迭代 | P3 | 环境不满足 | 需要协议层构造非法 thrift 请求 |
-| TDB-758 | 其它 | 功能迭代 | P1 | 环境不满足 | 需要协议层构造非法 thrift 请求 |
-| TDB-759 | 其它 | 新功能 | P0 | 环境不满足 | 内部接口未对外暴露，无 SQL 入口 |
-| TDB-762 | 查询引擎 | 功能迭代 | P0 | 环境不满足 | 需构造超大 mods（GB 级）内存压力 |
-| TDB-763 | 审计日志 | 新功能 | P1 | 环境不满足 | 需开源版安装包 |
-| TDB-764 | 审计日志 | 代码优化 | P1 | 环境不满足 | 需开源版安装包 |
-| TDB-765 | CLI/客户端 | 缺陷 | P1 | 环境不满足 | Windows CMD 场景，当前为 Linux 客户端 |
-| TDB-767 | 集群/节点 | 缺陷 | P00 | 环境不满足 | 需要双版本滚动升级编排 |
-| TDB-768 | 集群/节点 | 缺陷 | P1 | 环境不满足 | 需 Ratis 3C5D 3 副本拓扑 |
-| TDB-770 | 集群/节点 | 缺陷 | P0 | 环境不满足 | 需 3C3D 拓扑 + stop CN Leader |
-| TDB-772 | 安全/权限 | 缺陷 | P1 | 环境不满足 | 需 pipe writeback sink 环境 |
-| TDB-773 | 安全/权限 | 代码优化 | P1 | 环境不满足 | 需要用开源版安装包验证 |
-| TDB-774 | 安全/权限 | 安全相关 | P1 | 环境不满足 | 需通信加密（SSL）环境 |
-| TDB-775 | 审计日志 | 功能迭代 | P2 | 环境不满足 | IP 黑白名单为商业版门控特性，发行包无对应配置模板 |
-| TDB-782 | 审计日志 | 功能迭代 | P2 | 环境不满足 | 需密钥管理接口（GENERATE_KEY/DESTROY_KEY） |
-| TDB-784 | Region 迁移/取消 | 缺陷 | P1 | 环境不满足 | 需构造超大 frame（>protect max size） |
-| TDB-786 | 激活/打包 | 缺陷 | P1 | 环境不满足 | 导出/备份脚本，不在安装包内 |
-| TDB-788 | 集群/节点 | 缺陷 | P1 | 环境不满足 | 需要 3C3D 拓扑（当前 3C5D） |
-| TDB-789 | 其它 | 性能调优 | P2 | 环境不满足 | 需要协议层抓包对比压缩前后报文 |
-| TDB-790 | 存储/TsFile | 功能迭代 | P0 | 环境不满足 | 需订阅 tsfile 消费脚本环境 |
-| TDB-792 | 安全/权限 | 安全相关 | P1 | 环境不满足 | EAL4 认证项，需要认证测试环境与用例集 |
-| TDB-793 | 安全/权限 | 安全相关 | P1 | 环境不满足 | EAL4 认证项，需要认证测试环境与用例集 |
-| TDB-795 | Region 迁移/取消 | 缺陷 | P1 | 环境不满足 | 需迁移中停 Add Coordinator 的时序构造 |
-| TDB-797 | 集群/节点 | 缺陷 | P1 | 环境不满足 | 需 3C21D 集群 + 多次重启循环 |
-| TDB-798 | 集群/节点 | 功能迭代 | P1 | 环境不满足 | 需要多目录磁盘布局与快照传输 |
-| TDB-800 | 存储/TsFile | 缺陷 | P2 | 环境不满足 | 需要构造大数据量/长时间运行 |
-| TDB-801 | 查询引擎 | 缺陷 | P2 | 环境不满足 | 需 Ratis 协议 + 高并发读写压力构造 |
-| TDB-802 | 激活/打包 | 缺陷 | P2 | 环境不满足 | 恢复安装脚本，脚本不在安装包内 |
-| TDB-803 | 数据订阅 | 功能迭代 | P0 | 环境不满足 | 需 Java Session 订阅接口客户端 |
-| TDB-804 | 存储/TsFile | 缺陷 | P1 | 环境不满足 | 需 pipe 接收端持续接收场景 |
-| TDB-805 | 其它 | 功能迭代 | P1 | 环境不满足 | 逻辑视图为规划项，当前版本无 SQL 入口 |
-| TDB-806 | 其它 | 功能迭代 | P0 | 环境不满足 | 需先构造分区表损坏（人工改元数据） |
-| TDB-812 | 其它 | 缺陷 | P3 | 环境不满足 | 需要消息队列中间件 |
-| TDB-813 | 集群/节点 | 缺陷 | P1 | 环境不满足 | 需长时间运行观察线程泄漏 |
-| TDB-814 | 集群/节点 | 缺陷 | P1 | 环境不满足 | 需 Ratis + 24h stop/start |
-| TDB-816 | 安全/权限 | 缺陷 | P2 | 环境不满足 | 需 pipe sink 普通用户场景 |
-| TDB-820 | CLI/客户端 | 缺陷 | P2 | 环境不满足 | 需 3C3D3 副本拓扑 |
-| TDB-821 | 集群/节点 | 缺陷 | P2 | 环境不满足 | 需缩容+删除并发的卡死复现 |
-| TDB-822 | 集群/节点 | 缺陷 | P2 | 环境不满足 | 需构造 OOM（31G dump）与循环重启 |
-| TDB-824 | CLI/客户端 | 缺陷 | P1 | 环境不满足 | 需 SSL 环境 |
-| TDB-825 | 安全/权限 | 缺陷 | P1 | 环境不满足 | 需要 SSL 双向认证服务端配置 |
-| TDB-826 | 安全/权限 | 缺陷 | P1 | 环境不满足 | 需 pipe 接收端 load tsfile 权限场景 |
-| TDB-827 | 集群/节点 | 缺陷 | P1 | 环境不满足 | 需 IoTConsensus 内存监控长期采样 |
-| TDB-829 | 其它 | 缺陷 | P2 | 环境不满足 | 需要 V2.0.7.1 历史数据升级 |
-| TDB-830 | 查询引擎 | 缺陷 | P2 | 环境不满足 | 2.0.13.1 发行包不含 REST 模块（RestService 缺失，启用后 DN 无法启动） |
+| TDB-686 | COPY TO TsFile | 缺陷 | P1 | 杜添源 | 通过 | COPY-3 未指定 TABLE 的 COPY (query) TO 成功 |
+| TDB-687 | COPY TO TsFile | 缺陷 | P1 | 杜添源 | 通过 | COPY-1 TAGS 重复列被拒绝（701） |
+| TDB-688 | 表模型 DDL/Procedure | 缺陷 | P1 | 刘珍 | 通过 | DDL-5 DN 重启期间 CN 无 restartDataNode NPE |
+| TDB-689 | CLI/客户端 | 缺陷 | P0 | 肖志红 | 通过 | export-data.sh 导出成功（3 行、1 个 dump0.tsfile），无本地 jar 路径校验失败 |
+| TDB-691 | 表模型 DDL/Procedure | 缺陷 | P1 | 刘珍 | 通过 | DDL-6 连续 DROP DATABASE 无 Procedure 超时/SemanticException |
+| TDB-693 | 表模型 DDL/Procedure | 缺陷 | P1 | 刘珍 | 通过 | EXPLAIN ANALYZE 输出独立 Analyze Cost（1.228ms），未混入 Tree Plan Cost |
+| TDB-694 | 数据订阅 | 功能迭代 | P0 | 常雪 | 通过 | V1 下 mode=consensus topic 创建成功，SHOW TOPICS 显示 mode=consensus |
+| TDB-696 | 配置热加载 | 缺陷 | P0 | 杜添源 | 通过 | CFG-6 wal_throttle=-1 已落盘 |
+| TDB-698 | 审计日志 | 代码优化 | P0 | 肖志红 | 通过 | AUDIT-1 root.__audit TTL 品牌显示 TimechoDB |
+| TDB-699 | 配置热加载 | 缺陷 | P0 | 杜添源 | 通过 | CFG-7 非法 wal 值未写入配置文件 |
+| TDB-700 | CLI/客户端 | 缺陷 | P0 | 刘珍 | 通过 | CLI-4 CLI 直接可用，无远程 jar 校验失败 |
+| TDB-701 | 配置热加载 | 缺陷 | P1 | 杜添源 | 通过 | CFG-2 disk_space_warning_threshold=NaN 被拒绝且无 ReadOnly |
+| TDB-704 | Region 迁移/取消 | 缺陷 | P0 | 刘珍 | 通过 | REG-2 REMOVE Peer 期间取消，数据完整（5 行） |
+| TDB-707 | Region 迁移/取消 | 缺陷 | P1 | 刘珍 | 通过 | REG-3 add-peer 期间取消无 TreeSet/NPE |
+| TDB-708 | 配置热加载 | 缺陷 | P0 | 杜添源 | 通过 | CFG-3 region_migration_concurrency_limit 0→1 |
+| TDB-710 | 配置热加载 | 缺陷 | P0 | 杜添源 | 通过 | CFG-4 data_region_per_data_node 3→2 |
+| TDB-711 | 数据订阅 | 缺陷 | P1 | 常雪 | 通过 | consensus 模式带 start_time 被拒绝（明确报错） |
+| TDB-712 | 配置热加载 | 缺陷 | P1 | 刘珍 | 通过 | CFG-8 迁移限速设置无 IndexOutOfBounds |
+| TDB-716 | 查询引擎 | 缺陷 | P0 | 肖林捷 | 通过 | QUERY-1 对齐序列 LAST+时间过滤 1s 返回 |
+| TDB-717 | Region 迁移/取消 | 缺陷 | P3 | 刘珍 | 通过 | REG-3 无 unexpected consensusGroupId |
+| TDB-718 | CLI/客户端 | 缺陷 | P0 | 肖志红 | 通过 | CLI-1 三个 DN 查询结果一致 |
+| TDB-719 | 查询引擎 | 缺陷 | P1 | 肖志红 | 通过 | CLI-3 DATE 空值写入/查询无异常 |
+| TDB-721 | Region 迁移/取消 | 缺陷 | P2 | 刘珍 | 通过 | REGION-5 取消迁移后无新增 snapshot 残余目录 |
+| TDB-728 | CLI/客户端 | 缺陷 | P2 | 刘珍 | 通过 | JDBC 查询循环中重启 DN：3 次重连失败后自动恢复（34 OK / 3 FAIL） |
+| TDB-731 | 表模型 DDL/Procedure | 新功能 | P0 | 刘珍 | 通过 | ddl_ha_skill 数据库管理高可用（RC2 29 例回归） |
+| TDB-732 | 存储/TsFile | 新功能 | P0 | 肖志红 | 通过 | STOR-4 TTL 在 DN 宕机/恢复后保持一致（3600000） |
+| TDB-733 | 表模型 DDL/Procedure | 新功能 | P0 | 杜添源 | 通过 | ddl_ha_skill 可写视图高可用 |
+| TDB-734 | 表模型 DDL/Procedure | 新功能 | P0 | 肖志红 | 通过 | ddl_ha_skill 设备管理高可用 |
+| TDB-735 | Region 迁移/取消 | 缺陷 | P1 | 刘珍 | 通过 | CLUSTER-10 SHOW REGIONS 无负值指标 |
+| TDB-737 | Region 迁移/取消 | 功能迭代 | P00 | 刘珍 | 通过 | REG-1 CANCEL ALL MIGRATIONS 可执行 |
+| TDB-738 | 配置热加载 | 功能迭代 | P00 | 杜添源 | 通过 | CFG-9 运行时配置热改成功 |
+| TDB-739 | 查询引擎 | 功能迭代 | P2 | 肖志红 | 通过 | QUERY-6 GROUP BY/ORDER BY 支持别名 |
+| TDB-742 | 其它 | 功能迭代 | P1 | 肖志红 | 通过 | QUERY-5 FILL(PREVIOUS) 可执行 |
+| TDB-745 | 表模型 DDL/Procedure | 新功能 | P0 | 肖志红 | 通过 | ddl_ha_skill 表管理高可用 |
+| TDB-748 | 集群/节点 | 缺陷 | P0 | 肖志红 | 通过 | CLUSTER-8 三个 DN schema cache 一致 |
+| TDB-752 | 查询引擎 | 缺陷 | P0 | 肖志红 | 通过 | date_bin_gapfill(1 SECOND, time) 含嵌套子查询可用 |
+| TDB-756 | 集群/节点 | 代码优化 | P1 | 刘珍 | 通过 | CLUSTER-5 CN 重启后 8/8 且无 NPE |
+| TDB-760 | 集群/节点 | 缺陷 | P0 | 刘珍 | 通过 | CLUSTER-6 DN 重启期间建库/写入，恢复后数据与 region 完整 |
+| TDB-761 | 集群/节点 | 功能迭代 | P0 | 刘珍 | 通过 | CLUSTER-7 删除仅作用于目标表（A=1/B=3 行） |
+| TDB-766 | 其它 | 缺陷 | P0 | 刘珍 | 通过 | CFG-5 partition_table_recover_worker_num=0 无 ERROR 刷屏 |
+| TDB-771 | 集群/节点 | 缺陷 | P0 | 刘珍 | 通过 | CLUSTER-11 分区表修复参数开启+停 DN，CN 无 TSStatus 转换异常，恢复 8/8 |
+| TDB-777 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 通过 | AUDIT-11/12 锁定与登录拒绝事件 |
+| TDB-778 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 通过 | AUDIT-7 登录/会话审计行数增长（2343→2558） |
+| TDB-779 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 通过 | AUDIT-14 CN 重启/选举后审计增长 |
+| TDB-780 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 通过 | AUDIT-13 DN 重启后审计增长 |
+| TDB-781 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 通过 | AUDIT-9 用户管理审计行数增长（3178→3408） |
+| TDB-785 | COPY TO TsFile | 新功能 | P0 | 杜添源 | 通过 | COPY-1~4 覆盖 COPY TO TsFile 主路径与 TAGS 校验 |
+| TDB-791 | 其它 | 缺陷 | P3 | 刘珍 | 通过 | SEC-1 并发 create/list/drop user 无 NPE |
+| TDB-796 | 集群/节点 | 功能迭代 | P00 | 刘珍 | 通过 | CLUSTER-4 EXTEND REGION 17,19 TO 6 成功 |
+| TDB-799 | 表模型 DDL/Procedure | 功能迭代 | P3 | 肖志红 | 通过 | DDL-1 COUNT DATABASES 可用 |
+| TDB-807 | 查询引擎 | 功能迭代 | P2 | 肖志红 | 通过 | QUERY-7 SELECT 子句子查询可用 |
+| TDB-808 | 其它 | 功能迭代 | P2 | 肖志红 | 通过 | CLI-2 SHOW TIMESERIES ORDER BY timeseries |
+| TDB-809 | 存储/TsFile | 缺陷 | P2 | 刘珍 | 通过 | STOR-3 cast(1.1 as float) 无异常 |
+| TDB-810 | 其它 | 缺陷 | P1 | 刘珍 | 通过 | SEC-1 并发 create/list/drop user 无 NPE |
+| TDB-811 | CLI/客户端 | 缺陷 | P1 | 刘珍 | 通过 | CLI-5 删用户后重连被拒绝且 DN 无 NPE |
+| TDB-815 | 其它 | 缺陷 | P3 | 肖林捷 | 通过 | QUERY-2 DELETE 区间 min>max 返回 701（非 305） |
+| TDB-818 | 集群/节点 | 缺陷 | P2 | 刘珍 | 通过 | CLUSTER-3 CompressionRatio 两位小数（0.04） |
+| TDB-823 | 存储/TsFile | 缺陷 | P2 | 刘珍 | 通过 | 今日 10+ 次整集群 reset 均 8/8 Running，无节点长期 Unknown |
+| TDB-828 | 表模型 DDL/Procedure | 缺陷 | P2 | 杜添源 | 通过 | DDL-2 整型/浮点跨类型比较一致 |
+| TDB-685 | COPY TO TsFile | 缺陷 | P1 | 杜添源 | 部分验证 | COPY-4 导出文件生成；结果集 path 字段类型未单独断言 |
+| TDB-709 | 审计日志 | 缺陷 | P1 | 刘珍 | 部分验证 | AUDIT-5 803 拒绝通过；成功场景审计记录因无活动迁移未判定 |
+| TDB-715 | 审计日志 | 缺陷 | P2 | 刘珍 | 部分验证 | CLUSTER-5 CN 重启无 NPE；顺序停 3CN 退主未构造 |
+| TDB-730 | 集群/节点 | 缺陷 | P1 | 刘珍 | 部分验证 | CLUSTER-1 CompressionRatio 可见；object size 分子未单独验证 |
+| TDB-769 | 其它 | 功能迭代 | P2 | 肖志红 | 部分验证 | EXPLAIN (FORMAT JSON) 输出 JSON；EXPLAIN (ANALYZE, FORMAT JSON) 语法不支持 |
+| TDB-776 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 部分验证 | AUDIT-12 命中登录失败/锁定事件；会话超时单独事件未构造 |
+| TDB-794 | 审计日志 | 安全相关 | P1 | 肖林捷 | 部分验证 | AUDIT-10 无权限用户未被拒绝，权限模型待确认 |
+| TDB-817 | 集群/节点 | 缺陷 | P2 | 刘珍 | 部分验证 | 缩容后 CompressionRatio 未构造 |
+| TDB-819 | 集群/节点 | 缺陷 | P2 | 刘珍 | 部分验证 | 同上，Adding 状态下的 ratio 未单独验证 |
+| TDB-684 | COPY TO TsFile | 缺陷 | P0 | 杜添源 | 环境不满足 | 需自定义返回 STRING 的 UDF（无 UDF 编译/注册环境） |
+| TDB-690 | 安全/权限 | 缺陷 | P1 | 杜添源 | 环境不满足 | 需要 Pro/Max 商业包 |
+| TDB-692 | 数据订阅 | 缺陷 | P0 | 常雪 | 环境不满足 | 需订阅客户端持续消费（本环境无订阅客户端包） |
+| TDB-695 | 配置热加载 | 缺陷 | P1 | 杜添源 | 环境不满足 | 需 Ratis 协议 + 慢速网络传输大 snapshot |
+| TDB-697 | 集群/节点 | 缺陷 | P0 | 刘珍 | 环境不满足 | 需要指定旧版本升级路径 |
+| TDB-702 | 审计日志 | 缺陷 | P3 | 肖林捷 | 环境不满足 | 需开源版安装包（当前为 TimechoDB 企业版） |
+| TDB-703 | 审计日志 | 缺陷 | P3 | 肖林捷 | 环境不满足 | 需开源版安装包 |
+| TDB-705 | 数据订阅 | 缺陷 | P0 | 常雪 | 环境不满足 | 需要构造大数据量/长时间运行 |
+| TDB-706 | 激活/打包 | 缺陷 | P1 | 杜添源 | 环境不满足 | 需要 Pro/Max 商业包 |
+| TDB-714 | 数据订阅 | 缺陷 | P0 | 常雪 | 环境不满足 | 需 PullConsumer 客户端（本环境无订阅客户端包） |
+| TDB-720 | Region 迁移/取消 | 缺陷 | P0 | 张正明 | 环境不满足 | 需远端对象存储（多级存储冷热分层） |
+| TDB-722 | 激活/打包 | 缺陷 | P1 | 张正明 | 环境不满足 | 需要特定硬件/激活环境 |
+| TDB-723 | 安全/权限 | 漏洞相关 | P0 | 常雪 | 环境不满足 | 安全漏洞（需专项环境） |
+| TDB-724 | CLI/客户端 | 漏洞相关 | P0 | 肖林捷 | 环境不满足 | 需专项安全测试（CVE 构造） |
+| TDB-725 | 安全/权限 | 漏洞相关 | P0 | 常雪 | 环境不满足 | 安全漏洞（需专项环境） |
+| TDB-726 | 安全/权限 | 漏洞相关 | P0 | 常雪 | 环境不满足 | 安全漏洞（需专项环境） |
+| TDB-727 | 激活/打包 | 新功能 | P00 | 杜添源 | 环境不满足 | 打包脚本/控制台展示，属构建流水线 |
+| TDB-729 | 表模型 DDL/Procedure | 缺陷 | P1 | 刘珍 | 环境不满足 | OBJECT 数据需 API/pipe 写入，SQL 仅支持 NULL |
+| TDB-736 | 其它 | 性能调优 | P0 | 杜添源 | 环境不满足 | 需要高负载 + 监控压测环境 |
+| TDB-740 | CLI/客户端 | 新功能 | P0 | 肖林捷 | 环境不满足 | 需 Node.js 客户端包与运行时 |
+| TDB-741 | 其它 | 新功能 | P0 | 冯庆新 | 环境不满足 | 需要指定旧版本升级路径 |
+| TDB-743 | CLI/客户端 | 安全相关 | P0 | 张正明 | 环境不满足 | 需 SSL 双向认证服务端配置 |
+| TDB-744 | 安全/权限 | 安全相关 | P0 | 张正明 | 环境不满足 | 需国密加密环境 |
+| TDB-746 | 其它 | 代码优化 | 其他 |  | 环境不满足 | 日常维护类，无可验证功能点 |
+| TDB-747 | 其它 | 功能迭代 | P0 | 常雪 | 环境不满足 | 需求口径不明确（实时数据定义逻辑），无黑盒验收点 |
+| TDB-749 | 其它 | 缺陷 | P1 | 肖林捷 | 环境不满足 | 需要 AI/AINode 环境 |
+| TDB-750 | 查询引擎 | 代码优化 | P1 | 刘珍 | 环境不满足 | 需构造查询超时/内存压力 |
+| TDB-751 | CLI/客户端 | 功能迭代 | P1 | 肖志红 | 环境不满足 | 需 UDF 编译与 InternalSession 用例 |
+| TDB-753 | CLI/客户端 | 代码优化 | P2 | 刘珍 | 环境不满足 | 需对象存储环境（远程备份） |
+| TDB-754 | 激活/打包 | 缺陷 | P3 | 肖林捷 | 环境不满足 | 备份脚本参数校验，脚本不在安装包内 |
+| TDB-755 | Pipe/同步 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需并发写+删除+压缩的同步异常构造 |
+| TDB-757 | 其它 | 功能迭代 | P3 | 刘珍 | 环境不满足 | 需要协议层构造非法 thrift 请求 |
+| TDB-758 | 其它 | 功能迭代 | P1 | 刘珍 | 环境不满足 | 需要协议层构造非法 thrift 请求 |
+| TDB-759 | 其它 | 新功能 | P0 | 肖林捷 | 环境不满足 | 内部接口未对外暴露，无 SQL 入口 |
+| TDB-762 | 查询引擎 | 功能迭代 | P0 | 刘珍 | 环境不满足 | 需构造超大 mods（GB 级）内存压力 |
+| TDB-763 | 审计日志 | 新功能 | P1 | 肖林捷 | 环境不满足 | 需开源版安装包 |
+| TDB-764 | 审计日志 | 代码优化 | P1 | 肖林捷 | 环境不满足 | 需开源版安装包 |
+| TDB-765 | CLI/客户端 | 缺陷 | P1 | 刘珍 | 环境不满足 | Windows CMD 场景，当前为 Linux 客户端 |
+| TDB-767 | 集群/节点 | 缺陷 | P00 | 刘珍 | 环境不满足 | 需要双版本滚动升级编排 |
+| TDB-768 | 集群/节点 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需 Ratis 3C5D 3 副本拓扑 |
+| TDB-770 | 集群/节点 | 缺陷 | P0 | 刘珍 | 环境不满足 | 需 3C3D 拓扑 + stop CN Leader |
+| TDB-772 | 安全/权限 | 缺陷 | P1 | 常雪 | 环境不满足 | 需 pipe writeback sink 环境 |
+| TDB-773 | 安全/权限 | 代码优化 | P1 | 肖林捷 | 环境不满足 | 需要用开源版安装包验证 |
+| TDB-774 | 安全/权限 | 安全相关 | P1 | 张正明 | 环境不满足 | 需通信加密（SSL）环境 |
+| TDB-775 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 环境不满足 | IP 黑白名单为商业版门控特性，发行包无对应配置模板 |
+| TDB-782 | 审计日志 | 功能迭代 | P2 | 肖林捷 | 环境不满足 | 需密钥管理接口（GENERATE_KEY/DESTROY_KEY） |
+| TDB-784 | Region 迁移/取消 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需构造超大 frame（>protect max size） |
+| TDB-786 | 激活/打包 | 缺陷 | P1 | 张正明 | 环境不满足 | 导出/备份脚本，不在安装包内 |
+| TDB-788 | 集群/节点 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需要 3C3D 拓扑（当前 3C5D） |
+| TDB-789 | 其它 | 性能调优 | P2 | 刘珍 | 环境不满足 | 需要协议层抓包对比压缩前后报文 |
+| TDB-790 | 存储/TsFile | 功能迭代 | P0 | 张正明 | 环境不满足 | 需订阅 tsfile 消费脚本环境 |
+| TDB-792 | 安全/权限 | 安全相关 | P1 | 杜添源 | 环境不满足 | EAL4 认证项，需要认证测试环境与用例集 |
+| TDB-793 | 安全/权限 | 安全相关 | P1 | 杜添源 | 环境不满足 | EAL4 认证项，需要认证测试环境与用例集 |
+| TDB-795 | Region 迁移/取消 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需迁移中停 Add Coordinator 的时序构造 |
+| TDB-797 | 集群/节点 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需 3C21D 集群 + 多次重启循环 |
+| TDB-798 | 集群/节点 | 功能迭代 | P1 | 刘珍 | 环境不满足 | 需要多目录磁盘布局与快照传输 |
+| TDB-800 | 存储/TsFile | 缺陷 | P2 | 刘珍 | 环境不满足 | 需要构造大数据量/长时间运行 |
+| TDB-801 | 查询引擎 | 缺陷 | P2 | 刘珍 | 环境不满足 | 需 Ratis 协议 + 高并发读写压力构造 |
+| TDB-802 | 激活/打包 | 缺陷 | P2 | 张正明 | 环境不满足 | 恢复安装脚本，脚本不在安装包内 |
+| TDB-803 | 数据订阅 | 功能迭代 | P0 | 常雪 | 环境不满足 | 需 Java Session 订阅接口客户端 |
+| TDB-804 | 存储/TsFile | 缺陷 | P1 | 刘珍 | 环境不满足 | 需 pipe 接收端持续接收场景 |
+| TDB-805 | 其它 | 功能迭代 | P1 | 肖志红 | 环境不满足 | 逻辑视图为规划项，当前版本无 SQL 入口 |
+| TDB-806 | 其它 | 功能迭代 | P0 | 刘珍 | 环境不满足 | 需先构造分区表损坏（人工改元数据） |
+| TDB-812 | 其它 | 缺陷 | P3 | 张正明 | 环境不满足 | 需要消息队列中间件 |
+| TDB-813 | 集群/节点 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需长时间运行观察线程泄漏 |
+| TDB-814 | 集群/节点 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需 Ratis + 24h stop/start |
+| TDB-816 | 安全/权限 | 缺陷 | P2 | 刘珍 | 环境不满足 | 需 pipe sink 普通用户场景 |
+| TDB-820 | CLI/客户端 | 缺陷 | P2 | 刘珍 | 环境不满足 | 需 3C3D3 副本拓扑 |
+| TDB-821 | 集群/节点 | 缺陷 | P2 | 刘珍 | 环境不满足 | 需缩容+删除并发的卡死复现 |
+| TDB-822 | 集群/节点 | 缺陷 | P2 | 刘珍 | 环境不满足 | 需构造 OOM（31G dump）与循环重启 |
+| TDB-824 | CLI/客户端 | 缺陷 | P1 | 张正明 | 环境不满足 | 需 SSL 环境 |
+| TDB-825 | 安全/权限 | 缺陷 | P1 | 张正明 | 环境不满足 | 需要 SSL 双向认证服务端配置 |
+| TDB-826 | 安全/权限 | 缺陷 | P1 | 常雪 | 环境不满足 | 需 pipe 接收端 load tsfile 权限场景 |
+| TDB-827 | 集群/节点 | 缺陷 | P1 | 刘珍 | 环境不满足 | 需 IoTConsensus 内存监控长期采样 |
+| TDB-829 | 其它 | 缺陷 | P2 | 肖志红 | 环境不满足 | 需要 V2.0.7.1 历史数据升级 |
+| TDB-830 | 查询引擎 | 缺陷 | P2 | 肖志红 | 环境不满足 | 2.0.13.1 发行包不含 REST 模块（RestService 缺失，启用后 DN 无法启动） |
 
 ## 三、说明
 
@@ -169,5 +169,6 @@
 2. `部分验证` 指主路径通过、但 RN 描述的边界/拒绝分支未完整覆盖；
 3. `可测未验` 已按主题编入目录并附验证要点，可按批继续执行；
 4. `TDB-787`（export-tsfile）、`TDB-713`（TTL 删除失败审计）、`TDB-783`（审计存储失效）按要求**不验证**，不计入本表；
-5. `环境不满足` 的原因包括：需 >5 DN/特定拓扑、Pro/Max 包、旧版本升级路径、OOM 构造、消息队列、AI 节点、EOL 认证环境等。
+5. `验证人员` 逐条取自 PLM（V2.0.11.1 中 刘珍 59 条，其余为其他验证人，如 肖林捷/杜添源/肖志红/常雪/张正明 等），本表不做统一；
+6. `环境不满足` 的原因包括：需 >5 DN/特定拓扑、Pro/Max 包、旧版本升级路径、OOM 构造、消息队列、AI 节点、EOL 认证环境等。
 

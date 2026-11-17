@@ -1,148 +1,145 @@
-no	theme	feasible	reason	case	type	priority	status	title
-TDB-684	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P0	取消	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】查询中调用返回 STRING 的 ScalarFunction UDF 时，SELECT 报 301 内部错误：Unsupported dataType: BinaryColumn only support Binary data type（COPY TO TsFile 场景同样复现）
-TDB-685	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P1	发版	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】COPY TO TsFile 返回结果集 path 字段类型错误，JDBC/ITableSession 暴露为 TEXT 而非 STRING
-TDB-686	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P1	发版	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】COPY TO TsFile 未指定 TABLE 时自动生成目标表名，结果集 table_name 返回 default 而非 default(auto_gen)
-TDB-687	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P1	发版	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】TAGS 中指定重复列时被静默去重，未按需求报错
-TDB-688	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	【V2.0.11.1】【表模型】数据库删除 Procedure 执行期间重启 DataNode【ConfigNode restartDataNode 持续 NPE 导致节点约 10 分钟无法注册】
-TDB-689	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P0	取消	CLI本地校验Jar路径 2.0.11.1rc导出失败
-TDB-690	安全/权限	不能	需要 Pro/Max 商业包	RN-2.0.11.1-SEC	缺陷	P1	取消	【V2.0.11.1】【Max包】password_expiration_seconds 配置未按秒生效，口令过期时间仍按 password_expiration_days 计算
-TDB-691	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	【V2.0.11.1】【Procedure框架】单DN Unknown 场景连续 DROP DATABASE【RemoveRegionGroupProcedure 长期占用线程导致后续 Procedure 调度超时】
-TDB-692	数据订阅	可		RN-2.0.11.1-SUB	缺陷	P0	发版	【2.0.11.1】【数据订阅】无间隔写入5分钟，2小时消费仍未完成
-TDB-693	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	【V2.0.11.1】【查询引擎】表模型执行查询分析时【Analyzer耗时错误记录到Tree Plan Cost】
-TDB-694	数据订阅	可		RN-2.0.11.1-SUB	功能迭代	P0	发版	【数据订阅】mode 值的关键字修改
-TDB-695	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P1	发版	【V2.0.11.1】【配置项热加载】Ratis Region 迁移时，大 snapshot 在低速传输下因重配置重试窗口过短被提前回滚，导致迁移失败
-TDB-696	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	【V2.0.11.1】【配置项热加载】热加载 wal_throttle_threshold_in_byte=-1 后有效值显示为 200 GiB，但运行时仍沿用修改前的 WAL 阈值限流
-TDB-697	集群/节点	不能	需要指定旧版本升级路径	RN-2.0.11.1-CLUSTER	缺陷	P0	发版	【V2.0.11.1】【升级兼容/Schema Snapshot】旧版本混合模型数据升级启动 DataNode【恢复表设备统计时空指针导致启动失败】
-TDB-698	审计日志	可		RN-2.0.11.1-AUDIT	代码优化	P0	发版	【企业版-Master】【审计日志】针对root.__audit路径设置TTL时，校验信息错误显示为Apache IoTDB（应显示为TimechoDB）
-TDB-699	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	【V2.0.11.1】【配置项热加载】热加载 WAL 阈值参数 wal_throttle_threshold_in_byte，使用非法值写入返回301状态码后仍写入配置文件，导致 ConfigNode 与 DataNode 展示值不一致
-TDB-700	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P0	发版	取消客户端对远程导出依赖的jar包是否存在的校验逻辑
-TDB-701	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P1	发版	【2.0.11.1】【配置项热加载】热加载 disk_space_warning_threshold参数，当值是NaN这个非法值时未被拒绝，导致全部 DataNode 进入 ReadOnly(DiskFull) 状态
-TDB-702	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P3	发版	【开源版审计日志】执行删除/创建序列操作时，提示数据库只读，仍沿用旧逻辑代码
-TDB-703	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P3	发版	【开源版审计日志】在日志目录中存在审计的log日志文件，容易让用户产生分歧，建议去除
-TDB-704	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P0	发版	【V2.0.11.1】【迁移取消】REMOVE Peer 异步任务执行期间取消迁移【远端任务仍删除副本并造成数据缺失】
-TDB-705	数据订阅	不能	需要构造大数据量/长时间运行	RN-2.0.11.1-SUB	缺陷	P0	发版	【2.0.11.1】【数据订阅】mode=consensus无内存控制，3分钟队列积压导致OOM
-TDB-706	激活/打包	不能	需要 Pro/Max 商业包	RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【V2.0.11.1】【更新打包命令】Pro 包 ConfigNode/DataNode 启动横幅均显示 TimechoDB 品牌
-TDB-707	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	发版	【V2.0.11.1】【IoTConsensus】取消 Region 迁移并发清理同一 Peer 时【TreeSet.remove 触发 NPE】
-TDB-708	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	【V2.0.11.1】【配置项热加载】热加载 ConfigNode 迁移并发上限参数 region_migration_concurrency_limit 从 0 修改为 1 后，配置显示已更新，但实际 Region 迁移仍不限制并发
-TDB-709	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P1	发版	【V2.0.11.1】【审计日志】Tree 模型执行 CANCEL ALL MIGRATIONS【成功和 803 拒绝均未生成操作审计记录】
-TDB-710	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	【V2.0.11.1】【配置项热加载】热加载 data_region_per_data_node 后，已有数据库的 MaxDataRegionGroupNum 重算结果错误
-TDB-711	数据订阅	可		RN-2.0.11.1-SUB	缺陷	P1	发版	【2.0.11.1】【数据订阅】mode=consensus 的topic不支持除 db，table，format，column外的配置，希望报错
-TDB-712	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P1	发版	【V2.0.11.1】【配置热加载】执行 set configuration region_migration_speed_limit_bytes_per_second 时【Object 写入触发 IndexOutOfBoundsException】
-TDB-713	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P0	发版	TTL 删除失败时记录审计日志
-TDB-714	数据订阅	可		RN-2.0.11.1-SUB	缺陷	P0	发版	【V2.0.11.1】【Subscription consensus】使用 PullConsumer 订阅含非空 DATE FIELD 的 Tablet【持续空轮询且无消息】
-TDB-715	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P2	发版	【V2.0.11.1 RC1】【ConfigNode审计日志】顺序停止3C集群使最后一个Leader退主【CNAuditLogger连续抛出NullPointerException】
-TDB-716	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P0	发版	修复对齐序列多测点 LAST 查询在特定时间过滤条件下可能卡死的问题
-TDB-717	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P3	发版	[master][cancel迁移日志优化]执行 CANCEL ALL MIGRATIONS 取消 add-peer 阶段迁移【unexpected consensusGroupId 以 ERROR 连续输出】
-TDB-718	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P0	发版	修复 CLI 连接不同 DN 执行相同 SQL 返回结果不一致问题
-TDB-719	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P1	发版	修复 DATE 类型空值占位符1000-01-01时，查询逻辑未适配出现异常的问题
-TDB-720	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P0	发版	使用多级存储后，如果TsFileResource 的时间索引降级成FileTimeIndex后，tsFile 无法迁移到远端存储
-TDB-721	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P2	发版	[master][CANCEL ALL MIGRATIONS] 取消迁移后接收端snapshot残余文件未清理
-TDB-722	激活/打包	不能	需要特定硬件/激活环境	RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【V2.0.10.1】【激活模块】 跨机器部署V02忽略硬件激活码后启动 【校验失败，L4标志双层不生效】
-TDB-723	安全/权限	不能	安全漏洞（需专项环境）	RN-2.0.11.1-SEC	漏洞相关	P0	发版	CVE-2026-59562 旧版pipe sendFile RPC 中存在未认证路径遍历
-TDB-724	CLI/客户端	不能	安全漏洞（需专项环境）	RN-2.0.11.1-CLI	漏洞相关	P0	发版	CVE-2026-41114 修复JDBC 驱动 BigDecimal toPlainString 接口存在大规模内存耗尽的问题
-TDB-725	安全/权限	不能	安全漏洞（需专项环境）	RN-2.0.11.1-SEC	漏洞相关	P0	发版	CVE-2026-59229  修复 Apache IoTDB Legacy Pipe 权限提升问题
-TDB-726	安全/权限	不能	安全漏洞（需专项环境）	RN-2.0.11.1-SEC	漏洞相关	P0	发版	CVE-2026-58663 Apache IoTDB pipeTransfer ()  接口未鉴权
-TDB-727	激活/打包	可		RN-2.0.11.1-CLUSTER	新功能	P00	发版	修改打包脚本，使不同参数去判断是否阉割安全功能 + 修改控制台的展示
-TDB-728	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P2	发版	【V2.0.10.1】【JDBC客户端】查询执行过程中重启 DataNode，JDBC 自动重连后复用旧 statementId 重发查询 【报错 INTERNAL_SERVER_ERROR(305)：StatementId doesn't exist in this session】
-TDB-729	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	【2.0.10.1】【表模型 show regions中的TsFileSize】TsFileSize 不能把 object size 加进去
-TDB-730	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【2.0.10.1】【CompressionRatio】show regions CompressionRatio 显示为0，计算公式中分子没有加object大小（分母加了）
-TDB-731	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	【高可用测试】数据库管理的高可用
-TDB-732	存储/TsFile	可		RN-2.0.11.1-STORAGE	新功能	P0	发版	【高可用测试】TTL管理的高可用
-TDB-733	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	【高可用测试】可写视图管理的高可用
-TDB-734	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	【高可用测试】设备管理的高可用
-TDB-735	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	发版	【V2.0.10.1】【多盘存储/Region迁移】show regions 与 Prometheus object_file_global_count 出现负值
-TDB-736	其它	不能	需要高负载 + 监控压测环境	RN-2.0.11.1-CLUSTER	性能调优	P0	发版	修复高负载下情况下 ，使用 iotdb 监控配置参数 dn_metric_level=IMPORTANT ，CPU的使用率非常高的问题
-TDB-737	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	功能迭代	P00	发版	CANCEL ALL MIGRATIONS 全局中止迁移指令
-TDB-738	配置热加载	可		RN-2.0.11.1-CFG	功能迭代	P00	发版	支持集群运行时配置的热加载（cluster runtime configs hot reload）
-TDB-739	查询引擎	可		RN-2.0.11.1-QUERY	功能迭代	P2	发版	GROUP BY & ORDER BY 支持 select 中 as 的别名
-TDB-740	CLI/客户端	可		RN-2.0.11.1-CLI	新功能	P0	发版	支持 nodejs 语言的客户端（ 仅支持2.x 的版本）
-TDB-741	其它	不能	需要指定旧版本升级路径	RN-2.0.11.1-CLUSTER	新功能	P0	发版	JDK 升级为 17 并且更新第三方依赖
-TDB-742	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P1	发版	支持后值填充
-TDB-743	CLI/客户端	可		RN-2.0.11.1-CLI	安全相关	P0	发版	客户端通信加密双向认证
-TDB-744	安全/权限	可		RN-2.0.11.1-SEC	安全相关	P0	发版	支持国密通信加密
-TDB-745	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	【高可用测试】表管理的高可用
-TDB-746	其它	不能	日常维护类，无可验证功能点	RN-2.0.11.1-CLUSTER	代码优化	其他	发版	存储组 2.0.11 日常维护
-TDB-747	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P0	发版	修改实时数据定义逻辑
-TDB-748	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	修复集群中schema cache 不一致的问题
-TDB-749	其它	不能	需要 AI/AINode 环境	RN-2.0.11.1-CLUSTER	缺陷	P1	取消	【AINode】非 root 用户启动 AINode 识别不到显卡
-TDB-750	查询引擎	可		RN-2.0.11.1-QUERY	代码优化	P1	发版	【master_0525_5caf05a】【查询】查询超时有空指针 RelatedMemoryReserved can't be null when freeing memory
-TDB-751	CLI/客户端	可		RN-2.0.11.1-CLI	功能迭代	P1	发版	udf api 增加一个 InternalSession 接口
-TDB-752	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P0	发版	date_bin_gap_fill 嵌套查询报错：Cannot invoke "java.lang.Integer.intValue()" because the return value of "java.util.Map.get(Object)" is null
-TDB-753	CLI/客户端	可		RN-2.0.11.1-CLI	代码优化	P2	发版	【master_20250515_e253d04】【object 远程备份】备份完成后，1 DN 上有99个sshd-SshClient 线程，24个Pipe-Processor-Executor 线程不释放，可以设置一个不活跃时间
-TDB-754	激活/打包	可		RN-2.0.11.1-CLUSTER	缺陷	P3	发版	tsfile-backup.sh工具导出树模型数据时提示路径匹配错误
-TDB-755	Pipe/同步	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【2.0.9.2】并发读写与delete 数据，副本间数据同步卡死
-TDB-756	集群/节点	可		RN-2.0.11.1-CLUSTER	代码优化	P1	发版	【2.0.9.2】【ConfigNode】stop confignode 过程中有空指针
-TDB-757	其它	不能	需要协议层构造非法 thrift 请求	RN-2.0.11.1-CLUSTER	功能迭代	P3	发版	增加协议层的内存控制
-TDB-758	其它	不能	需要协议层构造非法 thrift 请求	RN-2.0.11.1-CLUSTER	功能迭代	P1	取消	thrift 协议请求的识别加强
-TDB-759	其它	不能	内部接口未对外暴露，无 SQL 入口	RN-2.0.11.1-CLUSTER	新功能	P0	取消	CN 提供直接删除指定数据库的接口，但不对外暴露
-TDB-760	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	DN 重启恢复过程中收到region创建请求，可能会导致该 region 的信息永久丢失
-TDB-761	集群/节点	可		RN-2.0.11.1-CLUSTER	功能迭代	P0	发版	删除时只针对当前表所属的 region group 发起请求
-TDB-762	查询引擎	可		RN-2.0.11.1-QUERY	功能迭代	P0	发版	加强查询中涉及 mods 的内存控制，对单个较大的 GB 级别的 mods2 也需要能控制住
-TDB-763	审计日志	可		RN-2.0.11.1-AUDIT	新功能	P1	发版	【开源版】删除审计相关代码及功能
-TDB-764	审计日志	可		RN-2.0.11.1-AUDIT	代码优化	P1	发版	【开源版】【审计日志】在开源版中对审计库使用创建删除语句会有审计库的鉴权内容，需要后续版本移除
-TDB-765	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P1	发版	[2.0.9.1] 【CLI工具/参数解析】在Windows CMD中执行start-cli.bat时 -pw参数置于中间位置 报参数格式错误
-TDB-766	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	[2.0.9.1] 分区表自动修复，参数值测试，partition_table_recover_worker_num=0，DN 和 CN 刷大量ERROR
-TDB-767	集群/节点	不能	需要双版本滚动升级编排	RN-2.0.11.1-CLUSTER	缺陷	P00	发版	[2.0.9.1] [分区表自动修复] 滚动升级后，依然查询不到丢失的时间分区
-TDB-768	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	取消	[2.0.9.1] DataRegion为RatisConsensus，3C5D3副本，无故障并发读写过程中，DN 空指针
-TDB-769	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P2	发版	EXPLAIN [ANALYZE]? 支持输出格式为 JSON
-TDB-770	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	【2.0.9.1】分区表自动修复功能，3C3D，stop ConfigNode Leader 进程不退出且持续刷大量日志
-TDB-771	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	【2.0.9.1】分区表自动修复,停止DataNode后 ，CN Leader节点刷大量ERROR日志 ：TSStatus类转换异常
-TDB-772	安全/权限	可		RN-2.0.11.1-SEC	缺陷	P1	取消	【2.0.9.1】【pipe-writeback-sink】树模型修改sink内使用的用户和password时，报错801
-TDB-773	安全/权限	不能	需要用开源版安装包验证	RN-2.0.11.1-SEC	代码优化	P1	发版	【只测开源】开源版代码移除密码历史功能
-TDB-774	安全/权限	可		RN-2.0.11.1-SEC	安全相关	P1	取消	通信加密回归验证
-TDB-775	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】基于黑白名单拒绝特定ip的数据库连接
-TDB-776	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】原发会话超时锁定时记录审计日志
-TDB-777	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】超出为该用户配置的最大连接数时，拒绝该用户的新连接请求时记录审计日志
-TDB-778	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】连接数、密码、黑白名单校验的审计日志
-TDB-779	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】重新选举leader记录审计
-TDB-780	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】状态机感知各节点状态，还有region和region group的审计日志
-TDB-781	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】鉴别失败达到阈值、达到阈值后所采取的动作(如锁定账户),及后来(适当时)还原到正常状态(如解锁)的审计日志
-TDB-782	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】密钥生成/销毁时，记录成功/失败的审计日志
-TDB-783	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	【审计日志埋点】审计日志模块：新增审计存储失效时处理动作的审计日志
-TDB-784	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	发版	【2.0.8.2】Frame size (69670459) larger than protect max size (67108864) 导致查询卡死，预期应返回正确的报错信息（region迁移自动化环境）
-TDB-785	COPY TO TsFile	可		RN-2.0.11.1-COPY	新功能	P0	发版	支持用 SQL 将查询结果写回到指定路径的 tsfile 中
-TDB-786	激活/打包	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	激活的序列及其子路径禁止创建设备
-TDB-787	数据订阅	可		RN-2.0.11.1-SUB	功能迭代	P3	取消	数据订阅： 重构export-tsfile脚本
-TDB-788	集群/节点	不能	需要 3C3D 拓扑（当前 3C5D）	RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【TIMECHODB-0049】 [rc/2.0.1.2rc2][IoTConsensus] 3C3D2副本读写+delete 数据+stop 某DN , 有一个DN 进程退出，生成了dump文件（25G）
-TDB-789	其它	不能	需要协议层抓包对比压缩前后报文	RN-2.0.11.1-CLUSTER	性能调优	P2	发版	RPC 压缩
-TDB-790	存储/TsFile	可		RN-2.0.11.1-STORAGE	功能迭代	P0	取消	封装订阅tsfile的脚本
-TDB-791	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P3	发版	【TIMECHODB-0586】 list user 和create user 或 drop user 并发有报错：301: Ratis request failed Unknown，CN 日志Caused by: java.util.ConcurrentModificationException: null
-TDB-792	安全/权限	不能	EAL4 认证项，需要认证测试环境与用例集	RN-2.0.11.1-SEC	安全相关	P1	取消	【EAL4】USB.1 用户-主体绑定
-TDB-793	安全/权限	不能	EAL4 认证项，需要认证测试环境与用例集	RN-2.0.11.1-SEC	安全相关	P1	取消	【EAL4】【UID.1 标识的时机】针对未登录的用户的操作进行日志记录
-TDB-794	审计日志	可		RN-2.0.11.1-AUDIT	安全相关	P1	取消	【EAL4】审计数据可用（权限）
-TDB-795	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	取消	【TIMECHODB-703】 【Migrate Region】传输SNAPSHOT过程中stop Add Coord和CN Leader 节点，再重启stopped节点，继续执行相同迁移任务失败，预期成功（运行4次，复现2次）
-TDB-796	集群/节点	可		RN-2.0.11.1-CLUSTER	功能迭代	P00	发版	extend region 和 remove region 语法支持传入 regionId list ，一次处理多个 region
-TDB-797	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【TIMECHODB-0313】 [2.0.4.1 RC1] 3C21D集群读写完成后，多次停止/重启整个集群，出现集群重启失败（可复现，不是每次都失败），研发：cn 共识层不可用，现象是选不出 leader
-TDB-798	集群/节点	不能	需要多目录磁盘布局与快照传输	RN-2.0.11.1-CLUSTER	功能迭代	P1	发版	IoTConsensus 接收快照时支持多目录
-TDB-799	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	功能迭代	P3	发版	表模型增加 count database 语句
-TDB-800	存储/TsFile	不能	需要构造大数据量/长时间运行	RN-2.0.11.1-STORAGE	缺陷	P2	发版	【TIMECHODB-0570】 PipeTsFileEpochProgressIndexKeeper 持有5万多个TsFileResource , DN OOM （IoTV2 3C3D2副本 2.0.6.1 RC5 RN 新问题：并发读写+delete + stop 1 DN , 测试 54 小时 1 DN OOM dump 23GB ON_HEAP_MEMORY="20G"）
-TDB-801	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P2	发版	【TIMECHODB-0344】 [ratis npe] 2.0.5.1 RC1 验证并发读写+缩容 ratis NullPointerException: Cannot invoke "org.apache.ratis.server.raftlog.segmented.LogSegment.getLastTermIndex()" because "this.openSegment" is null
-TDB-802	激活/打包	可		RN-2.0.11.1-CLUSTER	缺陷	P2	取消	【TIMECHODB-0321】 【封装订阅tsfile的脚本】按照测点、设备导出耗时过长、不可控
-TDB-803	数据订阅	可		RN-2.0.11.1-SUB	功能迭代	P0	发版	参考 表模型 Java Session 接口 重构 Subscription Session，删除旧的订阅接口，将订阅所有接口聚合到一个主类，该主类不能露普通 Session 的接口
-TDB-804	存储/TsFile	可		RN-2.0.11.1-STORAGE	缺陷	P1	发版	【TIMECHODB-0496】 pipe 接收端 1分钟刷出1万多条 WARN  o.a.i.d.s.l.m.LoadTsFileDataCacheMemoryBlock:63 - LoadTsFileDataCacheMemoryBlock{limitedMemorySizeInBytes=304881402, usedMemoryInBytes=306331114} has exceed total memory size
-TDB-805	其它	不能	逻辑视图为规划项，当前版本无 SQL 入口	RN-2.0.11.1-CLUSTER	功能迭代	P1	发版	支持逻辑视图
-TDB-806	其它	不能	需先构造分区表损坏（人工改元数据）	RN-2.0.11.1-CLUSTER	功能迭代	P0	发版	使用 SQL 手动修复分区表功能
-TDB-807	查询引擎	可		RN-2.0.11.1-QUERY	功能迭代	P2	发版	支持查询 SQL 仅包含 SELECT 子句
-TDB-808	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P2	发版	show timeseries 支持按测点名排序
-TDB-809	存储/TsFile	可		RN-2.0.11.1-STORAGE	缺陷	P2	发版	查询： cast(1.1 as float)  报错Msg: java.lang.UnsupportedOperationException: org.apache.tsfile.read.common.block.column.DoubleColumn（预期应该成功）
-TDB-810	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【TIMECHODB-0778】 master 2025-12-18_55b32fe8 : 并发读写过程中 drop user ，DN 空指针需处理：insertTablet failed .. Cannot invoke "org.apache.iotdb.commons.auth.entity.User.isOpenIdUser()" because "<local5>" is null
-TDB-811	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P1	发版	【TIMECHODB-0766】 多用户并发连接数据库，DN 空指针：Cannot invoke "org.apache.iotdb.commons.auth.entity.User.getMaxSessionPerUser()" because "<local16>" is null（connections系统表测试场景）
-TDB-812	其它	不能	需要消息队列中间件	RN-2.0.11.1-CLUSTER	缺陷	P3	发版	【TIMECHODB-0583】 IoTDB 的 MQTT 服务在解析 不合规的JSON 消息时，空指针异常：NullPointerException: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is
-TDB-813	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【TIMECHODB-0397】 confignode 线程泄漏 2.0.5.1 RC3 IoTV2 3C3D3副本 运行sql覆盖树模型用例，ConfigNodeRPC-Processor 线程有3000个，且连不上集群（CN/DN 有NPE）
-TDB-814	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【TIMECHODB-1043】 【ratis】rc/1.3.3.3 rc6 DataRegion是ratis协议，stop datanode 24小时才完成（shutdown timeout in 1day）
-TDB-815	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P3	发版	【TIMECHODB-0686】 【数据删除】WHERE子句后使用and连接两个原子表达式情况，时间的最小值大于最大值报错信息为305，需要优化
-TDB-816	安全/权限	可		RN-2.0.11.1-SEC	缺陷	P2	发版	【TIMECHODB-0578】 日志优化：sink.username是普通用户且没有被赋予任何权限，发送端WARN 日志刷的太多，30分钟30GB ，WARN  o.a.i.c.p.r.PipeReceiverStatusHandler:191 - No permission: will retry forever.希望控制日志
-TDB-817	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	【TIMECHODB-0567】 2.0.6.1 RC4 缩容场景 重启集群 show regions 大部分DataRegion的CompressionRatio 字段值是NaN （ 重启前CompressionRatio 是有值的）
-TDB-818	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	【TIMECHODB-0563】 [ 建议 ] show regions 结果中 CompressionRatio 字段 保留2位小数
-TDB-819	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	【TIMECHODB-0562】 2.0.6.1 RC4 缩容场景 Adding 状态的DataRegion ，show regions CompressionRatio 字段显示负值
-TDB-820	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P2	发版	【TIMECHODB-0508】 [sql 覆盖] 2.0.6.1 RC2 3C3D3副本 DN 有空指针：NullPointerException: Cannot invoke "java.util.Iterator.hasNext()" because "this.dbIterator" is null(此环境CN 线程有泄漏，cli 连2 DN 报错 ，可能有关）
-TDB-821	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	【TIMECHODB-0387】 2.0.5.1 RC1 验证RN: 缩容场景 有delete 数据操作， 遇到removing卡死 （及监控IoTConsensus Used Memory的IoTConsensusQueue是负值 另一issue)，研发已定位： IoTV1 没有考虑到删除匹配不到任何
-TDB-822	集群/节点	不能	需构造 OOM（31G dump）与循环重启	RN-2.0.11.1-CLUSTER	缺陷	P2	发版	【TIMECHODB-0359】 3C5D2副本，并发读写过程中 对NODE-1 间隔3分钟 循环重启 ，NODE-1 有OOM （dump 31G）
-TDB-823	存储/TsFile	可		RN-2.0.11.1-STORAGE	缺陷	P2	发版	【TIMECHODB-0264】 [ 2.0.3.1 RC2 ] 验证issue 0228 遇到新问题：重启集群有1个节点一直是Unknown 且没有enjoy 日志（新宇看到main线程阻塞），另外它能正常合并
-TDB-824	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P1	发版	【TIMECHODB-0676】 [报错信息优化] 2.0.7.1 安全包 开启SSL，CLI 登录集群不指定SSL 的ERROR信息可优化（更明确）
-TDB-825	安全/权限	不能	需要 SSL 双向认证服务端配置	RN-2.0.11.1-SEC	缺陷	P1	发版	【TIMECHODB-0668】 2.0.7.1 ssl 空指针（目前看影响不大）: NullPointerException: Cannot invoke "String.contains(java.lang.CharSequence)" because the return value of "java.lang.Throwable.getMessage()" is null
-TDB-826	安全/权限	可		RN-2.0.11.1-SEC	缺陷	P1	发版	【TIMECHODB-0655】  [2.0.7.1][tree][table]接收端有写权限，load tsfile: No permissions for this operation, please add privilege SYSTEM，数据没有被同步
-TDB-827	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	【TIMECHODB-0346】 2.0.5.1 RC1 验证缩容场景RN  监控面板IoTConsensus Used Memory中的IoTConsensusQueue  是负值
-TDB-828	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P2	发版	【TIMECHODB-0761】 树表模型在查询的过滤条件中需要将整形和浮点型进行对比时的表现不一致现象
-TDB-829	其它	不能	需要 V2.0.7.1 历史数据升级	RN-2.0.11.1-CLUSTER	缺陷	P2	发版	【TIMECHODB-0665】 【V2.0.7.1_RC10_三权分立】历史版本数据升级到V2.0.7.1后，通过show configuration查看enable_separation_of_powers应该为false而不是true
-TDB-830	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P2	发版	【TIMECHODB-0405】 【树模型-RESTAPI】通过RESTAPI工具执行查询时，log中有UNKNOWN
+no	theme	feasible	reason	case	type	priority	status	verifier	title
+TDB-684	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P0	取消	杜添源	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】查询中调用返回 STRING 的 ScalarFunction UDF 时，SELECT 报 301 内部错误：Unsupported dataType: BinaryColumn only support Binary data type（COPY TO TsFile 场景同样复现）
+TDB-685	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P1	发版	杜添源	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】COPY TO TsFile 返回结果集 path 字段类型错误，JDBC/ITableSession 暴露为 TEXT 而非 STRING
+TDB-686	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P1	发版	杜添源	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】COPY TO TsFile 未指定 TABLE 时自动生成目标表名，结果集 table_name 返回 default 而非 default(auto_gen)
+TDB-687	COPY TO TsFile	可		RN-2.0.11.1-COPY	缺陷	P1	发版	杜添源	【V2.0.11.1】【支持用 SQL 将查询结果写回到指定路径的 tsfile 中】TAGS 中指定重复列时被静默去重，未按需求报错
+TDB-688	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	刘珍	【V2.0.11.1】【表模型】数据库删除 Procedure 执行期间重启 DataNode【ConfigNode restartDataNode 持续 NPE 导致节点约 10 分钟无法注册】
+TDB-689	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P0	取消	肖志红	CLI本地校验Jar路径 2.0.11.1rc导出失败
+TDB-690	安全/权限	不能	需要 Pro/Max 商业包	RN-2.0.11.1-SEC	缺陷	P1	取消	杜添源	【V2.0.11.1】【Max包】password_expiration_seconds 配置未按秒生效，口令过期时间仍按 password_expiration_days 计算
+TDB-691	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	刘珍	【V2.0.11.1】【Procedure框架】单DN Unknown 场景连续 DROP DATABASE【RemoveRegionGroupProcedure 长期占用线程导致后续 Procedure 调度超时】
+TDB-692	数据订阅	可		RN-2.0.11.1-SUB	缺陷	P0	发版	常雪	【2.0.11.1】【数据订阅】无间隔写入5分钟，2小时消费仍未完成
+TDB-693	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	刘珍	【V2.0.11.1】【查询引擎】表模型执行查询分析时【Analyzer耗时错误记录到Tree Plan Cost】
+TDB-694	数据订阅	可		RN-2.0.11.1-SUB	功能迭代	P0	发版	常雪	【数据订阅】mode 值的关键字修改
+TDB-695	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P1	发版	杜添源	【V2.0.11.1】【配置项热加载】Ratis Region 迁移时，大 snapshot 在低速传输下因重配置重试窗口过短被提前回滚，导致迁移失败
+TDB-696	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	杜添源	【V2.0.11.1】【配置项热加载】热加载 wal_throttle_threshold_in_byte=-1 后有效值显示为 200 GiB，但运行时仍沿用修改前的 WAL 阈值限流
+TDB-697	集群/节点	不能	需要指定旧版本升级路径	RN-2.0.11.1-CLUSTER	缺陷	P0	发版	刘珍	【V2.0.11.1】【升级兼容/Schema Snapshot】旧版本混合模型数据升级启动 DataNode【恢复表设备统计时空指针导致启动失败】
+TDB-698	审计日志	可		RN-2.0.11.1-AUDIT	代码优化	P0	发版	肖志红	【企业版-Master】【审计日志】针对root.__audit路径设置TTL时，校验信息错误显示为Apache IoTDB（应显示为TimechoDB）
+TDB-699	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	杜添源	【V2.0.11.1】【配置项热加载】热加载 WAL 阈值参数 wal_throttle_threshold_in_byte，使用非法值写入返回301状态码后仍写入配置文件，导致 ConfigNode 与 DataNode 展示值不一致
+TDB-700	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P0	发版	刘珍	取消客户端对远程导出依赖的jar包是否存在的校验逻辑
+TDB-701	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P1	发版	杜添源	【2.0.11.1】【配置项热加载】热加载 disk_space_warning_threshold参数，当值是NaN这个非法值时未被拒绝，导致全部 DataNode 进入 ReadOnly(DiskFull) 状态
+TDB-702	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P3	发版	肖林捷	【开源版审计日志】执行删除/创建序列操作时，提示数据库只读，仍沿用旧逻辑代码
+TDB-703	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P3	发版	肖林捷	【开源版审计日志】在日志目录中存在审计的log日志文件，容易让用户产生分歧，建议去除
+TDB-704	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P0	发版	刘珍	【V2.0.11.1】【迁移取消】REMOVE Peer 异步任务执行期间取消迁移【远端任务仍删除副本并造成数据缺失】
+TDB-705	数据订阅	不能	需要构造大数据量/长时间运行	RN-2.0.11.1-SUB	缺陷	P0	发版	常雪	【2.0.11.1】【数据订阅】mode=consensus无内存控制，3分钟队列积压导致OOM
+TDB-706	激活/打包	不能	需要 Pro/Max 商业包	RN-2.0.11.1-CLUSTER	缺陷	P1	发版	杜添源	【V2.0.11.1】【更新打包命令】Pro 包 ConfigNode/DataNode 启动横幅均显示 TimechoDB 品牌
+TDB-707	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	发版	刘珍	【V2.0.11.1】【IoTConsensus】取消 Region 迁移并发清理同一 Peer 时【TreeSet.remove 触发 NPE】
+TDB-708	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	杜添源	【V2.0.11.1】【配置项热加载】热加载 ConfigNode 迁移并发上限参数 region_migration_concurrency_limit 从 0 修改为 1 后，配置显示已更新，但实际 Region 迁移仍不限制并发
+TDB-709	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P1	发版	刘珍	【V2.0.11.1】【审计日志】Tree 模型执行 CANCEL ALL MIGRATIONS【成功和 803 拒绝均未生成操作审计记录】
+TDB-710	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P0	发版	杜添源	【V2.0.11.1】【配置项热加载】热加载 data_region_per_data_node 后，已有数据库的 MaxDataRegionGroupNum 重算结果错误
+TDB-711	数据订阅	可		RN-2.0.11.1-SUB	缺陷	P1	发版	常雪	【2.0.11.1】【数据订阅】mode=consensus 的topic不支持除 db，table，format，column外的配置，希望报错
+TDB-712	配置热加载	可		RN-2.0.11.1-CFG	缺陷	P1	发版	刘珍	【V2.0.11.1】【配置热加载】执行 set configuration region_migration_speed_limit_bytes_per_second 时【Object 写入触发 IndexOutOfBoundsException】
+TDB-714	数据订阅	可		RN-2.0.11.1-SUB	缺陷	P0	发版	常雪	【V2.0.11.1】【Subscription consensus】使用 PullConsumer 订阅含非空 DATE FIELD 的 Tablet【持续空轮询且无消息】
+TDB-715	审计日志	可		RN-2.0.11.1-AUDIT	缺陷	P2	发版	刘珍	【V2.0.11.1 RC1】【ConfigNode审计日志】顺序停止3C集群使最后一个Leader退主【CNAuditLogger连续抛出NullPointerException】
+TDB-716	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P0	发版	肖林捷	修复对齐序列多测点 LAST 查询在特定时间过滤条件下可能卡死的问题
+TDB-717	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P3	发版	刘珍	[master][cancel迁移日志优化]执行 CANCEL ALL MIGRATIONS 取消 add-peer 阶段迁移【unexpected consensusGroupId 以 ERROR 连续输出】
+TDB-718	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P0	发版	肖志红	修复 CLI 连接不同 DN 执行相同 SQL 返回结果不一致问题
+TDB-719	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P1	发版	肖志红	修复 DATE 类型空值占位符1000-01-01时，查询逻辑未适配出现异常的问题
+TDB-720	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P0	发版	张正明	使用多级存储后，如果TsFileResource 的时间索引降级成FileTimeIndex后，tsFile 无法迁移到远端存储
+TDB-721	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P2	发版	刘珍	[master][CANCEL ALL MIGRATIONS] 取消迁移后接收端snapshot残余文件未清理
+TDB-722	激活/打包	不能	需要特定硬件/激活环境	RN-2.0.11.1-CLUSTER	缺陷	P1	发版	张正明	【V2.0.10.1】【激活模块】 跨机器部署V02忽略硬件激活码后启动 【校验失败，L4标志双层不生效】
+TDB-723	安全/权限	不能	安全漏洞（需专项环境）	RN-2.0.11.1-SEC	漏洞相关	P0	发版	常雪	CVE-2026-59562 旧版pipe sendFile RPC 中存在未认证路径遍历
+TDB-724	CLI/客户端	不能	安全漏洞（需专项环境）	RN-2.0.11.1-CLI	漏洞相关	P0	发版	肖林捷	CVE-2026-41114 修复JDBC 驱动 BigDecimal toPlainString 接口存在大规模内存耗尽的问题
+TDB-725	安全/权限	不能	安全漏洞（需专项环境）	RN-2.0.11.1-SEC	漏洞相关	P0	发版	常雪	CVE-2026-59229  修复 Apache IoTDB Legacy Pipe 权限提升问题
+TDB-726	安全/权限	不能	安全漏洞（需专项环境）	RN-2.0.11.1-SEC	漏洞相关	P0	发版	常雪	CVE-2026-58663 Apache IoTDB pipeTransfer ()  接口未鉴权
+TDB-727	激活/打包	可		RN-2.0.11.1-CLUSTER	新功能	P00	发版	杜添源	修改打包脚本，使不同参数去判断是否阉割安全功能 + 修改控制台的展示
+TDB-728	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P2	发版	刘珍	【V2.0.10.1】【JDBC客户端】查询执行过程中重启 DataNode，JDBC 自动重连后复用旧 statementId 重发查询 【报错 INTERNAL_SERVER_ERROR(305)：StatementId doesn't exist in this session】
+TDB-729	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P1	发版	刘珍	【2.0.10.1】【表模型 show regions中的TsFileSize】TsFileSize 不能把 object size 加进去
+TDB-730	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【2.0.10.1】【CompressionRatio】show regions CompressionRatio 显示为0，计算公式中分子没有加object大小（分母加了）
+TDB-731	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	刘珍	【高可用测试】数据库管理的高可用
+TDB-732	存储/TsFile	可		RN-2.0.11.1-STORAGE	新功能	P0	发版	肖志红	【高可用测试】TTL管理的高可用
+TDB-733	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	杜添源	【高可用测试】可写视图管理的高可用
+TDB-734	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	肖志红	【高可用测试】设备管理的高可用
+TDB-735	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	发版	刘珍	【V2.0.10.1】【多盘存储/Region迁移】show regions 与 Prometheus object_file_global_count 出现负值
+TDB-736	其它	不能	需要高负载 + 监控压测环境	RN-2.0.11.1-CLUSTER	性能调优	P0	发版	杜添源	修复高负载下情况下 ，使用 iotdb 监控配置参数 dn_metric_level=IMPORTANT ，CPU的使用率非常高的问题
+TDB-737	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	功能迭代	P00	发版	刘珍	CANCEL ALL MIGRATIONS 全局中止迁移指令
+TDB-738	配置热加载	可		RN-2.0.11.1-CFG	功能迭代	P00	发版	杜添源	支持集群运行时配置的热加载（cluster runtime configs hot reload）
+TDB-739	查询引擎	可		RN-2.0.11.1-QUERY	功能迭代	P2	发版	肖志红	GROUP BY & ORDER BY 支持 select 中 as 的别名
+TDB-740	CLI/客户端	可		RN-2.0.11.1-CLI	新功能	P0	发版	肖林捷	支持 nodejs 语言的客户端（ 仅支持2.x 的版本）
+TDB-741	其它	不能	需要指定旧版本升级路径	RN-2.0.11.1-CLUSTER	新功能	P0	发版	冯庆新	JDK 升级为 17 并且更新第三方依赖
+TDB-742	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P1	发版	肖志红	支持后值填充
+TDB-743	CLI/客户端	可		RN-2.0.11.1-CLI	安全相关	P0	发版	张正明	客户端通信加密双向认证
+TDB-744	安全/权限	可		RN-2.0.11.1-SEC	安全相关	P0	发版	张正明	支持国密通信加密
+TDB-745	表模型 DDL/Procedure	可		ddl_ha_skill（已覆盖，见 DDLHA-N/D 系列）	新功能	P0	发版	肖志红	【高可用测试】表管理的高可用
+TDB-746	其它	不能	日常维护类，无可验证功能点	RN-2.0.11.1-CLUSTER	代码优化	其他	发版		存储组 2.0.11 日常维护
+TDB-747	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P0	发版	常雪	修改实时数据定义逻辑
+TDB-748	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	肖志红	修复集群中schema cache 不一致的问题
+TDB-749	其它	不能	需要 AI/AINode 环境	RN-2.0.11.1-CLUSTER	缺陷	P1	取消	肖林捷	【AINode】非 root 用户启动 AINode 识别不到显卡
+TDB-750	查询引擎	可		RN-2.0.11.1-QUERY	代码优化	P1	发版	刘珍	【master_0525_5caf05a】【查询】查询超时有空指针 RelatedMemoryReserved can't be null when freeing memory
+TDB-751	CLI/客户端	可		RN-2.0.11.1-CLI	功能迭代	P1	发版	肖志红	udf api 增加一个 InternalSession 接口
+TDB-752	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P0	发版	肖志红	date_bin_gap_fill 嵌套查询报错：Cannot invoke "java.lang.Integer.intValue()" because the return value of "java.util.Map.get(Object)" is null
+TDB-753	CLI/客户端	可		RN-2.0.11.1-CLI	代码优化	P2	发版	刘珍	【master_20250515_e253d04】【object 远程备份】备份完成后，1 DN 上有99个sshd-SshClient 线程，24个Pipe-Processor-Executor 线程不释放，可以设置一个不活跃时间
+TDB-754	激活/打包	可		RN-2.0.11.1-CLUSTER	缺陷	P3	发版	肖林捷	tsfile-backup.sh工具导出树模型数据时提示路径匹配错误
+TDB-755	Pipe/同步	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【2.0.9.2】并发读写与delete 数据，副本间数据同步卡死
+TDB-756	集群/节点	可		RN-2.0.11.1-CLUSTER	代码优化	P1	发版	刘珍	【2.0.9.2】【ConfigNode】stop confignode 过程中有空指针
+TDB-757	其它	不能	需要协议层构造非法 thrift 请求	RN-2.0.11.1-CLUSTER	功能迭代	P3	发版	刘珍	增加协议层的内存控制
+TDB-758	其它	不能	需要协议层构造非法 thrift 请求	RN-2.0.11.1-CLUSTER	功能迭代	P1	取消	刘珍	thrift 协议请求的识别加强
+TDB-759	其它	不能	内部接口未对外暴露，无 SQL 入口	RN-2.0.11.1-CLUSTER	新功能	P0	取消	肖林捷	CN 提供直接删除指定数据库的接口，但不对外暴露
+TDB-760	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	刘珍	DN 重启恢复过程中收到region创建请求，可能会导致该 region 的信息永久丢失
+TDB-761	集群/节点	可		RN-2.0.11.1-CLUSTER	功能迭代	P0	发版	刘珍	删除时只针对当前表所属的 region group 发起请求
+TDB-762	查询引擎	可		RN-2.0.11.1-QUERY	功能迭代	P0	发版	刘珍	加强查询中涉及 mods 的内存控制，对单个较大的 GB 级别的 mods2 也需要能控制住
+TDB-763	审计日志	可		RN-2.0.11.1-AUDIT	新功能	P1	发版	肖林捷	【开源版】删除审计相关代码及功能
+TDB-764	审计日志	可		RN-2.0.11.1-AUDIT	代码优化	P1	发版	肖林捷	【开源版】【审计日志】在开源版中对审计库使用创建删除语句会有审计库的鉴权内容，需要后续版本移除
+TDB-765	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P1	发版	刘珍	[2.0.9.1] 【CLI工具/参数解析】在Windows CMD中执行start-cli.bat时 -pw参数置于中间位置 报参数格式错误
+TDB-766	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	刘珍	[2.0.9.1] 分区表自动修复，参数值测试，partition_table_recover_worker_num=0，DN 和 CN 刷大量ERROR
+TDB-767	集群/节点	不能	需要双版本滚动升级编排	RN-2.0.11.1-CLUSTER	缺陷	P00	发版	刘珍	[2.0.9.1] [分区表自动修复] 滚动升级后，依然查询不到丢失的时间分区
+TDB-768	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	取消	刘珍	[2.0.9.1] DataRegion为RatisConsensus，3C5D3副本，无故障并发读写过程中，DN 空指针
+TDB-769	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P2	发版	肖志红	EXPLAIN [ANALYZE]? 支持输出格式为 JSON
+TDB-770	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	刘珍	【2.0.9.1】分区表自动修复功能，3C3D，stop ConfigNode Leader 进程不退出且持续刷大量日志
+TDB-771	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P0	发版	刘珍	【2.0.9.1】分区表自动修复,停止DataNode后 ，CN Leader节点刷大量ERROR日志 ：TSStatus类转换异常
+TDB-772	安全/权限	可		RN-2.0.11.1-SEC	缺陷	P1	取消	常雪	【2.0.9.1】【pipe-writeback-sink】树模型修改sink内使用的用户和password时，报错801
+TDB-773	安全/权限	不能	需要用开源版安装包验证	RN-2.0.11.1-SEC	代码优化	P1	发版	肖林捷	【只测开源】开源版代码移除密码历史功能
+TDB-774	安全/权限	可		RN-2.0.11.1-SEC	安全相关	P1	取消	张正明	通信加密回归验证
+TDB-775	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】基于黑白名单拒绝特定ip的数据库连接
+TDB-776	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】原发会话超时锁定时记录审计日志
+TDB-777	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】超出为该用户配置的最大连接数时，拒绝该用户的新连接请求时记录审计日志
+TDB-778	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】连接数、密码、黑白名单校验的审计日志
+TDB-779	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】重新选举leader记录审计
+TDB-780	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】状态机感知各节点状态，还有region和region group的审计日志
+TDB-781	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】鉴别失败达到阈值、达到阈值后所采取的动作(如锁定账户),及后来(适当时)还原到正常状态(如解锁)的审计日志
+TDB-782	审计日志	可		RN-2.0.11.1-AUDIT	功能迭代	P2	发版	肖林捷	【审计日志埋点】密钥生成/销毁时，记录成功/失败的审计日志
+TDB-784	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	发版	刘珍	【2.0.8.2】Frame size (69670459) larger than protect max size (67108864) 导致查询卡死，预期应返回正确的报错信息（region迁移自动化环境）
+TDB-785	COPY TO TsFile	可		RN-2.0.11.1-COPY	新功能	P0	发版	杜添源	支持用 SQL 将查询结果写回到指定路径的 tsfile 中
+TDB-786	激活/打包	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	张正明	激活的序列及其子路径禁止创建设备
+TDB-788	集群/节点	不能	需要 3C3D 拓扑（当前 3C5D）	RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【TIMECHODB-0049】 [rc/2.0.1.2rc2][IoTConsensus] 3C3D2副本读写+delete 数据+stop 某DN , 有一个DN 进程退出，生成了dump文件（25G）
+TDB-789	其它	不能	需要协议层抓包对比压缩前后报文	RN-2.0.11.1-CLUSTER	性能调优	P2	发版	刘珍	RPC 压缩
+TDB-790	存储/TsFile	可		RN-2.0.11.1-STORAGE	功能迭代	P0	取消	张正明	封装订阅tsfile的脚本
+TDB-791	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P3	发版	刘珍	【TIMECHODB-0586】 list user 和create user 或 drop user 并发有报错：301: Ratis request failed Unknown，CN 日志Caused by: java.util.ConcurrentModificationException: null
+TDB-792	安全/权限	不能	EAL4 认证项，需要认证测试环境与用例集	RN-2.0.11.1-SEC	安全相关	P1	取消	杜添源	【EAL4】USB.1 用户-主体绑定
+TDB-793	安全/权限	不能	EAL4 认证项，需要认证测试环境与用例集	RN-2.0.11.1-SEC	安全相关	P1	取消	杜添源	【EAL4】【UID.1 标识的时机】针对未登录的用户的操作进行日志记录
+TDB-794	审计日志	可		RN-2.0.11.1-AUDIT	安全相关	P1	取消	肖林捷	【EAL4】审计数据可用（权限）
+TDB-795	Region 迁移/取消	可		RN-2.0.11.1-MIGRATE	缺陷	P1	取消	刘珍	【TIMECHODB-703】 【Migrate Region】传输SNAPSHOT过程中stop Add Coord和CN Leader 节点，再重启stopped节点，继续执行相同迁移任务失败，预期成功（运行4次，复现2次）
+TDB-796	集群/节点	可		RN-2.0.11.1-CLUSTER	功能迭代	P00	发版	刘珍	extend region 和 remove region 语法支持传入 regionId list ，一次处理多个 region
+TDB-797	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【TIMECHODB-0313】 [2.0.4.1 RC1] 3C21D集群读写完成后，多次停止/重启整个集群，出现集群重启失败（可复现，不是每次都失败），研发：cn 共识层不可用，现象是选不出 leader
+TDB-798	集群/节点	不能	需要多目录磁盘布局与快照传输	RN-2.0.11.1-CLUSTER	功能迭代	P1	发版	刘珍	IoTConsensus 接收快照时支持多目录
+TDB-799	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	功能迭代	P3	发版	肖志红	表模型增加 count database 语句
+TDB-800	存储/TsFile	不能	需要构造大数据量/长时间运行	RN-2.0.11.1-STORAGE	缺陷	P2	发版	刘珍	【TIMECHODB-0570】 PipeTsFileEpochProgressIndexKeeper 持有5万多个TsFileResource , DN OOM （IoTV2 3C3D2副本 2.0.6.1 RC5 RN 新问题：并发读写+delete + stop 1 DN , 测试 54 小时 1 DN OOM dump 23GB ON_HEAP_MEMORY="20G"）
+TDB-801	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P2	发版	刘珍	【TIMECHODB-0344】 [ratis npe] 2.0.5.1 RC1 验证并发读写+缩容 ratis NullPointerException: Cannot invoke "org.apache.ratis.server.raftlog.segmented.LogSegment.getLastTermIndex()" because "this.openSegment" is null
+TDB-802	激活/打包	可		RN-2.0.11.1-CLUSTER	缺陷	P2	取消	张正明	【TIMECHODB-0321】 【封装订阅tsfile的脚本】按照测点、设备导出耗时过长、不可控
+TDB-803	数据订阅	可		RN-2.0.11.1-SUB	功能迭代	P0	发版	常雪	参考 表模型 Java Session 接口 重构 Subscription Session，删除旧的订阅接口，将订阅所有接口聚合到一个主类，该主类不能露普通 Session 的接口
+TDB-804	存储/TsFile	可		RN-2.0.11.1-STORAGE	缺陷	P1	发版	刘珍	【TIMECHODB-0496】 pipe 接收端 1分钟刷出1万多条 WARN  o.a.i.d.s.l.m.LoadTsFileDataCacheMemoryBlock:63 - LoadTsFileDataCacheMemoryBlock{limitedMemorySizeInBytes=304881402, usedMemoryInBytes=306331114} has exceed total memory size
+TDB-805	其它	不能	逻辑视图为规划项，当前版本无 SQL 入口	RN-2.0.11.1-CLUSTER	功能迭代	P1	发版	肖志红	支持逻辑视图
+TDB-806	其它	不能	需先构造分区表损坏（人工改元数据）	RN-2.0.11.1-CLUSTER	功能迭代	P0	发版	刘珍	使用 SQL 手动修复分区表功能
+TDB-807	查询引擎	可		RN-2.0.11.1-QUERY	功能迭代	P2	发版	肖志红	支持查询 SQL 仅包含 SELECT 子句
+TDB-808	其它	可		RN-2.0.11.1-CLUSTER	功能迭代	P2	发版	肖志红	show timeseries 支持按测点名排序
+TDB-809	存储/TsFile	可		RN-2.0.11.1-STORAGE	缺陷	P2	发版	刘珍	查询： cast(1.1 as float)  报错Msg: java.lang.UnsupportedOperationException: org.apache.tsfile.read.common.block.column.DoubleColumn（预期应该成功）
+TDB-810	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【TIMECHODB-0778】 master 2025-12-18_55b32fe8 : 并发读写过程中 drop user ，DN 空指针需处理：insertTablet failed .. Cannot invoke "org.apache.iotdb.commons.auth.entity.User.isOpenIdUser()" because "<local5>" is null
+TDB-811	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P1	发版	刘珍	【TIMECHODB-0766】 多用户并发连接数据库，DN 空指针：Cannot invoke "org.apache.iotdb.commons.auth.entity.User.getMaxSessionPerUser()" because "<local16>" is null（connections系统表测试场景）
+TDB-812	其它	不能	需要消息队列中间件	RN-2.0.11.1-CLUSTER	缺陷	P3	发版	张正明	【TIMECHODB-0583】 IoTDB 的 MQTT 服务在解析 不合规的JSON 消息时，空指针异常：NullPointerException: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is
+TDB-813	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【TIMECHODB-0397】 confignode 线程泄漏 2.0.5.1 RC3 IoTV2 3C3D3副本 运行sql覆盖树模型用例，ConfigNodeRPC-Processor 线程有3000个，且连不上集群（CN/DN 有NPE）
+TDB-814	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【TIMECHODB-1043】 【ratis】rc/1.3.3.3 rc6 DataRegion是ratis协议，stop datanode 24小时才完成（shutdown timeout in 1day）
+TDB-815	其它	可		RN-2.0.11.1-CLUSTER	缺陷	P3	发版	肖林捷	【TIMECHODB-0686】 【数据删除】WHERE子句后使用and连接两个原子表达式情况，时间的最小值大于最大值报错信息为305，需要优化
+TDB-816	安全/权限	可		RN-2.0.11.1-SEC	缺陷	P2	发版	刘珍	【TIMECHODB-0578】 日志优化：sink.username是普通用户且没有被赋予任何权限，发送端WARN 日志刷的太多，30分钟30GB ，WARN  o.a.i.c.p.r.PipeReceiverStatusHandler:191 - No permission: will retry forever.希望控制日志
+TDB-817	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	刘珍	【TIMECHODB-0567】 2.0.6.1 RC4 缩容场景 重启集群 show regions 大部分DataRegion的CompressionRatio 字段值是NaN （ 重启前CompressionRatio 是有值的）
+TDB-818	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	刘珍	【TIMECHODB-0563】 [ 建议 ] show regions 结果中 CompressionRatio 字段 保留2位小数
+TDB-819	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	刘珍	【TIMECHODB-0562】 2.0.6.1 RC4 缩容场景 Adding 状态的DataRegion ，show regions CompressionRatio 字段显示负值
+TDB-820	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P2	发版	刘珍	【TIMECHODB-0508】 [sql 覆盖] 2.0.6.1 RC2 3C3D3副本 DN 有空指针：NullPointerException: Cannot invoke "java.util.Iterator.hasNext()" because "this.dbIterator" is null(此环境CN 线程有泄漏，cli 连2 DN 报错 ，可能有关）
+TDB-821	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P2	发版	刘珍	【TIMECHODB-0387】 2.0.5.1 RC1 验证RN: 缩容场景 有delete 数据操作， 遇到removing卡死 （及监控IoTConsensus Used Memory的IoTConsensusQueue是负值 另一issue)，研发已定位： IoTV1 没有考虑到删除匹配不到任何
+TDB-822	集群/节点	不能	需构造 OOM（31G dump）与循环重启	RN-2.0.11.1-CLUSTER	缺陷	P2	发版	刘珍	【TIMECHODB-0359】 3C5D2副本，并发读写过程中 对NODE-1 间隔3分钟 循环重启 ，NODE-1 有OOM （dump 31G）
+TDB-823	存储/TsFile	可		RN-2.0.11.1-STORAGE	缺陷	P2	发版	刘珍	【TIMECHODB-0264】 [ 2.0.3.1 RC2 ] 验证issue 0228 遇到新问题：重启集群有1个节点一直是Unknown 且没有enjoy 日志（新宇看到main线程阻塞），另外它能正常合并
+TDB-824	CLI/客户端	可		RN-2.0.11.1-CLI	缺陷	P1	发版	张正明	【TIMECHODB-0676】 [报错信息优化] 2.0.7.1 安全包 开启SSL，CLI 登录集群不指定SSL 的ERROR信息可优化（更明确）
+TDB-825	安全/权限	不能	需要 SSL 双向认证服务端配置	RN-2.0.11.1-SEC	缺陷	P1	发版	张正明	【TIMECHODB-0668】 2.0.7.1 ssl 空指针（目前看影响不大）: NullPointerException: Cannot invoke "String.contains(java.lang.CharSequence)" because the return value of "java.lang.Throwable.getMessage()" is null
+TDB-826	安全/权限	可		RN-2.0.11.1-SEC	缺陷	P1	发版	常雪	【TIMECHODB-0655】  [2.0.7.1][tree][table]接收端有写权限，load tsfile: No permissions for this operation, please add privilege SYSTEM，数据没有被同步
+TDB-827	集群/节点	可		RN-2.0.11.1-CLUSTER	缺陷	P1	发版	刘珍	【TIMECHODB-0346】 2.0.5.1 RC1 验证缩容场景RN  监控面板IoTConsensus Used Memory中的IoTConsensusQueue  是负值
+TDB-828	表模型 DDL/Procedure	可		RN-2.0.11.1-DDL	缺陷	P2	发版	杜添源	【TIMECHODB-0761】 树表模型在查询的过滤条件中需要将整形和浮点型进行对比时的表现不一致现象
+TDB-829	其它	不能	需要 V2.0.7.1 历史数据升级	RN-2.0.11.1-CLUSTER	缺陷	P2	发版	肖志红	【TIMECHODB-0665】 【V2.0.7.1_RC10_三权分立】历史版本数据升级到V2.0.7.1后，通过show configuration查看enable_separation_of_powers应该为false而不是true
+TDB-830	查询引擎	可		RN-2.0.11.1-QUERY	缺陷	P2	发版	肖志红	【TIMECHODB-0405】 【树模型-RESTAPI】通过RESTAPI工具执行查询时，log中有UNKNOWN

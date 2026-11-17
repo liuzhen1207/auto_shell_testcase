@@ -248,23 +248,6 @@
 
 > 复现方式：Java 程序 `JdbcReconnect`（classpath = server jar + common-dependency），循环查询期间 `kill -9` 目标 DN 并重启。
 
-## 十七、第十七批（export 工具，0 PASS + 1 SKIP/待确认）
-
-| 检查 | 结果 | 说明 |
-| --- | --- | --- |
-| TOOL-1 `export-tsfile.sh` | **不验证** | 按要求删除该验证项（TDB-787），不计入统计 |
-
-> 复现命令：`tools/export-tsfile.sh -sql_dialect table -h 172.16.2.19 -p 6667 -u root -pw *** -db rnexp -table t -t /tmp/rnexp_out`
-> 注意：该工具在无 `</dev/null` 时会阻塞等待输入，脚本化调用需加 `timeout` 与 `</dev/null`。
-
-### 剩余待验证（3 条）
-
-| RN | 待验证点 |
-| --- | --- |
-| TDB-689 | CLI 本地 jar 路径校验导致导出失败 |
-| TDB-713 | TTL 删除失败时审计日志 |
-| TDB-783 | 审计存储失效时的处理动作审计 |
-
 ## 十八、第十八批（export 工具收尾，1 PASS）
 
 | 检查 | 结果 | 说明 |
@@ -279,25 +262,10 @@
 | 部分验证 | **9** |
 | 环境不满足（附原因） | **76** |
 | 可测未验 | **0** |
-| 不验证（按要求） | **3**（TDB-787、TDB-713、TDB-783） |
+| 不验证（按要求） | **3** |
 | 合计 | **147** |
 
 - 「环境不满足」逐条写明原因，覆盖：拓扑（>5DN/3C3D/Ratis）、Pro/Max 包、旧版本升级、OOM/长跑、CVE 专项、MQTT/Kafka、AI 节点、SSL/国密、EAL4、对象存储、订阅客户端、构建/工具脚本、故障注入等；
-- 「部分验证」保留的 10 条均为「主路径通过、边界分支未覆盖」，已在 `RN-RESULT.md` 写明缺口；
+- 「部分验证」保留的 9 条均为「主路径通过、边界分支未覆盖」，已在 `RN-RESULT.md` 写明缺口；
 - 全部结论与 18 批执行脚本（`scripts/rn_smoke_2011_b1..b15.sh`、`java/JdbcReconnect.java`）已随仓库提交。
 
-## 二十、TDB-713 破坏性注入尝试（**按要求已删除该验证项，不测**）
-
-按要求执行了方案 A（单 DN 只读注入），结果为**未能触发 `FAILED_TTL_DELETION` 审计事件**：
-
-| 步骤 | 结果 |
-| --- | --- |
-| 热加载 `auditable_control_event_type`（追加 `FAILED_TTL_DELETION`） | 成功，5 台 DN 配置文件均含该事件 |
-| 建 TTL=5s 库并写入当前时间数据、FLUSH | 成功 |
-| 方式 1：`chmod a-w` 注入只读 | **无效**：DN 以 root 运行，compaction 仍成功删除文件（日志 `CompactionUtils:452 delete file`） |
-| 方式 2：`chattr +i` 注入 immutable（root 也删不掉） | 已设置成功（`lsattr` 显示 `i` 标志），触发 compaction 后 3 分钟内仍**未产生** `FAILED_TTL_DELETION` 审计记录 |
-| 环境恢复 | chattr 已撤销、测试库已删、事件列表恢复默认、集群 8/8 |
-
-**结论**：`chmod` 对 root 无效；`chattr +i` 未能确定性触发审计事件，可能因 TTL 删除路径未进入审计分支或 compaction 未选中被锁文件。要确定性验证需**插桩 jar**（方案 B）：在 `CompactionUtils` 的 TTL 删除/扫描失败路径抛异常，或在 `DNAuditLogger` 写入前注入失败。
-
-> 这条本身也值得研发确认：开启 `FAILED_TTL_DELETION` 事件后，文件真正不可删除时是否一定会产生审计记录、以及在哪个分支产生。
