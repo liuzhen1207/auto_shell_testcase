@@ -67,7 +67,7 @@ else
     c1=$(sec_sql_as "$SEC_USER" "$SEC_PW" tree "set configuration '$k'='5';" | grep -aoE '803' | head -1)
     c2=$(sec_sql_as "$DDL_USER" "$ADMIN_PW" tree "set configuration '$k'='5';" | grep -aoE 'successfully' | head -1)
     if [ "$c1" = "803" ] && [ -n "$c2" ]; then
-      pass "三权分立：$k 由 sys_admin 修改（security_admin 无 SYSTEM → 803；需求措辞“root 或安全管理员”待研发确认）"
+      pass "三权分立：$k 由 sys_admin 修改（security_admin 无 SYSTEM → 803；已提 TDB-1610 / MR 7532，修复后此处应转为 security_admin 可改）"
     else
       fail "三权分立下 $k 的角色权限与设计不符（security_admin=${c1:-非803} sys_admin=${c2:-未成功}）"
     fi

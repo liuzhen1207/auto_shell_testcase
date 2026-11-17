@@ -82,7 +82,7 @@ if [ "$code" = "803" ] || [ "$code" = "701" ]; then
   pass "普通用户执行解锁被拒（$code，权限错误）"
 elif printf '%s' "$mu" | grep -qiE 'Exception|INTERNAL_SERVER_ERROR'; then
   # 记录为缺陷候选：非授权解锁应返回权限错误（803），实际 305 内部错误 + Java 异常文本
-  warn "缺陷候选：普通用户执行 ALTER USER ... ACCOUNT UNLOCK 返回 $code（INTERNAL_SERVER_ERROR + Java 异常文本），期望 803 权限错误：$(printf '%s' "$mu" | grep -aE 'Error' | tail -1 | cut -c1-170)"
+  warn "已知缺陷 TDB-1607（已提单 P2）：普通用户执行 ALTER USER ... ACCOUNT UNLOCK 返回 $code（INTERNAL_SERVER_ERROR + Java 异常文本），期望 803 权限错误：$(printf '%s' "$mu" | grep -aE 'Error' | tail -1 | cut -c1-170)"
 else
   fail "普通用户执行解锁结果异常：$(printf '%s' "$mu" | grep -aE 'Error|Msg' | tail -1 | cut -c1-140)"
 fi

@@ -29,14 +29,19 @@ assert_contains "root 不可删除的文案说明原因" "$m" "Cannot drop admin
 
 sec_log "--- 2) 密码不以明文存储 ---"
 m=$(sec_user_create "$U" "$PW"); assert_contains "创建用户" "$m" "successfully"
-hitlog=$(sshx "$PRIMARY" "grep -rlF -- '$PW' $DB_DIR/logs 2>/dev/null | head -3")
-assert_eq "日志中无明文密码" "${hitlog:-none}" "none"
-wal=$(sshx "$PRIMARY" "grep -rlF -- '$PW' $DB_DIR/data/confignode/consensus 2>/dev/null | head -2")
+hitlog=$(sshx "$PRIMARY" "grep -ra -l -F -- '$PW' $DB_DIR/logs 2>/dev/null | head -3")
+assert_eq "运行日志中无明文密码" "${hitlog:-none}" "none"
+# 已知问题（研发确认不可修复）：明文口令会写入 ConfigNode 共识（Raft）日志。
+# 按"已知行为基线"处理：命中 → WARN（不计 FAIL）；若某版本不再命中 → 也提示复核台账（防止静默通过）。
+wal=$(sshx "$PRIMARY" "grep -ra -l -F -- '$PW' $DB_DIR/data/confignode/consensus 2>/dev/null | head -2")
 if [ -n "$wal" ]; then
-  warn "缺陷候选：明文密码出现在 ConfigNode 共识（Raft）日志中（需求：密码不得明文存储）：$(printf '%s' "$wal" | head -1 | sed 's#.*/consensus/##')"
+  warn "已知问题 #4（研发确认不修复，见 docs/KNOWN_DEFECTS.md）：明文口令出现在 CN 共识日志（$(printf '%s' "$wal" | head -1 | sed 's#.*/consensus/##')）；见 docs/KNOWN_DEFECTS.md #4"
 else
-  pass "共识日志中无明文密码"
+  warn "已知问题已变化：本次未在 CN 共识日志中检出明文口令，若为研发修复请复核 docs/KNOWN_DEFECTS.md #4 并更新账本"
 fi
+# 存储侧必须是哈希（硬门禁）
+prof=$(sshx "$PRIMARY" "grep -ra -l -F -- '$PW' $DB_DIR/data/confignode/system/users 2>/dev/null | head -2")
+assert_eq "用户元数据文件（profile）中无明文口令（应为哈希）" "${prof:-none}" "none"
 sec_check_password_leak "$PW"
 
 sec_log "--- 3) CREATE / ALTER / LIST / DROP 语义 ---"
