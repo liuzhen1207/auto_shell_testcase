@@ -116,3 +116,11 @@ bash /data2/iotdb/ddl_ha_skill/runner/run_case.sh DDLHA-P-002
 - RC3 结果（`ac7f95e`，`/data2/iotdb/ddl_ha_results_rc3`）：连续 **3/3 PASS**，每轮 230~234s，`meta=YES,data=YES,exp=YES,log=OK`（0 条 ERROR）。
 
 > 首轮曾出现 `FAIL_LOG`，原因是 RC2 继承配置导致的启动噪声（`enable_audit_log=true` 使 CN 早期创建 `root.__audit` 触发 `NotEnoughDataNodeException`、DN 报 `Cannot record login history`）。清理这些继承配置后连续 3 轮 PASS，与被测 DDL 无关。
+
+
+## RC3 全量回归结果（2026-11-18）
+
+- 版本：2.0.13.1 RC3 `ac7f95e`，3C5D，30 例，**26 PASS**，总耗时 **2.3h**
+- 非 PASS：`D-002`（DN 重启锁冲突，harness 时序）、`X-001/002`（DDL 成功，优于文档）、`C-002`（整集群重启，harness 限制）
+- 对比 RC2：`N-005`/`D-005`（TDB-1050 的 updateTable NPE）已转为 PASS
+- 详见 [docs/REPORT-RC3.md](docs/REPORT-RC3.md)，结果目录 `/data2/iotdb/ddl_ha_results_rc3_full`
