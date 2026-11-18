@@ -31,6 +31,28 @@ rows_only() {
   grep -E '^\|' | grep -vE '^\|[[:space:]]*-+' | grep -viE '^\|[[:space:]]*(Time|_col|count|num_of|TableName|Table|dev)' | sed 's/^|//; s/|$//' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//' | grep -v '^$'
 }
 
+
+# dr_pair_dns <db> - 取该库第一个 DataRegion 组的全部副本 DN（用于"双副本全宕"故障）
+dr_pair_dns() {
+  local db=$1 rid
+  rid=$(bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "SET SQL_DIALECT=TABLE; show regions" 2>/dev/null \
+    | awk -F'|' -v db="$db" '$3 ~ /DataRegion/ && $5 ~ db {gsub(/ /,"",$2); print $2}' | sort -n | head -n1)
+  [ -z "$rid" ] && return 0
+  bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "SET SQL_DIALECT=TABLE; show regions" 2>/dev/null \
+    | awk -F'|' -v rid="$rid" '$3 ~ /DataRegion/ {gsub(/ /,"",$2); if ($2 == rid) {gsub(/ /,"",$8); print $8}}' | sort -u
+}
+
+
+# sr_all_dns <db> - 取该库第一个 SchemaRegion 组的全部副本 DN（用于"元数据副本全宕"故障）
+sr_all_dns() {
+  local db=$1 rid
+  rid=$(bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "SET SQL_DIALECT=TABLE; show regions" 2>/dev/null \
+    | awk -F'|' -v db="$db" '$3 ~ /SchemaRegion/ && $5 ~ db {gsub(/ /,"",$2); print $2}' | sort -n | head -n1)
+  [ -z "$rid" ] && return 0
+  bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "SET SQL_DIALECT=TABLE; show regions" 2>/dev/null \
+    | awk -F'|' -v rid="$rid" '$3 ~ /SchemaRegion/ {gsub(/ /,"",$2); if ($2 == rid) {gsub(/ /,"",$8); print $8}}' | sort -u
+}
+
 cluster_running_cnt() {
   bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "show cluster" 2>/dev/null | grep -c '|Running|'
 }
@@ -48,13 +70,13 @@ wait_cluster() {
 # schema_replica_dns <db> —— 输出该库 SchemaRegion 所在 DN 列表
 schema_replica_dns() {
   local db=$1
-  bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "show regions" 2>/dev/null \
-    | awk -F'|' -v db="$db" '$3 ~ /SchemaRegion/ && $4 ~ db {gsub(/ /,"",$7); print $7}'
+  bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "SET SQL_DIALECT=TABLE; show regions" 2>/dev/null \
+    | awk -F'|' -v db="$db" '$3 ~ /SchemaRegion/ && $5 ~ db {gsub(/ /,"",$8); print $8}'
 }
 
 # data_replica_dns <db> —— 输出该库 DataRegion 所在 DN 列表（去重）
 data_replica_dns() {
   local db=$1
-  bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "show regions" 2>/dev/null \
-    | awk -F'|' -v db="$db" '$3 ~ /DataRegion/ && $4 ~ db {gsub(/ /,"",$7); print $7}' | sort -u
+  bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "SET SQL_DIALECT=TABLE; show regions" 2>/dev/null \
+    | awk -F'|' -v db="$db" '$3 ~ /DataRegion/ && $5 ~ db {gsub(/ /,"",$8); print $8}' | sort -u
 }

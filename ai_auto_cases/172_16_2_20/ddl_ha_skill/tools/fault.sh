@@ -62,6 +62,7 @@ case "${1:-}" in
       dn_partition)   partition_dn "$3" ;;
       cn_leader_kill) kill_cn_leader ;;
       dr_both_down)   for d in $3; do kill_dn "$d"; done ;;
+      sr_all_down)    for d in $3; do kill_dn "$d"; done ;;
       *) echo "unknown fault $2" >&2; exit 2 ;;
     esac ;;
   heal)
@@ -69,6 +70,7 @@ case "${1:-}" in
       dn_partition) heal_partition "$3" ;;
       dn_kill)      start_dn "$3" ;;
       dr_both_down) for d in $3; do start_dn "$d"; done ;;
+      sr_all_down)  for d in $3; do start_dn "$d"; done ;;
       cn_leader_kill) start_cn "$(cat /tmp/ddlha_cn_leader 2>/dev/null || echo 16)" ;;
       full_restart) : ;;
       *) : ;;

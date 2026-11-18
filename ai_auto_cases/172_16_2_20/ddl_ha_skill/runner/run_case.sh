@@ -74,6 +74,8 @@ TARGET=""
 case "$FAULT_TARGET" in
   auto_meta_replica|auto) TARGET=$(schema_replica_dns "$DB" | head -n1) ;;
   auto_dr_replicas)       TARGET=$(data_replica_dns "$DB" | tr '\n' ' ' | sed 's/ $//') ;;
+  auto_dr_pair)           TARGET=$(dr_pair_dns "$DB" | tr '\n' ' ' | sed 's/ $//') ;;
+  auto_sr_all)            TARGET=$(sr_all_dns "$DB" | tr '\n' ' ' | sed 's/ $//') ;;
   *)                      TARGET=$FAULT_TARGET ;;
 esac
 [ -z "${TARGET:-}" ] && TARGET=21
@@ -84,10 +86,21 @@ SQL_DN=19
 
 # ---------- 4) 娉ㄦ晠闅?----------
 case "$FAULT" in
-  dn_kill|dn_partition|dr_both_down)
+  dn_kill|dn_partition|dr_both_down|sr_all_down)
     bash "$SKILL/tools/fault.sh" apply "$FAULT" "$TARGET" >> "$A/fault.txt" 2>&1
     [ "$FAULT" = "dn_partition" ] && sleep 25
-    [ "$FAULT" = "dn_kill" ] && sleep 8 ;;
+    [ "$FAULT" = "dn_kill" ] && sleep 8
+    if [ "$FAULT" = "dr_both_down" ] || [ "$FAULT" = "sr_all_down" ]; then
+      sleep 8
+      DOWN_OK=1
+      for d in $TARGET; do
+        c=$(ssh -n -o BatchMode=yes root@"$(ip_of "$d")" "pgrep -c -f 'com[.]timecho[.]iotdb[.]DataNode' 2>/dev/null" 2>/dev/null)
+        c=${c:-0}; c=$(echo "$c" | tail -n1)
+        echo "down_check dn$d procs=${c:-0}" >> "$A/fault.txt"
+        [ "${c:-0}" != "0" ] && DOWN_OK=0
+      done
+      [ "$DOWN_OK" = "1" ] && echo "DR_BOTH_DOWN_VERIFIED target=$TARGET" >> "$A/fault.txt" || echo "DR_BOTH_DOWN_NOT_ALL_DOWN target=$TARGET" >> "$A/fault.txt"
+    fi ;;
 esac
 
 # ---------- 5) 鎵ц DDL ----------
@@ -134,6 +147,7 @@ fi
 # ---------- 6) 鎭㈠鏁呴殰 ----------
 case "$FAULT" in
   dn_partition)   bash "$SKILL/tools/fault.sh" heal dn_partition "$TARGET" >> "$A/fault.txt" 2>&1 ;;
+  sr_all_down)    bash "$SKILL/tools/fault.sh" heal sr_all_down "$TARGET" >> "$A/fault.txt" 2>&1 ;;
   dn_kill)        bash "$SKILL/tools/fault.sh" heal dn_kill "$TARGET" >> "$A/fault.txt" 2>&1 ;;
   dr_both_down)   bash "$SKILL/tools/fault.sh" heal dr_both_down "$TARGET" >> "$A/fault.txt" 2>&1 ;;
   cn_leader_kill) bash "$SKILL/tools/fault.sh" heal cn_leader_kill "" >> "$A/fault.txt" 2>&1 ;;

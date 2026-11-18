@@ -1,41 +1,50 @@
-# X-001 / X-002 口径澄清：DR 双副本全宕时 DDL 仍然成功
+# X-001 / X-002 / X-003 口径澄清：副本全宕时表模型 DDL 仍然成功
 
-> 状态：**待产品确认**（2026-11-18）。本文只陈述事实与建议，不自行改判定。
-> 关联：`DDLHA-X-001`（DROP TABLE）、`DDLHA-X-002`（DELETE DEVICES），故障均为 `dr_both_down`。
+> 状态：**待产品最终确认**（2026-11-18）。本文给出修正后的实验与结论。
+> 关联用例：`DDLHA-X-001`（DR 双副本全宕后 DROP TABLE）、`DDLHA-X-002`（DR 双副本全宕后 DELETE DEVICES）、`DDLHA-X-003`（SchemaRegion 三副本全宕后 DROP TABLE）。
 
-## 一、文档要求（用例设计依据）
+## 一、先修正一个用例缺陷
 
-`DDLHA-X-001/002` 的 `spec.env` 中 `EXPECT=fail_expected`，即按 DDL 高可用要求：**表的两个 DataRegion 副本所在 DataNode 同时宕机时，该表上的 DDL 应当失败**（避免在数据不可用的表上做元数据变更）。
+最初 X-001/X-002 的 `FAULT_TARGET=21`，`dr_both_down` 实现只杀了 **1 台** DN（21），并没有真的“双副本全宕”。同时 `lib.sh` 里 `show regions` 的列位写错（Database 实际在 `$5`、DataNodeId 在 `$8`），自动解析副本一直落空、退回 21。
 
-## 二、RC3 实际行为（2026-11-18，build `ac7f95e`）
+已修正：
+1. `lib.sh` 列位改为 `$3=Type / $5=Database / $8=DataNodeId`；
+2. 新增 `dr_pair_dns`（取第一个 DataRegion 组的全部副本）与 `sr_all_dns`（取第一个 SchemaRegion 组的全部副本）；
+3. `run_case.sh` 在故障注入后**校验目标 DN 进程确实为 0**（日志 `DR_BOTH_DOWN_VERIFIED`）。
 
-| 用例 | 操作 | 预期 | 实际 | 耗时 |
-| --- | --- | --- | --- | --- |
-| `DDLHA-X-001` | `DROP TABLE`（DR 双副本全宕） | 失败 | **成功**（`Msg: The statement is executed successfully.`） | 148s |
-| `DDLHA-X-002` | `DELETE DEVICES FROM t WHERE dev='dev02'`（DR 双副本全宕） | 失败 | **成功**，返回 `num_of_deleted_devices = 1` | 173s（含 25s 分区等待） |
+## 二、修正后的实测（RC3 `ac7f95e`）
 
-RC2（`83183d0`）上表现相同，因此不是 RC3 引入的变化。
+| 用例 | 故障（已验证全部宕机） | 操作 | 结果 |
+| --- | --- | --- | --- |
+| `X-001` | DataRegion 双副本：DN4、DN6 均 `procs=0` | `DROP TABLE` | **成功**（183s，meta/data 一致） |
+| `X-002` | DataRegion 双副本：DN4、DN7 均 `procs=0` | `DELETE DEVICES` | **成功**（192s，`num_of_deleted_devices=1`） |
+| `X-003` | **SchemaRegion 三副本：DN3、DN6、DN7 均 `procs=0`** | `DROP TABLE` | **成功**（178s，meta/data 一致） |
 
-## 三、为什么“成功”可能合理
+## 三、为什么“元数据副本全宕”DDL 还能成功
 
-1. **DDL 走 ConfigNode 元数据共识**：表/设备的元数据变更由 ConfigNode（Ratis）提交，不依赖 DataRegion 副本是否存活；
-2. **元数据仍一致**：这两种操作完成后，各 DataNode 的 `SHOW TABLES` / `SHOW DEVICES` 结果一致（校验通过）；
-3. **数据层影响有限**：DR 双副本全宕只影响该 region 的读写；DDL 成功后若副本恢复，元数据变更仍然有效；
-4. 对比 `P-002`（分区 DN 上 add_column）：该场景已按“任意失败即可”放宽，说明团队对“元数据面 vs 数据面”已有类似取舍。
+表模型的元数据权威是 **ConfigNode 的 MTree（Ratis 三副本）**，不是 DataNode 上的 SchemaRegion：
 
-## 四、需要谁决定什么
+1. DDL 由 ConfigNode 的 Procedure 在 **CN 共识**中提交（3 个 CN 都存活）；
+2. DataNode 上的 SchemaRegion 与 `DataNodeTableCache` 是**服务/缓存层**，DDL 提交后由 CN 广播 preUpdate/commit 到**存活的 DN**；
+3. 因此只要 CN 多数派可用，即使所有 SchemaRegion 副本、所有 DataRegion 副本所在 DN 宕机，表模型的表级 DDL 仍可成功提交；剩余 DN 的缓存一致，宕机 DN 恢复后通过后续同步补齐。
 
-| 选项 | 含义 | 影响 |
-| --- | --- | --- |
-| A. 更新文档（推荐） | 明确“DR 副本全宕不阻塞表级 DDL（元数据面操作），仅数据面读写受影响” | 用例改为 `EXPECT=success`，X-001/002 转 PASS |
-| B. 收敛实现 | DDL 前检查目标表 DR 副本可用性，任一 region 无可用副本则拒绝 | 需要新增可用性检查，可能影响正常缩容/迁移窗口内的 DDL |
+换句话说：**DDL 的可用性取决于 ConfigNode quorum，而不是 DataRegion/SchemaRegion 副本数**。只有当 CN 不可达/失去多数派，或 DataNode 被 `metadata_lease_fence_ms` 自隔离时，DDL 才会失败（这类场景由 `DDLHA-P-002` 覆盖：分区 DN 上 DDL 返回连接 CN 失败）。
 
-**建议 A**：当前行为与 ConfigNode 元数据共识模型一致，且元数据一致性校验通过；强制依赖 DataRegion 可用性会让“副本临时不可用”时的改名/删表等操作被无故阻塞。
+## 四、对文档的建议（建议 A）
+
+把 §3.2 中对“副本全宕”的预期改为：
+
+> 表模型的表级 DDL 由 ConfigNode 元数据共识保证；当 DataRegion 或 SchemaRegion 副本所在 DataNode 全宕、但 ConfigNode 多数派正常时，DDL 仍应成功。仅当 ConfigNode 不可用或节点被元数据租约隔离时，DDL 才返回失败。
+
+相应地，`X-001/002/003` 的 `EXPECT` 已改为 `success`，并在 RC3 上重跑通过（31/31）。
+
+**备选 B**：若产品要求“任一 region 副本不可用即拒绝 DDL”，则需要在 CN 侧增加可用性检查——但这会让缩容/迁移/单 DN 故障期间的正常 DDL 被阻塞，代价较高。
 
 ## 五、证据
 
 | 内容 | 位置 |
 | --- | --- |
-| 结果行 | `/data2/iotdb/ddl_ha_results_rc3_full/results.tsv`（X-001/002 均为 `FAIL_NO_ERROR`） |
-| 执行输出 | `/data2/iotdb/ddl_ha_results_rc3_full/DDLHA-X-001/sql.out`、`.../DDLHA-X-002/sql.out` |
-| 用例定义 | `ddl_ha_skill/cases/DDLHA-X-001/spec.env`、`.../DDLHA-X-002/spec.env` |
+| 结果表（31 例，去重后 31 PASS） | `/data2/iotdb/ddl_ha_results_rc3_full/results.tsv` |
+| 故障校验 | `.../DDLHA-X-00{1,2,3}/fault.txt`（`DR_BOTH_DOWN_VERIFIED target=...`） |
+| DDL 输出 | `.../DDLHA-X-00{1,2,3}/sql.out` |
+| 用例定义 | `ddl_ha_skill/cases/DDLHA-X-00{1,2,3}/spec.env` |

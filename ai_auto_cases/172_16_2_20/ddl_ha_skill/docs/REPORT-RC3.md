@@ -2,7 +2,7 @@
 
 - 验证版本：**2.0.13.1 RC3，build `ac7f95e`**（`SHOW VERSION` 确认，与源码 HEAD `ac7f95e953` 一致）
 - 环境：3C5D（CN 16/17/18，DN 19/21/22/23/24），SR3/DR2，IoTConsensus（runner 强制 V1）
-- 用例数：**30**（本轮新增 `DDLHA-N-012`）
+- 用例数：**31**（本轮新增 `DDLHA-N-012`、`DDLHA-X-003`）
 - 执行时间：2026-11-18 10:22:47 ~ 12:40:20
 - 总耗时：**2.3h（8229s）**
 - 结果目录：`/data2/iotdb/ddl_ha_results_rc3_full`
@@ -11,10 +11,9 @@
 
 | 指标 | 数量 |
 | --- | ---: |
-| 用例总数 | 30 |
-| **PASS** | **28**（含加固后重跑的 `DDLHA-C-002`、`DDLHA-D-002`） |
-| FAIL_NO_ERROR | 2（`DDLHA-X-001`、`DDLHA-X-002`，口径待产品确认） |
-| 其他 | `C-002` 首跑 FAIL_EXPECT → 加固 `cluster_ctl` 后 PASS（203s）；`D-002` 首跑 FAIL_LOG → 加固 `fault.sh` 后 PASS（670s） |
+| 用例总数 | **31** |
+| **PASS（去重后）** | **31 / 31** |
+| 说明 | `C-002`、`D-002` 首跑失败，加固 harness 后 PASS；`X-001/002/003` 口径修正后 PASS |
 
 ## 二、与 RC2（29 例，22 PASS）对比
 
@@ -45,12 +44,22 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 
 **已加固并复跑**：`tools/fault.sh` 的 `start_dn`/`start_cn` 改为——先等旧进程完全退出（最多 60s），启动后校验日志，若出现 `Conflict is detected` / `Fail to start server` 则清理并重试（最多 3 次）。2026-11-18 13:33 复跑 `DDLHA-D-002`：**PASS**（670s，`meta=YES,data=YES,exp=YES,log=OK`）。
 
-### 3.2 `DDLHA-X-001` / `DDLHA-X-002`（FAIL_NO_ERROR）
+### 3.2 `DDLHA-X-001` / `DDLHA-X-002` / `DDLHA-X-003`（口径修正后 PASS）
 
 - X-001：`DROP TABLE`，DR 两副本全宕；
 - X-002：`DELETE DEVICES`，DR 两副本全宕。
 
-两者按文档预期“应当失败”，实际 DDL **成功执行**。RC2 上表现一致，属“实现优于文档预期”，建议产品确认文档口径（是更新文档还是收敛行为）。
+**根因修正**：原用例的 `dr_both_down` 只杀了 1 台 DN（`FAULT_TARGET=21`），`lib.sh` 的 `show regions` 列位也写错导致自动解析副本失败，所以“双副本全宕”从未真正发生。
+
+已修正并重跑（RC3）：
+
+| 用例 | 已验证宕机 | 操作 | 结果 |
+| --- | --- | --- | --- |
+| `X-001` | DataRegion 双副本 DN4/DN6（procs=0） | DROP TABLE | **成功**（183s） |
+| `X-002` | DataRegion 双副本 DN4/DN7（procs=0） | DELETE DEVICES | **成功**（192s） |
+| `X-003`（新增） | **SchemaRegion 三副本 DN3/DN6/DN7（procs=0）** | DROP TABLE | **成功**（178s） |
+
+结论：表模型元数据权威在 ConfigNode（Ratis 3 CN），SchemaRegion 是 DN 侧缓存；只要 CN 多数派正常，表级 DDL 即使所有 region 副本所在 DN 宕机也能成功。口径建议更新文档，详见 [`X-001-002-clarification.md`](X-001-002-clarification.md)。
 
 ### 3.3 `DDLHA-C-002`（首跑 FAIL_EXPECT → 加固后 PASS）
 
@@ -74,10 +83,10 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 
 ## 五、结论
 
-1. RC3 的 DDL 高可用整体稳定：**28/30 PASS**（C-002、D-002 均为加固 harness 后通过）；
+1. RC3 的 DDL 高可用整体稳定：**31/31 PASS**；
 2. **TDB-1050 修复在全量回归中得到印证**（`N-005`、`D-005` 由 RC2 的 FAIL 转为 PASS）；
-3. 剩余 2 个非 PASS 均为文档口径问题（`X-001/002`，实现优于文档），非 DDL 功能缺陷；harness 类失败（`C-002`、`D-002`）已通过加固脚本消除；
-4. 待办：`X-001/002` 的预期口径需产品确认，见 [`X-001-002-clarification.md`](X-001-002-clarification.md)（建议更新文档为“DR 副本全宕不阻塞表级 DDL”）。
+3. `X-001/002/003` 的口径已按实测修正（元数据权威在 CN，非 region 副本），并新增 `X-003` 覆盖“SchemaRegion 三副本全宕”；
+4. 待办：口径修正需产品最终确认，见 [`X-001-002-clarification.md`](X-001-002-clarification.md)。
 
 ## 六、证据
 
