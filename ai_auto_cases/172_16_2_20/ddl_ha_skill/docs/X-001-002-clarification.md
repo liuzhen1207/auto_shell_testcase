@@ -48,3 +48,33 @@
 | 故障校验 | `.../DDLHA-X-00{1,2,3}/fault.txt`（`DR_BOTH_DOWN_VERIFIED target=...`） |
 | DDL 输出 | `.../DDLHA-X-00{1,2,3}/sql.out` |
 | 用例定义 | `ddl_ha_skill/cases/DDLHA-X-00{1,2,3}/spec.env` |
+
+
+## 六、补充：CN 多数派宕机（`DDLHA-X-004`）
+
+| 项 | 内容 |
+| --- | --- |
+| 故障 | 杀掉 CN17、CN18，保留 CN16（**3 个 CN 挂 2 个，超过 1/2**） |
+| 操作 | `CREATE TABLE ddlha_ddlha_x_004.t (...)` |
+| 结果 | **失败**：`IoTDBSQLException: 712: Timed out to wait for procedure return. The procedure is still running.`（240s 轮次，meta/data 一致） |
+| 恢复 | 重启 CN17/18 后集群 8/8 |
+
+这与“CN 全宕”同源：CN 是元数据权威，**丢失多数派后 DDL 无法提交**。若 3 个 CN 全宕，客户端连 `SHOW DATABASES` 都无法完成。
+
+## 七、DN 重启后元数据一致性
+
+`DDLHA-X-003` 在“SchemaRegion 三副本全宕 → DDL 成功 → 重启 3 台 DN”后：
+
+```
+READABLE_DNS=5/5
+META_CONSISTENT=YES
+DATA_CONSISTENT=YES
+```
+
+即重启后 5 台 DN 的表/视图元数据完全一致。原因：
+
+1. **权威副本在 ConfigNode**：DDL 已通过 CN 的 Ratis 提交并持久化，不依赖 DN 是否在线；
+2. **DN 启动时从 CN 同步**：SchemaRegion 重建/追平后，`DataNodeTableCache` 以 CN 的 MTree 为准刷新，宕机期间的缓存空缺被补齐；
+3. 因此“DN 宕机期间 DDL 成功”不会造成元数据分叉；宕机 DN 在重启后接受 CN 的既有事实，其余 DN 早已一致。
+
+风险窗口只在**宕机 DN 未重启期间**：它的本地缓存可能滞后，客户端若连到该 DN 会拿到旧缓存（但该 DN 此时本就不可用），恢复后即一致。

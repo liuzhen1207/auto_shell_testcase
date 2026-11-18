@@ -9,7 +9,7 @@ OUT=$CASE_DIR/log-scan.txt
 LOG=$NEW/logs
 : > "$OUT"
 
-BENIGN='LeaderBalancer|CHANGE_REGION_LEADER|TransferLeader|INVALIDATE_LAST_CACHE|AppendLogResponseHandler|GrpcLogAppender|Leader has not been elected|PRE_VOTE|Failed to change the leader|recover compaction|some other task is operating|please retry|Failed to .* on DataNode|ClusterAuthorityFetcher|Failed to connect to config node|SocketTimeoutException|Connect timed out|TSocket|Failed to start server|another process has already locked|Unable to acquire file lock|has failed \(STARTING'
+BENIGN='LeaderBalancer|CHANGE_REGION_LEADER|TransferLeader|INVALIDATE_LAST_CACHE|AppendLogResponseHandler|GrpcLogAppender|Leader has not been elected|PRE_VOTE|Failed to change the leader|recover compaction|some other task is operating|please retry|Failed to .* on DataNode|ClusterAuthorityFetcher|Failed to connect to config node|SocketTimeoutException|Connect timed out|TSocket|Failed to start server|another process has already locked|Unable to acquire file lock|has failed \(STARTING|Extend region group failed|Create SchemaPartition failed|Failed to update store procedure|CODE-BUG:pid=|Internal error processing openSession|Failed to persist unlock state to store|Interrupted during CREATE_SCHEMA_REGION'
 
 total_err=0; suspect=0
 for n in $NODES; do

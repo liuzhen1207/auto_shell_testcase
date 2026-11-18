@@ -2,7 +2,7 @@
 
 - 验证版本：**2.0.13.1 RC3，build `ac7f95e`**（`SHOW VERSION` 确认，与源码 HEAD `ac7f95e953` 一致）
 - 环境：3C5D（CN 16/17/18，DN 19/21/22/23/24），SR3/DR2，IoTConsensus（runner 强制 V1）
-- 用例数：**31**（本轮新增 `DDLHA-N-012`、`DDLHA-X-003`）
+- 用例数：**32**（本轮新增 `DDLHA-N-012`、`DDLHA-X-003`、`DDLHA-X-004`）
 - 执行时间：2026-11-18 10:22:47 ~ 12:40:20
 - 总耗时：**2.3h（8229s）**
 - 结果目录：`/data2/iotdb/ddl_ha_results_rc3_full`
@@ -11,8 +11,8 @@
 
 | 指标 | 数量 |
 | --- | ---: |
-| 用例总数 | **31** |
-| **PASS（去重后）** | **31 / 31** |
+| 用例总数 | **32** |
+| **PASS（去重后）** | **32 / 32** |
 | 说明 | `C-002`、`D-002` 首跑失败，加固 harness 后 PASS；`X-001/002/003` 口径修正后 PASS |
 
 ## 二、与 RC2（29 例，22 PASS）对比
@@ -83,7 +83,7 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 
 ## 五、结论
 
-1. RC3 的 DDL 高可用整体稳定：**31/31 PASS**；
+1. RC3 的 DDL 高可用整体稳定：**32/32 PASS**；
 2. **TDB-1050 修复在全量回归中得到印证**（`N-005`、`D-005` 由 RC2 的 FAIL 转为 PASS）；
 3. `X-001/002/003` 的口径已按实测修正（元数据权威在 CN，非 region 副本），并新增 `X-003` 覆盖“SchemaRegion 三副本全宕”；
 4. 待办：口径修正需产品最终确认，见 [`X-001-002-clarification.md`](X-001-002-clarification.md)。
@@ -95,3 +95,10 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 | 结果表 | `/data2/iotdb/ddl_ha_results_rc3_full/results.tsv` |
 | 逐例日志 | `/data2/iotdb/ddl_ha_results_rc3_full/<CASE>/{round.log,sql.out,logs/,log-scan.txt,verify.log}` |
 | 执行日志 | `/data2/iotdb/ddl_ha_rc3_full.log` |
+
+## 七、X-004：CN 多数派宕机
+
+- 故障：CN17/CN18 宕机（3 个 CN 挂 2 个，超过 1/2）；
+- 操作：`CREATE TABLE`；
+- 结果：**失败**（`712: Timed out to wait for procedure return`），符合“CN 是元数据权威、丢失多数派则 DDL 不可提交”的预期；
+- 恢复后集群 8/8、元数据一致（`meta=YES,data=YES`）。

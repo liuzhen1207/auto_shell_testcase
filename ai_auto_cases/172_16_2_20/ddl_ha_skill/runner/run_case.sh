@@ -86,7 +86,7 @@ SQL_DN=19
 
 # ---------- 4) 娉ㄦ晠闅?----------
 case "$FAULT" in
-  dn_kill|dn_partition|dr_both_down|sr_all_down)
+  dn_kill|dn_partition|dr_both_down|sr_all_down|cn_quorum_down)
     bash "$SKILL/tools/fault.sh" apply "$FAULT" "$TARGET" >> "$A/fault.txt" 2>&1
     [ "$FAULT" = "dn_partition" ] && sleep 25
     [ "$FAULT" = "dn_kill" ] && sleep 8
@@ -148,6 +148,7 @@ fi
 case "$FAULT" in
   dn_partition)   bash "$SKILL/tools/fault.sh" heal dn_partition "$TARGET" >> "$A/fault.txt" 2>&1 ;;
   sr_all_down)    bash "$SKILL/tools/fault.sh" heal sr_all_down "$TARGET" >> "$A/fault.txt" 2>&1 ;;
+  cn_quorum_down) bash "$SKILL/tools/fault.sh" heal cn_quorum_down "" >> "$A/fault.txt" 2>&1 ;;
   dn_kill)        bash "$SKILL/tools/fault.sh" heal dn_kill "$TARGET" >> "$A/fault.txt" 2>&1 ;;
   dr_both_down)   bash "$SKILL/tools/fault.sh" heal dr_both_down "$TARGET" >> "$A/fault.txt" 2>&1 ;;
   cn_leader_kill) bash "$SKILL/tools/fault.sh" heal cn_leader_kill "" >> "$A/fault.txt" 2>&1 ;;
