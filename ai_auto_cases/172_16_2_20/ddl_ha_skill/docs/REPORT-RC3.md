@@ -12,10 +12,9 @@
 | 指标 | 数量 |
 | --- | ---: |
 | 用例总数 | 30 |
-| **PASS** | **27**（含重跑通过的 `DDLHA-C-002`） |
-| FAIL_LOG | 1（`DDLHA-D-002`） |
-| FAIL_NO_ERROR | 2（`DDLHA-X-001`、`DDLHA-X-002`，口径待确认） |
-| 其他 | `DDLHA-C-002` 首跑 FAIL_EXPECT，加固 `cluster_ctl` 后重跑 **PASS**（203s） |
+| **PASS** | **28**（含加固后重跑的 `DDLHA-C-002`、`DDLHA-D-002`） |
+| FAIL_NO_ERROR | 2（`DDLHA-X-001`、`DDLHA-X-002`，口径待产品确认） |
+| 其他 | `C-002` 首跑 FAIL_EXPECT → 加固 `cluster_ctl` 后 PASS（203s）；`D-002` 首跑 FAIL_LOG → 加固 `fault.sh` 后 PASS（670s） |
 
 ## 二、与 RC2（29 例，22 PASS）对比
 
@@ -30,7 +29,7 @@
 
 ## 三、非 PASS 明细
 
-### 3.1 `DDLHA-D-002`（FAIL_LOG）
+### 3.1 `DDLHA-D-002`（首跑 FAIL_LOG → 加固后 PASS）
 
 `meta=YES,data=YES,exp=YES`，仅日志判为 SUSPECT。DN21 在 `dn_kill` 故障恢复时启动失败：
 
@@ -43,6 +42,8 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 ```
 
 判定：**harness 的 kill/restart 时序问题**（kill -9 后立即重启，旧进程尚未释放 data 目录锁），不是 DDL 高可用缺陷；该轮 DDL 结果与元数据均正确。
+
+**已加固并复跑**：`tools/fault.sh` 的 `start_dn`/`start_cn` 改为——先等旧进程完全退出（最多 60s），启动后校验日志，若出现 `Conflict is detected` / `Fail to start server` 则清理并重试（最多 3 次）。2026-11-18 13:33 复跑 `DDLHA-D-002`：**PASS**（670s，`meta=YES,data=YES,exp=YES,log=OK`）。
 
 ### 3.2 `DDLHA-X-001` / `DDLHA-X-002`（FAIL_NO_ERROR）
 
@@ -73,9 +74,9 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 
 ## 五、结论
 
-1. RC3 的 DDL 高可用整体稳定：**27/30 PASS**（C-002 加固 harness 后通过）；
+1. RC3 的 DDL 高可用整体稳定：**28/30 PASS**（C-002、D-002 均为加固 harness 后通过）；
 2. **TDB-1050 修复在全量回归中得到印证**（`N-005`、`D-005` 由 RC2 的 FAIL 转为 PASS）；
-3. 剩余 4 个非 PASS 均非 DDL 功能缺陷：1 个 harness 重启锁冲突、2 个文档口径（实现更优）、1 个 harness 整集群重启限制；
+3. 剩余 2 个非 PASS 均为文档口径问题（`X-001/002`，实现优于文档），非 DDL 功能缺陷；harness 类失败（`C-002`、`D-002`）已通过加固脚本消除；
 4. 待办：`X-001/002` 的预期口径需产品确认，见 [`X-001-002-clarification.md`](X-001-002-clarification.md)（建议更新文档为“DR 副本全宕不阻塞表级 DDL”）。
 
 ## 六、证据
