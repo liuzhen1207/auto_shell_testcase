@@ -12,10 +12,10 @@
 | 指标 | 数量 |
 | --- | ---: |
 | 用例总数 | 30 |
-| **PASS** | **26** |
+| **PASS** | **27**（含重跑通过的 `DDLHA-C-002`） |
 | FAIL_LOG | 1（`DDLHA-D-002`） |
-| FAIL_NO_ERROR | 2（`DDLHA-X-001`、`DDLHA-X-002`） |
-| FAIL_EXPECT | 1（`DDLHA-C-002`） |
+| FAIL_NO_ERROR | 2（`DDLHA-X-001`、`DDLHA-X-002`，口径待确认） |
+| 其他 | `DDLHA-C-002` 首跑 FAIL_EXPECT，加固 `cluster_ctl` 后重跑 **PASS**（203s） |
 
 ## 二、与 RC2（29 例，22 PASS）对比
 
@@ -51,7 +51,7 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 
 两者按文档预期“应当失败”，实际 DDL **成功执行**。RC2 上表现一致，属“实现优于文档预期”，建议产品确认文档口径（是更新文档还是收敛行为）。
 
-### 3.3 `DDLHA-C-002`（FAIL_EXPECT）
+### 3.3 `DDLHA-C-002`（首跑 FAIL_EXPECT → 加固后 PASS）
 
 `create_table_restart`（full_restart）：heal 阶段 `cluster_ctl stop` 后 `start`，集群停在 **0/8**：
 
@@ -60,7 +60,9 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 [12:33:11] ROUND END FAIL_EXPECT duration=1030s meta=UNKNOWN,data=YES,exp=NO,log=OK
 ```
 
-判定：**harness 限制**——`cluster_ctl start` 未按“3 个 CN 同时启动”的方式拉起（RC2 同样失败），需先加固 stop/start 脚本；用例本身（建表后整集群重启、元数据持久）尚未真正验证。
+判定：**harness 限制**——`cluster_ctl start` 未按“3 个 CN 同时启动”的方式拉起（RC2 同样失败）。
+
+**已加固并复跑**：`cluster_ctl.sh` 新增 `start_parallel()`（3 个 CN 同时启动 + 等待 8/8），`start` 改走该函数。2026-11-18 13:21 复跑 `DDLHA-C-002`：**PASS**（203s，`meta=YES,data=YES,exp=YES,log=OK`），整集群重启后元数据持久、8/8 恢复。
 
 ## 四、本轮新增用例
 
@@ -71,10 +73,10 @@ org.apache.iotdb.commons.exception.StartupException: Conflict is detected in dir
 
 ## 五、结论
 
-1. RC3 的 DDL 高可用整体稳定：26/30 PASS；
+1. RC3 的 DDL 高可用整体稳定：**27/30 PASS**（C-002 加固 harness 后通过）；
 2. **TDB-1050 修复在全量回归中得到印证**（`N-005`、`D-005` 由 RC2 的 FAIL 转为 PASS）；
 3. 剩余 4 个非 PASS 均非 DDL 功能缺陷：1 个 harness 重启锁冲突、2 个文档口径（实现更优）、1 个 harness 整集群重启限制；
-4. 待办：加固 `cluster_ctl start`（并行起 CN）后重跑 `C-002`；与产品确认 `X-001/002` 的预期口径。
+4. 待办：`X-001/002` 的预期口径需产品确认，见 [`X-001-002-clarification.md`](X-001-002-clarification.md)（建议更新文档为“DR 副本全宕不阻塞表级 DDL”）。
 
 ## 六、证据
 
