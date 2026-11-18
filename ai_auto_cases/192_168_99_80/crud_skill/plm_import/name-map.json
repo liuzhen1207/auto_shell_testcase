@@ -1,0 +1,17 @@
+{
+  "192_168_99_80/crud_skill/CR-00": "CRUD 冒烟：树模型合并骨架与基础写入",
+  "192_168_99_80/crud_skill/CR-01": "时间戳精度检查门禁（ms/us 位数与阈值）",
+  "192_168_99_80/crud_skill/CR-02": "时间戳精度 × 时间分区",
+  "192_168_99_80/crud_skill/CR-03": "表模型仅 Time 列写入拒绝",
+  "192_168_99_80/crud_skill/CR-04": "删除标记 .mods2 基础形态",
+  "192_168_99_80/crud_skill/CR-05": "Mod 分配阈值边界",
+  "192_168_99_80/crud_skill/CR-06": "删除与合并并发不丢数据",
+  "192_168_99_80/crud_skill/CR-07": "删除中间态（memtable/flush 中）",
+  "192_168_99_80/crud_skill/CR-08": "Pipe 传输带删除的 TsFile",
+  "192_168_99_80/crud_skill/CR-09": "Mod 生命周期与重启恢复",
+  "192_168_99_80/crud_skill/CR-10": "DELETE 阻塞写入量化",
+  "192_168_99_80/crud_skill/CR-11": "OBJECT 数据手动删除",
+  "192_168_99_80/crud_skill/CR-12": "OBJECT 删除异常路径",
+  "192_168_99_80/crud_skill/CR-13": "LOAD 时 LastCache 四策略",
+  "192_168_99_80/crud_skill/CR-14": "LOAD × Pipe + LastCache 语义"
+}
