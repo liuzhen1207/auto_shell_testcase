@@ -55,15 +55,41 @@ WARN o.a.i.c.c.r.AsyncRequestManager:170 - Failed to UPDATE_TABLE after 2 retrie
 
 RC3 的 17 轮窗口内未出现同类 `Failed to UPDATE_TABLE` 告警。
 
-## 四、源码层面观察（供研发参考）
+## 四、RC3 中的源码修复（已定位）
 
-`83183d0..ac7f95e` 之间（61 个提交）**没有直接修改** `ViewColumnAutoSyncTrigger` 或 `TreeToTableViewCache` 的提交，也没有标题含 1049 / 补偿 / 丢列的提交。可能的改善来源（需研发确认）：
+修复提交：
 
-- `34965fcf35 Preserve accepted table attribute versions across schema fetches`（#19134）
-- `b9e09d6321 Fix active load retries while table schema regions recover`（#19201）
-- `47e1a19426 Fix NPE in paired commit of schema-cascaded writable views`
+```
+d6a541bacb  fix that metadata high available frame could recognize the timeout exception (#19206)
+            (cherry picked from ade8910daa087c4a7c8c837592a0bc774d06c62e)
+```
 
-建议研发确认本次修复是否覆盖了“DN 无响应且未标记 Unknown 期间 schema 写入与视图列同步的补偿”，以决定是否需要补充针对该场景的单测/IT。
+改动文件：`iotdb-core/confignode/.../client/async/handlers/rpc/DataNodeTSStatusRPCHandler.java`
+
+```java
+// RC2: 超时被当成执行失败
+int code = e instanceof TTransportException || e instanceof ConnectException
+    ? TSStatusCode.CAN_NOT_CONNECT_DATANODE.getStatusCode()
+    : TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode();
+
+// RC3: 增加 TimeoutException，超时即视为 DataNode 不可达
+int code = e instanceof TTransportException
+        || e instanceof ConnectException
+        || e instanceof TimeoutException
+    ? TSStatusCode.CAN_NOT_CONNECT_DATANODE.getStatusCode()
+    : TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode();
+```
+
+**与缺陷根因的对应关系**（缺陷报告原文：*“CN 向挂起的 DN 发 RPC，5s 后超时，元数据高可用框架把该超时当错误处理，导致 AddTableColumnProcedure 的 pre-release 无法完成 fence 证明”*）：
+
+| 环节 | RC2 | RC3 |
+| --- | --- | --- |
+| DN 无响应 → RPC 超时 | 归类为 `EXECUTE_STATEMENT_ERROR`（执行失败） | 归类为 `CAN_NOT_CONNECT_DATANODE`（节点不可达） |
+| 元数据 HA 的 fence 证明 | 失败（当成执行错误，无法证明已 fenced） | 成功（不可达即可判定 fenced） |
+| pre-release / rollback | 均失败 → DN 侧收到 507 | 正常完成 |
+| 视图扩列 | 放弃且不重试（丢列） | 正常补列 |
+
+这也解释了 RC3 测试窗口内不再出现 `Failed to UPDATE_TABLE after 2 retries` 的原因。
 
 ## 五、结论
 
