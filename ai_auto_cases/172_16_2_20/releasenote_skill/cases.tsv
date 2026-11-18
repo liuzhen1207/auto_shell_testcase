@@ -3,3 +3,4 @@ v2.0.13.1	TDB-65	集群节点 ReadOnly 可观测性提升	新功能	通过	RC1	h
 v2.0.13.1	TDB-1104	【load snapshot】空 DataRegion 缩容(Adding)时 load snapshot 空指针	代码优化	通过	RC2	https://plm.infra.timecho.com/iterations?productId=1&itemId=1732	versions/v2.0.13.1/TDB-1104/evidence	2026-11-17
 v2.0.13.1	TDB-1104	空 DataRegion 真实扩容(3C4D→5D)后迁移/缩容	代码优化	通过	RC2	https://plm.infra.timecho.com/iterations?productId=1&itemId=1732	versions/v2.0.13.1/TDB-1104-expand/evidence	2026-11-17
 v2.0.11.1	RN-2.0.11.1-SMOKE	V2.0.11.1 迭代批量冒烟（147 RN / 117 可测，5 主题 14 项）	批量	通过	RC2	https://plm.infra.timecho.com/iterations?rnNo=TDB-1607	versions/v2.0.11.1	2026-11-17
+v2.0.13.1	TDB-1050	创建可写视图(cascade)提交阶段与源表fetch竞争导致NPE	缺陷	修复已验证	RC3	https://plm.infra.timecho.com/iterations?productId=1&itemId=1678	versions/v2.0.13.1/TDB-1050/evidence	2026-11-18

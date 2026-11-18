@@ -1,0 +1,13 @@
+=== 插桩命中（DN19） ===
+2026-11-18 09:47:52,125 [pool-58-IoTDB-DataNodeInternalRPC-Processor-1] INFO  o.a.i.d.s.t.DataNodeTableCache:455 - [DDLHA-PROOF-RC3] consumed specialStatus entry for t1050p.t
+
+=== NPE 计数 ===
+Internal error processing updateTable = 0
+
+=== 建视图结果 ===
+SHOW TABLES FROM t1050p;
+|        t|    INF|
+|        v|    INF|
+
+=== 黑盒 10 轮 ===
+iterations ok=10 fail=0，5 台 DN NPE 计数均为 0

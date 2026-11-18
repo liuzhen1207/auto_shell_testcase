@@ -1,0 +1,27 @@
+﻿diff --git "a/D:\\IDEA\\timechodb_src\\v20131\\timechodb\\iotdb-core\\datanode\\src\\main\\java\\org\\apache\\iotdb\\db\\schemaengine\\table\\DataNodeTableCache.java" "b/D:\\IDEA\\deepseek\\cloud1_ip20\\rc10\\patch_rc3\\DataNodeTableCache.java"
+index f3c8e07313..1b48805288 100644
+--- "a/D:\\IDEA\\timechodb_src\\v20131\\timechodb\\iotdb-core\\datanode\\src\\main\\java\\org\\apache\\iotdb\\db\\schemaengine\\table\\DataNodeTableCache.java"
++++ "b/D:\\IDEA\\deepseek\\cloud1_ip20\\rc10\\patch_rc3\\DataNodeTableCache.java"
+@@ -443,6 +443,22 @@ public class DataNodeTableCache implements ITableCache {
+       failIfMetadataLeaseFenced(LeaseFencedRetryPolicy.RETRY_UNTIL_SUCCESS);
+       final TsTable table1 = getTableFromSpecialStatusMap(unqualifiedDatabase1, tableName1);
+       final TsTable table2 = getTableFromSpecialStatusMap(unqualifiedDatabase2, tableName2);
++      // [DDLHA-PROOF-RC3] 测试开关：模拟 updateTableByFetch 在 commit 前消费 table2 的 specialStatus 条目
++      final String proveConsume = System.getProperty("iotdb.test.consumeTable2BeforeCommit");
++      if (proveConsume != null && proveConsume.equals(tableName2)) {
++        final java.util.Map<String, Pair<TsTable, Long>> proveMap =
++            specialStatusMap.get(unqualifiedDatabase2);
++        if (proveMap != null) {
++          final Pair<TsTable, Long> provePair = proveMap.get(tableName2);
++          if (provePair != null) {
++            provePair.setLeft(null);
++            LOGGER.info(
++                "[DDLHA-PROOF-RC3] consumed specialStatus entry for {}.{}",
++                unqualifiedDatabase2,
++                tableName2);
++          }
++        }
++      }
+       if (table1 instanceof NonCommittableTsTable || table2 instanceof NonCommittableTsTable) {
+         return false;
+       }

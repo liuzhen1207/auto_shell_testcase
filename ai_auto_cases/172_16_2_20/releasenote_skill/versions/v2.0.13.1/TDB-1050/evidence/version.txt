@@ -1,0 +1,6 @@
+验证版本: 2.0.13.1 RC3
+Build: ac7f95e
+源码 HEAD: ac7f95e953 Revert "[TIMECHODB] Fix write quota checks for deferred INSERT VALUES"
+环境: 3C5D（CN 172.16.2.16/17/18，DN 172.16.2.19/21/22/23/24），SR3/DR2，IoTConsensusV2
+RC3 安装路径: /data1/iotdb/v20131rc3_1117_ac7f95e/timechodb-2.0.13.1-bin
+验证时间: 2026-11-18 09:35 ~ 09:50
