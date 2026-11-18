@@ -466,10 +466,12 @@
       "templateTopology": "3C3D",
       "benchmarkAssetId": null,
       "benchmarkAssetName": null,
-      "status": "run-failed",
+      "status": "imported",
       "importedAt": "2026-11-18T12:51:36+08:00",
-      "runResult": "submit_failed",
-      "runError": "HTTP_502: <html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n"
+      "runResult": "passed",
+      "runError": "HTTP_502: <html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "runTaskId": "4efc28f8-9b4e-4af0-bbe2-c2f4838cca48",
+      "runAttemptId": "d2e49ac3-e653-47d1-80b1-951035c22c04"
     }
   ],
   "productId": 1,
