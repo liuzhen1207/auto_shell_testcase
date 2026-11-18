@@ -7,6 +7,8 @@ CASE=$1
 CDIR=$SKILL/cases/$CASE
 [ -d "$CDIR" ] || { echo "no case $CASE"; exit 2; }
 . "$CDIR/spec.env"
+# 将用例变量导出，供 check_meta/check_data 等子脚本使用（避免 VIEW 等 unbound）
+export CASE GROUP OP DB TABLE VIEW FAULT FAULT_TARGET TIMING EXPECT SQL_TARGET VERIFY_KIND EXPECT_OBJECT EXPECT_VALUE 2>/dev/null || true
 
 A=$ART/$CASE
 rm -rf "$A"; mkdir -p "$A"
@@ -92,7 +94,14 @@ esac
 if [ "$FAULT" = "cn_leader_kill" ]; then
   ( sleep 2; bash "$SKILL/tools/fault.sh" apply cn_leader_kill >> "$A/fault.txt" 2>&1 ) &
 fi
-if [ "$OP" = "add_column_twice" ]; then
+if [ "$OP" = "create_view_race" ]; then
+  # 并发读源表，制造 preUpdate 与 commitUpdate 之间被 fetch 的窗口（TDB-1050 场景）
+  ( for k in $(seq 1 40); do qdn "$SQL_DN" "SELECT count(*) FROM $DB.$TABLE;" >/dev/null 2>&1; done ) &
+  BG=$!
+  sleep 1
+  qdn "$SQL_DN" "$(sed -n '2,$p' "$CDIR/sql.sql")" > "$A/sql.out" 2>&1
+  wait $BG 2>/dev/null || true
+elif [ "$OP" = "add_column_twice" ]; then
   qdn "$SQL_DN" "$(sed -n '2,$p' "$CDIR/sql.sql" | head -n1)" > "$A/sql.out" 2>&1 &
   p1=$!
   qdn "$SQL_DN" "$(sed -n '2,$p' "$CDIR/sql.sql" | tail -n1)" > "$A/sql2.out" 2>&1 &

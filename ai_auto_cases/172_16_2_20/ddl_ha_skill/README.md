@@ -108,3 +108,11 @@ bash /data2/iotdb/ddl_ha_skill/runner/run_case.sh DDLHA-P-002
 **核心结论：DN 宕机前置的 9 类 DDL 全部成功，元数据与数据在 5 台 DN 上始终一致。**
 
 详细结论、缺陷候选与证据索引见 [`docs/REPORT.md`](docs/REPORT.md)。
+
+## 新增用例 DDLHA-N-012（TDB-1050 竞态场景）
+
+- 用例：`cases/DDLHA-N-012`，`OP=create_view_race`——建可写视图期间后台持续 `SELECT count(*) FROM t`，制造 preUpdate 与 commitUpdate 之间被 fetch 的窗口；
+- runner：`run_case.sh` 增加 `create_view_race` 分支；并补充 `export CASE/GROUP/.../VIEW`，避免子脚本 `VIEW: unbound variable`；
+- RC3 结果（`ac7f95e`，`/data2/iotdb/ddl_ha_results_rc3`）：连续 **3/3 PASS**，每轮 230~234s，`meta=YES,data=YES,exp=YES,log=OK`（0 条 ERROR）。
+
+> 首轮曾出现 `FAIL_LOG`，原因是 RC2 继承配置导致的启动噪声（`enable_audit_log=true` 使 CN 早期创建 `root.__audit` 触发 `NotEnoughDataNodeException`、DN 报 `Cannot record login history`）。清理这些继承配置后连续 3 轮 PASS，与被测 DDL 无关。

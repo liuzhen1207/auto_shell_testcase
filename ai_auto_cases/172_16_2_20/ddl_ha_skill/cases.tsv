@@ -28,3 +28,4 @@ DDLHA-X-002	extreme	delete_devices	dr_both_down	before	fail_expected	devices_del
 DDLHA-C-001	ha_event	add_column	cn_leader_kill	during	success	column_present	ddlha_ddlha_c_001
 DDLHA-C-002	ha_event	create_table_restart	full_restart	during	success	table_exists	ddlha_ddlha_c_002
 DDLHA-C-003	ha_event	add_column_twice	concurrent	during	success	column_present	ddlha_ddlha_c_003
+DDLHA-N-012	normal	create_view_race	none	none	success	view_exists	ddlha_ddlha_n_012
