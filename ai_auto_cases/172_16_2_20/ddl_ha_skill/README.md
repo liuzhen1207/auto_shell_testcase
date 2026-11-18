@@ -111,7 +111,7 @@ bash /data2/iotdb/ddl_ha_skill/runner/run_case.sh DDLHA-P-002
 
 ## 新增用例 DDLHA-N-012（TDB-1050 竞态场景）
 
-- 用例：`cases/DDLHA-N-012`，`OP=create_view_race`——建可写视图期间后台持续 `SELECT count(*) FROM t`，制造 preUpdate 与 commitUpdate 之间被 fetch 的窗口；
+- 用例数：29 → **30**（`cases.tsv` 已登记）；用例：`cases/DDLHA-N-012`，`OP=create_view_race`——建可写视图期间后台持续 `SELECT count(*) FROM t`，制造 preUpdate 与 commitUpdate 之间被 fetch 的窗口；
 - runner：`run_case.sh` 增加 `create_view_race` 分支；并补充 `export CASE/GROUP/.../VIEW`，避免子脚本 `VIEW: unbound variable`；
 - RC3 结果（`ac7f95e`，`/data2/iotdb/ddl_ha_results_rc3`）：连续 **3/3 PASS**，每轮 230~234s，`meta=YES,data=YES,exp=YES,log=OK`（0 条 ERROR）。
 

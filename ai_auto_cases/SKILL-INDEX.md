@@ -12,7 +12,7 @@
 | skill | 用例数 | 协议轮次 | 最近验证版本 | 最近回归 | 状态 | 文档 |
 | --- | ---: | ---: | --- | --- | --- | --- |
 | `delete_skill` | **97** | **187**（V1 97 + V2 90） | 2.0.13.1 RC2 `83183d0` | 2026-11-17 | ✅ 已跑完 | [README](172_16_2_20/delete_skill/README.md) |
-| `ddl_ha_skill` | **29** | 29（V1） | 2.0.13.1 RC2 `83183d0` | 2026-11-11 | ✅ 已跑完 | [报告](172_16_2_20/ddl_ha_skill/docs/REPORT-RC2.md) |
+| `ddl_ha_skill` | **30**（新增 `DDLHA-N-012` create_view_race） | 30（V1） | 2.0.13.1 RC3 `ac7f95e` | 2026-11-18 | 🔄 全量回归中 | [报告](172_16_2_20/ddl_ha_skill/docs/REPORT-RC2.md) |
 | `releasenote_skill` | **2 RN** + **V2.0.11.1 批量**（147 RN：117 可测 / 30 受限，14 项冒烟全 PASS）+ 1 变体 | — | 2.0.13.1 RC2 `83183d0` | 2026-11-17 | ✅ 均已验 | [README](172_16_2_20/releasenote_skill/README.md) |
 
 ### delete_skill 最近一次全量（2.0.13.1 RC2，163 轮 → 现 187 轮）
