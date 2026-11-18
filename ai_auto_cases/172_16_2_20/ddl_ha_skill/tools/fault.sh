@@ -51,6 +51,28 @@ start_dn() {
 start_cn() {
   ssh $SSHO root@"$(ip_of "$1")" "setsid bash $NEW/sbin/start-confignode.sh -d >/tmp/ddlha_start_cn$1.log 2>&1 </dev/null &" 2>/dev/null
 }
+start_cn_all() {
+  # 3 个 CN 同时拉起（已有 Raft 数据时必须并行，否则拿不到 quorum）
+  local i ok t cnt
+  for i in 16 17 18; do
+    ssh $SSHO root@"$(ip_of "$i")" "setsid bash $NEW/sbin/start-confignode.sh -d >/tmp/ddlha_start_cn$i.log 2>&1 </dev/null &" 2>/dev/null
+  done
+  sleep 30
+  for i in 16 17 18; do
+    ok=$(ssh $SSHO root@"$(ip_of "$i")" "grep -cE 'has successfully (re)?started and joined the cluster' $NEW/logs/log_confignode_all.log 2>/dev/null" 2>/dev/null)
+    if [ "${ok:-0}" -lt 1 ]; then
+      ssh $SSHO root@"$(ip_of "$i")" "setsid bash $NEW/sbin/start-confignode.sh -d >/tmp/ddlha_start_cn$i.log 2>&1 </dev/null &" 2>/dev/null
+    fi
+  done
+  t=0
+  while [ $t -lt 300 ]; do
+    cnt=$(bash "$CLI" -h "$(ip_of 19)" -p 6667 -u root -pw "$PW" -e "show cluster" 2>/dev/null | grep -c '|Running|')
+    [ "${cnt:-0}" -ge 8 ] && return 0
+    sleep 5; t=$((t+5))
+  done
+  return 1
+}
+
 kill_cn() {
   ssh $SSHO root@"$(ip_of "$1")" "pkill -9 -f 'com[.]timecho[.]iotdb'" 2>/dev/null
 }
@@ -64,6 +86,7 @@ case "${1:-}" in
       dr_both_down)   for d in $3; do kill_dn "$d"; done ;;
       sr_all_down)    for d in $3; do kill_dn "$d"; done ;;
       cn_quorum_down)   kill_cn 17; kill_cn 18 ;;
+      cn_all_down)      kill_cn 16; kill_cn 17; kill_cn 18 ;;
       *) echo "unknown fault $2" >&2; exit 2 ;;
     esac ;;
   heal)
@@ -73,6 +96,7 @@ case "${1:-}" in
       dr_both_down) for d in $3; do start_dn "$d"; done ;;
       sr_all_down)  for d in $3; do start_dn "$d"; done ;;
       cn_quorum_down) start_cn 17; start_cn 18 ;;
+      cn_all_down)    start_cn_all ;;
       cn_leader_kill) start_cn "$(cat /tmp/ddlha_cn_leader 2>/dev/null || echo 16)" ;;
       full_restart) : ;;
       *) : ;;

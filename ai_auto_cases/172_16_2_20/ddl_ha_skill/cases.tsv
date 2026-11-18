@@ -31,3 +31,4 @@ DDLHA-C-003	ha_event	add_column_twice	concurrent	during	success	column_present	d
 DDLHA-N-012	normal	create_view_race	none	none	success	view_exists	ddlha_ddlha_n_012
 DDLHA-X-003	extreme	drop_table	sr_all_down	none	success	table_exists	ddlha_ddlha_x_003
 DDLHA-X-004	extreme	create_table	cn_quorum_down	none	fail_expected	table_absent	ddlha_ddlha_x_004
+DDLHA-X-005	extreme	create_table	cn_all_down	none	fail_expected	table_absent	ddlha_ddlha_x_005
