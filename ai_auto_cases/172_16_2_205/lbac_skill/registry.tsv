@@ -1,4 +1,4 @@
-id	file	module	type	desc	func	status	skip_reason	io_normal	io_sep	v2_normal	v2_sep
+id	file	module	type	desc	func	status	skip_reason	io_normal	io_sep	dr2_normal	dr2_sep
 LB-001	cases/c1_component.sh	组件	正向	CREATE ARRAY 组件成功且系统表可见	case_LB001	执行		PASS	PASS	PASS	PASS
 LB-002	cases/c1_component.sh	组件	正向	CREATE SET 组件成功	case_LB002	执行		PASS	PASS	PASS	PASS
 LB-003	cases/c1_component.sh	组件	正向	CREATE TREE 组件成功（ROOT/UNDER 层级）	case_LB003	执行		PASS	PASS	PASS	PASS
@@ -159,40 +159,40 @@ LB-157	cases/c10_extra.sh	权限	正向	三权分立：security_admin 授 label 
 LB-158	cases/c10_extra.sh	旁路	边界	EXPORT / SELECT INTO 导出受保护列是否受检（待需求确认）	case_LB158	跳过	待需求确认：导出链路（EXPORT / SELECT INTO）是否在 LBAC 检查范围	SKIP	SKIP	SKIP	SKIP
 LB-159	cases/c10_extra.sh	旁路	边界	pipe / subscription 写入受保护列是否受检（待需求确认）	case_LB159	跳过	待需求确认：pipe / subscription 写入是否在 LBAC 检查范围	SKIP	SKIP	SKIP	SKIP
 LB-160	cases/c10_extra.sh	旁路	边界	LOAD / 批量导入受保护列是否受检（待需求确认）	case_LB160	跳过	待需求确认：LOAD / 批量导入是否在 LBAC 检查范围	SKIP	SKIP	SKIP	SKIP
-LB-161	cases/c11_selftest_ext.sh	组件	边界	单元素组件可用；200 元素 ARRAY 的 ordinal 连续	case_LB161	未运行		-	-	-	-
-LB-162	cases/c11_selftest_ext.sh	组件	异常	零元素/缺类型参数的组件创建被拒	case_LB162	未运行		-	-	-	-
-LB-163	cases/c11_selftest_ext.sh	组件	异常	非法类型 LIST、TREE 无 ROOT、UNDER 不存在父被拒	case_LB163	未运行		-	-	-	-
-LB-164	cases/c11_selftest_ext.sh	组件	边界	ARRAY 省略位置子句默认追加；SET 拒绝位置子句	case_LB164	未运行		-	-	-	-
-LB-165	cases/c11_selftest_ext.sh	组件	边界	TREE OVER 重挂接成功、跨父/重复 OVER 被拒	case_LB165	未运行		-	-	-	-
-LB-166	cases/c11_selftest_ext.sh	组件	异常	TREE 多个 ROOT 创建被拒、ADD ROOT 提升新根	case_LB166	未运行		-	-	-	-
-LB-167	cases/c11_selftest_ext.sh	组件	正向	新增元素后比较语义按新顺序生效	case_LB167	未运行		-	-	-	-
-LB-168	cases/c11_selftest_ext.sh	组件	异常	组件类型不可变更（ALTER ... SET）	case_LB168	未运行		-	-	-	-
-LB-169	cases/c11_selftest_ext.sh	策略	异常	策略重复引用同一组件被拒	case_LB169	未运行		-	-	-	-
-LB-170	cases/c11_selftest_ext.sh	策略	异常	空组件列表/省略 COMPONENTS 被拒	case_LB170	未运行		-	-	-	-
-LB-171	cases/c11_selftest_ext.sh	策略	异常	非法规则集名称被拒（OTHER_RULES/拼写错误）	case_LB171	未运行		-	-	-	-
-LB-172	cases/c11_selftest_ext.sh	标签	异常	SET 拒绝 packed string 形式的多值	case_LB172	未运行		-	-	-	-
-LB-173	cases/c11_selftest_ext.sh	标签	异常	ARRAY 拒绝多值及 packed string	case_LB173	未运行		-	-	-	-
-LB-174	cases/c11_selftest_ext.sh	标签	异常	标签重复指定同一组件被拒	case_LB174	未运行		-	-	-	-
-LB-175	cases/c11_selftest_ext.sh	标签	异常	标签名必须带策略前缀（裸名 COMMENT/DROP 失败）	case_LB175	未运行		-	-	-	-
-LB-176	cases/c11_selftest_ext.sh	标签	异常	ALTER LABEL 修改标签值不被支持	case_LB176	未运行		-	-	-	-
-LB-177	cases/c11_selftest_ext.sh	比较	正向	同一主体 READ=高标签、WRITE=低标签：读放行/写本级放行/写上级拒绝	case_LB177	未运行		-	-	-	-
-LB-178	cases/c11_selftest_ext.sh	豁免	正向	仅授 READARRAY 豁免：ARRAY 维度放行、SET 维度仍拒	case_LB178	未运行		-	-	-	-
-LB-179	cases/c11_selftest_ext.sh	豁免	边界	ALL 豁免展开后撤销单规则，剩余规则仍生效	case_LB179	未运行		-	-	-	-
-LB-180	cases/c11_selftest_ext.sh	豁免	正向	角色 READTREE 豁免受 IGNORE/USE 控制	case_LB180	未运行		-	-	-	-
-LB-181	cases/c12_gaps.sh	组件	反向	无 SECURITY 用户与不存在对象的 COMMENT 被拒	case_LB181	未运行		-	-	-	-
-LB-182	cases/c12_gaps.sh	标签	异常	歧义/非法标签值（括号不配对、嵌套、冒号、越界元素）被拒	case_LB182	未运行		-	-	-	-
-LB-183	cases/c12_gaps.sh	比较	边界	SET 维度空值三态（空用户/空对象/双方空）	case_LB183	未运行		-	-	-	-
-LB-184	cases/c12_gaps.sh	比较	边界	TREE 维度空值三态（空用户/空对象/双方空）	case_LB184	未运行		-	-	-	-
-LB-185	cases/c12_gaps.sh	比较	正向	多角色多策略：USED/IGNORED 混合下角色标签生效范围	case_LB185	未运行		-	-	-	-
-LB-186	cases/c12_gaps.sh	豁免	正向	六条内置规则逐一 GRANT/REVOKE 与记录核对	case_LB186	未运行		-	-	-	-
-LB-187	cases/c12_gaps.sh	豁免	正向	LBACWRITEARRAY 的 WRITE_UP / WRITE_DOWN 方向语义	case_LB187	未运行		-	-	-	-
-LB-188	cases/c12_gaps.sh	豁免	正向	SET 维度豁免：READSET / WRITESET 放行集合不满足的读写	case_LB188	未运行		-	-	-	-
-LB-189	cases/c12_gaps.sh	豁免	正向	TREE 维度豁免：READTREE / WRITETREE 放行后代访问	case_LB189	未运行		-	-	-	-
-LB-190	cases/c12_gaps.sh	豁免	反向	策略级豁免不跨策略生效	case_LB190	未运行		-	-	-	-
-LB-191	cases/c12_gaps.sh	豁免	边界	多规则叠加后逐步撤销；非法规则/方向组合被拒	case_LB191	未运行		-	-	-	-
-LB-192	cases/c12_gaps.sh	并发	并发	8 个并发会话创建同名组件：仅 1 个成功	case_LB192	未运行		-	-	-	-
-LB-193	cases/c12_gaps.sh	并发	边界	活跃访问期间执行必失败操作后，原访问与元数据不受影响	case_LB193	未运行		-	-	-	-
-LB-194	cases/c12_gaps.sh	系统表	正向	SECURITY 主体与普通用户对 security_label_access 的可见范围	case_LB194	未运行		-	-	-	-
-LB-195	cases/c12_gaps.sh	绑定	正向	两个策略下的同名标签互不串用	case_LB195	未运行		-	-	-	-
-LB-196	cases/c12_gaps.sh	比较	边界	TREE 多值标签读写（语法不支持，待确认）	case_LB196	未运行		-	-	-	-
-LB-197	cases/c12_gaps.sh	标签	边界	SET/TREE 多值标签创建（语法不支持，待确认）	case_LB197	未运行		-	-	-	-
+LB-161	cases/c11_selftest_ext.sh	组件	边界	单元素组件可用；200 元素 ARRAY 的 ordinal 连续	case_LB161	执行		-	-	PASS	PASS
+LB-162	cases/c11_selftest_ext.sh	组件	异常	零元素/缺类型参数的组件创建被拒	case_LB162	执行		-	-	PASS	PASS
+LB-163	cases/c11_selftest_ext.sh	组件	异常	非法类型 LIST、TREE 无 ROOT、UNDER 不存在父被拒	case_LB163	执行		-	-	PASS	PASS
+LB-164	cases/c11_selftest_ext.sh	组件	边界	ARRAY 省略位置子句默认追加；SET 拒绝位置子句	case_LB164	执行		-	-	PASS	PASS
+LB-165	cases/c11_selftest_ext.sh	组件	边界	TREE OVER 重挂接成功、跨父/重复 OVER 被拒	case_LB165	执行		-	-	PASS	PASS
+LB-166	cases/c11_selftest_ext.sh	组件	异常	TREE 多个 ROOT 创建被拒、ADD ROOT 提升新根	case_LB166	执行		-	-	PASS	PASS
+LB-167	cases/c11_selftest_ext.sh	组件	正向	新增元素后比较语义按新顺序生效	case_LB167	执行		-	-	PASS	PASS
+LB-168	cases/c11_selftest_ext.sh	组件	异常	组件类型不可变更（ALTER ... SET）	case_LB168	执行		-	-	PASS	PASS
+LB-169	cases/c11_selftest_ext.sh	策略	异常	策略重复引用同一组件被拒	case_LB169	执行		-	-	PASS	PASS
+LB-170	cases/c11_selftest_ext.sh	策略	异常	空组件列表/省略 COMPONENTS 被拒	case_LB170	执行		-	-	PASS	PASS
+LB-171	cases/c11_selftest_ext.sh	策略	异常	非法规则集名称被拒（OTHER_RULES/拼写错误）	case_LB171	执行		-	-	PASS	PASS
+LB-172	cases/c11_selftest_ext.sh	标签	异常	SET 拒绝 packed string 形式的多值	case_LB172	执行		-	-	PASS	PASS
+LB-173	cases/c11_selftest_ext.sh	标签	异常	ARRAY 拒绝多值及 packed string	case_LB173	执行		-	-	PASS	PASS
+LB-174	cases/c11_selftest_ext.sh	标签	异常	标签重复指定同一组件被拒	case_LB174	执行		-	-	PASS	PASS
+LB-175	cases/c11_selftest_ext.sh	标签	异常	标签名必须带策略前缀（裸名 COMMENT/DROP 失败）	case_LB175	执行		-	-	PASS	PASS
+LB-176	cases/c11_selftest_ext.sh	标签	异常	ALTER LABEL 修改标签值不被支持	case_LB176	执行		-	-	PASS	PASS
+LB-177	cases/c11_selftest_ext.sh	比较	正向	同一主体 READ=高标签、WRITE=低标签：读放行/写本级放行/写上级拒绝	case_LB177	执行		-	-	PASS	PASS
+LB-178	cases/c11_selftest_ext.sh	豁免	正向	仅授 READARRAY 豁免：ARRAY 维度放行、SET 维度仍拒	case_LB178	执行		-	-	PASS	PASS
+LB-179	cases/c11_selftest_ext.sh	豁免	边界	ALL 豁免展开后撤销单规则，剩余规则仍生效	case_LB179	执行		-	-	PASS	PASS
+LB-180	cases/c11_selftest_ext.sh	豁免	正向	角色 READTREE 豁免受 IGNORE/USE 控制	case_LB180	执行		-	-	PASS	PASS
+LB-181	cases/c12_gaps.sh	组件	反向	无 SECURITY 用户与不存在对象的 COMMENT 被拒	case_LB181	执行		-	-	PASS	PASS
+LB-182	cases/c12_gaps.sh	标签	异常	歧义/非法标签值（括号不配对、嵌套、冒号、越界元素）被拒	case_LB182	执行		-	-	PASS	PASS
+LB-183	cases/c12_gaps.sh	比较	边界	SET 维度空值三态（空用户/空对象/双方空）	case_LB183	执行		-	-	PASS	PASS
+LB-184	cases/c12_gaps.sh	比较	边界	TREE 维度空值三态（空用户/空对象/双方空）	case_LB184	执行		-	-	PASS	PASS
+LB-185	cases/c12_gaps.sh	比较	正向	多角色多策略：USED/IGNORED 混合下角色标签生效范围	case_LB185	执行		-	-	PASS	PASS
+LB-186	cases/c12_gaps.sh	豁免	正向	六条内置规则逐一 GRANT/REVOKE 与记录核对	case_LB186	执行		-	-	PASS	PASS
+LB-187	cases/c12_gaps.sh	豁免	正向	LBACWRITEARRAY 的 WRITE_UP / WRITE_DOWN 方向语义	case_LB187	执行		-	-	PASS	PASS
+LB-188	cases/c12_gaps.sh	豁免	正向	SET 维度豁免：READSET / WRITESET 放行集合不满足的读写	case_LB188	执行		-	-	PASS	PASS
+LB-189	cases/c12_gaps.sh	豁免	正向	TREE 维度豁免：READTREE / WRITETREE 放行后代访问	case_LB189	执行		-	-	PASS	PASS
+LB-190	cases/c12_gaps.sh	豁免	反向	策略级豁免不跨策略生效	case_LB190	执行		-	-	PASS	PASS
+LB-191	cases/c12_gaps.sh	豁免	边界	多规则叠加后逐步撤销；非法规则/方向组合被拒	case_LB191	执行		-	-	PASS	PASS
+LB-192	cases/c12_gaps.sh	并发	并发	8 个并发会话创建同名组件：仅 1 个成功	case_LB192	执行		-	-	PASS	PASS
+LB-193	cases/c12_gaps.sh	并发	边界	活跃访问期间执行必失败操作后，原访问与元数据不受影响	case_LB193	执行		-	-	PASS	PASS
+LB-194	cases/c12_gaps.sh	系统表	正向	SECURITY 主体与普通用户对 security_label_access 的可见范围	case_LB194	执行		-	-	PASS	PASS
+LB-195	cases/c12_gaps.sh	绑定	正向	两个策略下的同名标签互不串用	case_LB195	执行		-	-	PASS	PASS
+LB-196	cases/c12_gaps.sh	比较	边界	TREE 多值标签读写（语法不支持，待确认）	case_LB196	执行		-	-	PASS	PASS
+LB-197	cases/c12_gaps.sh	标签	边界	SET/TREE 多值标签创建（语法不支持，待确认）	case_LB197	执行		-	-	PASS	PASS

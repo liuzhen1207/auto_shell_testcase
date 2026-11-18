@@ -18,14 +18,14 @@ CASES_TSV = os.path.join(BASE, "cases.tsv")
 RUNS = [
     ("io_normal", os.path.join(BASE, "docs", "results_20261113", "r_normal.tsv")),
     ("io_sep", os.path.join(BASE, "docs", "results_20261113", "r_sep.tsv")),
-    ("v2_normal", os.path.join(BASE, "docs", "results_20261114_v2", "a1.tsv")),
-    ("v2_sep", os.path.join(BASE, "docs", "results_20261114_v2", "a2.tsv")),
+    ("dr2_normal", os.path.join(BASE, "docs", "results_20261117", "f1.tsv")),
+    ("dr2_sep", os.path.join(BASE, "docs", "results_20261117", "f2.tsv")),
 ]
 OUT_TSV = os.path.join(BASE, "registry.tsv")
 OUT_MD = os.path.join(BASE, "docs", "CASE_REGISTRY.md")
 
 COLS = ["id", "file", "module", "type", "desc", "func",
-        "status", "skip_reason", "io_normal", "io_sep", "v2_normal", "v2_sep"]
+        "status", "skip_reason", "io_normal", "io_sep", "dr2_normal", "dr2_sep"]
 
 
 def read_tsv(path):
@@ -78,7 +78,7 @@ def main():
         rows.append([c["id"], c["file"], c["module"], c["type"], c["desc"], c["func"],
                      status, reason.replace("\t", " "),
                      v["io_normal"] or "-", v["io_sep"] or "-",
-                     v["v2_normal"] or "-", v["v2_sep"] or "-"])
+                     v["dr2_normal"] or "-", v["dr2_sep"] or "-"])
 
     with io.open(OUT_TSV, "w", encoding="utf-8", newline="\n") as f:
         f.write("\t".join(COLS) + "\n")
@@ -107,11 +107,11 @@ def main():
     md.append("| 条件执行（仅三权分立） | %d |" % cond_cnt)
     md.append("| 跳过（不适用/待确认） | %d |" % skip_cnt)
     md.append("")
-    md.append("判决列说明：`io_*` = IoTConsensus；`v2_*` = IoTConsensusV2；`normal` = 普通模式；`sep` = 三权分立；`-` = 该轮未参与。")
+    md.append("判决列说明：`io_*` = 2026-11-13 旧版 160 条（IoTConsensus）；`dr2_*` = 2026-11-17 最新 197 条（SR3/DR2）；`normal` = 普通模式；`sep` = 三权分立；`-` = 该轮未参与。")
     md.append("")
     for mod, rs in groups.items():
         md.append("## %s（%d 条）\n" % (mod, len(rs)))
-        md.append("| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |")
+        md.append("| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |")
         md.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
         for r in rs:
             desc = r[4].replace("|", "\\|")

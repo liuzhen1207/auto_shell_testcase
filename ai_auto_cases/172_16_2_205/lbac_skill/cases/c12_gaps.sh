@@ -21,7 +21,7 @@ CASES+=(
 "LB-194|系统表|正向|SECURITY 主体与普通用户对 security_label_access 的可见范围|case_LB194"
 "LB-195|绑定|正向|两个策略下的同名标签互不串用|case_LB195"
 "LB-196|比较|正向|SET 多值标签：集合覆盖语义（对象 (RD,QA)、用户 RD 拒 / 用户 (RD,QA) 允）|case_LB196"
-"LB-197|比较|正向|TREE 多值标签：多分支覆盖语义（对象 (RND,STORAGE)、COMPANY 允 / RND 拒）|case_LB197"
+"LB-197|比较|正向|TREE 多值标签：任一值命中即放行（对象 (RND,STORAGE)：RND 允、SUPPORT 拒、COMPANY 允）|case_LB197"
 )
 
 
@@ -327,19 +327,24 @@ case_LB196() {
 
 case_LB197() {
   lbac_reset
-  Q "CREATE SECURITY LABEL COMPONENT lb_org TREE ('COMPANY' ROOT, 'RND' UNDER 'COMPANY', 'STORAGE' UNDER 'RND')" >/dev/null 2>&1
+  Q "CREATE SECURITY LABEL COMPONENT lb_org TREE ('COMPANY' ROOT, 'RND' UNDER 'COMPANY', 'STORAGE' UNDER 'RND', 'SUPPORT' UNDER 'COMPANY')" >/dev/null 2>&1
   Q "CREATE SECURITY POLICY lb_p COMPONENTS lb_org" >/dev/null 2>&1
   assert_ok "$(Q "CREATE SECURITY LABEL lb_p.l_obj COMPONENT lb_org 'RND', 'STORAGE'")" "TREE 多值标签 (RND,STORAGE) 创建成功"
   Q "CREATE SECURITY LABEL lb_p.l_comp COMPONENT lb_org 'COMPANY'" >/dev/null 2>&1
   Q "CREATE SECURITY LABEL lb_p.l_rnd COMPONENT lb_org 'RND'" >/dev/null 2>&1
+  Q "CREATE SECURITY LABEL lb_p.l_sup COMPONENT lb_org 'SUPPORT'" >/dev/null 2>&1
   mk_table
   bind_policy t1 lb_p
   protect t1 s1 l_obj
   with_label l_obj "INSERT INTO $DB.t1(time,dev,s1) VALUES(1,'d1',1.5)" >/dev/null 2>&1
   local u; u=$(mk_user c197)
+  # 实测语义：多值对象只要有一个值被用户值（相等或祖先）命中即放行
   Q "GRANT SECURITY LABEL lb_p.l_rnd TO USER $u FOR READ ACCESS" >/dev/null 2>&1
-  assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "2400" "用户 RND 不能覆盖对象 (RND,STORAGE)，读被拒"
+  assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "用户 RND 命中对象 (RND,STORAGE) 中的 RND，读放行"
   Q "REVOKE SECURITY LABEL lb_p.l_rnd FROM USER $u" >/dev/null 2>&1
+  Q "GRANT SECURITY LABEL lb_p.l_sup TO USER $u FOR READ ACCESS" >/dev/null 2>&1
+  assert_err "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "2400" "用户 SUPPORT 与 (RND,STORAGE) 无祖先关系，读被拒"
+  Q "REVOKE SECURITY LABEL lb_p.l_sup FROM USER $u" >/dev/null 2>&1
   Q "GRANT SECURITY LABEL lb_p.l_comp TO USER $u FOR READ ACCESS" >/dev/null 2>&1
   assert_ok "$(u_sql "$u" "SELECT s1 FROM $DB.t1")" "用户 COMPANY 为两者共同祖先，读放行"
 }

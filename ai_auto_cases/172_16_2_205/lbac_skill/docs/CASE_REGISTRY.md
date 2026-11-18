@@ -8,15 +8,15 @@
 | 项 | 数量 |
 | --- | ---: |
 | 用例总数 | 197 |
-| 常规执行 | 150 |
+| 常规执行 | 187 |
 | 条件执行（仅三权分立） | 1 |
 | 跳过（不适用/待确认） | 9 |
 
-判决列说明：`io_*` = IoTConsensus；`v2_*` = IoTConsensusV2；`normal` = 普通模式；`sep` = 三权分立；`-` = 该轮未参与。
+判决列说明：`io_*` = 2026-11-13 旧版 160 条（IoTConsensus）；`dr2_*` = 2026-11-17 最新 197 条（SR3/DR2）；`normal` = 普通模式；`sep` = 三权分立；`-` = 该轮未参与。
 
 ## 组件（29 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-001 | 正向 | CREATE ARRAY 组件成功且系统表可见 | 执行 | PASS | PASS | PASS | PASS |
 | LB-002 | 正向 | CREATE SET 组件成功 | 执行 | PASS | PASS | PASS | PASS |
@@ -38,19 +38,19 @@
 | LB-018 | 正向 | DROP 未被引用的组件成功 | 执行 | PASS | PASS | PASS | PASS |
 | LB-019 | 异常 | DROP 被 Policy 引用的组件报错 | 执行 | PASS | PASS | PASS | PASS |
 | LB-020 | 正向 | COMMENT ON COMPONENT 添加与替换备注 | 执行 | PASS | PASS | PASS | PASS |
-| LB-161 | 边界 | 单元素组件可用；200 元素 ARRAY 的 ordinal 连续 | 未运行 | - | - | - | - |
-| LB-162 | 异常 | 零元素/缺类型参数的组件创建被拒 | 未运行 | - | - | - | - |
-| LB-163 | 异常 | 非法类型 LIST、TREE 无 ROOT、UNDER 不存在父被拒 | 未运行 | - | - | - | - |
-| LB-164 | 边界 | ARRAY 省略位置子句默认追加；SET 拒绝位置子句 | 未运行 | - | - | - | - |
-| LB-165 | 边界 | TREE OVER 重挂接成功、跨父/重复 OVER 被拒 | 未运行 | - | - | - | - |
-| LB-166 | 异常 | TREE 多个 ROOT 创建被拒、ADD ROOT 提升新根 | 未运行 | - | - | - | - |
-| LB-167 | 正向 | 新增元素后比较语义按新顺序生效 | 未运行 | - | - | - | - |
-| LB-168 | 异常 | 组件类型不可变更（ALTER ... SET） | 未运行 | - | - | - | - |
-| LB-181 | 反向 | 无 SECURITY 用户与不存在对象的 COMMENT 被拒 | 未运行 | - | - | - | - |
+| LB-161 | 边界 | 单元素组件可用；200 元素 ARRAY 的 ordinal 连续 | 执行 | - | - | PASS | PASS |
+| LB-162 | 异常 | 零元素/缺类型参数的组件创建被拒 | 执行 | - | - | PASS | PASS |
+| LB-163 | 异常 | 非法类型 LIST、TREE 无 ROOT、UNDER 不存在父被拒 | 执行 | - | - | PASS | PASS |
+| LB-164 | 边界 | ARRAY 省略位置子句默认追加；SET 拒绝位置子句 | 执行 | - | - | PASS | PASS |
+| LB-165 | 边界 | TREE OVER 重挂接成功、跨父/重复 OVER 被拒 | 执行 | - | - | PASS | PASS |
+| LB-166 | 异常 | TREE 多个 ROOT 创建被拒、ADD ROOT 提升新根 | 执行 | - | - | PASS | PASS |
+| LB-167 | 正向 | 新增元素后比较语义按新顺序生效 | 执行 | - | - | PASS | PASS |
+| LB-168 | 异常 | 组件类型不可变更（ALTER ... SET） | 执行 | - | - | PASS | PASS |
+| LB-181 | 反向 | 无 SECURITY 用户与不存在对象的 COMMENT 被拒 | 执行 | - | - | PASS | PASS |
 
 ## 策略（18 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-021 | 正向 | CREATE POLICY 单组件成功 | 执行 | PASS | PASS | PASS | PASS |
 | LB-022 | 正向 | 多组件策略的组件顺序决定标签值展示顺序 | 执行 | PASS | PASS | PASS | PASS |
@@ -67,13 +67,13 @@
 | LB-033 | 异常 | DROP 被表绑定的策略报错 | 执行 | PASS | PASS | PASS | PASS |
 | LB-034 | 异常 | DROP 仍有标签授权/免除权的策略报错 | 执行 | PASS | PASS | PASS | PASS |
 | LB-035 | 正向 | COMMENT ON POLICY 添加与替换备注 | 执行 | PASS | PASS | PASS | PASS |
-| LB-169 | 异常 | 策略重复引用同一组件被拒 | 未运行 | - | - | - | - |
-| LB-170 | 异常 | 空组件列表/省略 COMPONENTS 被拒 | 未运行 | - | - | - | - |
-| LB-171 | 异常 | 非法规则集名称被拒（OTHER_RULES/拼写错误） | 未运行 | - | - | - | - |
+| LB-169 | 异常 | 策略重复引用同一组件被拒 | 执行 | - | - | PASS | PASS |
+| LB-170 | 异常 | 空组件列表/省略 COMPONENTS 被拒 | 执行 | - | - | PASS | PASS |
+| LB-171 | 异常 | 非法规则集名称被拒（OTHER_RULES/拼写错误） | 执行 | - | - | PASS | PASS |
 
 ## 标签（18 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-036 | 正向 | CREATE LABEL 单组件单值成功 | 执行 | PASS | PASS | PASS | PASS |
 | LB-037 | 正向 | CREATE LABEL 多组件多值（SET 多值） | 执行 | PASS | PASS | PASS | PASS |
@@ -86,17 +86,17 @@
 | LB-044 | 异常 | DROP 已授予用户的标签报错 | 执行 | PASS | PASS | PASS | PASS |
 | LB-045 | 异常 | DROP 被列引用的标签报错 | 执行 | PASS | PASS | PASS | PASS |
 | LB-046 | 正向 | COMMENT ON LABEL 与规范化 label_value 展示 | 执行 | PASS | PASS | PASS | PASS |
-| LB-172 | 异常 | SET 拒绝 packed string 形式的多值 | 未运行 | - | - | - | - |
-| LB-173 | 异常 | ARRAY 拒绝多值及 packed string | 未运行 | - | - | - | - |
-| LB-174 | 异常 | 标签重复指定同一组件被拒 | 未运行 | - | - | - | - |
-| LB-175 | 异常 | 标签名必须带策略前缀（裸名 COMMENT/DROP 失败） | 未运行 | - | - | - | - |
-| LB-176 | 异常 | ALTER LABEL 修改标签值不被支持 | 未运行 | - | - | - | - |
-| LB-182 | 异常 | 歧义/非法标签值（括号不配对、嵌套、冒号、越界元素）被拒 | 未运行 | - | - | - | - |
-| LB-197 | 边界 | SET/TREE 多值标签创建（语法不支持，待确认） | 未运行 | - | - | - | - |
+| LB-172 | 异常 | SET 拒绝 packed string 形式的多值 | 执行 | - | - | PASS | PASS |
+| LB-173 | 异常 | ARRAY 拒绝多值及 packed string | 执行 | - | - | PASS | PASS |
+| LB-174 | 异常 | 标签重复指定同一组件被拒 | 执行 | - | - | PASS | PASS |
+| LB-175 | 异常 | 标签名必须带策略前缀（裸名 COMMENT/DROP 失败） | 执行 | - | - | PASS | PASS |
+| LB-176 | 异常 | ALTER LABEL 修改标签值不被支持 | 执行 | - | - | PASS | PASS |
+| LB-182 | 异常 | 歧义/非法标签值（括号不配对、嵌套、冒号、越界元素）被拒 | 执行 | - | - | PASS | PASS |
+| LB-197 | 边界 | SET/TREE 多值标签创建（语法不支持，待确认） | 执行 | - | - | PASS | PASS |
 
 ## 授权（15 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-047 | 正向 | GRANT READ ACCESS 成功且系统表可见 | 执行 | PASS | PASS | PASS | PASS |
 | LB-048 | 正向 | GRANT WRITE ACCESS 成功 | 执行 | PASS | PASS | PASS | PASS |
@@ -116,7 +116,7 @@
 
 ## 豁免（17 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-061 | 正向 | GRANT EXEMPTION LBACREADARRAY 后读放行 | 执行 | PASS | PASS | PASS | PASS |
 | LB-062 | 正向 | LBACWRITEARRAY WRITE_UP 只免上写，下写仍拒绝 | 执行 | PASS | PASS | PASS | PASS |
@@ -126,19 +126,19 @@
 | LB-066 | 异常 | 撤销不存在的豁免报错 | 执行 | PASS | PASS | PASS | PASS |
 | LB-067 | 正向 | REVOKE ALL 清空该策略下全部豁免 | 执行 | PASS | PASS | PASS | PASS |
 | LB-068 | 正向 | 角色豁免在 IGNORE 下不生效、USE 下生效 | 执行 | PASS | PASS | PASS | PASS |
-| LB-178 | 正向 | 仅授 READARRAY 豁免：ARRAY 维度放行、SET 维度仍拒 | 未运行 | - | - | - | - |
-| LB-179 | 边界 | ALL 豁免展开后撤销单规则，剩余规则仍生效 | 未运行 | - | - | - | - |
-| LB-180 | 正向 | 角色 READTREE 豁免受 IGNORE/USE 控制 | 未运行 | - | - | - | - |
-| LB-186 | 正向 | 六条内置规则逐一 GRANT/REVOKE 与记录核对 | 未运行 | - | - | - | - |
-| LB-187 | 正向 | LBACWRITEARRAY 的 WRITE_UP / WRITE_DOWN 方向语义 | 未运行 | - | - | - | - |
-| LB-188 | 正向 | SET 维度豁免：READSET / WRITESET 放行集合不满足的读写 | 未运行 | - | - | - | - |
-| LB-189 | 正向 | TREE 维度豁免：READTREE / WRITETREE 放行后代访问 | 未运行 | - | - | - | - |
-| LB-190 | 反向 | 策略级豁免不跨策略生效 | 未运行 | - | - | - | - |
-| LB-191 | 边界 | 多规则叠加后逐步撤销；非法规则/方向组合被拒 | 未运行 | - | - | - | - |
+| LB-178 | 正向 | 仅授 READARRAY 豁免：ARRAY 维度放行、SET 维度仍拒 | 执行 | - | - | PASS | PASS |
+| LB-179 | 边界 | ALL 豁免展开后撤销单规则，剩余规则仍生效 | 执行 | - | - | PASS | PASS |
+| LB-180 | 正向 | 角色 READTREE 豁免受 IGNORE/USE 控制 | 执行 | - | - | PASS | PASS |
+| LB-186 | 正向 | 六条内置规则逐一 GRANT/REVOKE 与记录核对 | 执行 | - | - | PASS | PASS |
+| LB-187 | 正向 | LBACWRITEARRAY 的 WRITE_UP / WRITE_DOWN 方向语义 | 执行 | - | - | PASS | PASS |
+| LB-188 | 正向 | SET 维度豁免：READSET / WRITESET 放行集合不满足的读写 | 执行 | - | - | PASS | PASS |
+| LB-189 | 正向 | TREE 维度豁免：READTREE / WRITETREE 放行后代访问 | 执行 | - | - | PASS | PASS |
+| LB-190 | 反向 | 策略级豁免不跨策略生效 | 执行 | - | - | PASS | PASS |
+| LB-191 | 边界 | 多规则叠加后逐步撤销；非法规则/方向组合被拒 | 执行 | - | - | PASS | PASS |
 
 ## 比较（33 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-069 | 正向 | ARRAY READ：用户 SEC 读 INT 保护列允许 | 执行 | PASS | PASS | PASS | PASS |
 | LB-070 | 正向 | ARRAY READ：用户 SEC 读 SEC 保护列允许 | 执行 | PASS | PASS | PASS | PASS |
@@ -168,15 +168,15 @@
 | LB-094 | 反向 | 多组件 AND：任一组件不满足即拒绝（dept 缺 QA） | 执行 | PASS | PASS | PASS | PASS |
 | LB-095 | 正向 | 多组件 AND：所有组件均满足时允许 | 执行 | PASS | PASS | PASS | PASS |
 | LB-096 | 正向 | ALL ACCESS 授权可读可写 | 执行 | PASS | PASS | PASS | PASS |
-| LB-177 | 正向 | 同一主体 READ=高标签、WRITE=低标签：读放行/写本级放行/写上级拒绝 | 未运行 | - | - | - | - |
-| LB-183 | 边界 | SET 维度空值三态（空用户/空对象/双方空） | 未运行 | - | - | - | - |
-| LB-184 | 边界 | TREE 维度空值三态（空用户/空对象/双方空） | 未运行 | - | - | - | - |
-| LB-185 | 正向 | 多角色多策略：USED/IGNORED 混合下角色标签生效范围 | 未运行 | - | - | - | - |
-| LB-196 | 边界 | TREE 多值标签读写（语法不支持，待确认） | 未运行 | - | - | - | - |
+| LB-177 | 正向 | 同一主体 READ=高标签、WRITE=低标签：读放行/写本级放行/写上级拒绝 | 执行 | - | - | PASS | PASS |
+| LB-183 | 边界 | SET 维度空值三态（空用户/空对象/双方空） | 执行 | - | - | PASS | PASS |
+| LB-184 | 边界 | TREE 维度空值三态（空用户/空对象/双方空） | 执行 | - | - | PASS | PASS |
+| LB-185 | 正向 | 多角色多策略：USED/IGNORED 混合下角色标签生效范围 | 执行 | - | - | PASS | PASS |
+| LB-196 | 边界 | TREE 多值标签读写（语法不支持，待确认） | 执行 | - | - | PASS | PASS |
 
 ## 绑定（18 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-097 | 正向 | CREATE TABLE 同时绑定策略与列保护生效 | 执行 | PASS | PASS | PASS | PASS |
 | LB-098 | 异常 | 建表时 SECURED WITH 标签不属于该策略报错 | 执行 | PASS | PASS | PASS | PASS |
@@ -195,18 +195,18 @@
 | LB-144 | 边界 | RENAME TABLE 后策略与列标签保持（语法不支持） | 跳过 | SKIP | SKIP | SKIP | SKIP |
 | LB-145 | 正向 | DROP COLUMN 删除受保护列后该标签可被删除 | 执行 | PASS | PASS | PASS | PASS |
 | LB-146 | 边界 | CREATE TABLE AS SELECT / LIKE 不继承策略（语法不支持） | 跳过 | SKIP | SKIP | SKIP | SKIP |
-| LB-195 | 正向 | 两个策略下的同名标签互不串用 | 未运行 | - | - | - | - |
+| LB-195 | 正向 | 两个策略下的同名标签互不串用 | 执行 | - | - | PASS | PASS |
 
 ## 视图（2 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-109 | 正向 | 可写视图 CRUD 走底层表的 LBAC 检查 | 跳过 | SKIP | SKIP | SKIP | SKIP |
 | LB-110 | 正向 | 逻辑视图查询走底层表的 LBAC 检查 | 执行 | PASS | PASS | PASS | PASS |
 
 ## 查询（11 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-111 | 反向 | SELECT 受保护列无读凭证被拒（2400） | 执行 | PASS | PASS | PASS | PASS |
 | LB-112 | 反向 | SELECT * 含无权受保护列被拒 | 执行 | PASS | PASS | PASS | PASS |
@@ -222,7 +222,7 @@
 
 ## 写入（3 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-116 | 反向 | INSERT 受保护列无写凭证被拒 | 执行 | PASS | PASS | PASS | PASS |
 | LB-117 | 正向 | INSERT 受保护列有写凭证成功 | 执行 | PASS | PASS | PASS | PASS |
@@ -230,13 +230,13 @@
 
 ## 更新（1 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-118 | 边界 | UPDATE ATTRIBUTE 需 SET 列写凭证与 WHERE 列读凭证 | 执行 | PASS | PASS | PASS | PASS |
 
 ## 删除（3 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-119 | 反向 | DELETE 行需要所有受保护列的写凭证 | 执行 | PASS | PASS | PASS | PASS |
 | LB-120 | 边界 | DELETE WHERE 引用受保护列时还需读凭证 | 执行 | PASS | PASS | PASS | PASS |
@@ -244,7 +244,7 @@
 
 ## 系统表（8 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-123 | 正向 | 普通用户可查询 security_policies | 执行 | PASS | PASS | PASS | PASS |
 | LB-124 | 正向 | security_label_component_elements 的 ordinal/parent 正确 | 执行 | PASS | PASS | PASS | PASS |
@@ -253,18 +253,18 @@
 | LB-127 | 正向 | security_label_access 普通用户只看自己、SECURITY 看全部 | 执行 | PASS | PASS | PASS | PASS |
 | LB-128 | 正向 | security_policy_exemptions 的可见范围 | 执行 | PASS | PASS | PASS | PASS |
 | LB-129 | 正向 | tables.security_policy / columns.security_label 字段正确 | 执行 | PASS | PASS | PASS | PASS |
-| LB-194 | 正向 | SECURITY 主体与普通用户对 security_label_access 的可见范围 | 未运行 | - | - | - | - |
+| LB-194 | 正向 | SECURITY 主体与普通用户对 security_label_access 的可见范围 | 执行 | - | - | PASS | PASS |
 
 ## 审计（2 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-130 | 正向 | LBAC 拒绝访问产生 LBAC_AUTHENTICATION 审计记录 | 执行 | PASS | PASS | PASS | PASS |
 | LB-131 | 正向 | LBAC 元数据 DDL 需要 SECURITY 权限（无权限被拒） | 执行 | PASS | PASS | PASS | PASS |
 
 ## 高可用（3 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-132 | 可靠性 | CN 重启后 LBAC 元数据与授权仍有效 | 执行 | PASS | PASS | PASS | PASS |
 | LB-133 | 可靠性 | DN 重启后 LBAC 访问判断仍生效 | 执行 | PASS | PASS | PASS | PASS |
@@ -272,41 +272,41 @@
 
 ## 缓存（2 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-135 | 可靠性 | 解除列保护后立即生效（不按旧缓存放行） | 执行 | PASS | PASS | PASS | PASS |
 | LB-136 | 可靠性 | ALTER POLICY USE ROLE AUTHORIZATIONS 后立即生效 | 执行 | PASS | PASS | PASS | PASS |
 
 ## 一致性（2 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-137 | 可靠性 | 三个 CN 的 LBAC 元数据一致（schema 3 副本） | 执行 | PASS | PASS | PASS | PASS |
 | LB-138 | 可靠性 | 数据 2 副本下写入后多次查询结果一致 | 执行 | PASS | PASS | PASS | PASS |
 
 ## 持久化（1 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-139 | 可靠性 | 重启后 label grant / exemption 仍存在 | 执行 | PASS | PASS | PASS | PASS |
 
 ## 日志（1 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-140 | 可靠性 | 正常授权访问路径无异常 ERROR | 执行 | PASS | PASS | PASS | PASS |
 
 ## 并发（3 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-141 | 并发 | 并发对同一用户授予同一标签同类型：一成功一失败 | 执行 | PASS | PASS | PASS | PASS |
-| LB-192 | 并发 | 8 个并发会话创建同名组件：仅 1 个成功 | 未运行 | - | - | - | - |
-| LB-193 | 边界 | 活跃访问期间执行必失败操作后，原访问与元数据不受影响 | 未运行 | - | - | - | - |
+| LB-192 | 并发 | 8 个并发会话创建同名组件：仅 1 个成功 | 执行 | - | - | PASS | PASS |
+| LB-193 | 边界 | 活跃访问期间执行必失败操作后，原访问与元数据不受影响 | 执行 | - | - | PASS | PASS |
 
 ## 权限（4 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-153 | 反向 | 仅有 LBAC 凭证、无 RBAC 权限仍被拒（803） | 执行 | PASS | PASS | PASS | PASS |
 | LB-154 | 边界 | 同一策略 READ 与 WRITE 授予不同标签（待需求确认） | 跳过 | SKIP | SKIP | SKIP | SKIP |
@@ -315,7 +315,7 @@
 
 ## 旁路（3 条）
 
-| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | v2普通 | v2三权 |
+| 用例 | 类型 | 描述 | 状态 | io普通 | io三权 | DR2普通 | DR2三权 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | LB-158 | 边界 | EXPORT / SELECT INTO 导出受保护列是否受检（待需求确认） | 跳过 | SKIP | SKIP | SKIP | SKIP |
 | LB-159 | 边界 | pipe / subscription 写入受保护列是否受检（待需求确认） | 跳过 | SKIP | SKIP | SKIP | SKIP |
