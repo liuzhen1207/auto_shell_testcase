@@ -29,6 +29,10 @@ WAIT=$(( TTL_MS/1000 + 25 ))
 GUARD_INTERVALS=4
 GUARD_WAIT=$(( TTL_CHECK_INTERVAL_MS/1000 * GUARD_INTERVALS + 15 ))
 INF=9223372036854775807
+# RC2（2.0.13.x）起 SettleSelectorImpl 的清理门槛是 min(max_expired_time, 3*ttl)
+#   （L296-300），用 INF 会让门槛恒为 3*ttl，用例窗口（TTL+25s）内必然等不到清理；
+#   这里统一用秒级 max_expired_time，让『过期太久』门槛可在窗口内达到，比例/写放大语义不变。
+FAST_EXPIRE="${FAST_EXPIRE:-5000}"
 
 TINY=0.000001
 
@@ -36,7 +40,7 @@ tq(){ sql_lines_table "use $DB;" "$@"; }
 tq1(){ tq "$1"; }
 
 log "--- 集群准备（Phase1: max_expired_time=INF, expired_data_ratio=$TINY, ttl_check_interval=$TTL_CHECK_INTERVAL_MS） ---"
-MAX_EXPIRED_TIME_MS=$INF EXPIRED_DATA_RATIO=$TINY ttl_cluster_prepare
+MAX_EXPIRED_TIME_MS=$FAST_EXPIRE EXPIRED_DATA_RATIO=$TINY ttl_cluster_prepare
 
 log "--- 建库 + 两张表：t_exp(ttl=$TTL_MS, 会过期) / t_inf(ttl='INF', 永不过期) ---"
 out=$(sql_lines_table "create database $DB;"); assert_contains "建库成功" "$out" "successfully"
@@ -74,7 +78,7 @@ c=$(scalar "$(sql_lines_table "select count(*) from $DB.t_inf;")"); assert_scala
 
 log "--- D) 缺陷复现：expired_data_ratio=0.0 时零脏数据文件被反复 settle 重写（表模型） ---"
 cluster_stop
-MAX_EXPIRED_TIME_MS=$INF EXPIRED_DATA_RATIO=0.0 cluster_write_conf
+MAX_EXPIRED_TIME_MS=$FAST_EXPIRE EXPIRED_DATA_RATIO=0.0 cluster_write_conf
 cluster_start
 out=$(sql_lines_table "create database ${DB}_z;"); assert_contains "D 建库成功" "$out" "successfully"
 # 注意：必须显式 use 到 D 相自己的库！早期版本这里误用了 tq1（= use $DB），把表建到了主库，

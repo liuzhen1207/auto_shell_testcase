@@ -28,6 +28,10 @@ WAIT=$(( TTL_MS/1000 + 25 ))               # 等过期（+25s 抵消节点间时
 GUARD_INTERVALS=4                          # 写放大守卫观察的检查周期数
 GUARD_WAIT=$(( TTL_CHECK_INTERVAL_MS/1000 * GUARD_INTERVALS + 15 ))
 INF=9223372036854775807
+# RC2（2.0.13.x）起 SettleSelectorImpl 的清理门槛是 min(max_expired_time, 3*ttl)
+#   （L296-300），用 INF 会让门槛恒为 3*ttl，用例窗口（TTL+25s）内必然等不到清理；
+#   这里统一用秒级 max_expired_time，让『过期太久』门槛可在窗口内达到，比例/写放大语义不变。
+FAST_EXPIRE="${FAST_EXPIRE:-5000}"
 
 TINY=0.000001
 
@@ -36,7 +40,7 @@ DBP=root.th_part      # B/C: 部分过期 + 写放大守卫
 DBC=root.th_zero      # D: ratio=0.0 的写放大复现
 
 log "--- 集群准备（Phase1: max_expired_time=INF, expired_data_ratio=$TINY, ttl_check_interval=$TTL_CHECK_INTERVAL_MS） ---"
-MAX_EXPIRED_TIME_MS=$INF EXPIRED_DATA_RATIO=$TINY ttl_cluster_prepare
+MAX_EXPIRED_TIME_MS=$FAST_EXPIRE EXPIRED_DATA_RATIO=$TINY ttl_cluster_prepare
 
 log "--- A) 全过期文件 → 应整文件删除（FULLY_DIRTY） ---"
 sq "create database $DBF;" >/dev/null
@@ -98,7 +102,7 @@ log "  C 观察后：settle=$a（+$((a-b))），最大文件代=$agen（+$((agen
 
 log "--- D) 缺陷复现：expired_data_ratio=0.0 时零脏数据文件会被反复 settle 重写 ---"
 cluster_stop
-MAX_EXPIRED_TIME_MS=$INF EXPIRED_DATA_RATIO=0.0 cluster_write_conf
+MAX_EXPIRED_TIME_MS=$FAST_EXPIRE EXPIRED_DATA_RATIO=0.0 cluster_write_conf
 cluster_start
 sq "create database $DBC;" >/dev/null
 for d in d1 d2 d3; do sq "create timeseries $DBC.$d.s1 with datatype=int64;" >/dev/null; done

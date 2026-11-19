@@ -2,11 +2,11 @@
 # Suite runner for the tree-view auto-sync-schema cases.
 # usage: suite.sh [case-id-substring ...]
 set -u
-BASE=/data2/auto_test/treeview_suite
+BASE=${BASE:-/data2/auto_test/treeview_suite}
 NEW=${NEW:-master_1026_dc11a35}
 CLI=/data2/iotdb/$NEW/sbin/start-cli.sh
 PW=TimechoDB@2021
-RESULTS=$BASE/results/run_$(date +%Y%m%d_%H%M%S)
+RESULTS=${RESULTS:-$BASE/results}/run_$(date +%Y%m%d_%H%M%S)
 mkdir -p "$RESULTS"
 . $BASE/lib.sh
 

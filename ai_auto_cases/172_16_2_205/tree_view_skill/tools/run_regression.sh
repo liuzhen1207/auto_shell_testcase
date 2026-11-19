@@ -17,6 +17,10 @@ export NEW="$build"
 [ -n "${2:-}" ] && export PROTO="org.apache.iotdb.consensus.iot.$2"
 [ -n "${3:-}" ] && export PLM_ITEM="$3"
 . $B/env.sh
+# env.sh 缺失时兜底
+if ! declare -F proto_short >/dev/null 2>&1; then
+  proto_short() { case "${1:-}" in *V2*) echo V2 ;; *) echo V1 ;; esac; }
+fi
 
 STAMP=$(date +%Y%m%d_%H%M%S)
 OUT=$B/results/REGRESSION_${NEW}_$(proto_short "$PROTO")_${STAMP}
@@ -80,10 +84,11 @@ if [ "$n_act" -lt 8 ]; then
 fi
 
 # 5) run the suite
-say "run suite (49 cases)"
+say "run suite (all cases)"
 cd $B
-bash $B/tools/suite.sh > $OUT/suite.log 2>&1
-RUN=$(ls -td $B/results/run_* | head -1)
+RESULTS=$B/results bash $B/tools/suite.sh > $OUT/suite.log 2>&1
+RUN=$(ls -td $B/results/run_* 2>/dev/null | head -1)
+[ -z "${RUN:-}" ] && RUN=$(ls -td /data2/auto_test/treeview_suite/results/run_* 2>/dev/null | head -1)
 say "suite output dir: $RUN"
 cp $RUN/results.tsv $OUT/results.tsv 2>/dev/null
 

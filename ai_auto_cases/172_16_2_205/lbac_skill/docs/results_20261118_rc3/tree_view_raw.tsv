@@ -1,0 +1,68 @@
+id	feature	type	verdict	fails	errs	dur_s	detail
+TV-001	属性与语法	正向	PASS	0	0	125	
+TV-002	属性与语法	正向	FAIL	0	2	85	 logERROR=2
+TV-003	属性与语法	正向	PASS	0	0	82	
+TV-004	属性与语法	反向	PASS	0	0	6	
+TV-005	属性与语法	反向	FAIL	0	1	7	 logERROR=1
+TV-006	属性与语法	正向	PASS	0	0	109	
+TV-007	属性与语法	反向	PASS	0	0	7	
+TV-008	属性与语法	正向	PASS	0	0	73	
+TV-010	补列入口	正向	PASS	0	0	77	
+TV-011	补列入口	正向	PASS	0	0	82	
+TV-012	补列入口	正向	PASS	0	0	82	
+TV-013	补列入口	正向	PASS	0	0	92	
+TV-014	补列入口	正向	PASS	0	0	85	
+TV-015	补列入口	正向	FAIL	0	1	85	 logERROR=1
+TV-016	补列入口	正向	PASS	0	0	95	
+TV-017	补列入口	正向	PASS	0	0	84	
+TV-018	补列入口	反向	PASS	0	0	82	
+TV-020	冲突与类型	边界	PASS	0	0	83	
+TV-021	冲突与类型	边界	PASS	0	0	80	
+TV-022	冲突与类型	正向	PASS	0	0	91	
+TV-023	冲突与类型	正向	PASS	0	0	70	
+TV-024	冲突与类型	边界	PASS	0	0	29	
+TV-025	冲突与类型	反向	PASS	0	0	10	
+TV-026	冲突与类型	边界	PASS	0	0	89	
+TV-030	查询与生命周期	正向	PASS	0	0	83	
+TV-031	查询与生命周期	边界	PASS	0	0	98	
+TV-032	查询与生命周期	正向	PASS	0	0	88	
+TV-033	查询与生命周期	正向	PASS	0	0	99	
+TV-034	查询与生命周期	正向	PASS	0	0	86	
+TV-035	查询与生命周期	边界	PASS	0	0	11	
+TV-036	查询与生命周期	边界	PASS	0	0	12	
+TV-037	查询与生命周期	可靠性	PASS	0	0	371	
+TV-038	查询与生命周期	边界	PASS	0	0	104	
+TV-040	DDL 组合	正向	PASS	0	0	72	
+TV-041	DDL 组合	正向	PASS	0	0	72	
+TV-042	DDL 组合	边界	PASS	0	0	14	
+TV-043	DDL 组合	正向	PASS	0	0	82	
+TV-044	DDL 组合	正向	PASS	0	0	73	
+TV-045	DDL 组合	反向	PASS	0	0	12	
+TV-046	DDL 组合	边界	PASS	0	0	13	
+TV-047	DDL 组合	正向	PASS	0	0	93	
+TV-050	高可用	可靠性	PASS	0	0	135	
+TV-051	高可用	可靠性	PASS	0	0	131	
+TV-052	高可用	可靠性	FAIL	0	3	90	 logERROR=3
+TV-053	高可用	可靠性	PASS	0	0	142	
+TV-054	高可用	可靠性	PASS	0	0	148	
+TV-055	高可用	可靠性	FAIL	0	1	75	 logERROR=1
+TV-056	高可用	可靠性	PASS	0	0	96	
+TV-060	高可用	可靠性	FAIL	0	1	100	 logERROR=1
+TV-080	改名与视图	正向	FAIL	2	0	30	[FAIL] 改名后视图 TAG 应返回新设备名 d9（需求 §2.1.1.1），实测 d1  ; [FAIL] 改名后视图 TAG 仍返回旧设备名 d1（需求 §2.1.1.1） ; 
+TV-081	改名与视图	正向	FAIL	1	0	50	[FAIL] auto_sync 视图改名后 TAG 应为 d9（需求 §2.1.1.1） ; 
+TV-082	改名与视图	正向	FAIL	1	0	35	[FAIL] 跨库改名后目标库视图应包含该设备（需求 §2.1.1.3），实测 0 行 ; 
+TV-083	改名与视图	边界	PASS	0	0	23	
+TV-084	改名与视图	正向	PASS	0	0	35	
+TV-085	改名与视图	边界	PASS	0	0	26	
+TV-086	改名与视图	边界	PASS	0	0	29	
+TV-087	改名与视图	边界	PASS	0	0	29	
+TV-088	改名与视图	可靠性	FAIL	1	0	60	[FAIL] 重启 DN 后视图 TAG 仍应为新设备名 d9（持久化） ; 
+TV-089	改名与视图	边界	PASS	0	0	30	
+TV-090	LOAD与补列	正向	PASS	0	0	45	
+TV-091	LOAD与补列	边界	PASS	0	0	41	
+TV-092	LOAD与补列	正向	PASS	0	0	45	
+TV-093	LOAD与补列	反向	PASS	0	0	38	
+TV-094	LOAD与补列	反向	PASS	0	0	36	
+TV-095	LOAD与补列	边界	PASS	0	0	36	
+TV-096	LOAD与补列	边界	PASS	0	0	50	
+TV-097	LOAD与补列	可靠性	PASS	0	0	82	

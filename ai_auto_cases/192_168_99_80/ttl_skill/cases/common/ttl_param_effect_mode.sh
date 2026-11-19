@@ -43,6 +43,10 @@ DEVS=${RATIO_DEVS:-10}          # 设备数：让"部分过期"文件成为常�
 RATIO_HIGH=0.99
 RATIO_TINY=0.000001
 INF=9223372036854775807
+# RC2（2.0.13.x）起 SettleSelectorImpl 的清理门槛是 min(max_expired_time, 3*ttl)
+#   （L296-300），用 INF 会让门槛恒为 3*ttl，用例窗口（TTL+25s）内必然等不到清理；
+#   这里统一用秒级 max_expired_time，让『过期太久』门槛可在窗口内达到，比例/写放大语义不变。
+FAST_EXPIRE="${FAST_EXPIRE:-5000}"
 
 DA=root.pm_tiny   # A/B：ratio=1e-6（旧值）
 DC=root.pm_high   # C：ratio=0.99（重启后）
@@ -90,7 +94,7 @@ judge(){
 }
 
 log "--- 集群准备（A/B 相：max_expired_time=INF, expired_data_ratio=$RATIO_TINY） ---"
-MAX_EXPIRED_TIME_MS=$INF EXPIRED_DATA_RATIO=$RATIO_TINY ttl_cluster_prepare
+MAX_EXPIRED_TIME_MS=$FAST_EXPIRE EXPIRED_DATA_RATIO=$RATIO_TINY ttl_cluster_prepare
 
 log "--- A) 基线：ratio=$RATIO_TINY + M=INF，部分过期文件应被清理 ---"
 mk_scene "$DA"
@@ -110,7 +114,7 @@ judge "$DB2" settle
 
 log "--- C) 重启后（conf 写 ratio=$RATIO_HIGH）新值生效：部分过期文件应**不**被清理 ---"
 cluster_stop
-MAX_EXPIRED_TIME_MS=$INF EXPIRED_DATA_RATIO=$RATIO_HIGH cluster_write_conf
+MAX_EXPIRED_TIME_MS=$FAST_EXPIRE EXPIRED_DATA_RATIO=$RATIO_HIGH cluster_write_conf
 cluster_start
 for h in "${DN[@]}"; do
   eff=$(ttl_effective_conf "$h"); log "  重启后生效值($h): $eff"
