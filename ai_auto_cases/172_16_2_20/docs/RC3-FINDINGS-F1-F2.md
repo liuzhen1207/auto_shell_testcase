@@ -8,66 +8,56 @@
 
 ---
 
-## F-1 `CANCEL ALL MIGRATIONS` 没有审计记录
+## F-1 `CANCEL ALL MIGRATIONS` 审计记录：脚本误判，TDB-709 修复在 RC3 已验证
 
-### 1. 级别与结论
+> **结论修正（2026-11-19）**：TDB-709（【V2.0.11.1】【审计日志】Tree 模型执行 CANCEL ALL MIGRATIONS，成功和 803 拒绝均未生成操作审计记录）的修复代码在 RC3 中存在且**已生效**。此前“无审计记录”是验证脚本的断言方式错误导致的**假失败**。
 
-| 项 | 内容 |
-| --- | --- |
-| 级别 | **中**（审计合规缺口） |
-| 现象 | 执行 `CANCEL ALL MIGRATIONS` 后，`root.__audit` 中没有任何 CANCEL 相关记录 |
-| 影响 | 无法通过审计追溯“谁在什么时候取消了迁移”；TDB-709 的“成功场景应产生审计记录”未达成 |
-| 结论 | RC2、RC3 表现一致；疑似**未实现审计埋点**，而非 RC3 回归 |
+### 1. 修复代码（RC3 `ac7f95e`）
 
-### 2. 复现步骤
+`iotdb-core/datanode/src/main/java/org/apache/iotdb/db/queryengine/plan/relational/security/TreeAccessCheckVisitor.java`
 
-```sql
--- 1) 限速，制造长时间迁移窗口
-SET CONFIGURATION "region_migration_speed_limit_bytes_per_second"="256";
-
--- 2) 建库造数
-CREATE DATABASE f4;
-CREATE TABLE f4.t (dev STRING TAG, v INT32 FIELD);
-INSERT INTO f4.t(time,dev,v) VALUES (...);   -- 900 行
-FLUSH;
-
--- 3) 发起扩副本，随后取消
-EXTEND REGION <rid> TO 6;
-CANCEL ALL MIGRATIONS;      -- 返回：Successfully signalled 1 migration(s) to cancel
+```java
+@Override
+public TSStatus visitCancelMigrations(
+    CancelMigrationsStatement statement, TreeAccessCheckContext context) {
+  return checkGlobalAuth(
+      context.setAuditLogOperation(AuditLogOperation.CONTROL), PrivilegeType.MAINTAIN, () -> "");
+}
 ```
 
-### 3. 证据
+即 TDB-709 建议的 `context.setAuditLogOperation(AuditLogOperation.CONTROL)` 已合入。
 
-| 观察 | 数值 |
-| --- | ---: |
-| CANCEL 前审计总行数 | 3796 |
-| CANCEL 后 10 秒审计总行数 | 4083 |
-| 增量 | **+287 行**（说明审计链路正常，DDL/登录类都在写） |
-| 全量审计 `log` 字段中 `CANCEL ALL MIGRATIONS` 命中 | **0** |
-| 全量审计 `log` 字段中 `cancel`（忽略大小写）命中 | **0** |
-| RN 冒烟 `AUDIT-4` | **FAIL：未命中**（`rn_rc3_all.log` 第 23 行） |
+### 2. RC3 实测（2026-11-19 16:28~16:30）
 
-审计表中同时段存在的事件类型：`LOGIN`、`LOGOUT`、`OBJECT_AUTHENTICATION`、`ENTITY_STATUS_CHANGED`、`USER_DATA_TRANSFER` 等，**唯独没有迁移取消类事件**。
-
-### 4. 代码分析（RC3 `ac7f95e`）
-
-1. `AuditEventType` 枚举中没有迁移/CANCEL 相关事件类型
-   （`iotdb-core/node-commons/.../audit/AuditEventType.java`，共 40+ 类型：CHANGE_AUDIT_OPTION、LOGIN、OBJECT_AUTHENTICATION、FAILED_TTL_DELETION 等）；
-2. `CANCEL ALL MIGRATIONS` 仅出现在语法定义与 Procedure 注释中：
-   - `iotdb-core/antlr/.../IoTDBSqlParser.g4:553`、`relational-grammar/.../RelationalSql.g4:861`
-   - `AddRegionPeerProcedure.java:158`、`RegionOperationProcedure.java:31`（协作取消标志）
-3. 在 `CancelMigrationsTask` / `ClusterConfigTaskExecutor` 中都**没有**审计埋点调用。
-
-因此“无审计记录”是**当前实现缺失**，需要研发确认：补埋点，或在文档/RN 中明确“该操作不产生控制类审计”。
-
-### 5. 建议
-
-| 方案 | 说明 |
+| 场景 | 审计记录 |
 | --- | --- |
-| A（推荐） | 新增 `AuditEventType`（如 `CANCEL_MIGRATIONS`/`REGION_OPERATION`），在 CN 执行 CANCEL 成功/失败时写审计，字段含发起用户、目标 region、signalled 数量 |
-| B | 若设计上不审计，则在 TDB-709 的 RN 描述和用户文档中明确说明，避免验证预期与实际不一致 |
+| root（有 MAINTAIN）执行 `CANCEL ALL MIGRATIONS` | `OBJECT_AUTHENTICATION \| [MAINTAIN] \| CONTROL \| "User root (ID=0) requests authority on object  with result true"`（16:28:06.102） |
+| `cam_den2`（无 MAINTAIN）执行，返回 **803** | `OBJECT_AUTHENTICATION \| [MAINTAIN] \| CONTROL \| "User cam_den2 (ID=10001) re..."`（16:29:36.978，devices `root.__audit.log.node_4.u_10001`） |
 
----
+**成功与 803 拒绝均产生审计记录**，与 TDB-709 的修复目标一致。
+
+### 3. 之前为什么误判
+
+1. 审计记录里**不含** `CANCEL ALL MIGRATIONS` 文本：`sql_string` 为空，`log` 为 “requests authority on object ... with result true/false”；
+2. RN 冒烟 `AUDIT-4` 的断言是 `grep -ci 'cancel'`，因此永远命中不到 → 报“未命中”；
+3. 脚本查询审计时用了 `tail -n 4` 截断（审计写入量大，`root.__audit.log.**` 一次返回上千行），进一步降低了命中概率。
+
+### 4. 脚本修复
+
+`rn_smoke_2011_b3.sh` 的 `AUDIT-4` 改为按 **事件 + 权限 + 操作类型** 断言，且不再截断输出：
+
+```bash
+T0=$(date -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S)
+aud_cancel=$(bash "$CLI" ... -e "SET SQL_DIALECT=TREE; SELECT audit_event_type, privilege_type, operation_type, result FROM root.__audit.log.** WHERE time > $T0;")
+cnt_cancel=$(echo "$aud_cancel" | grep -E 'OBJECT_AUTHENTICATION' | grep -c '\[MAINTAIN\]')
+```
+
+复跑结果：`PASS | AUDIT-4 CANCEL ALL MIGRATIONS 产生审计记录（命中 9 行，TDB-709）`。
+
+### 5. 结论
+
+- **TDB-709 在 RC3 上验证通过**，无需提单；
+- 该条应从“已知缺口”中移除，改为“已验证通过（断言已修正）”。
 
 ## F-2 EXTEND + CANCEL 竞态下出现 `unexpected consensusGroupId` ERROR
 
