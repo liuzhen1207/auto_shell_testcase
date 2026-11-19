@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-211	TDB-1442 DROP USER 断连（普通模式）	异常	PASS	0	22	

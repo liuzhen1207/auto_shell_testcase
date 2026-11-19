@@ -147,3 +147,5 @@ RN-207	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 网络分区后补列	可靠�
 RN-208	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 多级存储补列	可靠性	两级存储下自动补列正常且数据落二级目录	case_RN208
 RN-209	cases/TIMECHODB_0764_v2.0.13.1.sh	V2.0.13.1	TDB-1497 连接数上限报错（普通模式）	异常	连接达到上限时新连接报错含资源不足提示、不含旧文案；已有连接不受影响，释放后恢复	case_RN209
 RN-210	cases/TIMECHODB_0764_v2.0.13.1.sh	V2.0.13.1	TDB-1497 连接数上限报错（三权分立）	异常	三权分立下 sys_admin 触发上限，报错文案同上；root 被拒 803	case_RN210
+RN-211	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TDB-1442 DROP USER 断连（普通模式）	异常	drop user 后原会话执行返回 802；重建同名用户后僵尸会话不复活，新连接正常	case_RN211
+RN-212	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TDB-1442 DROP USER 断连（三权分立）	异常	三权分立下 security_admin 删用户同样断连且僵尸不复活	case_RN212

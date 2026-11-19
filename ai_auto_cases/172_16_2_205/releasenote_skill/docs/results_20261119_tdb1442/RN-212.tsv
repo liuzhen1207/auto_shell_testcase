@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-212	TDB-1442 DROP USER 断连（三权分立）	异常	PASS	0	25	
