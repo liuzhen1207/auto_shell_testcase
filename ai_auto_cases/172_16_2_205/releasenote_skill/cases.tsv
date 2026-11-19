@@ -149,3 +149,5 @@ RN-209	cases/TIMECHODB_0764_v2.0.13.1.sh	V2.0.13.1	TDB-1497 连接数上限报�
 RN-210	cases/TIMECHODB_0764_v2.0.13.1.sh	V2.0.13.1	TDB-1497 连接数上限报错（三权分立）	异常	三权分立下 sys_admin 触发上限，报错文案同上；root 被拒 803	case_RN210
 RN-211	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TDB-1442 DROP USER 断连（普通模式）	异常	drop user 后原会话执行返回 802；重建同名用户后僵尸会话不复活，新连接正常	case_RN211
 RN-212	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TDB-1442 DROP USER 断连（三权分立）	异常	三权分立下 security_admin 删用户同样断连且僵尸不复活	case_RN212
+RN-213	cases/TIMECHODB_0501_v2.0.13.1.sh	V2.0.13.1	TDB-1429 DROP USER 元数据级联删除（普通模式）	异常	drop user 后密码历史元数据清零；重建同名用户不继承旧历史	case_RN213
+RN-214	cases/TIMECHODB_0501_v2.0.13.1.sh	V2.0.13.1	TDB-1429 DROP USER 元数据级联删除（三权分立）	异常	security_admin 删用户、audit_admin 校验系统库元数据级联删除	case_RN214
