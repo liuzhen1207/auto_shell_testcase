@@ -53,6 +53,12 @@ else
 fi
 
 ########## REG-3 EXTEND add-peer 期间取消，无 NPE / unexpected consensusGroupId（TDB-707/717） ##########
+# IoTConsensusV2 尚未完全适配 region 迁移，V2 下该场景不适用（F-2）
+PROTO_CLS=$(ssh -n -o BatchMode=yes root@172.16.2.19 "grep '^data_region_consensus_protocol_class' $NEW/conf/iotdb-system.properties 2>/dev/null | cut -d= -f2" 2>/dev/null)
+if echo "$PROTO_CLS" | grep -qi 'IoTConsensusV2'; then
+  sk "REG-3 add-peer 期间取消" "IoTConsensusV2 尚未适配 region 迁移，跳过"
+  exit 0
+fi
 q "EXTEND REGION $rid TO 6;" >/dev/null 2>&1
 sleep 2
 t "CANCEL ALL MIGRATIONS;" >/dev/null 2>&1

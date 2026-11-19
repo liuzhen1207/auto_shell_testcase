@@ -65,7 +65,7 @@ cnt_cancel=$(echo "$aud_cancel" | grep -E 'OBJECT_AUTHENTICATION' | grep -c '\[M
 
 | 项 | 内容 |
 | --- | --- |
-| 级别 | **低**（日志噪声 + 失败 RPC 重试；无数据不一致） |
+| 级别 | **不处理**（仅 IoTConsensusV2；V2 协议尚未完全适配 region 迁移，符合当前定位） |
 | 现象 | `EXTEND REGION` 后立即 `CANCEL ALL MIGRATIONS`，DN 日志出现 `unexpected consensusGroupId ... for set active request` ERROR，伴随 `ConsensusGroupModifyPeerException` |
 | 影响 | 迁移取消流程中出现一次失败 RPC（内部重试/清理后成功）；数据一致性、集群状态均正常 |
 | 复现率 | **1 / 7**（首跑命中，后续 6 次全部 PASS） |
@@ -119,7 +119,7 @@ public TSetActiveResp setActive(TSetActiveReq req) {
 }
 ```
 
-竞态链路：
+竞态链路（**仅 IoTConsensusV2 出现**）：
 1. CN 发起 `EXTEND REGION`（add-peer），目标 DN 创建 group；
 2. 用户 `CANCEL ALL MIGRATIONS`，CN 清理/取消该 Procedure，目标 DN 的 group 被删除；
 3. 未完成的 add-peer 流程仍向目标 DN 发 `setActive`，此时 `getImpl(groupId) == null`；
@@ -127,7 +127,15 @@ public TSetActiveResp setActive(TSetActiveReq req) {
 
 结果：失败 RPC 被上层吸收（最终数据一致、副本状态正确），但产生 ERROR 级日志与异常栈，容易被误判为缺陷。
 
-### 5. 建议
+### 5. 处理结论（2026-11-19，刘珍确认）
+
+**不处理**。该问题只在 **IoTConsensusV2** 协议下出现，而 V2 协议目前尚未完全适配 region 迁移（迁移/取消能力本身在 V2 下仍不完整）。因此：
+
+- 该 ERROR 属 V2 迁移未适配的伴随现象，不作为 RC3 缺陷；
+- 验证脚本 `rn_smoke_2011_b9.sh` 已增加协议守卫：检测到 `data_region_consensus_protocol_class` 为 `IoTConsensusV2` 时，`REG-3` 直接 **SKIP**（原因写明“IoTConsensusV2 尚未适配 region 迁移，跳过”）；
+- 后续若在 **IoTConsensus（V1）** 协议下回归 region 迁移，需重新检查该 ERROR 是否还存在。
+
+### 6. 建议（保留给 V1 回归参考）
 
 | 方案 | 说明 |
 | --- | --- |

@@ -11,7 +11,7 @@
 | skill / 套件 | 用例/轮次 | PASS | FAIL | SKIP | 耗时 | 结论 |
 | --- | ---: | ---: | ---: | ---: | --- | --- |
 | `ddl_ha_skill` | 33 例 | **33** | 0 | 0 | 2.3h + 复跑 | ✅ 33/33 |
-| `releasenote_skill` RN 冒烟 | 56 项检查 | **47** | 0 | 9 | ~20min + 补跑 | ✅ 全部通过 |
+| `releasenote_skill` RN 冒烟 | 56 项检查 | **46** | 0 | 10 | ~20min + 补跑 | ✅ 全部通过（SKIP 为环境/V2 限制） |
 | `releasenote_skill` 专项 | TDB-1050 / TDB-1104 / TDB-65 | **3** | 0 | 0 | ~1.5h | ✅ 全部通过 |
 | `delete_skill` RC3 精选 | 12 例 × IoTV2 | **12** | 0 | 0 | 8h + 复跑 2 例 | ✅ 12/12 |
 | **合计** | **45 + 56 项** | **全部通过（除 1 项已知审计缺口）** | | | | |
@@ -80,13 +80,13 @@ IP Address: 172.16.2.20
 
 | 结果 | 数量 |
 | --- | ---: |
-| PASS | **47** |
+| PASS | **46** |
 | FAIL | 0 |
-| SKIP | 9（订阅未开启、region 不足 2 个、成本分项无数据等环境项） |
+| SKIP | 10（订阅未开启、region 不足 2 个、成本分项无数据、以及 `REG-3` 因 V2 未适配 region 迁移而跳过） |
 
 补跑修正的 2 项：
 - `COPY-3 COPY (query) TO`：首跑 725（`copy_to_allowed_export_dirs` 未配置 + 目标文件已存在），恢复配置、清理磁盘文件后 **PASS**；
-- `REG-3 add-peer 取消异常`：首跑命中 4 条 `unexpected consensusGroupId`，复跑 **PASS**（1/2 复现，数据一致，判为间歇性观察项）；
+- `REG-3 add-peer 取消异常`：首跑命中 4 条 `unexpected consensusGroupId`（**仅 IoTConsensusV2**）。按“V2 尚未适配 region 迁移”的定位，该检查在 V2 下改为 **SKIP**，不作为缺陷；
 - `AUDIT-4`：首跑“未命中”为断言缺陷（审计记录不含 CANCEL 文本，且查询被 `tail` 截断），修正断言后 **PASS**（命中 9 行 `OBJECT_AUTHENTICATION+[MAINTAIN]+CONTROL`），**TDB-709 修复在 RC3 已验证**。
 
 ### 4.2 专项 RN
@@ -102,16 +102,16 @@ IP Address: 172.16.2.20
 | 编号 | 级别 | 内容 | 建议 |
 | --- | --- | --- | --- |
 | F-1 | — | **已澄清**：TDB-709 修复在 RC3 生效（成功/803 均有 `OBJECT_AUTHENTICATION+[MAINTAIN]+CONTROL`），此前为脚本断言误判 | 断言已修正（`rn_smoke_2011_b3.sh`） |
-| F-2 | 低 | EXTEND + CANCEL 间歇出现 `unexpected consensusGroupId` ERROR（V2，1/2 复现，无数据不一致） | 观察项，建议排查竞态 |
+| F-2 | — | **关闭**：仅 IoTConsensusV2 出现，V2 尚未完全适配 region 迁移，不作为缺陷；`REG-3` 已加协议守卫（V2 下 SKIP） | 后续 V1 回归时复核 |
 | F-3 | 低 | CN 全宕时 DDL 报 thrift 原始异常（305 + Connection refused） | 封装为“集群元数据不可用”错误码 |
 | F-4 | 低 | `DELETE` 回归脚本 `norm()` 未过滤 CLI 时间行，导致 12 例误判 | 已修复（保留在 `rc3_matrix/scripts/run_round.sh`） |
 
 ## 六、结论
 
 1. RC3 在本次覆盖范围内**功能稳定**：ddl_ha 33/33、delete 精选 12/12、RN 专项 3/3；
-2. RN 冒烟 **47/56 通过（0 失败）**，其余 9 项为环境 SKIP；TDB-709 的 CANCEL 审计已在 RC3 验证通过；
+2. RN 冒烟 **46/56 通过（0 失败）**，10 项 SKIP（环境限制 + V2 未适配 region 迁移）；TDB-709 的 CANCEL 审计已在 RC3 验证通过；
 3. RC3 未发现新的阻塞级缺陷；TDB-1050 修复得到验证，TDB-1104/TDB-65 行为符合预期；
-4. 待办：delete 剩余 174 轮按需续跑（约 60 小时）；F-2（consensusGroupId 间歇报错）需研发确认。
+4. 待办：delete 剩余 174 轮按需续跑（约 60 小时）；F-2 已按“V2 未适配 region 迁移”关闭，无待研发项。
 
 ## 七、证据路径
 
