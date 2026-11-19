@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-217	TDB-1336 explain analyze 增强输出	功能	PASS	0	118	[LOG err=0 warn=0 unexp=0] 
