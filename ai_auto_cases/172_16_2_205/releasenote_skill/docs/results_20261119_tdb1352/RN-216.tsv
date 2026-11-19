@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-216	TDB-1352 非对齐视图 last 查询下推与倒序	性能	FAIL	2	121	[FAIL] scan 顺序为 |│ScanOrder:ASC│|，期望 DESC（未按 TDB-1352 优化为倒序） ; [FAIL] last 耗时 1316ms 与全量 count 1073ms 相当，仍扫描全部数据 ; [LOG err=0 warn=0 unexp=0] 
