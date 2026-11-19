@@ -200,15 +200,12 @@ w11_fp_compare(){ local label=$1 f0=$2 f1=$3 res same total
   # count=8000 / sum=8016000.0 / min=1 / max=2003 两相完全一致，且时间戳是确定性公式生成的
   # ⇒ 不是排序问题，疑似"丢一行 + 重复一行"或时间戳错位。只有把两相的行 dump 出来 diff 才能定位。
   if [ "${same:-0}" != "${total:-0}" ] && [ -n "${DBNC:-}" ] && [ -n "${DB:-}" ]; then
-    # 用**指纹时刻**落盘的行做 diff（不要重新查询：实测重新查询时 NC 相已返回 EMPTY）
-    local f_nc="$ART/d1_seq_${DBNC}.rows" f_c="$ART/d1_seq_${DB}.rows"
-    log "  !! 指纹不一致 ⇒ 用指纹时刻的行做 diff：$(basename "$f_nc") vs $(basename "$f_c")"
-    if [ -s "$f_nc" ] && [ -s "$f_c" ]; then
-      log "    行数：NC=$(grep -c . "$f_nc") C=$(grep -c . "$f_c")"
-      diff "$f_nc" "$f_c" | head -40 | sed 's/^/      /' >>"$OUT" 2>&1
-    else
-      warn "    指纹时刻的行文件缺失（NC=$(test -s "$f_nc" && echo yes || echo no)、C=$(test -s "$f_c" && echo yes || echo no)）⇒ 本次无法 diff"
-    fi
+    log "  !! 指纹不一致 ⇒ 落盘行级证据（$DBNC.d1 vs $DB.d1，diff 前 60 行）"
+    norm_result "$(sq "select s1 from $DBNC.d1 order by time;")" >"$ART/rows_NC.txt" 2>/dev/null
+    norm_result "$(sq "select s1 from $DB.d1 order by time;")"   >"$ART/rows_C.txt" 2>/dev/null
+    log "    行数：NC=$(grep -c . "$ART/rows_NC.txt") C=$(grep -c . "$ART/rows_C.txt")"
+    diff "$ART/rows_NC.txt" "$ART/rows_C.txt" | head -60 | sed 's/^/      /' >>"$OUT" 2>&1
+    log "    行级证据：$ART/rows_NC.txt vs $ART/rows_C.txt"
   fi }
 # 每设备点数（一行 N 列）
 w11_check_devcounts(){ local line=$1 want=$2 n bad

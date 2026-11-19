@@ -8,6 +8,7 @@ set -u
 BASE="${BASE:-$(cd "$(dirname "$0")/.." && pwd)}"
 for _p in "$BASE/conf/env.conf" "$BASE/scripts/env.conf"; do [ -f "$_p" ] && . "$_p" && break; done
 for _p in "$BASE/lib/lib_rn.sh" "$BASE/scripts/lib_rn.sh"; do [ -f "$_p" ] && . "$_p" && break; done
+for _p in "$BASE/lib/logcheck.sh" "$BASE/scripts/logcheck.sh"; do [ -f "$_p" ] && . "$_p" && break; done
 if ! command -v T >/dev/null 2>&1; then echo "环境错误：未加载 lib_rn.sh"; exit 4; fi
 
 RESULTS="$RESULT_ROOT/run_$(date +%Y%m%d_%H%M%S)"
@@ -64,10 +65,20 @@ for entry in "${CASES[@]}"; do
   fi
   echo "[$(date +%T)] ===== $id | $feature | $ctype | $desc"
   CASE_FAILS=0; CASE_MSGS=""
+  [ "${RN_LOG_CHECK:-0}" = "1" ] && log_mark
   t0=$(date +%s)
   "$fn" >> "$RESULTS/$id.out" 2>&1
   t1=$(date +%s)
   dur=$((t1 - t0))
+  if [ "${RN_LOG_CHECK:-0}" = "1" ]; then
+    lc=$(log_check "$id")
+    CASE_MSGS="${CASE_MSGS}[LOG $lc] "
+    case "$lc" in
+      *"unexp=0"*) ;;
+      *) CASE_FAILS=$((CASE_FAILS+1))
+         echo "  [FAIL] 日志窗口存在不符预期的 WARN/ERROR：$lc（样本 /tmp/rn_logcheck_$id.txt）" >> "$RESULTS/$id.out" ;;
+    esac
+  fi
   verdict=PASS
   if [ "$CASE_FAILS" -gt 0 ]; then
     verdict=FAIL

@@ -105,23 +105,8 @@ c33_nrows(){ c33_rows "$1" | wc -l | tr -d ' '; }
 c33_gen(){ local stage=$1 dev=$2 off=${3:-0} vb=${4:-11} mode=${5:-unsorted} base out
   base=$(sshx "$NODE" 'date +%s%3N' | tr -dc '0-9')
   sshx "$NODE" "rm -rf $stage; mkdir -p $stage" >/dev/null 2>&1
-  # 2026-11-04：jar 名不能写死（2.0.12.1 → 2.0.13.1 已改名），按 glob 取实际的 server jar
-  local srvjar
-  srvjar=$(sshx "$NODE" "ls $DB_DIR/lib/timechodb-server-*.jar 2>/dev/null | head -1" 2>/dev/null | tr -d '\r')
-  if [ -z "$srvjar" ]; then
-    log "    !! 未找到 $DB_DIR/lib/timechodb-server-*.jar ⇒ 生成器无法编译/运行"
-    fail "  CO-33 生成器 classpath 缺失（server jar 不存在）"
-    echo E; return
-  fi
-  out=$(sshx "$NODE" "cd $RMT && java -cp $srvjar:$DB_DIR/lib/common-dependency.jar:$RMT UnsortedTsFileGen $dev $stage $base $off $vb $mode" 2>&1 | tail -1)
+  out=$(sshx "$NODE" "cd $RMT && java -cp $DB_DIR/lib/timechodb-server-2.0.12.1.jar:$DB_DIR/lib/common-dependency.jar:$RMT UnsortedTsFileGen $dev $stage $base $off $vb $mode" 2>&1 | tail -1)
   [ -n "$out" ] || out="(java 无输出)"
-  # 2026-11-04：校验真的产出了 .tsfile（之前只看字符串非空，生成失败也会"看起来成功"）
-  local nf
-  nf=$(sshx "$NODE" "ls $stage/*.tsfile 2>/dev/null | wc -l" 2>/dev/null | tr -dc '0-9')
-  if [ "${nf:-0}" -lt 1 ]; then
-    log "    !! 生成失败：$stage 下没有任何 .tsfile（java 输出：$out）"
-    fail "  CO-33 未排序 TsFile 未生成（$stage 为空）"
-  fi
   log "    生成未排序 TsFile：$out（device=$dev base=$base offset=$off valueBase=$vb mode=$mode）"
   printf '%s' "$out"; }
 # 顺序/乱序空间文件数（cmp_su 输出形如 "77:1/0 78:1/0 "，取合计）
@@ -165,13 +150,7 @@ EXTRA_CONF="enable_seq_space_compaction=false,enable_unseq_space_compaction=fals
 assert_eq "  enable_auto_repair_compaction 生效值" "$(cmp_eff "${DN[0]}" enable_auto_repair_compaction)" "true"
 
 log "--- 1) 编译并分发未排序 TsFile 生成器（用服务端自带 jar）---"
-if ! GEN_DIR=$(V_TESTDB="$V_TESTDB" GEN_TARGET_NODE="$NODE" GEN_REMOTE_DIR="$RMT" bash "$TTL_SKILL_DIR/assets/unsorted/build_gen.sh" 2>>"$OUT"); then
-  if ssh -o BatchMode=yes root@"$NODE" "ls $RMT/*.class >/dev/null 2>&1"; then
-    warn "  生成器编译脚本返回非 0，但产物已就位 ⇒ 继续（脚本告警不影响场景）"
-  else
-    fail "  生成器编译/分发失败"
-  fi
-fi
+GEN_DIR=$(V_TESTDB="$V_TESTDB" GEN_TARGET_NODE="$NODE" GEN_REMOTE_DIR="$RMT" bash "$TTL_SKILL_DIR/assets/unsorted/build_gen.sh" 2>>"$OUT") || fail "  生成器编译/分发失败"
 [ -n "${GEN_DIR:-}" ] && log "    编译目录：$GEN_DIR，目标节点：$NODE:$RMT"
 
 # ===========================================================================
@@ -181,7 +160,7 @@ log "=== A 相：未排序文件 load → 修复链路（auto_repair=true）==="
 C0=$(c33_all_cnts); log "  A 修复链基线：$C0"
 c33_mkdb "$DB"
 A_FILE=$(c33_gen "$STAGE_A" "$DB.d1")
-[ -n "$A_FILE" ] && pass "  生成器执行成功" || warn "  生成器执行失败"
+[ -n "$A_FILE" ] && pass "  生成器执行成功" || fail "  生成器执行失败"
 A_LOAD=$(c33_load "$STAGE_A")
 assert_not_contains "  load 无报错" "$(printf '%s' "$A_LOAD" | strip_echo)" 'Error|error|Exception|Failed|failed'
 P_A0=$(c33_pairs "$DB"); N_A0=$(c33_nrows "$DB"); F_A0=$(c33_asc "$DB")
@@ -205,9 +184,9 @@ D_CHECK=$(c33_delta "$C0" "$C1" check); D_NEED=$(c33_delta "$C0" "$C1" need)
 D_TASK=$(c33_delta "$C0" "$C1" task);  D_DONE=$(c33_delta "$C0" "$C1" done)
 D_UNS=$(c33_delta "$C0" "$C1" unsorted); D_OVL=$(c33_delta "$C0" "$C1" overlap)
 log "  A 增量：start_check=$D_CHECK need=$D_NEED (unsorted=$D_UNS overlap=$D_OVL) task=$D_TASK done=$D_DONE"
-[ "${D_CHECK:-0}" -ge 1 ] && pass "  A 修复扫描执行（[RepairScheduler] start check tsfile +$D_CHECK）" || warn "  A 未执行修复扫描"
-[ "${D_NEED:-0}" -ge 1 ] && pass "  A 命中待修复判定（need to repair because … +$D_NEED）" || warn "  A 未判定出待修复文件"
-[ "${D_TASK:-0}" -ge 1 ] && pass "  A 生成 RepairUnsortedFileCompactionTask（+$D_TASK）" || warn "  A 未生成修复任务"
+[ "${D_CHECK:-0}" -ge 1 ] && pass "  A 修复扫描执行（[RepairScheduler] start check tsfile +$D_CHECK）" || fail "  A 未执行修复扫描"
+[ "${D_NEED:-0}" -ge 1 ] && pass "  A 命中待修复判定（need to repair because … +$D_NEED）" || fail "  A 未判定出待修复文件"
+[ "${D_TASK:-0}" -ge 1 ] && pass "  A 生成 RepairUnsortedFileCompactionTask（+$D_TASK）" || fail "  A 未生成修复任务"
 [ "${D_DONE:-0}" -ge 1 ] && pass "  A 修复流程结束（[RepairScheduler] Repair task finished +$D_DONE）" || warn "  A 未见 Repair task finished（可能仍在收尾）"
 
 # 设计文档《数据修复功能》+ RC7 源码 `RepairUnsortedFileCompactionTask.generateTargetFile():144-151`
@@ -217,7 +196,7 @@ A_SU1=$(c33_su "$DB"); log "  A 修复后空间分布：$A_SU0 → $A_SU1"
 A_S1=$(printf '%s' "$A_SU1" | sed -n 's/.*seq=\([0-9]*\).*/\1/p')
 A_U1=$(printf '%s' "$A_SU1" | sed -n 's/.*unseq=\([0-9]*\).*/\1/p')
 [ "${A_U1:-0}" -ge 1 ] && pass "  A 修复目标写入**乱序区**（源码 L144-151：seq 源 → unsequence 目录）" \
-  || warn "  A 修复后乱序区仍为空（与源码 L144-151 不符）"
+  || fail "  A 修复后乱序区仍为空（与源码 L144-151 不符）"
 [ "${A_S1:-9}" -eq 0 ] && pass "  A 原待修复文件已从顺序区移除（seq=0）" \
   || warn "  A 顺序区仍有 ${A_S1:-?} 个文件（可能是同库其它正常文件）"
 c33_repair_log

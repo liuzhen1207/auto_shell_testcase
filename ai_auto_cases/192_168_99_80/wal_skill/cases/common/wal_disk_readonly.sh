@@ -262,10 +262,7 @@ w25_recover_verify(){ local tag=$1 n post_c post_s post_md5 grow wf exact=1
   assert_eq "  [$tag] 恢复后再写一批：count 精确增加 $(( DEVS * ROWS ))" "${grow:-0}" "$(( ${post_c:-0} + DEVS * ROWS ))"
   wf=$(wal_sum_over_dn wal_file_cnt)
   log "  [$tag] 恢复后 WAL 面：files=$wf bytes=$(wal_sum_over_dn wal_dir_bytes)B 逐副本=$(wal_per_node)"
-  # 【2026-10-28 口径】WAL 在 checkpoint 之后本来就会被清理，"文件数=0" 不能证明 WAL 没恢复工作；
-  #   本用例的硬判据是"恢复后数据一致 + 再写一批精确增长"，WAL 文件数只作过程证据（WARN）。
-  [ "${wf:-0}" -ge 1 ] && pass "  [$tag] 恢复后 WAL 目录确有 .wal" \
-    || warn "  [$tag] 恢复后 WAL 文件数=0（checkpoint 后清理属正常；本判据不计 fail_flag，数据面另有硬判据）"; }
+  [ "${wf:-0}" -ge 1 ] && pass "  [$tag] 恢复后 WAL 目录确有 .wal" || fail "  [$tag] 恢复后 WAL 文件数=0（WAL 未恢复工作）"; }
 
 # ===========================================================================
 # 相 0：基线
@@ -426,14 +423,5 @@ log "--- 收尾三件套 ---"
 export CMP_POSITIVE_EVIDENCE_FN=wal_positive_evidence
 export WAL_EVIDENCE_DB="$DB"
 export CMP_LOG_BENIGN_EXTRA='Fail to (roll|sync|fsync) wal node|change system mode to error|No space left on device|Read-only file system|Operation not permitted|Execute FragmentInstance in ConsensusGroup|Failed to CHANGE_REGION_LEADER|RatisRequestFailedException|transferLeader|Connection refused|Connection reset by peer'
-# 【2026-10-28 口径】只读窗口若已触发 WAL 写失败/系统 error 模式，三副本数据本来就可能不一致
-#   （部分写入被拒），这是构造的直接后果，不能当缺陷 ⇒ 跳过"逐 DN 停机副本一致性"，只做 sync lag + 日志扫描。
-W25_ERRMODE=$(w25_werr_sum)
-if [ "${W25_ERRMODE:-0}" -gt 0 ]; then
-  warn "  收尾：检测到 ${W25_ERRMODE} 条 WAL 写盘失败/error 模式日志 ⇒ 跳过「逐 DN 停机副本一致性」"
-  log "--- 收尾检查 1/3：sync lag 归零 ---"; check_sync_lag || true
-  log "--- 收尾检查 3/3：CN/DN 日志异常分析 ---"; check_logs
-else
-  post_checks "select count(s1) from $DB.d1 order by time;" tree
-fi
+post_checks "select count(s1) from $DB.d1 order by time;" tree
 cmp_case_finish "" tree ""

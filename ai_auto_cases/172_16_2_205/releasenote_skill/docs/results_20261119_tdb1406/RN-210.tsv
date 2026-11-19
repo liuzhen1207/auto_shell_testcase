@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-210	TDB-1497 连接数上限报错（三权分立）	异常	PASS	0	140	[LOG err=0 warn=0 unexp=0] 

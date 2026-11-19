@@ -54,7 +54,7 @@ try "$DB.t_STRING.d1.s1" TEXT
 try "$DB.t_TIMESTAMP.d1.s1" INT64
 
 log "=== 4) 树模型：负向（不兼容 + 不存在 + 重复改）==="
-neg(){ local path=$1 to=$2; local 
+neg(){ local path=$1 to=$2; local r
   r=$(sq "alter timeseries $path set data type $to;" 2>&1 | grep -vE '^\||^\+|Total line|It costs' | tail -2 | tr '\n' ' ' | cut -c1-160)
   echo "  [$path → $to] resp=[$r]"; }
 neg "$DB.t_DOUBLE.d1.s1" FLOAT

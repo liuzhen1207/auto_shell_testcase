@@ -622,15 +622,12 @@ if READY_MSG=$(c41_ready "$DBC" 1); then log "  $DBC 落盘就绪：$READY_MSG";
 c41_assert_ts "$DBC" "1"
 assert_eq "  C 相写入后 OBJECT 行数" "$(c41_rows "$DBC")" "$C41_ROWS"
 G_C1=$(c41_obj_stable "$C41_STABLE_W"); OBJ_C=$(( G_C1 - G_C0 ))
-# 【2026-10-28 修正】不能用"全局净增量"判本相是否产生 object：并发的 GC 会把上一相遗留的 object 清掉，
-#   净增量可能恰好为 0（实测 C 相 +120 新对象、同期 B 相遗留 -120 被 GC ⇒ 全局 +0，误判"场景无效"）。
-#   改为以**本库按 region 的精确计数**为主判据，全局增量只作旁证（2026-10-27 CO-V2 实测：全局 +0 / 本库 120）。
-OBJ_DB_C1=$(c41_obj_db_all "$DBC")
-if [ "${OBJ_C:-0}" -gt 0 ] || [ "${OBJ_DB_C1:-0}" -gt 0 ]; then
-  pass "  场景有效性：C 相产生了 object 真实文件（本库精确计数 $OBJ_DB_C1；全局净增量 +$OBJ_C，$G_C0 → $G_C1）"
+if [ "${OBJ_C:-0}" -gt 0 ]; then
+  pass "  场景有效性：C 相产生了 object 真实文件 +$OBJ_C（全局计数 $G_C0 → $G_C1）"
 else
-  fail "  场景无效：C 相未见 object 真实文件（本库精确计数 0、全局净增量 0）"
+  fail "  场景无效：C 相未见 object 真实文件（+0）"
 fi
+OBJ_DB_C1=$(c41_obj_db_all "$DBC")
 SCEN_C=0
 if [ "${OBJ_DB_C1:-0}" = "$(( C41_ROWS * 3 ))" ]; then
   SCEN_C=1; pass "  场景有效性：C 相 object 真实文件数=$OBJ_DB_C1（$C41_ROWS 点 × 3 副本）"

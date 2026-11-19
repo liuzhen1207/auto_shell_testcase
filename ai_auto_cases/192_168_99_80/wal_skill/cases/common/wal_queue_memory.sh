@@ -145,9 +145,7 @@ w18_wal_report(){ local tag=$1
 # ---- ④ 写入器（后台；按块记账）----
 # 每块：DEVS 设备 × STMTS 条语句 × PER 行；值 = 全局自增 g；s2 是大 payload（撑内存/WAL 体积）
 w18_writer(){ local db=$1 stopf=$2 logf=$3 maxch=$4 win=$5 t0=$6
-  # 2026-11-02：g 从 BASE_ROWS 起，避免与基线批次（ts=BASE0+k*10, k=1..BASE_ROWS）时间戳重叠；
-  #   否则压力写入会覆盖基线 d1 的前 100 行（表现为可见点数恒少 100、值总和恒少 5050=1..100）。
-  local c=0 d s k g=${BASE_ROWS:-0} rows gs ts vals rc ms0 ms1 errs
+  local c=0 d s k g=0 rows gs ts vals rc ms0 ms1 errs
   local -a ST=()
   while :; do
     [ -f "$stopf" ] && { printf 'stop=stopfile\n' >>"$logf"; break; }
@@ -302,9 +300,7 @@ log "--- ④ 写入结果分类（先取证再判定：阻写拒绝 = WARN，其
 OKROWS=$(w18_field_sum "$CHUNKLOG" rows OK); OKSUM=$(w18_field_sum "$CHUNKLOG" gsum OK)
 ALLROWS=$(w18_all_sum "$CHUNKLOG" rows); ALLSUM=$(w18_all_sum "$CHUNKLOG" gsum)
 CHUNKS_OK=$(grep -c 'status=OK' "$CHUNKLOG" 2>/dev/null)
-# 2026-11-02：`stop=window` / `stop=stopfile` 是**停止标记**，不是"未确认块"，
-# 之前被算成 PART>0 ⇒ 误报"压力阶段出现非阻写类写入失败"。
-PART=$(grep -v 'status=OK' "$CHUNKLOG" 2>/dev/null | grep -vE '^[[:space:]]*stop=' | grep -c . )
+PART=$(grep -v 'status=OK' "$CHUNKLOG" 2>/dev/null | grep -c . )
 log "  已确认块=$CHUNKS_OK 已确认点数=$OKROWS 全部块点数=$ALLROWS；未确认块=$PART"
 if [ "${PART:-0}" -gt 0 ]; then
   w18_evidence "写入未全部完成（PARTIAL）"
@@ -317,7 +313,7 @@ if [ "${PART:-0}" -gt 0 ]; then
 else
   pass "  压力阶段所有块都正常完成（无异常/无超时）"
 fi
-if [ "${OKROWS:-0}" -ge $(( DEVS * PER * 2 )) ]; then pass "  场景有效性：压力期已确认点数 $OKROWS ≥ ${DEVS}×${PER}×2（写入确实发生）"
+if [ "${OKROWS:-0}" -ge $(( DEVS * PER * 2 )); then pass "  场景有效性：压力期已确认点数 $OKROWS ≥ ${DEVS}×${PER}×2（写入确实发生）"
 else fail "  场景无效：已确认点数 $OKROWS 太少（< ${DEVS}×${PER}×2）⇒ 压力没打上去，队列内存判据无从谈起"; fi
 
 log "--- ⑤ 硬判据：无 OOM（wal_oom_cnt 必须 0）+ DN 进程存活 ---"

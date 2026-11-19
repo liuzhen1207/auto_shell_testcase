@@ -1,0 +1,123 @@
+﻿
+修改数据类型手册更新内容
+仅企业版，树模型/表模型
+树模型
+基础功能-测点管理
+2.3 修改时间序列数据类型
+自 V2.0.8 版本起，支持通过 SQL 语句修改时间序列的数据类型。
+语法定义：
+SQLALTER TIMESERIES fullPath SET DATA TYPE newType=type
+说明：
+变更过程中若该时间序列被并发删除，会报错提示。
+变更后的时间序列类型需要与原类型兼容，具体兼容性如下表所示：
+原始类型
+可变更为类型
+INT32
+INT64, FLOAT, DOUBLE, TIMESTAMP, STRING, TEXT
+INT64
+TIMESTAMP, DOUBLE, STRING, TEXT
+FLOAT
+DOUBLE, STRING, TEXT
+DOUBLE
+STRING, TEXT
+BOOLEAN
+STRING, TEXT
+TEXT
+BLOB, STRING
+STRING
+TEXT, BLOB
+BLOB
+STRING, TEXT
+DATE
+STRING, TEXT
+TIMESTAMP
+INT64, DOUBLE, STRING, TEXT
+使用示例：
+SQLALTER TIMESERIES root.ln.wf01.wt01.temperature set data type DOUBLE
+SQL 手册 - SQL 手册
+1.2 时间序列管理
+修改时间序列数据类型
+V2.0.8 起支持该语句
+SQLALTER TIMESERIES root.ln.wf01.wt01.temperature set data type DOUBLE
+SQL 手册 - 关键字
+增加 TYPE
+
+表模型
+基础功能-表管理
+1.4 修改表
+用于修改表，包括添加列、删除列、修改列类型（V2.0.8）以及设置表的属性。
+语法：
+SQLALTER TABLE (IF EXISTS)? tableName=qualifiedName ADD COLUMN (IF NOT EXISTS)? column=columnDefinition COMMENT 'column_comment'               #addColumn| ALTER TABLE (IF EXISTS)? tableName=qualifiedName DROP COLUMN (IF EXISTS)? column=identifier                    #dropColumn// set TTL can use this| ALTER TABLE (IF EXISTS)? tableName=qualifiedName SET PROPERTIES propertyAssignments                #setTableProperties| COMMENT ON TABLE tableName=qualifiedName IS 'table_comment'| COMMENT ON COLUMN tableName.column IS 'column_comment'|ALTER TABLE (IF EXISTS)? tableName=qualifiedName ALTER COLUMN (IF EXISTS)? column=identifier SET DATA TYPE new_type=type   #changeColumndatatype
+说明：
+SET PROPERTIES操作目前仅支持对表的 TTL 属性进行配置。
+删除列功能，仅支持删除属性列(ATTRIBUTE)和物理量列(FIELD)，标识列(TAG)不支持删除。
+修改后的 comment 会覆盖原有注释，如果指定为 null，则会擦除之前的 comment。
+自 V2.0.8 版本起支持修改字段数据类型，目前只支持修改Category类型为FIELD的字段。
+变更过程中若该时间序列被并发删除，会报错提示。
+变更后的字段类型需要与原类型兼容，具体兼容性如下表所示：
+原始类型
+可变更为类型
+INT32
+INT64, FLOAT, DOUBLE, TIMESTAMP, STRING, TEXT
+INT64
+TIMESTAMP, DOUBLE, STRING, TEXT
+FLOAT
+DOUBLE, STRING, TEXT
+DOUBLE
+STRING, TEXT
+BOOLEAN
+STRING, TEXT
+TEXT
+BLOB, STRING
+STRING
+TEXT, BLOB
+BLOB
+STRING, TEXT
+DATE
+STRING, TEXT
+TIMESTAMP
+INT64, DOUBLE, STRING, TEXT
+示例:
+SQLALTER TABLE table1 ADD COLUMN IF NOT EXISTS a TAG COMMENT 'a'ALTER TABLE table1 ADD COLUMN IF NOT EXISTS b FLOAT FIELD COMMENT 'b'ALTER TABLE table1 set properties TTL=3600COMMENT ON TABLE table1 IS 'table1'COMMENT ON COLUMN table1.a IS nullALTER TABLE table1 ALTER COLUMN IF EXISTS b SET DATA TYPE DOUBLE
+SQL 手册 - 元数据管理
+2.4 修改表
+语法：
+SQLALTER TABLE (IF EXISTS)? tableName=qualifiedName ADD COLUMN (IF NOT EXISTS)? column=columnDefinition COMMENT 'column_comment'               #addColumn| ALTER TABLE (IF EXISTS)? tableName=qualifiedName DROP COLUMN (IF EXISTS)? column=identifier                    #dropColumn// set TTL can use this| ALTER TABLE (IF EXISTS)? tableName=qualifiedName SET PROPERTIES propertyAssignments                #setTableProperties| COMMENT ON TABLE tableName=qualifiedName IS 'table_comment'| COMMENT ON COLUMN tableName.column IS 'column_comment'|ALTER TABLE (IF EXISTS)? tableName=qualifiedName ALTER COLUMN (IF EXISTS)? column=identifier SET DATA TYPE new_type=type   #changeColumndatatype
+示例:
+SQLALTER TABLE table1 ADD COLUMN IF NOT EXISTS a TAG COMMENT 'a'ALTER TABLE table1 ADD COLUMN IF NOT EXISTS b FLOAT FIELD COMMENT 'b'ALTER TABLE table1 set properties TTL=3600COMMENT ON TABLE table1 IS 'table1'COMMENT ON COLUMN table1.a IS nullALTER TABLE table1 ALTER COLUMN IF EXISTS b SET DATA TYPE DOUBLE
+高级功能-树转表视图
+2.2 修改表视图
+2.2.1 语法定义
+修改表视图功能支持修改视图名称、添加列、列重命名、修改 FIELD 列数据类型（V2.0.8 起支持）、删除列、设置视图的 TTL 属性，以及通过 COMMENT 添加注释。
+SQL-- 修改视图名ALTER VIEW [IF EXISTS] viewName RENAME TO to=identifier              -- 在视图中添加某一列ALTER VIEW [IF EXISTS] viewName ADD COLUMN [IF NOT EXISTS] viewColumnDefinition viewColumnDefinition  : column_name [dataType] TAG                                     # tagColumn  | column_name [dataType] FIELD [FROM original_measurement]     # fieldColumn  -- 为视图中的某一列重命名ALTER VIEW [IF EXISTS] viewName RENAME COLUMN [IF EXISTS] oldName TO newName--修改 FIELD 列的数据类型ALTER VIEW [IF EXISTS] viewName ALTER COLUMN [IF EXISTS] columnName SET DATA TYPE new_type-- 删除视图中的某一列ALTER VIEW [IF EXISTS] viewName DROP COLUMN [IF EXISTS] columnName                  -- 修改视图的 TTLALTER VIEW [IF EXISTS] viewName SET PROPERTIES propertyAssignments-- 添加注释COMMENT ON VIEW qualifiedName IS (string | NULL) #commentViewCOMMENT ON COLUMN qualifiedName '.' column=identifier IS (string | NULL) #commentColumn
+2.2.2 语法说明
+SET PROPERTIES操作目前仅支持对表视图的 TTL 属性进行配置。
+删除列功能，仅支持删除物理量列(FIELD)，标识列(TAG)不支持删除。
+修改后的 comment 会覆盖原有注释，如果指定为 null，则会擦除之前的 comment。
+修改 FIELD 列数据类型时，变更后的字段类型需要与原类型兼容，具体兼容性如下表所示：
+原始类型
+可变更为类型
+INT32
+INT64, FLOAT, DOUBLE, TIMESTAMP, STRING, TEXT
+INT64
+TIMESTAMP, DOUBLE, STRING, TEXT
+FLOAT
+DOUBLE, STRING, TEXT
+DOUBLE
+STRING, TEXT
+BOOLEAN
+STRING, TEXT
+TEXT
+BLOB, STRING
+STRING
+TEXT, BLOB
+BLOB
+STRING, TEXT
+DATE
+STRING, TEXT
+TIMESTAMP
+INT64, DOUBLE, STRING, TEXT
+2.2.3 使用示例
+SQL-- 修改视图名ALTER VIEW IF EXISTS tableview1 RENAME TO tableview            -- 在视图中添加某一列ALTER VIEW IF EXISTS tableview ADD COLUMN IF NOT EXISTS temperature float field  -- 为视图中的某一列重命名ALTER VIEW IF EXISTS tableview RENAME COLUMN IF EXISTS temperature TO temp--修改 FIELD 列的数据类型ALTER VIEW IF EXISTS tableview ALTER COLUMN IF EXISTS temperature SET DATA TYPE double-- 删除视图中的某一列ALTER VIEW IF EXISTS tableview DROP COLUMN IF EXISTS temp              -- 修改视图的 TTLALTER VIEW IF EXISTS tableview SET PROPERTIES TTL=3600-- 添加注释COMMENT ON VIEW tableview IS '树转表'COMMENT ON COLUMN tableview.status is Null
+
+

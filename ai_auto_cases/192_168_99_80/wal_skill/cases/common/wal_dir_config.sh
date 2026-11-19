@@ -180,38 +180,17 @@ w24_wait_dir_files(){ local d=$1 want=$2 win=$3 dl n
   echo "${n:-0}"; return 1; }
 # 无 clean 重启（数据 / WAL 目录必须跨重启保留）：stop → 核对 conf → start
 #   框架启动脚本可能把 properties 还原成 conf_orig ⇒ 发现 dn_wal_dirs 不是 want 时用 cluster_write_conf 重写
-# 逐步取证：记录每个 DN 的 properties 里 dn_wal_dirs 值 + 整个文件 md5（判断"哪一步被改回去"）
-w24_props_probe(){ local step=$1 h v m
-  for h in "${DN[@]}"; do
-    v=$(wal_props_get "$h" dn_wal_dirs)
-    m=$(sshx "$h" "md5sum $DB_DIR/conf/iotdb-system.properties 2>/dev/null | cut -c1-8" 2>/dev/null | tr -d '\r')
-    log "    [props-$step] ${h##*.}: dn_wal_dirs='${v:-<空>}' file_md5=${m:-?}"
-  done; }
 w24_restart_noclean(){ local tag=$1 want=$2 n
   log "--- [$tag] 重启（cluster_stop → cluster_start；**不 clean**：数据与 WAL 目录要跨重启保留）---"
-  w24_props_probe "before-stop"
   cluster_stop
-  w24_props_probe "after-stop"
   n=$(w24_props_match dn_wal_dirs "$want")
   if [ "${n:-0}" -lt "${#DN[@]}" ]; then
-    warn "[$tag] 停集群后 dn_wal_dirs ≠ $want（$n/${#DN[@]}）⇒ 用 cluster_write_conf 重写（不改变用例语义）"
+    warn "[$tag] 重启前有节点的 dn_wal_dirs ≠ $want（$n/${#DN[@]}；框架启动脚本可能还原了 properties）⇒ 用 cluster_write_conf 重写（不改变用例语义）"
     EXTRA_CONF="$(w24_strip_keys 'dn_wal_dirs'),dn_wal_dirs=$want,$CMP_EXTRA_WRITE" cluster_write_conf
-    w24_props_probe "after-rewrite"
   fi
-  cluster_start
-  w24_props_probe "after-start"; }
+  cluster_start; }
 
 # ===========================================================================
-# 【2026-11-02】清理上一轮遗留的自定义 WAL 目录：否则"未重启时该目录不应存在"的判据会被上轮残留顶掉
-if [ "${W24_KEEP_DIRS:-0}" != "1" ]; then
-  for h in "${DN[@]}"; do sshx "$h" "rm -rf '$WAL_BASE'" >/dev/null 2>&1 || true; done
-  log "  已清理各 DN 上的 $WAL_BASE（W24_KEEP_DIRS=1 可跳过）"
-fi
-# 【2026-11-02】清理上一轮遗留的自定义 WAL 目录：否则"未重启时该目录不应存在"的判据会被上轮残留顶掉
-if [ "${W24_KEEP_DIRS:-0}" != "1" ]; then
-  for h in "${DN[@]}"; do sshx "$h" "rm -rf '$WAL_BASE'" >/dev/null 2>&1 || true; done
-  log "  已清理各 DN 上的 $WAL_BASE（W24_KEEP_DIRS=1 可跳过）"
-fi
 log "=== W-24 WAL 目录配置：库 $DB；${DEVS} 设备 × ${ROWS} 点/批；consensus=${CONSENSUS_CLASS##*.} ==="
 log "  默认 WAL 根（源码口径 data/datanode/wal）：$DEF_WAL"
 log "  自定义 WAL 根（本用例创建/清理）：$WAL_BASE ⇒ 单目录=[$CUSTOM1] 多目录=[$CUSTOM1,$CUSTOM2]"
@@ -346,8 +325,7 @@ else
   w24_assert_rows "相 B-4 重启后总行数（数据面硬判据）" "$(w24_exp_rows)"
   cmp_assert_same "相 B-4 重启前后 count/sum/min/max（自定义目录 WAL 重放）" "$FP_PRE" "$(w24_fp)"
   cmp_assert_same "相 B-4 重启前后 $DB.d1 全序列" "$FPD_PRE" "$(w24_fpd)"
-  # 2026-11-03：这是**跨相比对**（相 A 基线只含 1 批 1800 行，B-4 已含 3 批 5400 行）⇒ 恒不等，改为记录；重启一致性由上一行 FP_PRE 比对覆盖
-  warn "  相 B-4 与相 A 基线指纹（跨相参考，不等属预期）：相A=[$FP_A] B-4后=[$(w24_fp)]"
+  cmp_assert_same "相 B-4 与相 A 基线指纹（前 2 批不得变化）" "$(printf '%s' "$FP_A" | sed 's/^/A/')" "$(printf '%s' "$(w24_fp)" | sed 's/^/A/')"
   sq "flush;" >/dev/null
 
   # -------------------------------------------------------------------------

@@ -58,7 +58,7 @@
 
 ```java
 // we add a hard limit for cross compaction that selected unseqFile should reach a certain size
-// or be compacted in inner space at least once. This is used to improve the priority of inne
+// or be compacted in inner space at least once. This is used to improve the priority of inner
 // compaction and avoid too much cross compaction with small files.
 if (unseqFile.getTsFileSize() < targetCompactionFileSize
     && unseqFileName.getInnerCompactionCnt() < config.getMinCrossCompactionUnseqFileLevel()) {

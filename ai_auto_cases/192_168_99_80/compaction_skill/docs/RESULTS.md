@@ -8,8 +8,11 @@ build **`v20121rc6_1010_7ae8713e`（2.0.12.1 / 7ae8713e）**。
 每条用例末尾固定**收尾三件套**：sync lag 归零 → 所有在线节点为基准、**逐个停 1 个 DN** 再查并比对
 → CN/DN 日志扫 NPE/OOM/越界/overlap/`CompactionTableSchemaNotMatchException` 等 ERROR。
 
-**最终结果：16 / 16 PASS（fail_flag 全 0）**，来源：`results/test_result.csv`（多轮记录）、
-`results/<ID>_<runid>.out`（逐条完整输出）、`results/SUITE_*.out`（集合汇总）、`results/perf_baseline.csv`。
+**最终结果：41 条用例（CO-01~CO-32 + DT-01~DT-09）= PASS 40 / FAIL 1**，来源：`results/final_results.csv`（每用例最后一条）、
+`results/test_result_all_rounds.csv`（多轮原始）、`results/<ID>_<runid>.out`（逐条完整输出）、
+`results/DT_final_evidence.tgz`（DT 批证据包）、`results/SUITE_*.out`（集合汇总）、`results/perf_baseline.csv`。
+唯一 FAIL 是 **DT-07**（视图列类型修改触发 ConfigNode NPE，功能面断言全 PASS），属**产品缺陷门禁**，
+根因与修复建议见 `docs/DEFECT_view_column_datatype_procedure.md`；DT 批的需求映射见 `docs/DATATYPE_CHANGE.md`。
 > **跑法与轮次**：第 1 轮全量（14:32→16:39，`tools/run_full_chain.sh`）暴露了 16 个**用例自身**的问题
 > （不是产品缺陷，逐条列在下面第 4 节）；第 2/3 轮定点复跑（16:58→19:49，`tools/run_rerun_chain.sh`
 > + `tools/run_rerun2_chain.sh`）后 **14 条全部 PASS**。
@@ -212,7 +215,82 @@ gap=1 时当然合不出 L2（当时我误以为是产品缺陷）。改成默�
    ⇒ 本用例改成"比首个 Cross 位置 + 记录观察"（不判缺陷）。
 6. 15 条新用例最终 **15/15 PASS**（`results/B6_chain.out` 为最后一轮；各条耗时见上表）。
 
+## 3.6 修改数据类型 × 合并 / 高可用（DT-01 ~ DT-09，2026-10-14 新增）
+
+需求来源：《修改数据类型手册更新内容》（树模型 `ALTER TIMESERIES … SET DATA TYPE`、表模型
+`ALTER TABLE … ALTER COLUMN … SET DATA TYPE`、树转表视图 `ALTER VIEW … ALTER COLUMN … SET DATA TYPE`），
+用户追加要求"与合并并发 + 高可用（磁盘 readonly、节点正常 stop）"。需求点 → 用例映射见
+`docs/DATATYPE_CHANGE.md`；每个需求点都有对应用例与判据。
+
+| 用例 | 覆盖 | 结果 | 耗时 | 关键实测值 |
+| --- | --- | --- | --- | --- |
+| **DT-01** | 树模型基础 + 兼容性矩阵（10 类型 / 30 条转换） | **PASS** | 693s | 30/30 转换成功、`show timeseries` 类型三副本一致、行数不减、值按新类型可读（`11 → 11.0`）；实测 TIMESTAMP 测量列**只接受不带引号**的字面量，设备名不能叫 `TIMESTAMP`（解析 700） |
+| **DT-02** | 树模型负向（不兼容/不存在） | **PASS** | 299s | 6 组不兼容全部 507 且**类型与数据不变**；不存在序列/库 508；链式转换逐步正确 |
+| **DT-03** | 树模型 × 合并（改后合并 / 合并中改类型 / 混合 schema 合并） | **PASS** | 752s | A：新旧类型混合文件合并（finishes 0→6、TsFile 6→3、值 `11.0\|12.0\|1.25\|2.75\|` 不变）；B：限流 1MB/s 下 **合并进行中 ALTER 成功**（30→6 文件、finishes 0→12，TEXT 6×100KB 载荷与 INT32 指纹均不变）；C：INT32/DOUBLE/TEXT 同库合并（0→4、8→6）三序列指纹全一致 |
+| **DT-04** | 树模型并发（并发删除 / 并发写入） | **PASS** | 400s | ①先删后改 → 508；②`ALTER ∥ DELETE TIMESERIES` 8 轮**每轮最终态自洽**（3 轮 DOUBLE、5 轮序列已删除、0 轮不明确）；③`ALTER ∥ 连续写入` 10/10 写入成功且数据不丢、类型保持 DOUBLE；④无 `TsFileResource.writeLock` 卡死 |
+| **DT-05** | 表模型基础（FIELD-only、兼容性、值转换） | **PASS** | 236s | 值转换硬断言：`42\|43\| → 42.0\|43.0\|`、`abc\|def\|`、`2.5\|3.5\|`；TAG/时间列 701、不兼容 701、不存在列 616、不存在表 550 |
+| **DT-06** | 表模型 × 合并（顺序空间 / 跨空间 / 并发 DROP） | **PASS** | 297s | A：finishes 0→2、TsFile 6→5、值不变；B：**与 seq 重叠**的乱序文件 unseq **4→0**，**真实 `CrossSpaceCompaction` finishes 0→8**，值不变；C：并发 `DROP TABLE ∥ ALTER COLUMN` 双方成功、删除后 550、`SHOW TABLES` 无残留 |
+| **DT-07** | 树转表视图列类型修改 × 底层合并 | **FAIL** fail_flag=3（**功能面断言全 PASS**，3 条 FAIL 全部来自 CN NPE 门禁） | 236s | 视图读数 `7\|8\| → 7.0\|8.0\|`（硬断言）、`desc` 更新为 DOUBLE、不兼容 701、不存在列 616、底层合并后视图读数不变；**ConfigNode follower 抛 `NullPointerException` / `Unknown Procedure type: 766`** ⇒ `ProcedureFactory.create()` 漏 `ALTER_VIEW_COLUMN_DATATYPE_PROCEDURE` 分支（缺陷定位见 `docs/DEFECT_view_column_datatype_procedure.md`） |
+| **DT-08** | 高可用：合并期间磁盘 readonly | **PASS** | 1022s | 整盘 `mount -o remount,ro /data` 在本环境必 EBUSY（有进程持有可写 fd）⇒ 用"自绑定 + `remount,ro,bind`"把数据根变只读，**硬校验**（`touch` 返回 EROFS）才算注入成功；只读窗口内 .77/.78 各并成 1 个文件、**受害副本仍 2/0/0/0**（写不了新目标），数据指纹/行数/1KB 载荷原文不变；恢复可写 RW_OK、节点自动回 Running；该 region **180s 内不自动重试**（WARN，见下）⇒ 重启该 DN 触发 region 恢复后 **4s 内三副本布局收敛一致**、TsFile 6→3、finishes 4→6 |
+| **DT-09** | 高可用：节点正常下线（TERM）+ `kill -9` 对照 | **PASS** | 852s | A 合并中优雅停 1 DN ⇒ 一致且收敛；B 停 1 CN ⇒ 写入成功、**合并仍推进**（finishes 6→10、TsFile 9→6）；C 停 2 CN（无 CN 多数派）⇒ DML 与已有库上的 DDL 都成功且数据/元数据一致（数据区/模式区共识都在 DN 上，架构如此）、读可用；D 改类型期间停 DN ⇒ 恢复后类型仍 DOUBLE、三副本各 2 行；E `kill -9` 对照 ⇒ 指纹/行数一致、无残留临时文件 |
+
+**DT 汇总：9 条用例，8 PASS + 1 FAIL（DT-07 为缺陷门禁，功能面断言全 PASS）**，
+汇总见 `results/final_results.csv`（**CO 32 条 + DT 9 条 = 41 条，PASS 40 / FAIL 1**）、
+`results/DT_final_evidence.tgz`（9 条 DT 的最终输出 + 多轮 CSV + 链日志）。
+
+**本轮发现（写进 `docs/DATATYPE_CHANGE.md`，细节见该文件 §三）**：
+
+1. **缺陷候选（已定位到源码）**：`ALTER VIEW … ALTER COLUMN … SET DATA TYPE` 的 procedure 类型 766
+   （`ALTER_VIEW_COLUMN_DATATYPE_PROCEDURE`）在 `ProcedureFactory.create()` 里**没有 case**，
+   follower ConfigNode 反序列化抛 `IOException: Unknown Procedure type: 766` → `deserializeRequest` 吞异常返回 null
+   → `ApplicationStateMachineProxy.applyTransaction:153` 对 null 调方法抛 NPE（每条日志按 apply 重试反复刷）。
+   同族 case（765 表模型、ADD/RENAME_VIEW_COLUMN、可写视图、pipe-enriched）都在，**master 同样缺**
+   ⇒ 不是回合遗漏而是功能缺陷。完整链条/修复建议/门禁：
+   `docs/DEFECT_view_column_datatype_procedure.md`；DT-07 已把"CN 日志出现 NPE"做成硬 FAIL。
+2. **"磁盘 readonly" 注入不能用整盘 `remount,ro`**（EBUSY），要用自绑定 + `remount,ro,bind`，
+   并且**必须硬校验注入生效**（否则会出现"注入没生效却 PASS"的假通过——首版就是这样）。
+3. **只读盘事件后该 region 不会自动重试合并**：合并因 EROFS 失败后留下 target/`*.inner-compaction.log`，
+   磁盘恢复可写后 8 分钟无新任务，直到 region 重开（DN 重启）才由 `CompactionRecoverManager` 恢复并完成合并
+   （源码：`CompactionRecoverManager.recoverCompaction()` 只在 DataRegion 构造/恢复路径调用）⇒ 记为**待研发确认的观察**。
+4. **停 2 个 CN（无 CN 多数派）不等于"写入必须失败"**：DML 与已有库上的 DDL 都仍成功
+   （数据区共识在 DN、库的模式区共识也在 DN）⇒ 判据应为"明确结果 + 恢复后一致"。
+5. **`stop-datanode.sh -f` 是 `kill -9`**：不带 `-f` 才是 `kill -s TERM`（优雅停）。
+
+**本轮实测的产品行为（写进用例断言/文档）**：
+
+1. **TIMESTAMP 测量列只接受不带引号的字面量**（ISO 或 epoch 毫秒）：带引号一律 `507 data type is not consistent`，
+   `CAST(... AS TIMESTAMP)` 报 700 解析失败；`create timeseries root.db.TIMESTAMP.s1`（设备名=关键字）也会 700。
+2. **表模型 `SELECT` 只返回投影列**（`select v from t` 每行只有 1 列）——按列序号写的取值 helper 会取到空串，
+   让"值可读"判据空转；已改为按表头列名定位（`cmp_tbl_col_vals` 等）。
+3. **表模型 Compaction 日志前缀与树模型同形**（`<db>-<regionId> [Compaction] …`）⇒ 按库统计的 helper 通用。
+4. **合并 × 改类型可以共存**：三个场景（改后合并、合并中改类型、混合 schema 同库合并）都无 schema 不一致异常，
+   合并产物读数与改类型后指纹逐字节一致 —— 这是本轮最关键的正面结论。
+
+**这一批踩到的 harness 坑（都已修）**：
+
+1. **多相共用一个库 ⇒ 前相开着的合并会在本相写入期间把文件并掉**，基线之后不再推进 ⇒ 误判"合并未收敛"
+   （DT-03 首轮 B/C 两相都中）。修法：**每相独立库** + 写入前 `cmp_compaction_off` + 写完用 `cmp_wait_lay`
+   等布局稳定 + 把"起点 level-0 文件数 ≥2"做成**场景有效性硬断言**。
+2. **树方言查询用序列路径会返回空集**（`select s1 from root.db.dev.s1`）⇒ 并发可见性轮询一度恒为 0 行、
+   误报"写入丢失"（DT-04）。修法：一律走 `cmp_rows_series`（内部转设备路径）。
+3. **表模型取值列号**：见产品行为 2；DT-05/DT-07 修复后新判据实测全部命中（`42|43| → 42.0|43.0|` 等）。
+4. **函数返回值用 `$(...)` 捕获时别把 log 一起当返回值**（DT-08 首版）：`RO_ON=$(dt08_ro_on)` 拿到的是
+   "明细行 + 判定值"，与 `1` 比较恒不相等 ⇒ 注入明明生效却判 FAIL；改成 `| tail -1` 只取判定值。
+5. **注入类场景必须硬校验注入真的生效**（DT-08 首版整盘 `remount,ro` 被 EBUSY 拒，只 WARN ⇒ 假 PASS）；
+   恢复也要校验（`RW_OK`），并用 `trap` 保证一定恢复。
+
+## 3.7 DT 批的判据/证据口径（补充说明）
+
+- **每条 DT 用例都跑统一收尾三件套**（sync lag 归零 → 逐个停 DN 比对副本一致性 → CN/DN 日志异常扫描），
+  负向场景自带 `CMP_LOG_BENIGN_EXTRA`（数值错误码、只读文件系统、停机噪声）。
+- **证据**：`results/final_results.csv`（41 条的最后一条记录）、`results/test_result_all_rounds.csv`（多轮原始）、
+  `results/DT_final_evidence.tgz`（9 条 DT 最终输出 + 两份 CSV + 8 份链日志）、
+  以及本机 `results/NEWCHAIN_20261014_*.out` 逐轮链日志。
+- **判据口径**：合并类用"finishes↑ **且** 该库 TsFile↓"双信号；数据类用"归一化指纹 / 行数 / 1KB 载荷原文"三重比对；
+  高可用类额外要求"恢复后三副本布局收敛一致"；缺陷类（DT-07）把日志门禁做成硬 FAIL。
+
 ## 4. 性能基线（`--set perf`）
+
 
 ## 关键结论（写给研发/后续版本）
 

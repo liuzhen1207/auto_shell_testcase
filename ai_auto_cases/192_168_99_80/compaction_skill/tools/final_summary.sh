@@ -7,8 +7,8 @@ CSV=$S/results/test_result.csv
 OUT=$S/results/final_results.csv
 [ -f "$CSV" ] || { echo "找不到 $CSV"; exit 1; }
 
-# 只保留 caseName 形如 CO-XX 的行（run_all 写的），每个取最后一条
-awk -F, 'NR==1{print; next} $4 ~ /^CO-[0-9]+$/ {line[$4]=$0} END{for (k in line) print line[k]}' "$CSV" \
+# 只保留 caseName 形如 CO-XX / DT-XX 的行（run_all 写的），每个取最后一条
+awk -F, 'NR==1{print; next} $4 ~ /^(CO|DT)-[0-9]+$/ {line[$4]=$0} END{for (k in line) print line[k]}' "$CSV" \
   | { echo "caseName,result,elapsedSeconds,failCount,build,consensus,Time"; \
       tail -n +2 | sort -t, -k1,1 | awk -F, '{printf "%s,%s,%s,%s,%s,%s,%s\n", $4,$5,$6,$7,$2,$3,$1}'; } > "$OUT"
 

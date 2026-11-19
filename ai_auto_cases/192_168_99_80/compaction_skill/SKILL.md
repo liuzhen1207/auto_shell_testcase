@@ -24,6 +24,8 @@ bash tools/run_all.sh --set ttl                   # CO-13/CO-14 TTL 场景（TTL
 bash tools/run_all.sh --set combo                 # CO-15/CO-16/CO-17 参数**组合**测试（门控矩阵/优先级/selector×performer/chunk/非法值/层级边界/cross 上限）
 bash tools/run_all.sh --set param2                # CO-18~CO-26/CO-32 **逐参数基础功能**（优先级/乱序选择/目标文件大小/总大小上限/候选队列/线程族/对齐批量/限流/settle 门控/自动修复）
 bash tools/run_all.sh --set scene                 # CO-27~CO-31 基础形态与生命周期（no-op/空库/全删/多时间分区/表模型 unseq+cross/崩溃恢复/插入式 cross/并发读写）
+bash tools/run_all.sh --set dtype                 # DT-01~DT-07 修改数据类型（树/表/视图）+ 与合并的并发交叉（手册需求点逐条覆盖）
+bash tools/run_all.sh --set ha                    # DT-08/DT-09 高可用（合并期间磁盘只读、节点优雅下线/停 CN 无多数派）
 bash tools/run_all.sh --set all                   # 全部 16 条
 
 # 单条 / 换协议 / 换版本
@@ -99,6 +101,16 @@ bash tools/progress.sh /tmp/co_full.log          # 看阶段 / 各用例 PASS-FA
 | **`show configuration` 只列"properties 文件里出现过的键"** | 没写进文件的键读回来是**空串**（实测 `cross_selector=`、`inner_compaction_total_file_num_threshold=` 都是空）；`cmp_eff` 拿它判"生效值"会假 FAIL。而 `SET CONFIGURATION` 会把键写进文件 ⇒ SET 之后又能读到 | 只对**自己写进 conf** 的键断言生效值；默认值场景改用行为判据（或先 SET 一次把键落进文件） |
 | **副本布局不可控：`flush;` 返回后 TsFile 仍是 UNCLOSED/可追加** | 只等"文件出现"就写下一批 ⇒ leader 2 个文件、follower 1 个文件（两批数据被追加进同一个 TsFile，数据都在但布局乱了）⇒ 层级/合并判据全乱（CO-17 第二次跑就是这么挂的） | 每批写完先 `ensure_closed`（等 close 事件）**再**写下一批；用**单设备**（只落 1 个 region）让布局可预测；并把"各副本布局一致"作为**场景有效性**断言（CO-17 的 `co17_wait_lay`） |
 | **写 in-order 数据才落 `sequence/`** | 时间戳比已落盘水位更早的批次落 `unsequence/`（两个空间各自独立合并、层级互不相干）——把 seq/unseq 文件混在一个场景里判"层级分布"必然错 | 造层级（段 1/2）：批次时间戳严格递增；造 unseq（段 3）：先写"水位"批（当前时间）再写更早且**互相重叠**的批次 |
+| **DT 批：多相共用一个库 ⇒ 前相开着的合并把本相文件在写入期间并掉**（2026-10-14） | DT-03 首轮 B/C 两相都报"合并未收敛"（`finish` 基线之后不再推进）：A 相打开的 seq 合并一直开着，B/C 写入时文件就被并完了 | 每相用**独立库**（DT-03 改成 `root.dtca/dtcb/dtmix`）；每相写入前 `cmp_compaction_off`；写完 `cmp_wait_lay` 等布局稳定；把"起点 level-0 文件数 ≥2"做成**场景有效性硬断言**（`cmp_min_l0`） |
+| **DT 批：树方言查询写成序列路径 ⇒ 恒空集** | DT-04 §3 用 `select s1 from root.dtcc.cw.s1` 轮询可见性 ⇒ 90s 都是 0 行，误报"写入丢失 10 条"（其实数据在，收尾用设备路径查得到） | 一律用 `cmp_rows_series`/`cmp_fp_series`（内部把序列路径转成设备路径 + 测量名） |
+| **DT 批：表模型 `SELECT` 只返回投影列** | `select v from db.t order by time` 每行只有 1 列（`\|11\|`），旧 helper 按 `c=3` 取值取到空串 ⇒ DT-05/DT-07 打印 `i32=\|\|`、`视图读数=\|\|` 却"PASS"（判据空转） | 用 `cmp_tbl_col_vals/cmp_tbl_coltype/cmp_tbl_rows`（**按表头列名定位** + `table_rows` 剔除表头），并给初始值/转换后值加硬断言（`42\|43\| → 42.0\|43.0\|`） |
+| **DT 批：TIMESTAMP 测量列的写入字面量** | 带引号（`'2026-01-01T00:00:00'` / `'<epoch ms>'`）一律 `507 data type is not consistent`；`CAST(... AS TIMESTAMP)` 报 700；设备名写成 `TIMESTAMP` 也 700 解析失败 | TIMESTAMP 列用**不带引号**的 ISO 或 epoch 毫秒；设备名用 `t_<TYPE>`（DT-01 已修） |
+| **DT 批：`stop-datanode.sh -f` 是 `kill -9`，不是"正常 stop"** | 早期 DT-09 用 `-f` 当优雅停，语义写错 | 优雅停 = 不带 `-f`（`kill -s TERM`）；强制对照才用 `-f`（DT-09 E 相） |
+| **DT 批：负向 DDL 的 benign 正则** | DT-02/05/06/07 故意触发 `507/508/616/701/550` 与 `not compatible with the existing one`，收尾日志扫描会误判 | 用例里 `export CMP_LOG_BENIGN_EXTRA='…'`（DT-08/09 另加 `Read-only file system\|EROFS`、`Failed to CHANGE_REGION_LEADER\|RatisRequestFailedException\|721: Fetch Schema failed` 等停机噪声） |
+| **DT 批：`mount -o remount,ro /data` 在本环境必失败（EBUSY）** | ext4 有进程持有可写 fd（IoTDB 常驻打开 TsFile/WAL/日志）时拒绝整盘转只读：`mount: /data: mount point is busy.`；只 WARN 的话会**假 PASS**（实测首轮只读窗口其实没生效） | 用**自绑定挂载**：`mount --bind <数据根> <数据根>; mount -o remount,ro,bind <数据根>` ⇒ 子树内新建/改名/删除返回 `Read-only file system`（已打开 fd 仍可写，是该方式的边界）；**注入后必须探针硬校验**（`touch` 被拒才算成功），否则判 FAIL"场景无效"；恢复用 `mount -o remount,rw,bind` + `umount -l` 并校验 `RW_OK` |
+| **DT 批：只读盘事件后节点不会自动回 Running** | 产品会打 `Set system mode from Running to ReadOnly` / `Only query statements are permitted`，`show cluster` 状态 = `ReadOnly`；磁盘恢复可写后**仍需重启该 DataNode**（实测 JVM 起来 ~110s，恢复等待窗口要给足，DT-08 给 420s） | 恢复流程写成"探针校验 RW_OK → 看状态/进程 → 不是 Running 就 TERM 停 + 起 → 长窗口等 Running"；追赶判据用**三副本布局收敛一致**（`cmp_lay_uni` 只有一个值），比"TsFile 总数下降"更强 |
+| **DT 批：停 2 个 CN（无 CN 多数派）不等于"写入必须失败"** | 实测 `INSERT` 与**已有库上的 `CREATE TIMESERIES`** 都仍成功且数据/元数据一致——数据区共识在 DN、库的模式区共识也在 DN，CN 只管集群级元数据/分区 | 判据写成"明确结果 + 恢复 CN 后元数据/数据一致"，不要写成"必须失败"（DT-09 首轮就是判据错误） |
+| **DT 批：`stop-datanode.sh -f` 是 `kill -9`** | `-f` 分支是 `kill -9`，不带 `-f` 才是 `kill -s TERM`（`stop-confignode.sh` 相同） | 优雅停用**不带 `-f`**；要强杀对照才用 `-f`（DT-09 的 A~D 优雅、E 强杀） |
 
 ## 5. TTL 场景用例（CO-13/CO-14）的设计要点
 

@@ -6,7 +6,7 @@
 
 | 协议 | PASS | FAIL | MISSING |
 | --- | --- | --- | --- |
-| IoTConsensus | 44 | 4 | 4 |
+| IoTConsensus | 44 | 8 | 0 |
 | IoTConsensusV2 | 29 | 4 | 19 |
 
 双协议一致性：**一致 29** / 分歧 4 / 缺 19（共 52 条用例）
@@ -47,10 +47,10 @@
 | CO-30 | co_insertion_cross.sh | PASS (287s) | PASS (1211s) | 一致 |  |
 | CO-31 | co_concurrent_io.sh | PASS (555s) | PASS (795s) | 一致 |  |
 | CO-32 | co_auto_repair.sh | PASS (364s) | PASS (851s) | 一致 |  |
-| CO-33 | co_repair_unsorted_load.sh | — | — | 缺 | 缺：V1 V2 |
-| CO-34 | co_scale_cascade.sh | — | — | 缺 | 缺：V1 V2 |
-| CO-35 | co_target_split_formula.sh | — | — | 缺 | 缺：V1 V2 V2 fail=44 / V1 fail=1：已定性为用例 harness 缺陷（命令替换吞换行导致相位静默跳过），修复中 |
-| CO-36 | co_fast_fake_overlap.sh | — | — | 缺 | 缺：V1 V2 |
+| CO-33 | co_repair_unsorted_load.sh | FAIL (1067s fail=11) | — | 缺 | 缺：V2 |
+| CO-34 | co_scale_cascade.sh | FAIL (236s fail=1) | — | 缺 | 缺：V2 |
+| CO-35 | co_target_split_formula.sh | FAIL (555s fail=1) | — | 缺 | 缺：V2 V2 fail=44 / V1 fail=1：已定性为用例 harness 缺陷（命令替换吞换行导致相位静默跳过），修复中 |
+| CO-36 | co_fast_fake_overlap.sh | FAIL (4773s fail=23) | — | 缺 | 缺：V2 |
 | CO-37 | co_aligned_grouping.sh | PASS (354s) | PASS (900s) | 一致 |  |
 | CO-38 | co_level_search_gate.sh | FAIL (977s fail=4) | — | 缺 | 缺：V2 |
 | CO-39 | co_priority_rules.sh | PASS (752s) | — | 缺 | 缺：V2 |
@@ -72,13 +72,13 @@
 
 | 用例 | 协议 | 来源 | 原因 |
 | --- | --- | --- | --- |
-| CO-33 | IoTConsensus | * | 远端脚本被部署截断5字节(c33_repair->c33_repai),start repair data 从未下发,fail=11为假失败;已修复待重跑 |
-| CO-33 | IoTConsensusV2 | * | 同上部署截断(V2 1029s/fail=11) |
-| CO-34 | IoTConsensus | * | grep -c ... || echo 0 在0匹配时输出两行,断言拿到"0\n0",fail=1为假失败(实测写入报错行数=0);已修复待重跑 |
-| CO-34 | IoTConsensusV2 | * | 同上 grep 双行(V2 231s/fail=1) |
-| CO-36 | IoTConsensus | * | 远端脚本被截断1字符(函数签名 ...del=$6 per -> ...del=$6 pe),set -u 下 $per 未定义,fail=23/20为假失败;已重新部署待重跑 |
-| CO-35 | IoTConsensus | * | harness 缺陷:命令替换吞尾换行->两DN输出粘连->bash算术致命错误->相位后半段40+断言被静默跳过(V1 fail=1 并非"V1正常",V1三相同样中 value too great for base);修复中 |
-| CO-35 | IoTConsensusV2 | * | 同上 harness 缺陷(V2 fail=44 系相位侥幸跑完后半段暴露的口径错误,非产品问题);修复中 |
+| CO-33 | IoTConsensus | 20261016_041349 | 远端脚本被部署截断5字节(c33_repair->c33_repai),start repair data 从未下发,fail=11为假失败;已修复待重跑 |
+| CO-34 | IoTConsensus | 20261016_041349 | grep -c ... || echo 0 在0匹配时输出两行,断言拿到"0\n0",fail=1为假失败(实测写入报错行数=0);已修复待重跑 |
+| CO-36 | IoTConsensus | 20261016_041349 | 远端脚本被截断1字符(函数签名 ...del=$6 per -> ...del=$6 pe),set -u 下 $per 未定义,fail=23/20为假失败;已重新部署待重跑 |
+| CO-33 | IoTConsensusV2 | test_result.csv | 同上部署截断原因(V2 1029s/fail=11) |
+| CO-34 | IoTConsensusV2 | test_result.csv | 同上 grep 双行原因(V2 231s/fail=1) |
+| CO-35 | IoTConsensus | 20261016_041349 | 用例 harness 缺陷:命令替换吞尾换行->两DN输出粘连->bash算术致命错误->相位后半段40+断言被静默跳过(V1 fail=1 并非"V1正常",V1三相同样中 value too great for base);修复中 |
+| CO-35 | IoTConsensusV2 | test_result.csv | 同上 harness 缺陷(V2 fail=44 系相位侥幸跑完后半段暴露的口径错误,非产品问题);修复中 |
 
 ## 4. 历史轨迹（各轮，按时间）
 
@@ -514,32 +514,32 @@ CO-32:
    2026-10-16T17:50:59+08:00  IoTConsensusV2  PASS     851s fail=0    test_result.csv
 CO-33:
    2026-10-15T16:42:35+08:00  IoTConsensus    FAIL    1067s fail=11   test_result_rc7_v1_archived_20261016_041349.csv   [作废]
-   2026-10-15T16:42:35+08:00  IoTConsensus    FAIL    1067s fail=11   test_result_rc7_v1_full_20261016_004107.csv   [作废]
-   2026-10-15T16:42:35+08:00  IoTConsensus    FAIL    1067s fail=11   test_result_rc7_v1_partial_20261015_201417.csv   [作废]
+   2026-10-15T16:42:35+08:00  IoTConsensus    FAIL    1067s fail=11   test_result_rc7_v1_full_20261016_004107.csv
+   2026-10-15T16:42:35+08:00  IoTConsensus    FAIL    1067s fail=11   test_result_rc7_v1_partial_20261015_201417.csv
    2026-10-15T16:42:35+08:00  IoTConsensus    FAIL    1067s fail=11   test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T01:15:08+08:00  IoTConsensus    FAIL    1001s fail=11   test_result_rc7_v1_archived_20261016_041349.csv   [作废]
    2026-10-16T01:15:08+08:00  IoTConsensus    FAIL    1001s fail=11   test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T18:08:08+08:00  IoTConsensusV2  FAIL    1029s fail=11   test_result.csv   [作废]
 CO-34:
    2026-10-15T16:46:31+08:00  IoTConsensus    FAIL     236s fail=1    test_result_rc7_v1_archived_20261016_041349.csv   [作废]
-   2026-10-15T16:46:31+08:00  IoTConsensus    FAIL     236s fail=1    test_result_rc7_v1_full_20261016_004107.csv   [作废]
-   2026-10-15T16:46:31+08:00  IoTConsensus    FAIL     236s fail=1    test_result_rc7_v1_partial_20261015_201417.csv   [作废]
+   2026-10-15T16:46:31+08:00  IoTConsensus    FAIL     236s fail=1    test_result_rc7_v1_full_20261016_004107.csv
+   2026-10-15T16:46:31+08:00  IoTConsensus    FAIL     236s fail=1    test_result_rc7_v1_partial_20261015_201417.csv
    2026-10-15T16:46:31+08:00  IoTConsensus    FAIL     236s fail=1    test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T01:18:38+08:00  IoTConsensus    FAIL     210s fail=1    test_result_rc7_v1_archived_20261016_041349.csv   [作废]
    2026-10-16T01:18:38+08:00  IoTConsensus    FAIL     210s fail=1    test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T18:11:59+08:00  IoTConsensusV2  FAIL     231s fail=1    test_result.csv   [作废]
 CO-35:
    2026-10-15T16:56:41+08:00  IoTConsensus    FAIL     555s fail=1    test_result_rc7_v1_archived_20261016_041349.csv   [作废]
-   2026-10-15T16:56:41+08:00  IoTConsensus    FAIL     555s fail=1    test_result_rc7_v1_full_20261016_004107.csv   [作废]
-   2026-10-15T16:56:41+08:00  IoTConsensus    FAIL     555s fail=1    test_result_rc7_v1_partial_20261015_201417.csv   [作废]
+   2026-10-15T16:56:41+08:00  IoTConsensus    FAIL     555s fail=1    test_result_rc7_v1_full_20261016_004107.csv
+   2026-10-15T16:56:41+08:00  IoTConsensus    FAIL     555s fail=1    test_result_rc7_v1_partial_20261015_201417.csv
    2026-10-15T16:56:41+08:00  IoTConsensus    FAIL     555s fail=1    test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T01:27:51+08:00  IoTConsensus    FAIL     553s fail=1    test_result_rc7_v1_archived_20261016_041349.csv   [作废]
    2026-10-16T01:27:51+08:00  IoTConsensus    FAIL     553s fail=1    test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T18:47:57+08:00  IoTConsensusV2  FAIL    2158s fail=44   test_result.csv   [作废]
 CO-36:
    2026-10-15T19:20:15+08:00  IoTConsensus    FAIL    4773s fail=23   test_result_rc7_v1_archived_20261016_041349.csv   [作废]
-   2026-10-15T19:20:15+08:00  IoTConsensus    FAIL    4773s fail=23   test_result_rc7_v1_full_20261016_004107.csv   [作废]
-   2026-10-15T19:20:15+08:00  IoTConsensus    FAIL    4773s fail=23   test_result_rc7_v1_partial_20261015_201417.csv   [作废]
+   2026-10-15T19:20:15+08:00  IoTConsensus    FAIL    4773s fail=23   test_result_rc7_v1_full_20261016_004107.csv
+   2026-10-15T19:20:15+08:00  IoTConsensus    FAIL    4773s fail=23   test_result_rc7_v1_partial_20261015_201417.csv
    2026-10-15T19:20:15+08:00  IoTConsensus    FAIL    4773s fail=23   test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
    2026-10-16T03:38:16+08:00  IoTConsensus    FAIL    4844s fail=20   test_result_rc7_v1_archived_20261016_041349.csv   [作废]
    2026-10-16T03:38:16+08:00  IoTConsensus    FAIL    4844s fail=20   test_result_rc7_v1_rerun_20261016_041349.csv   [作废]
@@ -727,13 +727,9 @@ DT-09:
 
 ## 5. 缺失项（需补跑）
 
-- CO-33 / IoTConsensus
 - CO-33 / IoTConsensusV2
-- CO-34 / IoTConsensus
 - CO-34 / IoTConsensusV2
-- CO-35 / IoTConsensus
 - CO-35 / IoTConsensusV2
-- CO-36 / IoTConsensus
 - CO-36 / IoTConsensusV2
 - CO-38 / IoTConsensusV2
 - CO-39 / IoTConsensusV2

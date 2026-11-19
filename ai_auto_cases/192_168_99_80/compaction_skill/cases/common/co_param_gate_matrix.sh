@@ -125,8 +125,7 @@ co15_cross_finish(){ local db=$1 h s=0 v
 #   而**未 seal 的文件不参与任何合并选择** ⇒ 8 个组合里多数组合三种合并全是「+0」，
 #   于是"该跑的跑"逐条 FAIL —— 这是**场景没成立**，不是门控失效（同 CO-36 的 17 条连锁误判）。
 # 处置：写完后按**判据集**（V1=全部副本 / V2=leader）确认文件数 ≥2（V2 follower 不 flush memtable，
-#   不能用"各副本都 ≥2"卡）；场景不成立就只跳过本组合的门控判据，最后汇总成**一条 WARN**
-#   （2026-10-28 起按用户确认：场景不成立不计 fail_flag；仅当"一条判据都没判到"时才 FAIL）。
+#   不能用"各副本都 ≥2"卡）；场景不成立就只跳过本组合的门控判据，最后合并成**一条** FAIL。
 CO15_NO_SCENE=0
 co15_scene_ok(){ local db=$1 h n j
   j=$(cmp_judge_nodes "$db")
@@ -191,9 +190,9 @@ for s in 1 0; do for u in 1 0; do for c in 1 0; do
   log "     cross 选择器证据：本窗口新增 selector 日志=${SEL_N} 条，最大 unseqFiles=${SEL_UMAX:-0}，Cannot-select 行=${SEL_BLK}（源码 RewriteCrossSpaceCompactionSelector:385/399）"
   # 该跑的跑
   #   ⚠️ 若本组合写入后仍有副本未 seal（CO15_SEALED_THIS=0），文件不参与合并选择 ⇒ +0 是场景问题，不判 FAIL，
-  #      结尾统一汇总成一条 WARN（2026-10-28 起不计 fail_flag；只剩"一条判据都没判到"才 FAIL）。
+  #      统一汇入结尾的一条 FAIL（与 CO-36/CO-38 的"场景不成立只留 1 条 FAIL"口径一致）。
   if [ "$s" = 1 ]; then
-    if [ "$ds" -gt 0 ]; then pass "  seq=开 ⇒ Sequence InnerSpaceCompaction 推进（+$ds）"; CO15_JUDGED=$(( ${CO15_JUDGED:-0} + 1 ))
+    if [ "$ds" -gt 0 ]; then pass "  seq=开 ⇒ Sequence InnerSpaceCompaction 推进（+$ds）"
     elif [ "${CO15_SEALED_THIS:-1}" = "0" ]; then
       CO15_NO_SEAL=$(( ${CO15_NO_SEAL:-0} + 1 ))
       warn "  seq=开 但 Sequence InnerSpaceCompaction 未推进（+0）：本组合有副本未 seal ⇒ 场景不成立，本判据不判"
@@ -201,7 +200,7 @@ for s in 1 0; do for u in 1 0; do for c in 1 0; do
   fi
   [ "$s" = 0 ] && { [ "$ds" -eq 0 ] && pass "  seq=关 ⇒ 没有 Sequence InnerSpaceCompaction（+0）" || fail "  seq=关 仍有 Sequence InnerSpaceCompaction（+$ds）"; }
   if [ "$u" = 1 ]; then
-    if [ "$du" -gt 0 ]; then pass "  unseq=开 ⇒ Unsequence InnerSpaceCompaction 推进（+$du）"; CO15_JUDGED=$(( ${CO15_JUDGED:-0} + 1 ))
+    if [ "$du" -gt 0 ]; then pass "  unseq=开 ⇒ Unsequence InnerSpaceCompaction 推进（+$du）"
     elif [ "${CO15_SEALED_THIS:-1}" = "0" ]; then
       CO15_NO_SEAL=$(( ${CO15_NO_SEAL:-0} + 1 ))
       warn "  unseq=开 但 Unsequence InnerSpaceCompaction 未推进（+0）：本组合有副本未 seal ⇒ 场景不成立，本判据不判"
@@ -212,7 +211,7 @@ for s in 1 0; do for u in 1 0; do for c in 1 0; do
   if [ "$c" = 1 ] && { [ "$s" = 1 ] || [ "$u" = 1 ]; }; then
     # cross=开 的判据（改口径）：finishes 增量 **或** 选择器给出了 unseq 候选
     if [ "$dc" -gt 0 ]; then
-      pass "  cross=开（且 seq/unseq 至少一个开）⇒ CrossSpaceCompaction 推进（+$dc）"; CO15_JUDGED=$(( ${CO15_JUDGED:-0} + 1 ))
+      pass "  cross=开（且 seq/unseq 至少一个开）⇒ CrossSpaceCompaction 推进（+$dc）"
     elif [ "${SEL_UMAX:-0}" -gt 0 ]; then
       fail "  cross=开但 CrossSpaceCompaction 一次都没跑（+0）：窗口 ${WIN_USE}s 内选择器**已给出 unseq 候选**（最大 unseqFiles=${SEL_UMAX}，selector 日志 ${SEL_N} 条，Cannot-select ${SEL_BLK} 条）⇒ 可能是真门控/调度问题，需带完整 selector 日志定点复跑确认"
     else
@@ -222,15 +221,8 @@ for s in 1 0; do for u in 1 0; do for c in 1 0; do
   # 数据不变（任何组合都不允许损坏数据）
   cmp_assert_same "  [seq=$s unseq=$u cross=$c] 合并前后数据指纹" "$fp0" "$(cmp_fingerprint tree "select count(s1), sum(s1) from $DBX.**")"
 done; done; done
-# 【2026-10-28 口径修改】"场景不成立/无效"不再计入 fail_flag（用户确认）：
-#   · 未 seal 的文件本来就不参与合并选择，+0 不能证明门控失效；
-#   · 但仍要留痕（warn 会进 v_warnMessage），并保留一道兜底：**一条判据都没判到**时才算 FAIL，
-#     否则整个用例会在"环境时序不好"的情况下静默变绿。
-[ "${CO15_NO_SCENE:-0}" -gt 0 ] && warn "  场景无效（不计 fail_flag）：${CO15_NO_SCENE}/8 个组合在写完 + flush 后判据集仍 <2 个 TsFile（未 seal，未 seal 的文件不参与合并选择）⇒ 这些组合的门控判据**未判**（不是门控失效）；建议定点复跑并加大 seal 等待"
-[ "${CO15_NO_SEAL:-0}" -gt 0 ] && warn "  场景不成立（不计 fail_flag）：另有 ${CO15_NO_SEAL} 条『该跑的跑』判据因**写入后有副本未 seal** 无法判定（未 seal 的文件不参与合并选择；本用例 seal 等待已加大到 3×30s）⇒ 需定点复跑确认，**不计为门控失效**"
-if [ "${CO15_JUDGED:-0}" -eq 0 ]; then
-  fail "  场景整体无效：所有『该跑的跑』判据都没能判定（未 seal 跳过=${CO15_NO_SEAL:-0}，无效组合=${CO15_NO_SCENE:-0}）⇒ 本用例没有验证到任何门控行为，需要修环境/构造后重跑"
-fi
+[ "${CO15_NO_SCENE:-0}" -gt 0 ] && fail "  场景无效：${CO15_NO_SCENE}/8 个组合在写完 + flush 后判据集仍 <2 个 TsFile（未 seal，未 seal 的文件不参与合并选择）⇒ 这些组合的门控判据**未判**（不是门控失效）；需定点复跑并加大 seal 等待"
+[ "${CO15_NO_SEAL:-0}" -gt 0 ] && fail "  场景不成立：另有 ${CO15_NO_SEAL} 条『该跑的跑』判据因**写入后有副本未 seal** 无法判定（未 seal 的文件不参与合并选择；本用例 seal 等待已加大到 3×30s）⇒ 需定点复跑确认，**不计为门控失效**"
 
 # ---------------------------------------------------------------- 段 2：合并优先级
 log "--- 段 2：compaction_priority 三种取值（各需重启）---"

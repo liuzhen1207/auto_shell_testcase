@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-215	TDB-1406 树转表视图元数据导出为 CREATE VIEW	功能	PASS	0	54	[LOG err=0 warn=0 unexp=0] 

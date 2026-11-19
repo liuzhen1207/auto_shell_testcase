@@ -151,3 +151,4 @@ RN-211	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TDB-1442 DROP USER 断连（�
 RN-212	cases/TIMECHODB_0479_v2.0.13.1.sh	V2.0.13.1	TDB-1442 DROP USER 断连（三权分立）	异常	三权分立下 security_admin 删用户同样断连且僵尸不复活	case_RN212
 RN-213	cases/TIMECHODB_0501_v2.0.13.1.sh	V2.0.13.1	TDB-1429 DROP USER 元数据级联删除（普通模式）	异常	drop user 后密码历史元数据清零；重建同名用户不继承旧历史	case_RN213
 RN-214	cases/TIMECHODB_0501_v2.0.13.1.sh	V2.0.13.1	TDB-1429 DROP USER 元数据级联删除（三权分立）	异常	security_admin 删用户、audit_admin 校验系统库元数据级联删除	case_RN214
+RN-215	cases/TIMECHODB_0366_v2.0.13.1.sh	V2.0.13.1	TDB-1406 树转表视图元数据导出为 CREATE VIEW	功能	export-schema.sh 导出视图定义正确（非 CREATE TABLE），导入后仍为视图且自动扩列可用	case_RN215

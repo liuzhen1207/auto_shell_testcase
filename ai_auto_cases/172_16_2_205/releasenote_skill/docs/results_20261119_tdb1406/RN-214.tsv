@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-214	TDB-1429 DROP USER 元数据级联删除（三权分立）	异常	PASS	0	72	[LOG err=0 warn=0 unexp=0] 

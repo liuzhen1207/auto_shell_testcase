@@ -22,7 +22,7 @@ ttype(){ local p=$1 out idx
   printf '%s\n' "$out" | awk -F'|' -v i="$idx" -v p="$p" '{gsub(/^[ \t]+|[ \t]+$/,"",$2); if($2==p){v=$i; gsub(/[ \t]/,"",v); print v; exit}}'; }
 # 数据渲染（前 2 行值）
 tval(){ sq "select s1 from $1 order by time limit 3;" 2>&1 | grep -E '^\|' | tail -n +2 | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$3); printf "%s ", $3}'; echo; }
-talt(){ local p=$1 to=$2 
+talt(){ local p=$1 to=$2 r
   r=$(sq "alter timeseries $p set data type $to;" 2>&1 | grep -vE '^\||^\+|Total line|It costs' | tail -2 | tr '\n' ' ' | cut -c1-200)
   printf '  [%s → %-9s] %s\n' "${p##*.}" "$to" "$r"; }
 twrite(){ sq "insert into $1(time,s1) values ($(( BASE + $2 )),$3);" 2>&1 | grep -vE '^\||^\+|Total line|It costs' | tail -1 | cut -c1-90; }

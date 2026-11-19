@@ -39,22 +39,29 @@ _wal_warn_once(){ local h=$1; shift
   case " ${WAL_DIR_WARNED:-} " in *" $h "*) return 0 ;; esac
   WAL_DIR_WARNED="${WAL_DIR_WARNED:-}$h "; _wal_warn "$*"; }
 wal_dir_roots(){ local h=$1 v out="" src=conf
-  # 2026-11-02：去引号/CR，并按逗号逐项解析（相对路径补 $DB_DIR）；解析结果为空时打 WARN 便于定位。
-  v=$(sshx "$h" "grep -hE '^[[:space:]]*dn_wal_dirs[[:space:]]*=' $DB_DIR/conf/iotdb-system.properties 2>/dev/null | tail -1 | cut -d= -f2-" 2>/dev/null | tr -d '\r' | tr -d '"')
-  [ -z "$v" ] && v=$(sshx "$h" "grep -hE '^[[:space:]]*wal_dirs[[:space:]]*=' $DB_DIR/conf/iotdb-system.properties 2>/dev/null | tail -1 | cut -d= -f2-" 2>/dev/null | tr -d '\r' | tr -d '"')
-  if [ -n "$v" ]; then
-    out=$(printf '%s' "$v" | awk -v base="$DB_DIR" 'BEGIN{RS=","} {p=$0; gsub(/^[ \t]+|[ \t]+$/,"",p); if(p=="") next; if (p ~ /^\//) print p; else print base "/" p}')
-  fi
+  # 配置键在不同版本可能是 wal_dirs（1.x/2.0 设计文档）或 dn_wal_dirs（2.0 新版模板）
+  v=$(sshx "$h" "grep -hE '^[[:space:]]*(wal_dirs|dn_wal_dirs)[[:space:]]*=' $DB_DIR/conf/iotdb-system.properties 2>/dev/null | tail -1 | cut -d= -f2-" 2>/dev/null | tr -d '\r')
+  [ -n "$v" ] && out=$(printf '%s' "$v" | tr ',' '\n' | sed 's/[[:space:]]//g' | while read -r p; do
+      [ -n "$p" ] || continue
+      case "$p" in
+        /*) echo "$p" ;;
+        *)  echo "$DB_DIR/$p" ;;
+      esac
+    done)
+  # 探测常见路径（设计文档给的是 data/wal；2.0 也有 data/datanode/wal 的布局）
   if [ -z "$out" ]; then
     src=probe
     out=$(sshx "$h" "for p in $DB_DIR/data/wal $DB_DIR/data/datanode/wal $DB_DIR/wal; do [ -d \"\$p\" ] && echo \"\$p\"; done" 2>/dev/null | tr -d '\r')
   fi
+  # 兜底：find（限深，避免扫全盘）。**必须排除安装目录里的 tools/**、tools/windows/**
   if [ -z "$out" ]; then
     src=find
     out=$(sshx "$h" "find $DB_DIR -maxdepth 4 -type d -name wal 2>/dev/null | grep -vE '/(tools|windows)/' | head -3" 2>/dev/null | tr -d '\r')
+    [ -n "$out" ] && _wal_warn_once "$h" "  [$h] wal_dir_roots 退化到 find 兜底（命中：$(printf '%s' "$out" | tr '\n' ' ')）——请核对 dn_wal_dirs 是否写对；按库统计可能因此恒为 0"
   fi
-  # 注意：本函数是 `$(...)` 调用的，**不能**把调试写到 stdout（会污染返回值）⇒ 走 stderr
-  printf '[%s]     [wal_dir_roots:%s] src=%s raw=%s -> %s\n' "$(date '+%F %T')" "$h" "$src" "$v" "$(printf '%s' "$out" | tr '\n' ' ')" >&2
+  if [ -z "$out" ]; then
+    _wal_warn_once "$h" "  [$h] wal_dir_roots 没能定位到任何 WAL 目录（conf 键为空、常见路径与 find 兜底都没命中）——后续 WAL 文件面统计会恒为 0，请检查 dn_wal_dirs/数据目录"
+  fi
   printf '%s\n' "$out" | sed '/^$/d' | sort -u; }
 
 # 把多目录展开成远端 find 的表达式（`dir1 dir2` → `dir1 dir2`）
@@ -485,9 +492,6 @@ wal_dev_sum_of(){ local fn=$1 db=$2 n=$3 i v s=0
 wal_seq_fp(){ local db=$1 raw seq
   raw=$(sq "select s1 from $db.d1 order by time;")
   if wal_agg_is_err "$raw"; then printf 'd1_seq_md5=ERR\nd1_seq_rows=ERR\n'; return 1; fi
-  # 【2026-10-28】归一化掉空白：CLI 按列宽补空格，两相列宽可能差一格（实测 8000 行只差对齐空格就 md5 不同）
-  seq=$(printf '%s\n' "$raw" | data_rows | tr -d ' ')
-  # 【2026-10-28】指纹时刻就把归一化行落盘：后续 diff 若重新查询，数据可能已不可见（实测 NC 相拿到 EMPTY）
-  if [ -n "${ART:-}" ]; then printf '%s\n' "${seq:-EMPTY}" > "$ART/d1_seq_${db}.rows"; fi
+  seq=$(printf '%s\n' "$raw" | data_rows)
   printf 'd1_seq_md5=%s\n'  "$(printf '%s\n' "$seq" | md5sum | cut -c1-12)"
   printf 'd1_seq_rows=%s\n' "$(printf '%s\n' "$seq" | wc -l | tr -d ' ')"; }

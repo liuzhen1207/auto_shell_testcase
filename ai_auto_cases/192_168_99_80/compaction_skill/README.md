@@ -52,6 +52,15 @@ IoTDB / TimechoDB **2.0.12.1** 的**在线文件合并（compaction）**专项�
 | **CO-30** | 树 | **插入式跨空间合并**（`InsertionCrossSpaceCompaction`：unseq 文件直接挪进 seq 空间，不重写） | scene |
 | **CO-31** | 树 | **合并与读写并发**：合并期间持续写 + 查，无错误、数据都在 | scene |
 | **CO-32** | 树 | **参数功能⑩**：`enable_auto_repair_compaction` 开/关两相（不误报修复任务 + 合并正确） | param2 |
+| **DT-01** | 树 | **改数据类型基础**：10 种原始类型按手册兼容表逐条 `ALTER TIMESERIES ... SET DATA TYPE`（类型生效 + 三副本一致 + 数据可读） | dtype |
+| **DT-02** | 树 | **改数据类型负向/链式**：不兼容被拒（507）、失败后类型与数据不变、不存在路径 508、链式 INT32→INT64→DOUBLE→STRING→TEXT、改后按新类型写入 | dtype |
+| **DT-03** | 树 | **改类型 × 合并（核心）**：改类型前后文件混合合并、合并进行中改类型、同库混合数据类型文件一起合并（无 DataType/schema 异常） | dtype |
+| **DT-04** | 树 | **并发删除序列 × 改类型**：先删后改必须报错；N 轮 `ALTER ∥ DELETE TIMESERIES`；改类型 ∥ 并发写入 | dtype |
+| **DT-05** | 表 | **改数据类型（表模型）**：仅 FIELD 列（TAG/时间列 701）、兼容性正向 + 不兼容 701、`desc`/值转换、三副本一致 | dtype |
+| **DT-06** | 表 | **改类型（表模型）× 合并**：顺序空间 / 跨空间 / 并发 `DROP TABLE ∥ ALTER COLUMN` | dtype |
+| **DT-07** | 表 | **树转表视图改列类型**：`CREATE VIEW ... AS root.path.**` + `ALTER VIEW ... SET DATA TYPE` + 负向 + 底层合并后视图读数不变 | dtype |
+| **DT-08** | 树 | **高可用·磁盘只读**：合并中把一个 DN 的**数据目录挂成只读**（整盘 `mount -o remount,ro /data` 在本环境因有可写 fd 必 EBUSY ⇒ 自绑定挂载 + `remount,ro,bind`，`touch` 返回 EROFS 才算注入成功，**注入不生效即判场景无效**）⇒ 数据不丢不坏、恢复可写（校验 `RW_OK`）后追赶并与其它副本**布局收敛一致**（`trap` 保证一定恢复） | ha |
+| **DT-09** | 树 | **高可用·节点下线**：合并中**优雅 stop（不带 `-f` = `kill -s TERM`）**1 个 DN；停 1 个 CN 仍可读写合并；停 2 个 CN（无多数派）写入必须明确失败且数据不损坏；**改类型期间**停 DN ⇒ 恢复后元数据一致；E 相 `kill -9`（`stop-datanode.sh -f`）强制对照 | ha |
 
 ## 统一收尾（每条用例末尾自动执行）
 
