@@ -145,3 +145,5 @@ RN-205	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 DN失联恢复补列	可靠�
 RN-206	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 flush 期间补列	可靠性	落盘期间建序列全部补列	case_RN206
 RN-207	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 网络分区后补列	可靠性	iptables 分区恢复后补列正常	case_RN207
 RN-208	cases/TDB343_v2.0.13.1.sh	V2.0.13.1	TDB-343 多级存储补列	可靠性	两级存储下自动补列正常且数据落二级目录	case_RN208
+RN-209	cases/TIMECHODB_0764_v2.0.13.1.sh	V2.0.13.1	TDB-1497 连接数上限报错（普通模式）	异常	连接达到上限时新连接报错含资源不足提示、不含旧文案；已有连接不受影响，释放后恢复	case_RN209
+RN-210	cases/TIMECHODB_0764_v2.0.13.1.sh	V2.0.13.1	TDB-1497 连接数上限报错（三权分立）	异常	三权分立下 sys_admin 触发上限，报错文案同上；root 被拒 803	case_RN210
