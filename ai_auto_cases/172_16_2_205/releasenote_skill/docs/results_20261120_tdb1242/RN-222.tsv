@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-222	TDB-1242 开审计+数据升级后并发写入	升级	PASS	0	767	[LOG err=0 warn=0 unexp=0] 

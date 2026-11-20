@@ -158,3 +158,4 @@ RN-218	cases/V2_1281_v2.0.13.1.sh	V2.0.13.1	TDB-1281 旧 PLAIN resource 加载�
 RN-219	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1262 数据升级（RC12→RC3）	升级	旧集群树+表(含 OBJECT)数据整体换二进制启动：旧数据可查、可写新数据、CN 无 NPE/数组越界	case_RN219
 RN-220	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1262 滚动升级（CN→DN，含并发读写）	升级	旧集群在线+并发读写，逐个升级 CN follower→leader→DN：最终 8/8 新版本、数据完整、无 NPE/数组越界（当前复现 TDB-1624：旧 CN 无法解析 -898/-899 计划、升级后 CN key-domain 启动失败）	case_RN220
 RN-221	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1624 升级单 CN follower（密钥元数据）	升级	只升级一个 CN follower：旧 CN 无 -898/-899 与状态机 NPE，升级后 CN 正常启动，集群恢复 8/8	case_RN221
+RN-222	cases/V2_1242_v2.0.13.1.sh	V2.0.13.1	TDB-1242 开审计+数据升级后并发写入	升级	开审计并数据升级后并发写入：DN 无 addStatementId NPE，审计持续记录，数据完整	case_RN222
