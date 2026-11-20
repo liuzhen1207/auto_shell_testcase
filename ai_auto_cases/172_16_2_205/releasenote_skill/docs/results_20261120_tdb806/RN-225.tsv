@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-225	TDB-806 修复权限控制	异常	PASS	0	63	[LOG err=0 warn=0 unexp=0] 

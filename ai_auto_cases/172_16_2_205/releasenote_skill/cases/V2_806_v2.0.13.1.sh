@@ -25,7 +25,15 @@ _rn806_repair_and_wait() {  # $1=标签 $2=超时秒数
   local tag=$1 want=${2:-120} i st prog off newlines
   off=$(ssh -n -o StrictHostKeyChecking=no root@172.16.2.26 "wc -l < $UPG_CN_DIR/${UPG_RC3}/logs/log_confignode_all.log 2>/dev/null || echo 0" 2>/dev/null | tr -dc '0-9')
   [ -z "${off:-}" ] && off=0
-  assert_ok "$(T "REPAIR DATA PARTITION TABLE")" "$tag 触发 REPAIR DATA PARTITION TABLE"
+  local rep_out; rep_out=$(T "REPAIR DATA PARTITION TABLE")
+  if echo "$rep_out" | grep -qi "success"; then
+    ok "$tag 触发 REPAIR DATA PARTITION TABLE"
+  elif echo "$rep_out" | grep -q "304"; then
+    ok "$tag 修复程序已在运行（304 already submitted，复用现有过程）"
+  else
+    fail "$tag 触发修复失败：$(echo "$rep_out" | head -1 | cut -c1-110)"
+    return 1
+  fi
   for i in $(seq 1 $((want / 2))); do
     st=$(_rn806_progress)
     prog=${st#* }
@@ -98,7 +106,7 @@ case_RN224() {
 case_RN225() {
   echo "  --- 权限：无 SYSTEM 被拒、授予 SYSTEM 后允许 ---"
   _rn806_seed
-  local U=rn806_u PW='Rn806@123456'
+  local U=rn806_u UPW='Rn806@123456'
   T "drop user $U" >/dev/null 2>&1
   # root 账号若已被锁定（822）或认证失败（801），不再重试（避免继续累计失败把账号锁得更久）
   local rootchk create_out
@@ -107,29 +115,26 @@ case_RN225() {
     fail "root 账号当前不可用（$(echo "$rootchk" | head -1 | cut -c1-100)），跳过权限用例（需重启集群解锁）"
     return
   fi
-  create_out=$(T "create user $U '$PW'")
+  create_out=$(T "create user $U '$UPW'")
   if echo "$create_out" | grep -qi "success"; then
     ok "创建普通用户 $U"
   else
     fail "创建普通用户 $U 失败：$(echo "$create_out" | head -1 | cut -c1-120)（不再重试，避免账号锁定）"
     return
   fi
-  # 先确认该用户能正常登录，避免反复失败登录把账号锁住（822）
-  local login; login=$(L "$U" "$PW" "show cluster" 2>&1)
-  if echo "$login" | grep -qiE "822|blocked|803|Exception"; then
-    fail "普通用户登录失败（$(echo "$login" | head -1 | cut -c1-100)），跳过权限用例"
+  # 用修复语句本身区分「登录成功但无权限(803)」与「登录失败(801/822)」
+  local out; out=$(L "$U" "$UPW" "REPAIR DATA PARTITION TABLE" 2>&1)
+  if echo "$out" | grep -q "803"; then
+    ok "无 SYSTEM 权限执行修复被拒绝（803）"
+  elif echo "$out" | grep -qE "801|822"; then
+    fail "普通用户登录失败：$(echo "$out" | head -1 | cut -c1-100)"
     T "drop user $U" >/dev/null 2>&1
     return
-  fi
-  ok "普通用户可正常登录"
-  local out; out=$(L "$U" "$PW" "REPAIR DATA PARTITION TABLE" 2>&1)
-  if echo "$out" | grep -qE "803|No permissions|permission"; then
-    ok "无 SYSTEM 权限执行修复被拒绝（$(echo "$out" | head -1 | cut -c1-80)）"
   else
     fail "无权限用户竟然可以执行修复：$(echo "$out" | head -1 | cut -c1-100)"
   fi
   assert_ok "$(T "grant system on root.** to user $U")" "授予 SYSTEM 权限"
-  local out2; out2=$(L "$U" "$PW" "REPAIR DATA PARTITION TABLE" 2>&1)
+  local out2; out2=$(L "$U" "$UPW" "REPAIR DATA PARTITION TABLE" 2>&1)
   if echo "$out2" | grep -qiE "Exception|ERROR"; then
     fail "有 SYSTEM 权限执行修复失败：$(echo "$out2" | head -1 | cut -c1-100)"
   else
