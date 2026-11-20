@@ -59,3 +59,15 @@
 | `conf/known_failures.conf` | RN-220、RN-221 的 KNOWN 说明（TDB-1624） |
 | `RN-221.out` / `RN-221.tsv` | 本次复现结果（KNOWN，含日志窗口） |
 | `docs/results_20261120_tdb1262/` | 完整证据：旧 CN `-898/-899`、NPE、升级后 CN key-domain 堆栈 |
+
+## 五、环境前置（重要）
+
+升级类用例要求**旧集群版本纯正**。实测发现：`deploy_build.sh` 在目标 `lib` 已存在时会跳过复制，
+导致节点残留上一轮的 RC3 二进制（表现为 `show cluster` 里 CN=RC12、DN=RC3 的混合版本）。
+
+因此新增 `tools/force_align_build.sh`（本次以脚本 `/tmp/force_align_build.sh` 运行）：
+停止全部节点 → 检查每节点 `lib/timechodb-server-*.jar` 版本 → 不一致则用打包好的
+`lib+sbin` tar 覆盖 → 重启并校验 8 节点 BuildInfo 全部为 `c05111d`。
+
+RN-221 已在该纯 RC12 环境（8/8 全部 `c05111d`）复跑，结果与混合环境一致（7 项断言全中，KNOWN），
+说明复现结论不受此前的混合版本干扰。
