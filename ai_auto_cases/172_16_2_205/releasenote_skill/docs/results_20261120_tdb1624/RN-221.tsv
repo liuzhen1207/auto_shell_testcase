@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-221	TDB-1624 升级单 CN follower（密钥元数据）	升级	KNOWN	7	475	[FAIL] 升级后 CN follower 未正常运行（java=0, port10710=0）——TDB-1624 现象 ; [FAIL] 升级后 CN 报 'Failed to initialize the cluster key-domain identity'（TDB-1624 核心现象） ; [FAIL] 旧 CN 172.16.2.26 出现未识别计划 -898/-899（1 条） ; [FAIL] 旧 CN 172.16.2.26 出现 ConfigRegion 状态机 NPE（1 条） ; [FAIL] 旧 CN 172.16.2.28 出现未识别计划 -898/-899（1 条） ; [FAIL] 旧 CN 172.16.2.28 出现 ConfigRegion 状态机 NPE（1 条） ; [FAIL] 升级后集群未恢复 8/8（滚动升级中断） ; [LOG err=0 warn=0 unexp=0] [known] 

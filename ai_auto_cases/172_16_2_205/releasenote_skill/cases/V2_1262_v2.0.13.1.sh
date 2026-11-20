@@ -194,3 +194,74 @@ CASES+=(
 "RN-219|TDB-1262 数据升级（RC12→RC3）|升级|旧集群树+表(含 OBJECT)数据整体换二进制启动：旧数据可查、可写新数据、CN 无 NPE/数组越界|case_RN219"
 "RN-220|TDB-1262 滚动升级（CN→DN，含并发读写）|升级|旧集群在线+并发读写，逐个升级 CN follower→leader→DN：最终 8/8 新版本、数据完整、无 NPE/数组越界|case_RN220"
 )
+
+# ---------------------------------------------------------------- RN-221 TDB-1624 聚焦复现
+#   只升级一个 CN follower，检查 TDB-1624 的完整链路：
+#     旧 CN：Unrecognized log configPhysicalPlanType: -898/-899 + 状态机 NPE
+#     升级后 CN：StartupException: Failed to initialize the cluster key-domain identity
+#     集群：未恢复 8/8（滚动升级中断）
+case_RN221() {
+  echo "  --- TDB-1624 聚焦复现：升级单个 CN follower ---"
+  if ! _upg_is_old; then
+    fail "当前集群不是 RC12（BuildInfo=$(upg_version)），无法执行该用例"
+    return
+  fi
+  ok "当前为旧版本 RC12（BuildInfo=c05111d）"
+
+  local target=172.16.2.27
+  local peers="172.16.2.26 172.16.2.28"
+  local off_dir=/tmp/rn221_off ip off newn npe n port
+  rm -rf "$off_dir"; mkdir -p "$off_dir"
+  for ip in $peers $target; do
+    ssh -n -o StrictHostKeyChecking=no root@$ip "wc -l < $UPG_CN_DIR/$UPG_OLD/logs/log_confignode_all.log 2>/dev/null || echo 0" 2>/dev/null | tr -dc '0-9' > "$off_dir/$ip"
+  done
+  ok "已记录 CN 日志基线（升级窗口起点）"
+
+  # 只升级一个 CN follower
+  upg_stop_node "$target" cn || fail "停止 CN follower $target 失败"
+  upg_swap_build "$target" cn "$UPG_OLD" "$UPG_RC3" || fail "替换 CN follower $target 二进制失败"
+  upg_start_node "$target" cn "$UPG_CN_DIR/$UPG_OLD" >/dev/null 2>&1
+  sleep 60
+
+  # 1) 升级后 CN 是否正常起来
+  n=$(ssh -n -o StrictHostKeyChecking=no root@$target "pgrep -cf '[c]om.timecho.iotdb' 2>/dev/null | head -1" 2>/dev/null | tr -dc '0-9')
+  [ -z "${n:-}" ] && n=0
+  port=$(ssh -n -o StrictHostKeyChecking=no root@$target "ss -lnt 2>/dev/null | grep -c ':10710'" 2>/dev/null | tr -dc '0-9')
+  [ -z "${port:-}" ] && port=0
+  if [ "$n" -ge 1 ] && [ "$port" -ge 1 ]; then
+    ok "升级后 CN follower 正常运行（java=$n, 10710 监听）"
+  else
+    fail "升级后 CN follower 未正常运行（java=$n, port10710=$port）——TDB-1624 现象"
+  fi
+
+  # 2) 升级后 CN 的 key-domain 启动失败
+  if ssh -n -o StrictHostKeyChecking=no root@$target "grep -q 'Failed to initialize the cluster key-domain identity' $UPG_CN_DIR/$UPG_OLD/logs/log_confignode_all.log 2>/dev/null" 2>/dev/null; then
+    fail "升级后 CN 报 'Failed to initialize the cluster key-domain identity'（TDB-1624 核心现象）"
+  else
+    ok "升级后 CN 无 key-domain identity 初始化失败"
+  fi
+
+  # 3) 旧 CN 的未识别计划与状态机 NPE（只看升级窗口内新增）
+  for ip in $peers; do
+    off=$(cat "$off_dir/$ip" 2>/dev/null); [ -z "${off:-}" ] && off=0
+    newn=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((off + 1)) $UPG_CN_DIR/$UPG_OLD/logs/log_confignode_all.log 2>/dev/null | grep -cE 'Unrecognized log configPhysicalPlanType: -(898|899)'" 2>/dev/null | tr -dc '0-9')
+    npe=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((off + 1)) $UPG_CN_DIR/$UPG_OLD/logs/log_confignode_all.log 2>/dev/null | grep -c 'markAsGeneratedByRemoteConsensusLeader'" 2>/dev/null | tr -dc '0-9')
+    [ -z "${newn:-}" ] && newn=0
+    [ -z "${npe:-}" ] && npe=0
+    [ "$newn" -gt 0 ] && fail "旧 CN $ip 出现未识别计划 -898/-899（$newn 条）" || ok "旧 CN $ip 无未识别计划"
+    [ "$npe" -gt 0 ] && fail "旧 CN $ip 出现 ConfigRegion 状态机 NPE（$npe 条）" || ok "旧 CN $ip 无状态机 NPE"
+  done
+
+  # 4) 集群是否恢复
+  if upg_wait_running 180; then ok "升级后集群 8/8"; else fail "升级后集群未恢复 8/8（滚动升级中断）"; fi
+
+  # 清理：回滚该 CN 到 RC12，恢复干净环境
+  upg_stop_node "$target" cn >/dev/null 2>&1
+  upg_restore_build "$target" cn "$UPG_OLD" >/dev/null 2>&1
+  upg_start_node "$target" cn "$UPG_CN_DIR/$UPG_OLD" >/dev/null 2>&1
+  upg_wait_running 300 >/dev/null 2>&1
+}
+
+CASES+=(
+"RN-221|TDB-1624 升级单 CN follower（密钥元数据）|升级|旧 CN 无 -898/-899 与 NPE、升级后 CN 正常启动并恢复 8/8（当前已知缺陷 RN-220/221 记录 known）|case_RN221"
+)
