@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-218	TDB-1281 旧 PLAIN resource 加载后升级为 ARRAY	兼容性	PASS	0	105	[LOG err=0 warn=0 unexp=0] 

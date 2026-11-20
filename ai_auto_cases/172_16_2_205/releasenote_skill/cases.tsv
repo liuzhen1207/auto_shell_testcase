@@ -154,3 +154,4 @@ RN-214	cases/TIMECHODB_0501_v2.0.13.1.sh	V2.0.13.1	TDB-1429 DROP USER 元数据�
 RN-215	cases/TIMECHODB_0366_v2.0.13.1.sh	V2.0.13.1	TDB-1406 树转表视图元数据导出为 CREATE VIEW	功能	export-schema.sh 导出视图定义正确（非 CREATE TABLE），导入后仍为视图且自动扩列可用	case_RN215
 RN-216	cases/V2_1352_v2.0.13.1.sh	V2.0.13.1	TDB-1352 非对齐视图 last 查询下推与倒序	性能	EXPLAIN 显示聚合下推且 ScanOrder=DESC；last 耗时应远低于全量扫描	case_RN216
 RN-217	cases/V2_1336_v2.0.13.1.sh	V2.0.13.1	TDB-1336 explain analyze 增强输出	功能	SinkNode 输出 DownStreamPlanNodeId、ExchangeNode 输出 size_in_bytes、ScanNode 输出 rowScanFilteredRows（verbose）	case_RN217
+RN-218	cases/V2_1281_v2.0.13.1.sh	V2.0.13.1	TDB-1281 旧 PLAIN resource 加载后升级为 ARRAY	兼容性	模拟旧格式 resource(type=1)，重启后数据可查且文件升级为 type=3，二次重启仍正常	case_RN218
