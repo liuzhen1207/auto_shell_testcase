@@ -1,5 +1,29 @@
 # 2.0.13.1 RC3 验证对照：本地 3C3D vs PLM PVE 实例
 
+> **✅ 更新（2026-11-20）：文中的"PVE 环境失败"已定性并由研发修复。**
+>
+> **真实根因（PLM bug，非内存/非产品问题）**：
+> 用例名被 PLM 截断到 40 字符时，末尾可能留下**未闭合的反引号**（如 `…（目录口径 + \`file_c`），
+> PLM 生成 `task.env` 时 `PLM_CASE_NAME` **没有做 shell 转义**，`dash` source 该文件直接语法错误退出，
+> 执行 shell 从未启动 → 被判定为 **`SHELL_PROCESS_DISAPPEARED`**（session 为空）。
+>
+> **研发状态**：已修复（`task.env` 生成时对 `PLM_CASE_NAME` 做转义）。
+>
+> **我这边的处置（与平台修复并行，立即可用）**：
+> 1. 发现 PLM `PUT /api/open/test-cases/{id}` 支持改名，扫描 7 个模块 133 条用例，
+>    把名字含 `` ` `` / `"` / `'` / `$` / `\` 的 **40 条**改名为"去特殊字符 + ≤30 字符"的干净名字；
+> 2. 同时净化 `name-map.json`，后续新导入不会再带反引号。
+>
+> **改名后验证（同一 PVE、同一 rc3 镜像）**：
+>
+> | 用例 | 改名前后 |
+> | --- | --- |
+> | W-00（TimechoDB-11210） | ❌ `SHELL_PROCESS_DISAPPEARED` → ✅ **VERIFIED**（task `4bdb1b2e`） |
+> | CR-01（TimechoDB-11025） | ❌ failed → ✅ **VERIFIED**（task `148e3671`） |
+> | compaction CO-17 / CO-19 / CO-20 | ❌ failed → ✅ **VERIFIED** |
+>
+> ⇒ 第四节"资源不足/OOM"的推断**作废**（保留作过程记录）；第五节资源建议仅作参考，本次失败与内存无关。
+
 > 生成时间：2026-11-19 19:10
 > 目的：区分 **产品问题** 与 **PVE 验证环境问题**，供研发评估。
 
