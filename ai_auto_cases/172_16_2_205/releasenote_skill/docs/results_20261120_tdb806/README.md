@@ -5,8 +5,8 @@
 | 功能 | Tree 方言 `REPAIR DATA PARTITION TABLE` + `SHOW REPAIR DATA PARTITION TABLE PROGRESS` |
 | 参考记录 | PLM `docs/708`（2.0.11.1 RC5，62 项：58 PASS） |
 | 验证版本 | 2.0.13.1 RC3 `ac7f95e`，3C5D（SR3/DR2，IoTConsensus V1） |
-| 用例 | RN-223 ~ RN-227 |
-| 结果 | **RN-223 / 224 / 225 / 226 / 227 全部 PASS**（日志窗口均 `err=0 warn=0 unexp=0`） |
+| 用例 | RN-223 ~ RN-227（健康集群）+ **RN-228（真正需要修复的场景）** |
+| 结果 | **RN-223~228 全部 PASS**（日志窗口均 `err=0 warn=0 unexp=0`） |
 
 ## 一、用例设计（依据 docs/708 的 6 类场景精简）
 
@@ -57,3 +57,42 @@ create_out=$(T "create user $U '$PW'")   # root 实际用普通用户密码登�
 | `cases/V2_806_v2.0.13.1.sh` | RN-223~227 |
 | `RN-223/224/226/227.out` `.tsv` | PASS 证据（含日志窗口） |
 | `RN-225.out` `.tsv` | PASS 证据 |
+
+## 六、RN-228 真正需要修复的场景（2.0.6.1 误删分区 → 升级 RC3 → REPAIR 恢复）
+
+前 5 个用例跑在健康集群上，修复过程直接输出 `No databases have lost data partitions`，
+**没有真正走到“需要修复”的路径**。RN-228 补上了这一场景，造数方式参照用户脚本
+`tc2026_April_003602_..._auto_repair_dev_ttl_ns.sh`：
+
+1. **2.0.6.1 + `timestamp_precision=ns` + `ttl_check_interval=10000`**；
+2. 造数：4 个设备 d1~d4，每个设备在 **2026-01-01**（T1）与当前时刻（T2）各一行 → 跨 2 个 7 天时间分区；
+3. **只对 d1 设设备级 TTL**（值 = now - T1）；
+4. 等待 TTL 检查（约 40s）→ 2.0.6.1 的 bug 把**整个时间分区条目**删除：
+   `show timepartition` 由 **2 → 1**（T1 分区丢失，d2/d3/d4 一并受害）；
+5. **数据升级到 RC3**（就地替换 lib/sbin，保留 conf/data）；
+6. 修复前确认：分区仍缺失（1 个）、`d2` 窄窗口查询 `count=0`、但 `d2` 总数=2（数据仍在 DN）；
+7. 执行 `REPAIR DATA PARTITION TABLE` → **分区恢复为 2 个**，`d2/d3/d4` 窄窗口 `count=1`；
+8. `d1` 旧数据仍为 0（TTL 正常清理，未被错误恢复）。
+
+实测明细：
+
+```
+[ok] 当前为 2.0.6.1（BuildInfo=802dd96）
+[ok] 基线数据写入（d2 count=2）
+[ok] 基线时间分区数=2
+[ok] 已对 d1 设置 TTL=27944731ms（其余设备不设）
+[ok] 已复现：时间分区被误删（2 → 1）
+[ok] 已升级并恢复 8/8
+[ok] 集群版本为 RC3（ac7f95e）
+[ok] 升级后分区仍缺失（show timepartition=1，符合预期）
+[ok] 修复前 d2 窄窗口查询为空（count=0，缺失分区现象）
+[ok] 修复前 d2 数据仍在 DN（总数=2）
+[ok] 触发 REPAIR DATA PARTITION TABLE
+[ok] 修复后时间分区恢复为 2 个
+[ok] 修复后 d2/d3/d4 窄窗口数据可查（count=1）
+[ok] d1 旧数据仍被 TTL 清理（符合预期，count=0）
+[LOG err=0 warn=0 unexp=0]
+```
+
+**结论：手动修复分区表在“真实缺失分区”场景下有效，升级路径 2.0.6.1 → 2.0.13.1 RC3 验证通过。**
+

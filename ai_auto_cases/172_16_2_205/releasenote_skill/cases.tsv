@@ -164,3 +164,4 @@ RN-224	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复幂等/重复触发	功
 RN-225	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复权限控制	异常	无 SYSTEM 权限被拒（803），授予后可执行并完成	case_RN225
 RN-226	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复 SQL 方言与语法	异常	Table 方言拒绝修复/进度语句；Tree 方言非法语法报 700	case_RN226
 RN-227	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复 worker 参数	功能	partition_table_recover_worker_num=4 时修复正常完成且数据完整	case_RN227
+RN-228	cases/V2_806b_v2.0.13.1.sh	V2.0.13.1	TDB-806 真正需要修复的分区场景	功能	2.0.6.1 上 TTL 误删时间分区 → 升级 RC3 → REPAIR 恢复分区与窄窗口数据	case_RN228
