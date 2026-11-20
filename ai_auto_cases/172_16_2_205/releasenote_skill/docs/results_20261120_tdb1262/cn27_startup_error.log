@@ -1,0 +1,21 @@
+2026-11-20 12:29:38,639 [1@group-000000000000-LeaderElection1] INFO  o.a.r.s.i.RaftServerImpl:622 - 1@group-000000000000: set firstElectionSinceStartup to false for REJECTED 
+2026-11-20 12:29:40,606 [grpc-default-executor-0] INFO  o.a.i.c.c.s.ConfigRegionStateMachine:300 - [ConfigRegion Update] ConfigNode [nodeId: 1, consensusEndpoint: TEndPoint(ip:172.16.2.27, port:10720)] is a ConfigRegion follower; new leader nodeId: 0. Stopping leader services. 
+2026-11-20 12:29:40,607 [grpc-default-executor-0] INFO  o.a.r.s.impl.ServerState:305 - 1@group-000000000000: change Leader from null to 0 at term 1 for APPEND_ENTRIES, leader elected after 2631ms 
+2026-11-20 12:29:40,607 [pool-3-IoTDB-ConfigNode-Leader-Services-Transition-1] INFO  o.a.i.c.m.l.s.TopologyService:145 - Topology Probing has stopped successfully 
+2026-11-20 12:29:40,610 [pool-3-IoTDB-ConfigNode-Leader-Services-Transition-1] INFO  o.a.i.c.c.s.ConfigRegionStateMachine:475 - [ConfigRegion Update] ConfigNode [nodeId: 1, consensusEndpoint: TEndPoint(ip:172.16.2.27, port:10720)] completed stopping leader services. 
+2026-11-20 12:29:40,714 [main] INFO  o.a.ratis.conf.ConfUtils:62 - raft.grpc.client.channel.shutdown.graceful.timeout = 3s (default) 
+2026-11-20 12:29:40,715 [main] INFO  o.a.ratis.conf.ConfUtils:62 - raft.grpc.client.channel.shutdown.forceful.timeout = 2s (default) 
+2026-11-20 12:29:40,782 [main] ERROR o.a.i.c.s.ConfigNode:323 - Meet error while starting up. 
+org.apache.iotdb.commons.exception.StartupException: Failed to initialize the cluster key-domain identity.
+	at org.apache.iotdb.confignode.service.ConfigNode.validateClusterKeyManagementState(ConfigNode.java:637)
+	at org.apache.iotdb.confignode.service.ConfigNode.active(ConfigNode.java:204)
+	at org.apache.iotdb.confignode.service.ConfigNode.start(ConfigNode.java:160)
+	at com.timecho.iotdb.service.ConfigNode.start(ConfigNode.java:218)
+	at org.apache.iotdb.commons.ServerCommandLine.run(ServerCommandLine.java:83)
+	at com.timecho.iotdb.service.ConfigNode.main(ConfigNode.java:73)
+2026-11-20 12:29:40,785 [main] INFO  o.a.i.c.s.ConfigNode:584 - Deactivating IoTDB-ConfigNode... 
+2026-11-20 12:29:40,785 [main] INFO  o.a.i.c.p.a.r.AbstractPipePeriodicalJobExecutor:110 - Pipe periodical job executor is stopped successfully. 
+2026-11-20 12:29:40,785 [main] INFO  o.a.i.c.m.p.a.r.PipeConfigNodeRuntimeAgent:97 - PipeRuntimeConfigNodeAgent stopped 
+2026-11-20 12:29:40,785 [main] INFO  o.a.i.c.s.RegisterManager:78 - deregister all service. 
+2026-11-20 12:29:40,786 [main] INFO  o.a.i.c.s.m.MetricService:151 - MetricService try to stop. 
+2026-11-20 12:29:40,787 [main] INFO  o.a.i.c.s.m.MetricService:156 - MetricService stop successfully. 

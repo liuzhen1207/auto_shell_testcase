@@ -14,7 +14,7 @@ RN_NOISE_RE='Connection refused|Connection reset|Socket is closed by peer|Broken
 _rn_log_offsets() {  # $1=ip $2=kind(cn|dn) -> "err warn"
   local dir=/data/iotdb
   [ "$2" = "dn" ] && dir=/data1/iotdb
-  ssh -n -o StrictHostKeyChecking=no root@$1 "wc -l < $dir/$NEW/logs/log_${2}_error.log 2>/dev/null || echo 0; wc -l < $dir/$NEW/logs/log_${2}_warn.log 2>/dev/null || echo 0" 2>/dev/null | tr -d ' '
+  ssh -n -o StrictHostKeyChecking=no root@$1 "wc -l < $dir/${LOG_NEW:-$NEW}/logs/log_${2}_error.log 2>/dev/null || echo 0; wc -l < $dir/${LOG_NEW:-$NEW}/logs/log_${2}_warn.log 2>/dev/null || echo 0" 2>/dev/null | tr -d ' '
 }
 
 log_mark() {
@@ -37,7 +37,7 @@ log_check() {  # $1=可选 case id（用于样本文件名）
     kind=${base%%_*}; ip=${base#*_}
     read -r e w <<< "$(cat "$f")"
     dir=/data/iotdb; [ "$kind" = "dn" ] && dir=/data1/iotdb
-    out=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((${e:-0} + 1)) $dir/$NEW/logs/log_${kind}_error.log 2>/dev/null; tail -n +$((${w:-0} + 1)) $dir/$NEW/logs/log_${kind}_warn.log 2>/dev/null" 2>/dev/null)
+    out=$(ssh -n -o StrictHostKeyChecking=no root@$ip "tail -n +$((${e:-0} + 1)) $dir/${LOG_NEW:-$NEW}/logs/log_${kind}_error.log 2>/dev/null; tail -n +$((${w:-0} + 1)) $dir/${LOG_NEW:-$NEW}/logs/log_${kind}_warn.log 2>/dev/null" 2>/dev/null)
     [ -z "${out:-}" ] && continue
     while IFS= read -r line; do
       case "$line" in

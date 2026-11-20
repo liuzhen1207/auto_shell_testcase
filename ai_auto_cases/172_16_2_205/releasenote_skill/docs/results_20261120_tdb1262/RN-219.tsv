@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-219	TDB-1262 数据升级（RC12→RC3）	升级	PASS	0	404	[LOG err=0 warn=0 unexp=0] 

@@ -155,3 +155,5 @@ RN-215	cases/TIMECHODB_0366_v2.0.13.1.sh	V2.0.13.1	TDB-1406 树转表视图元�
 RN-216	cases/V2_1352_v2.0.13.1.sh	V2.0.13.1	TDB-1352 非对齐视图 last 查询下推与倒序	性能	EXPLAIN 显示聚合下推且 ScanOrder=DESC；last 耗时应远低于全量扫描	case_RN216
 RN-217	cases/V2_1336_v2.0.13.1.sh	V2.0.13.1	TDB-1336 explain analyze 增强输出	功能	SinkNode 输出 DownStreamPlanNodeId、ExchangeNode 输出 size_in_bytes、ScanNode 输出 rowScanFilteredRows（verbose）	case_RN217
 RN-218	cases/V2_1281_v2.0.13.1.sh	V2.0.13.1	TDB-1281 旧 PLAIN resource 加载后升级为 ARRAY	兼容性	模拟旧格式 resource(type=1)，重启后数据可查且文件升级为 type=3，二次重启仍正常	case_RN218
+RN-219	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1262 数据升级（RC12→RC3）	升级	旧集群树+表(含 OBJECT)数据整体换二进制启动：旧数据可查、可写新数据、CN 无 NPE/数组越界	case_RN219
+RN-220	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1262 滚动升级（CN→DN，含并发读写）	升级	旧集群在线+并发读写，逐个升级 CN follower→leader→DN：最终 8/8 新版本、数据完整、无 NPE/数组越界	case_RN220

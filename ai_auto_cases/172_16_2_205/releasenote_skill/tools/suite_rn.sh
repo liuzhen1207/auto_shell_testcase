@@ -9,6 +9,7 @@ BASE="${BASE:-$(cd "$(dirname "$0")/.." && pwd)}"
 for _p in "$BASE/conf/env.conf" "$BASE/scripts/env.conf"; do [ -f "$_p" ] && . "$_p" && break; done
 for _p in "$BASE/lib/lib_rn.sh" "$BASE/scripts/lib_rn.sh"; do [ -f "$_p" ] && . "$_p" && break; done
 for _p in "$BASE/lib/logcheck.sh" "$BASE/scripts/logcheck.sh"; do [ -f "$_p" ] && . "$_p" && break; done
+for _p in "$BASE/lib/upgrade_lib.sh" "$BASE/scripts/upgrade_lib.sh"; do [ -f "$_p" ] && . "$_p" && break; done
 if ! command -v T >/dev/null 2>&1; then echo "环境错误：未加载 lib_rn.sh"; exit 4; fi
 
 RESULTS="$RESULT_ROOT/run_$(date +%Y%m%d_%H%M%S)"
