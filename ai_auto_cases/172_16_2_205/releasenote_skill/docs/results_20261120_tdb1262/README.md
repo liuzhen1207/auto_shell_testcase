@@ -71,3 +71,24 @@ org.apache.iotdb.commons.exception.StartupException:
 | `RN-219.out` / `RN-219.tsv` | 数据升级结果（PASS，含日志窗口） |
 | `RN-220.out` | 滚动升级失败明细 |
 | `cn27_startup_error.log` | CN follower 启动失败堆栈（key-domain identity） |
+
+## 六、与 TDB-1624 的对应关系（已确认同一问题）
+
+TDB-1624（2.0.13.1-RC2，密钥管理）描述的链路与本次 RN-220 实测**逐条一致**：
+
+| TDB-1624 描述 | 本次 RN-220 实测（RC3 `ac7f95e`，升级源 RC12 `c05111d`） |
+| --- | --- |
+| 旧版本 CN leader 记录 `Unrecognized log configPhysicalPlanType: -898` | CN26/CN28（仍为 RC12）日志出现同一条，另有 `-899` |
+| ConfigRegion 状态机 `NullPointerException` | 同一条 NPE：`Cannot invoke "...markAsGeneratedByRemoteConsensusLeader()" because "<local7>" is null` |
+| RC2 `.62` 抛 `StartupException: Failed to initialize the cluster key-domain identity` | CN27（升级后 RC3）完全相同堆栈，落在 `ConfigNode.validateClusterKeyManagementState(ConfigNode.java:637)` |
+| `10710` 未就绪、滚动升级中断 | 集群未恢复 8/8，RN-220 判定 FAIL |
+
+补充：TDB-1624 报告于 **RC2（83183d0）**，本次在 **RC3（ac7f95e）** 仍可复现，说明该问题在 RC3 未修复
+（PLM 上该单修复版本字段为 RC4，状态“排期确认”，与实测一致）。
+
+**因此 RN-220 可直接作为 TDB-1624 的自动化回归入口**：RC4 修复后重新执行，预期转为 PASS。
+
+证据文件：
+- `old_cn_26_unrecognized.log` / `old_cn_28_unrecognized.log`：旧版 CN 的 `-898/-899 Unrecognized` + NPE
+- `upgraded_cn_27_keydomain.log`：升级后 CN 的 key-domain 启动失败堆栈
+

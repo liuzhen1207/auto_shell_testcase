@@ -1,0 +1,12 @@
+635-2026-11-20 12:29:40,714 [main] INFO  o.a.ratis.conf.ConfUtils:62 - raft.grpc.client.channel.shutdown.graceful.timeout = 3s (default) 
+636-2026-11-20 12:29:40,715 [main] INFO  o.a.ratis.conf.ConfUtils:62 - raft.grpc.client.channel.shutdown.forceful.timeout = 2s (default) 
+637-2026-11-20 12:29:40,782 [main] ERROR o.a.i.c.s.ConfigNode:323 - Meet error while starting up. 
+638:org.apache.iotdb.commons.exception.StartupException: Failed to initialize the cluster key-domain identity.
+639-	at org.apache.iotdb.confignode.service.ConfigNode.validateClusterKeyManagementState(ConfigNode.java:637)
+640-	at org.apache.iotdb.confignode.service.ConfigNode.active(ConfigNode.java:204)
+641-	at org.apache.iotdb.confignode.service.ConfigNode.start(ConfigNode.java:160)
+642-	at com.timecho.iotdb.service.ConfigNode.start(ConfigNode.java:218)
+643-	at org.apache.iotdb.commons.ServerCommandLine.run(ServerCommandLine.java:83)
+644-	at com.timecho.iotdb.service.ConfigNode.main(ConfigNode.java:73)
+645-2026-11-20 12:29:40,785 [main] INFO  o.a.i.c.s.ConfigNode:584 - Deactivating IoTDB-ConfigNode... 
+646-2026-11-20 12:29:40,785 [main] INFO  o.a.i.c.p.a.r.AbstractPipePeriodicalJobExecutor:110 - Pipe periodical job executor is stopped successfully. 

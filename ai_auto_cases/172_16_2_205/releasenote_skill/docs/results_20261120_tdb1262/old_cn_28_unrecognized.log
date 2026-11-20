@@ -1,0 +1,2 @@
+324:java.io.IOException: Unrecognized log configPhysicalPlanType: -898
+333:java.lang.NullPointerException: Cannot invoke "org.apache.iotdb.commons.request.IConsensusRequest.markAsGeneratedByRemoteConsensusLeader()" because "<local7>" is null
