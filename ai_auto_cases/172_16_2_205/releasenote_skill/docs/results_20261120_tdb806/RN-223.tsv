@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-223	TDB-806 手动修复分区表基础	功能	PASS	0	61	[LOG err=0 warn=0 unexp=0] 

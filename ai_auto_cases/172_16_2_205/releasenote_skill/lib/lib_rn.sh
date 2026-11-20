@@ -22,6 +22,14 @@ ok()   { echo "  [ok] $*"; }
 fail() { CASE_FAILS=$((CASE_FAILS+1)); CASE_MSGS="${CASE_MSGS}[FAIL] $* ; "; echo "  [FAIL] $*"; }
 
 assert_ok()       { if echo "$1" | grep -qiE 'Exception|ERROR|timeout|超时'; then fail "$2: 预期成功，实际 $(echo "$1" | head -1 | cut -c1-120)"; else ok "$2"; fi; }
+assert_err() {  # $1=输出 $2=期望包含(可空) $3=描述
+  if [ -z "${2:-}" ]; then
+    if echo "$1" | grep -qiE 'Exception|ERROR'; then ok "$3"; else fail "$3：预期报错但成功了（$(echo "$1" | head -1 | cut -c1-100)）"; fi
+  else
+    if echo "$1" | grep -q "$2"; then ok "$3"; else fail "$3：报错信息不含 [$2]（实际 $(echo "$1" | head -1 | cut -c1-120)）"; fi
+  fi
+}
+
 assert_contains() { if echo "$1" | grep -q "$2"; then ok "$3"; else fail "$3: 预期包含 '$2'"; fi; }
 assert_not_contains() { if echo "$1" | grep -qi "$2"; then fail "$3: 不应出现 '$2'"; else ok "$3"; fi; }
 

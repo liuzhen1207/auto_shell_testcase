@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-225	TDB-806 修复权限控制	异常	FAIL	1	44	[FAIL] root 账号当前不可用（Error: Can't execute sql because 801: Authentication failed.），跳过权限用例（需重启集群解锁） ; [LOG err=0 warn=0 unexp=0] 

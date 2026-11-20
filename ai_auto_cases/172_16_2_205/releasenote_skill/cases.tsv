@@ -159,3 +159,8 @@ RN-219	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1262 数据升级（RC12→RC3�
 RN-220	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1262 滚动升级（CN→DN，含并发读写）	升级	旧集群在线+并发读写，逐个升级 CN follower→leader→DN：最终 8/8 新版本、数据完整、无 NPE/数组越界（当前复现 TDB-1624：旧 CN 无法解析 -898/-899 计划、升级后 CN key-domain 启动失败）	case_RN220
 RN-221	cases/V2_1262_v2.0.13.1.sh	V2.0.13.1	TDB-1624 升级单 CN follower（密钥元数据）	升级	只升级一个 CN follower：旧 CN 无 -898/-899 与状态机 NPE，升级后 CN 正常启动，集群恢复 8/8	case_RN221
 RN-222	cases/V2_1242_v2.0.13.1.sh	V2.0.13.1	TDB-1242 开审计+数据升级后并发写入	升级	开审计并数据升级后并发写入：DN 无 addStatementId NPE，审计持续记录，数据完整	case_RN222
+RN-223	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 手动修复分区表基础	功能	REPAIR DATA PARTITION TABLE 触发成功，进度 IDLE/0% → 100%，修复后数据完整	case_RN223
+RN-224	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复幂等/重复触发	功能	连续两次触发修复均成功且数据不丢	case_RN224
+RN-225	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复权限控制	异常	无 SYSTEM 权限被拒（803），授予后可执行并完成	case_RN225
+RN-226	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复 SQL 方言与语法	异常	Table 方言拒绝修复/进度语句；Tree 方言非法语法报 700	case_RN226
+RN-227	cases/V2_806_v2.0.13.1.sh	V2.0.13.1	TDB-806 修复 worker 参数	功能	partition_table_recover_worker_num=4 时修复正常完成且数据完整	case_RN227

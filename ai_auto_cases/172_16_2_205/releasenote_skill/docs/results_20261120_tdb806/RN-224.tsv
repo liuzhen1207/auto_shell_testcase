@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-224	TDB-806 修复幂等/重复触发	功能	PASS	0	62	[LOG err=0 warn=0 unexp=0] 

@@ -1,0 +1,2 @@
+id	feature	type	verdict	fails	dur_s	detail
+RN-227	TDB-806 修复 worker 参数	功能	PASS	0	65	[LOG err=0 warn=0 unexp=0] 
